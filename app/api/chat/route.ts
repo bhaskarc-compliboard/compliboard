@@ -11,7 +11,8 @@
 // The security item and the functional prerequisite turned out to be the same work.
 // DECISIONS.md §4 and §34; docs/DETERMINATION-GATE.md §0.
 //
-// THIS CLOSES ONE OF §0.8b's FOUR UNDOCUMENTED ROUTES, NOT ALL FOUR. /api/extract-dates,
+// THIS CLOSES ONE OF §0.8b's FOUR UNDOCUMENTED ROUTES, NOT ALL FOUR. (/api/extract-dates was the
+// second; it was DELETED in Calendar Job B, decision 17 — Documents is the one door for files.)
 // /api/feedback and /api/scan-website are unchanged — the SSRF in scan-website and the
 // unescaped HTML interpolation in feedback are still open.
 //

@@ -525,7 +525,8 @@ async function callWithCitations(
 
 /**
  * Same as askAI, but for when we expect JSON back.
- * Strips markdown fences and parses. Used by extract-dates and the document scan; review and the
+ * Strips markdown fences and parses. Used by the document scan (extract-dates, its other caller, was
+ * deleted in Calendar Job B); review and the
  * old audit route were callers until Run 3 retired them (30 September 2026).
  */
 export async function askAIJson<T = any>(

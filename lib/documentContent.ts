@@ -7,10 +7,11 @@ import { ACCEPTED_FILE_TYPES_PROSE } from './acceptedFiles.ts'
  * TURNS AN UPLOADED FILE INTO CONTENT BLOCKS THE MODEL CAN ACTUALLY READ.
  *
  * One implementation. Three callers since the audit engine went (Run 3, 30 September 2026):
- * /api/chat, /api/extract-dates, /api/hr. The document scan is the fourth.
+ * /api/chat and /api/hr. The document scan is the third. (/api/extract-dates was one of them until
+ * Calendar Job B deleted it, decision 17.)
  *
  * WHY THIS EXISTS. The same branching was written four times and no two copies agreed.
- * /api/extract-dates read Excel, CSV, Word and PowerPoint. The old audit route read Word and
+ * /api/extract-dates (now deleted) read Excel, CSV, Word and PowerPoint. The old audit route read Word and
  * PowerPoint but not Excel or CSV. /api/hr read PDFs and images ONLY — not because it
  * could not parse the rest, but because the parsers had never been wired into it, and the
  * restriction was written up as though it were a property of the format. And /api/chat

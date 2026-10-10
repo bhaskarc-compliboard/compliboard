@@ -1,38 +1,81 @@
+/**
+ * THE COMPLIANCE CALENDAR — Calendar Job B (`docs/CALENDAR-PLAN.md` decision 16, boards 1–8 and 13).
+ *
+ * *** EVERYTHING UNDER THIS PAGE WAS REBUILT IN JOB A *** (`DECISIONS.md` §186). This page writes
+ * nothing of its own: every change goes through `lib/calendarDates.ts` by way of
+ * `/api/calendar/dates`, and every day is read by `lib/calendarDate.ts`. There is no second writer
+ * and no second idea of what a day is — which is how the old page could call a date "Overdue" in one
+ * panel and "Due today" in the row beneath it (`docs/CALENDAR-MACHINERY.md` B2).
+ *
+ * THE SHELL IS HR's AND THE WORKSPACE's, piece for piece (decision 16): `AppLayout`, the 900 column,
+ * the 28px serif title, `components/Tabs.tsx`, `components/Drawer.tsx` at 720, `components/Sheet.tsx`
+ * for anything destructive, `components/Empty.tsx`, `components/buttonStyles.ts` for every action,
+ * and `lib/printFrame.ts` for Print. Nothing here is styled by hand that one of those already styles.
+ *
+ * THE WORDS (§185c): **nothing says "overdue" or "not done" about a date.** All we know is that its
+ * day has gone by — people do the work and record it in their own calendar, not necessarily in ours.
+ * The group is "Dates that have passed". A date outside the current year shows its year. Never
+ * "compliant" (§6).
+ *
+ * WHAT WENT: "Import from file" and `/api/extract-dates` (decision 17). Documents is the one door for
+ * files and it reads dates with the line they came from; the importer enumerated dates from a
+ * document with no anchor, which §3.3 names as the mode the model is unreliable in.
+ */
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import { Tabs } from '@/components/Tabs'
+import { Drawer, printDrawer } from '@/components/Drawer'
+import { Sheet } from '@/components/Sheet'
+import { Empty } from '@/components/Empty'
+import { PRIMARY, OUTLINE, TEXT_ACTION } from '@/components/buttonStyles'
+import { printWithFrame } from '@/lib/printFrame'
+import { monthlyEmailPromised } from '@/lib/emailPromise'
+import {
+  today, formatDay, formatDayShort, formatMonth, monthRange, inMonth, isPast, dueWords,
+  compareDays, nextOccurrence, isDayString, type HowOften,
+} from '@/lib/calendarDate'
 
-interface CalendarEvent {
+type Tab = 'month' | 'list' | 'confirm'
+
+interface CalendarDate {
   id: string
   title: string
   description: string | null
-  due_date: string
-  category: string | null
-  is_recurring: boolean
-  recurrence_period: string | null
-  completed: boolean
+  due_date: string | null
+  source: 'document' | 'conversation' | 'audit' | 'hand' | 'handbook'
+  state: 'not_confirmed' | 'confirmed' | 'done' | 'rejected' | 'withdrawn'
+  rejected_reason: string | null
+  is_recurring: boolean | null
+  repeats_every: HowOften | null
+  line_verified: boolean | null
+  counts_as_due: boolean | null
+  entity_id: string | null
+  document_id: string | null
+  document_deadline_id: string | null
+  topic_id: string | null
+  audit_finding_id: string | null
+  handbook_id: string | null
+  date_key: string
   completed_at: string | null
+  created_at: string
 }
 
-const CATEGORIES = [
-  'OSHA', 'EPA', 'DOT', 'FDA', 'State License', 'Permit Renewal',
-  'Training', 'Inspection', 'Report', 'Other'
+const HOW_OFTEN: Array<{ key: HowOften; label: string }> = [
+  { key: 'monthly', label: 'Every month' },
+  { key: 'quarterly', label: 'Every three months' },
+  { key: 'yearly', label: 'Every year' },
 ]
 
-const MONTHS = ['January','February','March','April','May','June',
-  'July','August','September','October','November','December']
-
-const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate()
-}
-
-function getFirstDayOfMonth(year: number, month: number) {
-  return new Date(year, month, 1).getDay()
+const SOURCE_WORDS: Record<CalendarDate['source'], string> = {
+  document: 'From a document',
+  conversation: 'From a conversation',
+  audit: 'From an audit',
+  handbook: 'From a handbook',
+  hand: 'Added by hand',
 }
 
 export default function CalendarPage() {
@@ -45,590 +88,729 @@ export default function CalendarPage() {
 
 function Calendar() {
   const supabase = createClient()
-  const today = new Date()
+  const params = useSearchParams()
 
-  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [dates, setDates] = useState<CalendarDate[]>([])
+  const [sites, setSites] = useState<Array<{ id: string; name: string }>>([])
+  const [docs, setDocs] = useState<Record<string, string>>({})
+  const [companyName, setCompanyName] = useState('')
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [companyId, setCompanyId] = useState<string | null>(null)
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
-  const [currentYear, setCurrentYear] = useState(today.getFullYear())
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [view, setView] = useState<'calendar' | 'list'>('calendar')
+  /** *** "COULDN'T LOAD" IS NOT AN EMPTY CALENDAR *** (R2/R3, `CLAUDE.md` §3.12). */
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
-  const [newTitle, setNewTitle] = useState('')
-  const [newDate, setNewDate] = useState('')
-  const [newCategory, setNewCategory] = useState('')
-  const [newDescription, setNewDescription] = useState('')
-  const [newRecurring, setNewRecurring] = useState(false)
-  const [newRecurrencePeriod, setNewRecurrencePeriod] = useState('annually')
-  const [saving, setSaving] = useState(false)
+  const [tab, setTab] = useState<Tab>('month')
+  const [cursor, setCursor] = useState(() => {
+    const t = today()
+    return { y: Number(t.slice(0, 4)), m: Number(t.slice(5, 7)) }
+  })
+  const [site, setSite] = useState<string>('all')
+  const [showDone, setShowDone] = useState(false)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [deleting, setDeleting] = useState<CalendarDate | null>(null)
+  const [rejecting, setRejecting] = useState<string | null>(null)
+  const [reason, setReason] = useState('')
+  const [changing, setChanging] = useState(false)
+
+  const now = today()
 
   /**
-   * *** THE ADD FORM PREFILLS FROM THE ADDRESS — Audits Run 3b, item 5. ***
-   *
-   * The audit report's "Add to calendar" sent `?add=<title>&on=<date>` and **this page read no
-   * parameter at all** — it opened the calendar and nothing else, so the link looked like an action
-   * and was a navigation. Checked by grepping this file for `useSearchParams`: no match.
-   *
-   * It is the smallest thing that makes the link true: the form opens with the title and the date
-   * already in it, and the person presses Save. Nothing is written without them.
+   * *** ?tab=confirm, EXACTLY — the monthly email already links to it *** (A5b, pinned by a test in
+   * `tests/unit/calendarNotify.test.ts`). A link that has been sent cannot be fixed afterwards, so
+   * the name it uses is the name this page answers to.
    */
-  const params = useSearchParams()
   useEffect(() => {
-    const add = params.get('add')
-    if (!add) return
-    setNewTitle(add.slice(0, 200))
-    const on = params.get('on')
-    // Only a date we can actually put in a date input; anything else is left blank rather than
-    // guessed at, and the person picks it.
-    if (on && /^\d{4}-\d{2}-\d{2}$/.test(on)) { setNewDate(on); setSelectedDate(on) }
-    setShowAddForm(true)
+    const t = params.get('tab')
+    if (t === 'confirm' || t === 'list' || t === 'month') setTab(t as Tab)
   }, [params])
-  const [saveError, setSaveError] = useState('')
-  /** The tick's own message. `saveError` is drawn INSIDE the Add form, so a failure with the form
-   *  closed would be silent — and §5.1's first rule is that nothing fails silently. */
-  const [tickError, setTickError] = useState('')
-  const [importFile, setImportFile] = useState<File | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [showImport, setShowImport] = useState(false)
-  const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
-  const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
-  const [addingToCalendar, setAddingToCalendar] = useState(false)
-  const [calendarSuccess, setCalendarSuccess] = useState('')
 
-  useEffect(() => {
-    async function loadData() {
+  const load = useCallback(async () => {
+    try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      setUserId(user.id)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-      if (profile?.company_id) setCompanyId(profile.company_id)
-      // A compliance calendar is a company asset — read by company_id so all
-      // users at a company see the same deadlines (matches the dashboard).
-      if (profile?.company_id) {
-        const res = await fetch('/api/calendar', { headers: await authHeaders() })
-        const json = await res.json()
-        if (json.data) setEvents(json.data)
+      if (!user) { setLoadError('Please sign in again.'); setLoading(false); return }
+      const h = await authHeaders()
+      const [res, prof] = await Promise.all([
+        fetch('/api/calendar/dates?view=all', { headers: h }),
+        supabase.from('profiles').select('company_id').eq('id', user.id).maybeSingle(),
+      ])
+      // EVERY READ CHECKS ITS ERROR, and a failure is SAID rather than drawn as an empty month.
+      if (!res.ok) throw new Error(`the calendar answered ${res.status}`)
+      const json = await res.json()
+      if (!json?.dates) throw new Error('the calendar came back in a shape we could not use')
+      setDates(json.dates as CalendarDate[])
+
+      const companyId = prof.data?.company_id
+      if (companyId) {
+        const [s, c, d] = await Promise.all([
+          supabase.from('entities').select('id, name').eq('company_id', companyId).order('name'),
+          supabase.from('companies').select('name').eq('id', companyId).maybeSingle(),
+          supabase.from('document_index_v').select('document_id, title').eq('company_id', companyId),
+        ])
+        if (s.error) throw new Error(`the sites could not be read: ${s.error.message}`)
+        if (d.error) throw new Error(`the documents could not be read: ${d.error.message}`)
+        setSites(s.data ?? [])
+        setCompanyName((c.data as { name?: string } | null)?.name ?? '')
+        setDocs(Object.fromEntries(((d.data ?? []) as Array<{ document_id: string; title: string }>)
+          .map((x) => [x.document_id, x.title])))
       }
+      setLoadError(null)
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : String(e))
+    } finally {
       setLoading(false)
     }
-    loadData()
   }, [])
 
-  async function handleAddEvent() {
-    if (!newTitle || !newDate || !userId || !companyId) {
-      setSaveError('Please fill in title and date')
-      return
-    }
-    setSaving(true)
-    setSaveError('')
+  useEffect(() => { load() }, [load])
+
+  // ---------------------------------------------------------------------------
+  // EVERY WRITE GOES THROUGH THE ONE ROUTE. There is no insert on this page.
+  // ---------------------------------------------------------------------------
+  const act = useCallback(async (body: Record<string, unknown>, method: 'POST' | 'PATCH' = 'PATCH') => {
+    setBusy(true)
     try {
-      const res = await fetch('/api/calendar', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          title: newTitle,
-          description: newDescription || null,
-          due_date: newDate,
-          category: newCategory || null,
-          is_recurring: newRecurring,
-          recurrence_period: newRecurring ? newRecurrencePeriod : null,
-        }),
+      const res = await fetch('/api/calendar/dates', {
+        method, headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body),
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setEvents(prev => [...prev, json.data].sort((a, b) => a.due_date.localeCompare(b.due_date)))
-      setNewTitle('')
-      setNewDate('')
-      setNewCategory('')
-      setNewDescription('')
-      setNewRecurring(false)
-      setShowAddForm(false)
-      setSelectedDate(null)
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save')
-    } finally {
-      setSaving(false)
+      const j = await res.json().catch(() => null)
+      if (!res.ok) { setNotice(j?.error ?? 'We could not save that just now. That is our side, not yours.'); return null }
+      setNotice(null)
+      await load()
+      return j
+    } catch {
+      setNotice('We could not save that just now. That is our side, not yours.')
+      return null
+    } finally { setBusy(false) }
+  }, [load])
+
+  const remove = useCallback(async (d: CalendarDate) => {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/calendar?id=${d.id}`, { method: 'DELETE', headers: await authHeaders() })
+      if (!res.ok) { setNotice('We could not delete that just now. That is our side, not yours.'); return }
+      setDeleting(null); setOpenId(null); await load()
+    } finally { setBusy(false) }
+  }, [load])
+
+  // ---------------------------------------------------------------------------
+  // WHAT EACH TAB SHOWS. `counts_as_due` is the database's own column (migration 073), so no query
+  // here can get decision 5's rule wrong.
+  // ---------------------------------------------------------------------------
+  const bySite = useCallback((d: CalendarDate) =>
+    site === 'all' || d.entity_id === site || d.entity_id === null, [site])
+
+  const onBoard = useMemo(() => dates.filter((d) => d.counts_as_due && bySite(d)), [dates, bySite])
+  const toConfirm = useMemo(() => dates.filter((d) => d.state === 'not_confirmed' && bySite(d)), [dates, bySite])
+  const passed = useMemo(() => onBoard
+    .filter((d) => d.state !== 'done' && isPast(d.due_date, now))
+    .sort((a, b) => compareDays(a.due_date ?? '', b.due_date ?? '')), [onBoard, now])
+  const ahead = useMemo(() => onBoard
+    .filter((d) => d.state !== 'done' && !isPast(d.due_date, now))
+    .sort((a, b) => compareDays(a.due_date ?? '', b.due_date ?? '')), [onBoard, now])
+  const doneDates = useMemo(() => onBoard.filter((d) => d.state === 'done')
+    .sort((a, b) => compareDays(b.due_date ?? '', a.due_date ?? '')), [onBoard])
+
+  const open = openId ? dates.find((d) => d.id === openId) ?? null : null
+
+  // ---------------------------------------------------------------------------
+  // THE MONTH (board 1)
+  // ---------------------------------------------------------------------------
+  const month = useMemo(() => {
+    const { first, last } = monthRange(cursor.y, cursor.m)
+    // Monday first, as the board draws it: JS gives Sunday 0, so Sunday becomes the seventh column.
+    const jsDow = new Date(cursor.y, cursor.m - 1, 1, 12).getDay()
+    const lead = (jsDow + 6) % 7
+    const daysIn = Number(last.slice(8))
+    const cells: Array<{ day: number; iso: string; dates: CalendarDate[] } | null> =
+      Array.from({ length: lead }, () => null)
+    for (let n = 1; n <= daysIn; n++) {
+      const iso = `${first.slice(0, 8)}${String(n).padStart(2, '0')}`
+      cells.push({ day: n, iso, dates: onBoard.filter((d) => d.due_date === iso) })
     }
+    return cells
+  }, [cursor, onBoard])
+
+  const step = (by: number) => setCursor((c) => {
+    const m = c.m + by
+    return m < 1 ? { y: c.y - 1, m: 12 } : m > 12 ? { y: c.y + 1, m: 1 } : { y: c.y, m }
+  })
+
+  /** A date on the month: solid for confirmed, open for not confirmed, amber once its day has gone. */
+  const dotClass = (d: CalendarDate) =>
+    d.state === 'done' ? 'line-through text-gray-400'
+      : isPast(d.due_date, now) ? 'text-[var(--amber)]'
+        : d.state === 'not_confirmed' ? 'text-gray-500' : 'text-gray-900'
+
+  const sourceOf = (d: CalendarDate): { words: string; href: string | null } => {
+    // §185 decision 2's correction: when the source is gone, say so in plain words. Never a dead link.
+    if (d.source === 'document') {
+      return d.document_id
+        ? { words: docs[d.document_id] ?? 'a document', href: `/documents?open=${d.document_id}` }
+        : { words: 'The document this came from was deleted.', href: null }
+    }
+    if (d.source === 'conversation') {
+      return d.topic_id
+        ? { words: 'the conversation it came from', href: `/compliance?topic=${d.topic_id}` }
+        : { words: 'The conversation this came from was deleted.', href: null }
+    }
+    if (d.source === 'audit') {
+      return d.audit_finding_id
+        ? { words: 'the audit that found it', href: '/audits' }
+        : { words: 'The audit this came from was deleted.', href: null }
+    }
+    if (d.source === 'handbook') {
+      return d.handbook_id
+        ? { words: 'the handbook it came from', href: `/hr?handbook=${d.handbook_id}` }
+        : { words: 'The handbook this came from was deleted.', href: null }
+    }
+    return { words: 'You added this date.', href: null }
   }
 
-  async function handleImport() {
-    if (!importFile || !userId || !companyId) return
-    setImporting(true)
-    try {
-      const fd = new FormData()
-      fd.append('file', importFile)
-      fd.append('file_name', importFile.name)
-      // *** THE HEADER IS REQUIRED SINCE 28 September 2026. ***
-      // `/api/extract-dates` gained `requireCompany`, so a call without a token now gets 401 — and
-      // this was the last fetch in the app sending none. It is a FormData POST, so only the
-      // Authorization header is added; setting Content-Type by hand would break the multipart
-      // boundary the browser writes for us.
-      const res = await fetch('/api/extract-dates', {
-        method: 'POST', body: fd, headers: await authHeaders(),
-      })
-      const json = await res.json()
-      if (json.dates_found && json.dates_found.length > 0) {
-        setPendingDates(json.dates_found)
-        setSelectedDates(new Set(json.dates_found.map((_: any, i: number) => i)))
-        setShowImport(false)
-        setImportFile(null)
-      } else if (json.extraction_failed) {
-        // The document was never read, so nothing may be asserted about what is in it.
-        // Until 11 Sep this branch did not exist and an unreadable file produced "No
-        // compliance dates found in this file. Make sure it contains deadline or expiry
-        // dates." — a claim about contents nobody had looked at, plus a suggestion that
-        // the user check their own file. CLAUDE.md §5.1.
-        alert(json.extraction_failed.message)
-      } else {
-        // Genuinely read, genuinely empty. The suggestion is fair here.
-        alert('No compliance dates found in this file. Make sure it contains deadline or expiry dates.')
-      }
-    } catch (err) {
-      console.error('Import error:', err)
-    } finally {
-      setImporting(false)
-    }
-  }
+  const siteName = (id: string | null) => sites.find((s) => s.id === id)?.name ?? null
 
-  async function handleAddToCalendar() {
-    if (!companyId || !userId) return
-    setAddingToCalendar(true)
-    try {
-      const toAdd = pendingDates.filter((_, i) => selectedDates.has(i))
-      for (const d of toAdd) {
-        const res = await fetch('/api/calendar', {
-          method: 'POST',
-          headers: await authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({
-            title: d.title,
-            description: d.description,
-            due_date: d.date,
-            category: 'compliance',
-            is_recurring: d.is_recurring,
-            recurrence_period: d.recurrence_period,
-          }),
-        })
-        const json = await res.json()
-        if (json.data) setEvents(prev => [...prev, json.data].sort((a, b) => a.due_date.localeCompare(b.due_date)))
-      }
-      setCalendarSuccess(`Added ${toAdd.length} date${toAdd.length !== 1 ? 's' : ''} to your calendar.`)
-      setTimeout(() => {
-        setPendingDates([])
-        setSelectedDates(new Set())
-        setCalendarSuccess('')
-      }, 3000)
-    } catch (err) {
-      console.error('Calendar error:', err)
-    } finally {
-      setAddingToCalendar(false)
+  const Row = ({ d }: { d: CalendarDate }) => (
+    <div onClick={() => setOpenId(d.id)}
+      className="group -mx-3 flex cursor-pointer items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-white">
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-[13px] group-hover:text-[var(--green)] ${
+          d.state === 'done' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{d.title}</p>
+        <p className="mt-0.5 truncate text-[12px] text-gray-500">
+          {[
+            d.due_date ? formatDayShort(d.due_date, now) : 'No day yet',
+            siteName(d.entity_id),
+            d.is_recurring
+              ? (d.repeats_every
+                ? HOW_OFTEN.find((h) => h.key === d.repeats_every)?.label.toLowerCase()
+                : 'repeats — how often?')
+              : null,
+            d.state === 'not_confirmed' ? 'not confirmed' : null,
+          ].filter(Boolean).join(' · ')}
+        </p>
+      </div>
+      {d.due_date && d.state !== 'done' && (
+        <span className={`shrink-0 text-[12px] ${isPast(d.due_date, now) ? 'text-[var(--amber)]' : 'text-gray-400'}`}>
+          {dueWords(d.due_date, now)}
+        </span>
+      )}
+    </div>
+  )
+
+  // ---------------------------------------------------------------------------
+  // TO CONFIRM, grouped by document (board 3)
+  // ---------------------------------------------------------------------------
+  const groups = useMemo(() => {
+    const m = new Map<string, { label: string; dates: CalendarDate[] }>()
+    for (const d of toConfirm) {
+      const key = d.document_id ?? d.source
+      const label = d.document_id ? (docs[d.document_id] ?? 'A document') : SOURCE_WORDS[d.source]
+      if (!m.has(key)) m.set(key, { label, dates: [] })
+      m.get(key)?.dates.push(d)
     }
-  }
+    return [...m.values()].sort((a, b) => a.label.localeCompare(b.label))
+  }, [toConfirm, docs])
 
   /**
-   * *** THE TICK NEVER SAVED — `docs/CALENDAR-MACHINERY.md` B1, proved on 9 October. ***
-   *
-   * This was the last fetch in the app sending no Authorization header. `/api/calendar` gained
-   * `requireCompany` on 9 September (`b992996`) and has answered **401 Unauthorized** to every tick
-   * since; `git log -L231,239` shows these lines were never touched after they were written, so the
-   * tick has not saved for a month. Nothing showed, because the row is updated in the browser first
-   * (below) and the response was never read — so it went green, and came back undone on reload.
-   *
-   * Two changes, and the second is the one that makes it stay fixed:
-   *   1. the token, through `authHeaders()`, as every other call on this page already does;
-   *   2. the answer is READ. A failure puts the tick back and says so, rather than leaving the screen
-   *      claiming something the database never heard about (`CLAUDE.md` §5.1).
+   * Confirm several, ONE AFTER ANOTHER — Company information's own pattern
+   * (`app/company-information/page.tsx:252–273`). A date already settled by an earlier call is
+   * skipped rather than reported as a failure.
    */
-  async function toggleComplete(event: CalendarEvent) {
-    const newCompleted = !event.completed
-    setEvents(prev => prev.map(e => e.id === event.id ? { ...e, completed: newCompleted } : e))
+  const confirmAll = useCallback(async (list: CalendarDate[]) => {
+    setBusy(true)
     try {
-      const res = await fetch('/api/calendar', {
-        method: 'PATCH',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ id: event.id, completed: newCompleted }),
-      })
-      if (!res.ok) throw new Error(String(res.status))
-      setTickError('')
-    } catch {
-      setEvents(prev => prev.map(e => e.id === event.id ? { ...e, completed: event.completed } : e))
-      setTickError('We could not save that just now. That is our side, not yours. Please try again.')
-    }
+      const h = await authHeaders({ 'Content-Type': 'application/json' })
+      let failed: string | null = null
+      for (const d of list) {
+        if (!d.due_date) continue        // a repeat with no day: the person picks it first
+        const res = await fetch('/api/calendar/dates', {
+          method: 'PATCH', headers: h, body: JSON.stringify({ id: d.id, action: 'confirm' }),
+        })
+        if (!res.ok && res.status !== 404) {
+          failed = (await res.json().catch(() => null))?.error ?? 'We could not confirm one of those.'
+          break
+        }
+      }
+      setNotice(failed)
+      await load()
+    } finally { setBusy(false) }
+  }, [load])
+
+  const printMonth = () => printWithFrame(
+    { company: companyName || 'CompliBoard', type: `Calendar — ${formatMonth(cursor.y, cursor.m)}` })
+
+  if (loading) {
+    return <AppLayout title="Calendar"><div className="p-8 text-[14px] text-gray-400">Loading your calendar…</div></AppLayout>
   }
-
-  async function deleteEvent(id: string) {
-    if (!confirm('Delete this deadline?')) return
-    setEvents(prev => prev.filter(e => e.id !== id))
-    await fetch(`/api/calendar?id=${id}`, { method: 'DELETE', headers: await authHeaders() })
-  }
-
-  function exportToGoogleCalendar(event: CalendarEvent) {
-    const date = event.due_date.replace(/-/g, '')
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${date}/${date}&details=${encodeURIComponent(event.description || '')}`
-    window.open(url, '_blank')
-  }
-
-  function exportToOutlook(event: CalendarEvent) {
-    const url = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(event.title)}&startdt=${event.due_date}&enddt=${event.due_date}&body=${encodeURIComponent(event.description || '')}`
-    window.open(url, '_blank')
-  }
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth)
-  const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
-
-  const eventsThisMonth = events.filter(e => {
-    const d = new Date(e.due_date)
-    return d.getFullYear() === currentYear && d.getMonth() === currentMonth
-  })
-
-  function getEventsForDay(day: number) {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    return events.filter(e => e.due_date === dateStr)
-  }
-
-  const upcomingEvents = events.filter(e => {
-    const due = new Date(e.due_date)
-    const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    return diff >= 0 && diff <= 30 && !e.completed
-  })
-
-  const overdueEvents = events.filter(e => {
-    const due = new Date(e.due_date)
-    return due < today && !e.completed
-  })
 
   return (
-    <AppLayout title="Compliance Calendar" didYouKnow={{ icon: '📅', text: 'Upload your permits, licenses, and inspection reports in Company Files, click Extract dates, and CompliBoard will find all renewal and expiry dates and add them to your calendar automatically. You never miss a deadline again.' }}>
-      <div className="max-w-6xl mx-auto px-6 py-8">
-
-        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Calendar</h1>
-            <p className="text-sm text-gray-400">Track all your compliance deadlines and recurring dates</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setShowImport(!showImport); setShowAddForm(false) }}
-              className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors">
-              {showImport ? '× Cancel' : '📂 Import from file'}
-            </button>
-            <button onClick={() => { setShowAddForm(!showAddForm); setShowImport(false); setSelectedDate(null) }}
-              className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-              {showAddForm ? '× Cancel' : '+ Add deadline'}
-            </button>
-          </div>
+    <AppLayout title="Calendar">
+      <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
+        <div className="no-print pt-6">
+          <h1 className="font-serif text-[28px] font-normal text-gray-900">Calendar</h1>
+          {/*
+            THE TRUE WORDS (decision 21, B15). The old tip promised that uploading a file would add
+            every renewal date "automatically" and that "you never miss a deadline again" — a
+            guarantee nothing can make, since a date we never read is one we cannot warn about.
+            The second sentence promises the monthly email, so it is drawn only when that email can
+            reach a customer: `lib/emailPromise.ts`, not a held-back line somebody must remember.
+          */}
+          <p className="mt-1 text-[14px] text-gray-500">
+            When CompliBoard reads a document, the dates it sets appear here for you to confirm.
+            {monthlyEmailPromised() && ' On the 1st of each month we email you what is due.'}
+          </p>
         </div>
 
-        <div className="flex items-center gap-6 mb-4 border-b border-gray-200">
-          <button onClick={() => setView('calendar')}
-            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${view === 'calendar' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-            Calendar
-          </button>
-          <button onClick={() => setView('list')}
-            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${view === 'list' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-            List
-          </button>
-        </div>
-
-        {tickError && (
-          <div className="mb-4 flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm text-red-700">{tickError}</p>
-            <button onClick={() => setTickError('')} className="text-sm text-red-500 hover:text-red-700">Close</button>
+        {loadError && (
+          <div className="no-print mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm text-red-700">We couldn’t load your calendar. That is our side, not yours.</p>
+            <button onClick={() => { setLoading(true); load() }} className={`mt-1 ${TEXT_ACTION}`}>Try again</button>
           </div>
         )}
 
-        {(overdueEvents.length > 0 || upcomingEvents.length > 0) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-            {overdueEvents.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                {/* "Overdue" says they did not do it; all we know is the day has gone by — the
-                    owner's rule, `DECISIONS.md` §185. Job B rebuilds this panel; the WORDS change now. */}
-                <p className="text-xs font-semibold text-red-700 mb-1">Passed</p>
-                <p className="text-sm text-red-600">{overdueEvents.length} date{overdueEvents.length !== 1 ? 's' : ''} whose day has gone by</p>
-              </div>
-            )}
-            {upcomingEvents.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                <p className="text-xs font-semibold text-amber-700 mb-1">📅 Due in 30 days</p>
-                <p className="text-sm text-amber-600">{upcomingEvents.length} deadline{upcomingEvents.length !== 1 ? 's' : ''} coming up</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {showImport && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-1">Import compliance deadlines</h2>
-            <p className="text-xs text-gray-400 mb-4">Upload your existing deadline spreadsheet or document. CompliBoard will find all dates and let you choose which ones to add.</p>
-            <label htmlFor="import-file"
-              className={`flex items-center gap-3 w-full border border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors mb-4 ${importFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-green-500 hover:bg-green-50'}`}>
-              <span className="text-2xl">{importFile ? '📊' : '📎'}</span>
-              <div>
-                <p className="text-sm font-medium text-gray-700">{importFile ? importFile.name : 'Click to select file'}</p>
-                <p className="text-xs text-gray-400">Excel, CSV, PDF, Word, or PowerPoint</p>
-              </div>
-              <input id="import-file" type="file" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.pptx,.ppt" className="hidden"
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
-            </label>
-            <button onClick={handleImport} disabled={!importFile || importing}
-              className="bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {importing ? 'Extracting dates...' : 'Extract dates →'}
+        <Tabs active={tab} onSelect={setTab}
+          tabs={[
+            { key: 'month', label: 'Calendar' },
+            { key: 'list', label: 'List' },
+            { key: 'confirm', label: `To confirm${toConfirm.length ? ` (${toConfirm.length})` : ''}` },
+          ]}
+          right={
+            <button onClick={() => setAdding(true)}
+              className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
+              + Add a date
             </button>
+          } />
+
+        {notice && (
+          <div className="no-print mb-4 flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm text-red-700">{notice}</p>
+            <button onClick={() => setNotice(null)} className="text-sm text-red-500 hover:text-red-700">Close</button>
           </div>
         )}
 
-        {showAddForm && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Title <span className="text-red-400">*</span></label>
-                <input type="text"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="e.g. Annual OSHA inspection"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Due date <span className="text-red-400">*</span></label>
-                <input type="date"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  value={newDate || selectedDate || ''}
-                  onChange={(e) => setNewDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
-                <select
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}>
-                  <option value="">Select category</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                <input type="text"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="Optional notes"
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div onClick={() => setNewRecurring(!newRecurring)}
-                  className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${newRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                  <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-all ${newRecurring ? 'left-4' : 'left-0.5'}`} />
-                </div>
-                <span className="text-sm text-gray-600">Recurring</span>
-              </label>
-              {newRecurring && (
-                <select
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none bg-gray-50"
-                  value={newRecurrencePeriod}
-                  onChange={(e) => setNewRecurrencePeriod(e.target.value)}>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="annually">Annually</option>
-                </select>
-              )}
-            </div>
-            {saveError && <p className="text-sm text-red-600 mt-3">{saveError}</p>}
-            <button onClick={handleAddEvent} disabled={saving}
-              className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save deadline →'}
-            </button>
+        {sites.length > 1 && (
+          <div className="no-print mb-4 flex items-center gap-2 text-[13px]">
+            <span className="text-gray-500">Site</span>
+            <select value={site} onChange={(e) => setSite(e.target.value)}
+              className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[13px]">
+              <option value="all">All sites</option>
+              {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <p className="text-sm text-gray-400">Loading your calendar...</p>
-          </div>
-        ) : view === 'calendar' ? (
-          <div className="bg-white rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <button onClick={() => {
-                if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
-                else setCurrentMonth(m => m - 1)
-              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">←</button>
-              <h2 className="text-sm font-semibold text-gray-900">{MONTHS[currentMonth]} {currentYear}</h2>
-              <button onClick={() => {
-                if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1) }
-                else setCurrentMonth(m => m + 1)
-              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">→</button>
+        {/* ── THE MONTH (board 1) ─────────────────────────────────────────── */}
+        {tab === 'month' && (
+          <section>
+            <div className="no-print mb-3 flex items-center justify-between">
+              <h2 className="text-[15px] font-medium text-gray-900">{formatMonth(cursor.y, cursor.m)}</h2>
+              <div className="flex items-center gap-3">
+                <button onClick={() => step(-1)} className={TEXT_ACTION} aria-label="Previous month">←</button>
+                <button onClick={() => setCursor({ y: Number(now.slice(0, 4)), m: Number(now.slice(5, 7)) })}
+                  className={TEXT_ACTION}>Today</button>
+                <button onClick={() => step(1)} className={TEXT_ACTION} aria-label="Next month">→</button>
+                <button onClick={printMonth} className={TEXT_ACTION}>Print</button>
+              </div>
             </div>
-            <div className="grid grid-cols-7 border-b border-gray-100">
-              {DAYS.map(d => (
-                <div key={d} className="py-2 text-center text-xs font-medium text-gray-400">{d}</div>
+            <div className="no-print grid grid-cols-7 border-t border-gray-200">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => (
+                <div key={d} className={`py-2 text-center text-[11px] font-medium uppercase tracking-wide text-gray-400 ${i === 0 ? '' : 'border-l border-gray-100'}`}>{d}</div>
               ))}
-            </div>
-            <div className="grid grid-cols-7">
-              {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-20 border-b border-r border-gray-50" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                const dayEvents = getEventsForDay(day)
-                const isToday = today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear
-                const isSelected = selectedDate === dateStr
-                return (
-                  <div key={day}
-                    onClick={() => { setSelectedDate(dateStr); setNewDate(dateStr); setShowAddForm(true) }}
-                    className={`h-20 border-b border-r border-gray-50 p-1.5 cursor-pointer hover:bg-gray-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}>
-                    <p className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-green-700 text-white' : 'text-gray-700'}`}>
-                      {day}
-                    </p>
-                    <div className="space-y-0.5">
-                      {dayEvents.slice(0, 2).map(e => (
-                        <p key={e.id} className={`text-xs px-1 rounded truncate ${e.completed ? 'line-through text-gray-300 bg-gray-50' : 'text-green-800 bg-green-100'}`}>
-                          {e.title}
-                        </p>
+              {month.map((cell, i) => (
+                <div key={i} className={`min-h-[84px] border-t border-gray-100 p-1.5 ${i % 7 === 0 ? '' : 'border-l'}`}>
+                  {cell && (
+                    <>
+                      <p className={`mb-1 flex h-6 w-6 items-center justify-center rounded-full text-[12px] ${
+                        cell.iso === now ? 'bg-gray-900 text-white' : 'text-gray-600'}`}>{cell.day}</p>
+                      {cell.dates.slice(0, 3).map((d) => (
+                        <button key={d.id} onClick={() => setOpenId(d.id)}
+                          className={`block w-full truncate text-left text-[11px] leading-5 ${dotClass(d)}`}>
+                          {d.state === 'not_confirmed' ? '○ ' : '● '}{d.title}
+                        </button>
                       ))}
-                      {dayEvents.length > 2 && (
-                        <p className="text-xs text-gray-400 px-1">+{dayEvents.length - 2} more</p>
+                      {cell.dates.length > 3 && (
+                        <p className="text-[11px] text-gray-400">+{cell.dates.length - 3} more</p>
                       )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {eventsThisMonth.length > 0 && (
-              <div className="px-5 py-4 border-t border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">This month</p>
-                <div className="space-y-2">
-                  {eventsThisMonth.map(e => (
-                    <div key={e.id} className="flex items-center gap-3">
-                      <div onClick={() => toggleComplete(e)}
-                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all ${e.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
-                        {e.completed && <span className="text-white text-xs">✓</span>}
-                      </div>
-                      <p className={`text-sm flex-1 ${e.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>{e.title}</p>
-                      <span className="text-xs text-gray-400">{new Date(e.due_date + 'T00:00:00').toLocaleDateString()}</span>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => exportToGoogleCalendar(e)} title="Add to Google Calendar"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">G</button>
-                        <button onClick={() => exportToOutlook(e)} title="Add to Outlook"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">O</button>
-                        <button onClick={() => deleteEvent(e.id)}
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
-                      </div>
-                    </div>
-                  ))}
+                    </>
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl overflow-hidden">
-            {events.length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-4xl mb-4">📅</p>
-                <p className="text-base font-medium text-gray-700 mb-1">No deadlines yet</p>
-                <p className="text-sm text-gray-400 mb-4">Upload compliance documents in Company Files and click Extract dates to populate your calendar automatically.</p>
-                <button onClick={() => setShowAddForm(true)}
-                  className="inline-flex items-center gap-2 bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-                  Add a deadline manually
-                </button>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-50">
-                {events.map(e => {
-                  const due = new Date(e.due_date + 'T00:00:00')
-                  const diff = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-                  const isOverdue = diff < 0 && !e.completed
-                  const isDueSoon = diff >= 0 && diff <= 7 && !e.completed
-                  return (
-                    <div key={e.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                      <div onClick={() => toggleComplete(e)}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all ${e.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
-                        {e.completed && <span className="text-white text-xs">✓</span>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${e.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>{e.title}</p>
-                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                          {e.category && <span className="text-xs text-gray-400">{e.category}</span>}
-                          <span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : isDueSoon ? 'text-amber-600' : 'text-gray-400'}`}>
-                            {isOverdue ? (diff === -1 ? 'Passed yesterday' : `Passed ${Math.abs(diff)} days ago`) : e.completed ? 'Done' : diff === 0 ? 'Due today' : `Due in ${diff} days`}
-                          </span>
-                          {e.is_recurring && <span className="text-xs text-green-600">🔄 {e.recurrence_period}</span>}
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-400 flex-shrink-0">{new Date(e.due_date + 'T00:00:00').toLocaleDateString()}</span>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => exportToGoogleCalendar(e)} title="Add to Google Calendar"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">G</button>
-                        <button onClick={() => exportToOutlook(e)} title="Add to Outlook"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">O</button>
-                        <button onClick={() => deleteEvent(e.id)}
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+            {/* THE PRINTED MONTH IS THE LIST, NOT THE GRID (board 13). A grid of boxes prints as a
+                grid of boxes; what a person carries into a meeting is the dates in order. */}
+            <div className="hidden print:block">
+              <h2 className="mb-2 font-serif text-[18px]">{formatMonth(cursor.y, cursor.m)}</h2>
+              {onBoard.filter((d) => inMonth(d.due_date, cursor.y, cursor.m)).length === 0 && (
+                <p className="text-[12px] text-gray-500">Nothing is due in this month.</p>
+              )}
+              {onBoard.filter((d) => inMonth(d.due_date, cursor.y, cursor.m))
+                .sort((a, b) => compareDays(a.due_date ?? '', b.due_date ?? ''))
+                .map((d) => (
+                  <p key={d.id} className="border-b border-gray-100 py-1.5 text-[12px]">
+                    {formatDayShort(d.due_date, now)} · {d.title}
+                    {siteName(d.entity_id) ? ` · ${siteName(d.entity_id)}` : ''}
+                    {d.state === 'not_confirmed' ? ' · not confirmed' : ''}
+                    {d.state === 'done' ? ' · done' : ''}
+                  </p>
+                ))}
+            </div>
+          </section>
         )}
 
-
-        {pendingDates.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-lg z-50 px-4">
-            <div className="bg-white rounded-2xl border border-green-200 shadow-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">📅 Dates found in your file</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Select which dates to add to your calendar</p>
-                </div>
-                <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
-              </div>
-              <div className="space-y-2 mb-4">
-                {pendingDates.map((d, i) => (
-                  <div key={i} onClick={() => {
-                    const next = new Set(selectedDates)
-                    if (next.has(i)) next.delete(i)
-                    else next.add(i)
-                    setSelectedDates(next)
-                  }} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedDates.has(i) ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                    <div className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center ${selectedDates.has(i) ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
-                      {selectedDates.has(i) && <span className="text-white text-xs">✓</span>}
+        {/* ── THE LIST (board 2) ──────────────────────────────────────────── */}
+        {tab === 'list' && (
+          <section>
+            {!onBoard.length ? (
+              <Empty title="No dates yet"
+                note="Add documents in Company Documents and the dates they set will appear here, or add a date yourself." />
+            ) : (
+              <>
+                {passed.length > 0 && (
+                  <>
+                    {/* §185c: "Dates that have passed", never "overdue" or "not done". */}
+                    <h3 className="mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                      Dates that have passed
+                    </h3>
+                    <p className="mb-2 text-[12px] text-gray-500">
+                      A gentle reminder in case any of these still need attention. If they’re already
+                      taken care of, you can mark them done and we won’t list them again.
+                    </p>
+                    <div className="divide-y divide-gray-100 border-y border-gray-100">
+                      {passed.map((d) => <Row key={d.id} d={d} />)}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">{d.title}</p>
-                      <p className="text-xs text-green-700 font-medium">{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{d.description}</p>
+                  </>
+                )}
+                {ahead.length > 0 && (
+                  <>
+                    <h3 className="mb-1 mt-6 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Ahead</h3>
+                    <div className="divide-y divide-gray-100 border-y border-gray-100">
+                      {ahead.map((d) => <Row key={d.id} d={d} />)}
+                    </div>
+                  </>
+                )}
+                {doneDates.length > 0 && (
+                  <div className="mt-6">
+                    <button onClick={() => setShowDone((v) => !v)} className={TEXT_ACTION}>
+                      {showDone ? 'Hide done' : `Show done (${doneDates.length})`}
+                    </button>
+                    {showDone && (
+                      <div className="mt-2 divide-y divide-gray-100 border-y border-gray-100">
+                        {doneDates.map((d) => <Row key={d.id} d={d} />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
+        {/* ── TO CONFIRM (board 3) ────────────────────────────────────────── */}
+        {tab === 'confirm' && (
+          <section>
+            {!toConfirm.length ? (
+              <Empty title="Nothing to confirm"
+                note="When a reading finds a date in one of your documents, it appears here for you to check against its line." />
+            ) : (
+              <>
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <p className="text-[13px] text-gray-600">
+                    {toConfirm.length} date{toConfirm.length === 1 ? '' : 's'} found in your documents.
+                    Check each one against the line it came from.
+                  </p>
+                  <button disabled={busy} onClick={() => confirmAll(toConfirm)} className={PRIMARY}>
+                    Confirm all {toConfirm.filter((d) => d.due_date).length}
+                  </button>
+                </div>
+                {groups.map((g) => (
+                  <div key={g.label} className="mb-6">
+                    <div className="mb-1 flex items-center justify-between gap-4">
+                      <h3 className="truncate text-[13px] font-medium text-gray-900">
+                        {g.label} <span className="font-normal text-gray-400">· {g.dates.length}</span>
+                      </h3>
+                      <button disabled={busy} onClick={() => confirmAll(g.dates)} className={OUTLINE}>
+                        Confirm all {g.dates.filter((d) => d.due_date).length}
+                      </button>
+                    </div>
+                    <div className="divide-y divide-gray-100 border-y border-gray-100">
+                      {g.dates.map((d) => (
+                        <div key={d.id} className="py-1">
+                          <Row d={d} />
+                          {/* Decision 5: a line we could not find is SAID, not hidden. */}
+                          {d.line_verified === false && (
+                            <p className="px-3 pb-1 text-[12px] text-[var(--amber)]">
+                              We could not find this line in the document.
+                            </p>
+                          )}
+                          {!d.due_date && (
+                            <p className="px-3 pb-1 text-[12px] text-gray-500">
+                              Pick the day this falls on before it goes on the calendar.
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
-              </div>
-              {calendarSuccess ? (
-                <p className="text-sm text-green-700 font-medium text-center py-2">✅ {calendarSuccess}</p>
-              ) : (
-                <div className="flex gap-2">
-                  <button onClick={handleAddToCalendar} disabled={selectedDates.size === 0 || addingToCalendar}
-                    className="flex-1 bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                    {addingToCalendar ? 'Adding...' : `Add ${selectedDates.size} date${selectedDates.size !== 1 ? 's' : ''} to calendar →`}
-                  </button>
-                  <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }}
-                    className="px-4 py-2.5 rounded-xl text-sm text-gray-500 border border-gray-200 hover:border-gray-300 transition-colors">
-                    Skip
-                  </button>
-                </div>
+              </>
+            )}
+          </section>
+        )}
+      </div>
+
+      {/* ── THE DRAWER FOR ONE DATE (boards 5 and 6) ───────────────────────── */}
+      {open && (
+        <Drawer title={open.title} onClose={() => setOpenId(null)}
+          company={companyName} printType="Calendar"
+          sub={[
+            open.due_date ? formatDay(open.due_date) : 'No day yet',
+            siteName(open.entity_id),
+            open.state === 'not_confirmed' ? 'Not confirmed'
+              : open.state === 'done' ? 'Done'
+                : open.state === 'rejected' ? 'You said this is not right'
+                  : open.state === 'withdrawn' ? 'No longer in the document' : 'Confirmed',
+          ].filter(Boolean).join(' · ')}
+          footer={
+            <>
+              {open.state === 'not_confirmed' && (
+                <button disabled={busy || !open.due_date} onClick={() => act({ id: open.id, action: 'confirm' })} className={OUTLINE}>
+                  Confirm
+                </button>
+              )}
+              {(open.state === 'confirmed' || open.state === 'not_confirmed') && open.due_date && (
+                <button disabled={busy} onClick={() => act({ id: open.id, action: 'done' })} className={TEXT_ACTION}>
+                  Mark done
+                </button>
+              )}
+              {open.state !== 'rejected' && (
+                <button disabled={busy} onClick={() => { setRejecting(open.id); setReason('') }} className={TEXT_ACTION}>
+                  Not right
+                </button>
+              )}
+              <button disabled={busy} onClick={() => setChanging(true)} className={TEXT_ACTION}>Change</button>
+              <button onClick={printDrawer} className={TEXT_ACTION}>Print</button>
+              <span className="flex-1" />
+              <a className={TEXT_ACTION} target="_blank" rel="noreferrer"
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(open.title)}&dates=${(open.due_date ?? '').replace(/-/g, '')}/${(open.due_date ?? '').replace(/-/g, '')}`}>
+                Google
+              </a>
+              <a className={TEXT_ACTION} target="_blank" rel="noreferrer"
+                href={`https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(open.title)}&startdt=${open.due_date ?? ''}&enddt=${open.due_date ?? ''}`}>
+                Outlook
+              </a>
+              {/* DELETE IS FOR HAND-ADDED DATES ONLY (decision 6). A document's date is REJECTED, not
+                  deleted, so the next reading of that document knows not to raise it again. */}
+              {open.source === 'hand' && (
+                <button disabled={busy} onClick={() => setDeleting(open)} className={TEXT_ACTION}>Delete</button>
+              )}
+            </>
+          }>
+          <section className="space-y-4">
+            <div>
+              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Where it came from</h4>
+              <p className="mt-1 text-[13px] text-gray-700">
+                {SOURCE_WORDS[open.source]}
+                {(() => {
+                  const s = sourceOf(open)
+                  return s.href
+                    ? <> · <a href={s.href} className="text-[var(--green)] underline hover:text-[var(--green-ink)]">{s.words}</a></>
+                    : <> · <span className="text-gray-500">{s.words}</span></>
+                })()}
+              </p>
+              {open.description && <p className="mt-1 text-[13px] italic text-gray-600">“{open.description}”</p>}
+              {open.line_verified === false && (
+                <p className="mt-1 text-[12px] text-[var(--amber)]">We could not find this line in the document.</p>
               )}
             </div>
-          </div>
-        )}
 
-      </div>
+            {open.state === 'rejected' && open.rejected_reason && (
+              <div>
+                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">You said</h4>
+                <p className="mt-1 text-[13px] text-gray-700">{open.rejected_reason}</p>
+              </div>
+            )}
+
+            <div>
+              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">How often</h4>
+              {!open.is_recurring ? (
+                <p className="mt-1 text-[13px] text-gray-700">It happens once.</p>
+              ) : (
+                <>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    {HOW_OFTEN.map((h) => (
+                      <button key={h.key} disabled={busy}
+                        onClick={() => act({ id: open.id, action: 'confirm', every: h.key })}
+                        className={`rounded-md border px-2.5 py-1 text-[12px] ${
+                          open.repeats_every === h.key
+                            ? 'border-[var(--green)] bg-green-50 text-[var(--green-ink)]'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        {h.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Decision 9: the reading says only THAT a date repeats, never how often, so the
+                      person is asked rather than "annually" being written for them (B4). */}
+                  {!open.repeats_every && (
+                    <p className="mt-1 text-[12px] text-gray-500">Nobody has said how often yet.</p>
+                  )}
+                  {open.repeats_every && open.due_date && (
+                    <p className="mt-1 text-[12px] text-gray-500">
+                      Next after this one: {formatDay(nextOccurrence(open.due_date, open.repeats_every))}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* THE ONES DONE BEFORE (board 6). One row per occurrence is the history this product
+                exists to keep: "we did this in January and again in February". */}
+            {(() => {
+              const earlier = dates.filter((d) => d.id !== open.id && d.state === 'done'
+                && d.title === open.title && d.document_id === open.document_id)
+                .sort((a, b) => compareDays(b.due_date ?? '', a.due_date ?? ''))
+              return earlier.length ? (
+                <div>
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Done before</h4>
+                  <ul className="mt-1 space-y-0.5">
+                    {earlier.map((d) => (
+                      <li key={d.id} className="text-[13px] text-gray-600">{formatDay(d.due_date)}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null
+            })()}
+          </section>
+        </Drawer>
+      )}
+
+      {/* ── NOT RIGHT, with its one-line reason (board 8) ───────────────────── */}
+      {rejecting && (
+        <Sheet title="What is not right about this date?"
+          lede="We keep it, with your reason, so the next reading of that document does not raise it again."
+          onClose={() => setRejecting(null)}>
+          <input autoFocus value={reason} onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g. that is the old permit’s fee"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px] focus:border-[var(--green)] focus:outline-none" />
+          <div className="mt-3 flex items-center gap-2">
+            <button disabled={busy || !reason.trim()}
+              onClick={async () => { await act({ id: rejecting, action: 'reject', reason }); setRejecting(null); setOpenId(null) }}
+              className={PRIMARY}>Save</button>
+            <button onClick={() => setRejecting(null)} className={TEXT_ACTION}>Cancel</button>
+          </div>
+        </Sheet>
+      )}
+
+      {/* ── DELETE, hand-added only, through the sheet (decision 6) ─────────── */}
+      {deleting && (
+        <Sheet title="Delete this date?" lede="It will be removed from your calendar. This cannot be undone."
+          onClose={() => setDeleting(null)}>
+          <p className="mb-3 text-[13px] text-gray-700">{deleting.title}</p>
+          <div className="flex items-center gap-2">
+            <button disabled={busy} onClick={() => remove(deleting)} className={PRIMARY}>Delete</button>
+            <button onClick={() => setDeleting(null)} className={TEXT_ACTION}>Keep it</button>
+          </div>
+        </Sheet>
+      )}
+
+      {adding && <AddDate onClose={() => setAdding(false)} sites={sites} act={act} />}
+      {changing && open && <ChangeDate date={open} onClose={() => setChanging(false)} act={act} />}
     </AppLayout>
+  )
+}
+
+/** "Add a date" (board 7). The route sets the state from the source, so a hand date is confirmed. */
+function AddDate({ onClose, sites, act }: {
+  onClose: () => void
+  sites: Array<{ id: string; name: string }>
+  act: (b: Record<string, unknown>, m?: 'POST' | 'PATCH') => Promise<unknown>
+}) {
+  const [title, setTitle] = useState('')
+  const [day, setDay] = useState('')
+  const [entity, setEntity] = useState('')
+  const [repeats, setRepeats] = useState(false)
+  const [every, setEvery] = useState<HowOften>('yearly')
+  const [saving, setSaving] = useState(false)
+  const ok = !!title.trim() && (isDayString(day) || repeats)
+  return (
+    <Sheet title="Add a date" lede="It goes straight on your calendar — you added it, so it is confirmed."
+      onClose={onClose}>
+      <label className="block text-[12px] text-gray-600">What is due</label>
+      <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
+        placeholder="e.g. Annual air permit fee"
+        className="mb-3 mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px] focus:border-[var(--green)] focus:outline-none" />
+      <label className="block text-[12px] text-gray-600">When</label>
+      <input type="date" value={day} onChange={(e) => setDay(e.target.value)}
+        className="mb-3 mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px] focus:border-[var(--green)] focus:outline-none" />
+      {sites.length > 1 && (
+        <>
+          <label className="block text-[12px] text-gray-600">Which site</label>
+          <select value={entity} onChange={(e) => setEntity(e.target.value)}
+            className="mb-3 mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px]">
+            <option value="">The whole company</option>
+            {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </>
+      )}
+      <label className="mb-3 flex items-center gap-2 text-[13px] text-gray-700">
+        <input type="checkbox" checked={repeats} onChange={(e) => setRepeats(e.target.checked)} />
+        It repeats
+      </label>
+      {repeats && (
+        <select value={every} onChange={(e) => setEvery(e.target.value as HowOften)}
+          className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px]">
+          {HOW_OFTEN.map((h) => <option key={h.key} value={h.key}>{h.label}</option>)}
+        </select>
+      )}
+      <div className="flex items-center gap-2">
+        <button disabled={!ok || saving} className={PRIMARY}
+          onClick={async () => {
+            setSaving(true)
+            const r = await act({
+              source: 'hand', title, day: isDayString(day) ? day : null,
+              entity_id: entity || null, repeats, every: repeats ? every : null,
+            }, 'POST')
+            setSaving(false)
+            if (r) onClose()
+          }}>Add it</button>
+        <button onClick={onClose} className={TEXT_ACTION}>Cancel</button>
+      </div>
+    </Sheet>
+  )
+}
+
+/** "Change" — the day, and how often it repeats. Both go through `confirmDate`. */
+function ChangeDate({ date, onClose, act }: {
+  date: CalendarDate; onClose: () => void
+  act: (b: Record<string, unknown>, m?: 'POST' | 'PATCH') => Promise<unknown>
+}) {
+  const [day, setDay] = useState(date.due_date ?? '')
+  const [every, setEvery] = useState<HowOften | ''>(date.repeats_every ?? '')
+  const [saving, setSaving] = useState(false)
+  return (
+    <Sheet title="Change this date" onClose={onClose}>
+      <label className="block text-[12px] text-gray-600">When</label>
+      <input type="date" value={day} onChange={(e) => setDay(e.target.value)}
+        className="mb-3 mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px]" />
+      {date.is_recurring && (
+        <>
+          <label className="block text-[12px] text-gray-600">How often</label>
+          <select value={every} onChange={(e) => setEvery(e.target.value as HowOften)}
+            className="mb-3 mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px]">
+            <option value="">Nobody has said yet</option>
+            {HOW_OFTEN.map((h) => <option key={h.key} value={h.key}>{h.label}</option>)}
+          </select>
+        </>
+      )}
+      <div className="flex items-center gap-2">
+        <button disabled={saving || !isDayString(day)} className={PRIMARY}
+          onClick={async () => {
+            setSaving(true)
+            const r = await act({ id: date.id, action: 'confirm', day, every: every || null })
+            setSaving(false)
+            if (r) onClose()
+          }}>Save</button>
+        <button onClick={onClose} className={TEXT_ACTION}>Cancel</button>
+      </div>
+    </Sheet>
   )
 }
