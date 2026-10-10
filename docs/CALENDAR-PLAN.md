@@ -1,6 +1,8 @@
 # The Calendar section — the plan
 
-**Version:** 7 · **Updated:** 9 October 2026, night: **decision 15 — "today" is the company's time zone** (B10).
+**Version:** 8 · **Updated:** 9 October 2026, late: **Job C done** — dates in Workspace and HR summaries, the owner's
+paragraph word for word, every date checked in code (its line in the conversation, its day in its line), added only
+when pressed; $0.06 on Haiku; quality is the owner's Opus test at the finish line. Version 7: 9 October 2026, night: **decision 15 — "today" is the company's time zone** (B10).
 Version 6: 9 October 2026, night: **Job B done** (`DECISIONS.md` §187 a–f, staging only, $0 spent):
 the page on HR's shell, the dashboard's calendar part, the promise words (switched on by the server only when the
 email can reach a customer), one email frame for all four customer emails, migration 077 (a typed date is confirmed),
@@ -307,7 +309,8 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
    repeats, print. The import retired (decision 17). STOP: the owner looks.
 6. **Audits' "Add to calendar"** onto the shared function, with its document and finding, and "On your calendar".
    Audits' free checks re-run. STOP.
-7. **Dates in Workspace and HR summaries** (decision 13). **Quality change: the prompt paragraph is shown to the
+7. **Dates in Workspace and HR summaries** (decision 13). **DONE 9 October in Job C** (the owner approved the paragraph).
+   **Quality change: the prompt paragraph is shown to the
    owner first.** Workspace and HR free checks re-run; their finish-line parts gain a line. STOP.
 8. **The monthly email** (decision 11). Proved with `NOTIFY_TEST_TO`. Reaching customers waits for decision 22. STOP.
    **Steps 3, 4, 6 and 8: DONE 9 October in Job A** (`DECISIONS.md` §186).

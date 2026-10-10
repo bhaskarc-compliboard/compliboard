@@ -103,7 +103,7 @@ not a month.
 
 *Severity 1 first. One helper, then these.*
 
-9. **D3 · sev 1 · ✓ · Documents.** `app/api/folders/route.ts:134–158`: the "does this folder still hold files /
+9. **D3 · sev 1 · ✓ FIXED (Job E1, "Job E: the R2 helper, and D3") · Documents.** `app/api/folders/route.ts:134–158`: the "does this folder still hold files /
    sub-folders" counts never read `error`, so a failed count is 0 and a full folder is deleted — sub-folders and
    `folder_audits` cascade, documents become unfiled. No screen calls it today; the API does. **Fix:** check both
    errors, refuse on failure.
@@ -387,6 +387,13 @@ not a month.
 ---
 
 ## 5. What the owner decides before Job E
+
+> **ANSWERED — the owner, 10 October 2026: "yes to all".** (1) Keep A3d/A3e's approach: readers take the latest
+> readable reading; Job E fixes the remaining writes and screens. (2) D5: a document with a gap still open from an
+> earlier reading shows "Needs work". (3) The R3 prompt words (A-prompt, D4) are drafted by Claude Code and shown to
+> the owner before they go in. (4) The export holds everything the deletion destroys — **and every My Account item
+> moves to My Account's own section, the next one after Calendar**: M1, M2, M3, M4, O4, O5 (the export, account
+> deletion, the name field, the industry list, signup), so that page is worked once. (5) Job E runs before Job D.
 
 1. **R1's approach.** Keep A3d/A3e's: readers take the latest *readable* reading, and Job E fixes the remaining
    *writes* (D1, L1) and screens (D6, D13). The alternative — a failed reading never becomes current at all — means

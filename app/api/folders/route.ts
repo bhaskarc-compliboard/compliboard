@@ -8,6 +8,8 @@
 // rename or delete another company's folders. Reference: app/api/documents/route.ts.
 
 import { NextRequest, NextResponse } from 'next/server'
+import { folderBlockers } from '@/lib/folderDelete'
+import { ReadFailed } from '@/lib/mustRead'
 import { requireCompany } from '@/lib/auth'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -129,28 +131,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
     }
 
-    // Refuse to delete a folder that still holds files. The count is scoped to this
-    // company as well — an unscoped count could be satisfied by another company's rows.
-    const { count } = await db
-      .from('documents')
-      .select('*', { count: 'exact', head: true })
-      .eq('folder_id', id)
-      .eq('company_id', companyId)
+    // *** FIX LIST D3 (root R2). *** These two counts used to be `const { count } = …` with the
+    // error never read — and a failed count is `null`, so `count && count > 0` was falsy and the
+    // delete ran. A folder full of compliance documents could be destroyed because a question
+    // about it went unanswered. `folderBlockers` throws instead; the catch below turns that into a
+    // refusal, which is the only safe direction when we do not know what the folder holds.
+    const blockers = folderBlockers({
+      files: await db.from('documents').select('*', { count: 'exact', head: true })
+        .eq('folder_id', id).eq('company_id', companyId),
+      subfolders: await db.from('company_folders').select('*', { count: 'exact', head: true })
+        .eq('parent_id', id).eq('company_id', companyId),
+    })
 
-    if (count && count > 0) {
+    if (blockers.files > 0) {
       return NextResponse.json(
         { error: 'Folder contains files. Move or delete files first.' },
         { status: 400 }
       )
     }
 
-    const { count: subCount } = await db
-      .from('company_folders')
-      .select('*', { count: 'exact', head: true })
-      .eq('parent_id', id)
-      .eq('company_id', companyId)
-
-    if (subCount && subCount > 0) {
+    if (blockers.subfolders > 0) {
       return NextResponse.json(
         { error: 'Folder contains sub-folders. Delete them first.' },
         { status: 400 }
@@ -166,6 +166,17 @@ export async function DELETE(request: NextRequest) {
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
+    // A COUNT WE COULD NOT TAKE IS NOT AN EMPTY FOLDER (D3). The person is told plainly that we
+    // could not check, in words they can act on (§5.1) — never the raw PostgREST message, and
+    // never a deletion.
+    if (error instanceof ReadFailed) {
+      console.error(`folder delete refused: ${error.message}`)
+      return NextResponse.json(
+        { error: 'We couldn\u2019t check whether this folder still holds files, so we haven\u2019t '
+          + 'deleted it. That is our side, not yours. Please try again in a moment.' },
+        { status: 503 },
+      )
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to delete folder' },
       { status: 500 }
