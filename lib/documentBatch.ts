@@ -13,6 +13,7 @@
  * function called twice.
  */
 import { Resend } from 'resend'
+import { renderEmail, type EmailContent, type EmailBlock } from './emailFrame.ts'
 import { emailFrom } from './emailSender.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,29 +172,43 @@ export async function notifyBatch(args: {
 
   const subject = `We've read your ${s.total} document${s.total === 1 ? '' : 's'}`
 
-  const lines: string[] = []
-  if (override && override !== args.to) {
-    lines.push(`[staging: this would have gone to ${args.to}]`, '')
-  }
-  lines.push(summaryLine(s), '')
+  // *** THE SAME FRAME AS EVERY OTHER EMAIL *** (`lib/emailFrame.ts`, Calendar B5, board 15).
+  // The WORDS here are unchanged — they are Documents' own and stay Documents' own. What is new is
+  // that they are described once, as data, and rendered as HTML and plain text from that one
+  // description, so the two parts cannot drift apart.
+  const blocks: EmailBlock[] = [{ kind: 'para', text: summaryLine(s) }]
 
   if (s.attention.length) {
-    lines.push('What needs attention:')
-    for (const a of s.attention) {
-      lines.push(a.reason
-        ? `  ${a.title} — ${WORD[a.status] ?? a.status}. ${a.reason}`
-        : `  ${a.title} — ${WORD[a.status] ?? a.status}`)
-    }
-    lines.push('')
+    blocks.push({
+      kind: 'list',
+      heading: 'What needs attention:',
+      rows: s.attention.map((a) => ({
+        main: `${a.title} — ${WORD[a.status] ?? a.status}${a.reason ? `. ${a.reason}` : ''}`,
+      })),
+    })
   }
   if (s.fine.length) {
-    lines.push(`On file and nothing to do: ${s.fine.length}`)
-    for (const t of s.fine) lines.push(`  ${t}`)
-    lines.push('')
+    blocks.push({
+      kind: 'list',
+      heading: `On file and nothing to do: ${s.fine.length}`,
+      rows: s.fine.map((t) => ({ main: t })),
+    })
   }
-  lines.push(`See them all: ${appUrl}/documents`)
 
-  const text = lines.join('\n')
+  const content: EmailContent = {
+    company: args.companyName ?? 'Your company',
+    title: subject,
+    banner: override && override !== args.to ? `[staging: this would have gone to ${args.to}]` : null,
+    blocks,
+    button: { label: 'See them all', href: `${appUrl}/documents` },
+    // THE LINE DOCUMENTS DID NOT HAVE. An email with no explanation of why it reached you is the
+    // one people mark as spam, and all four emails share a sender — so one unexplained email takes
+    // the other three down with it. The owner's words, 9 October 2026.
+    why: 'You get this because you sent documents to CompliBoard to read, '
+      + 'and we\u2019ve finished reading them.',
+  }
+
+  const { text, html } = renderEmail(content)
 
   // The key is read here rather than at module scope so an unset key is a failure of THIS send,
   // reported and recorded, instead of a module that throws on import and takes the sweep with it.
@@ -217,6 +232,7 @@ export async function notifyBatch(args: {
       to,
       subject,
       text,
+      html,
     })
     if (res.error) return { ok: false, error: `${res.error.name}: ${res.error.message}`, to, subject, text }
     return { ok: true, id: res.data?.id ?? null, to, subject, text }

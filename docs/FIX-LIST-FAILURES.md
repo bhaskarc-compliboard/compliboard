@@ -211,7 +211,7 @@ not a month.
    added to `scripts/measure-layout.mjs` for this and is there for the rest of this list.
    `shots/b3-dash-good.png` is the same page with every read working — R2: a check that reports an
    absence has to be shown seeing a presence first.
-35b. **B2b · sev 2 · OPEN, NEEDS NEW ARTWORK (not a code change) · Landing page (ours).**
+35b. **B2b · sev 2 · PARKED BY THE OWNER — the landing page is its own project · Landing page (ours).**
     **Two marketing images say "overdue" in baked pixels**, which `DECISIONS.md` §185c forbids
     everywhere: all the product knows is that a day has gone by, and "overdue" states that the work
     was not done. Found by LOOKING at the page during Calendar B4 — the rule had already been applied
@@ -227,8 +227,9 @@ not a month.
     no text to edit. The JSX mock beside Hero2 on the same page *was* fixed in Calendar B4 ("3 dates
     have passed", amber not red) — which now leaves the real screen and the picture of it
     disagreeing, and the picture is the one a visitor reads first. **The owner's call**: new artwork,
-    or drop the two panels from the images. Goes with **Job D** (release), since it is the landing
-    page.
+    or drop the two panels from the images. **Not Job D and not Job E** (the owner, 9 October 2026, evening: *"that is a whole work after all the
+    sections are done. the whole app idea changed since that landing page was made"*). The landing page is
+    rewritten as its own project once every section is done; these two images go with it.
 
 36. **M4 · sev 2 · · · My Account and signup (ours).** `app/signup/page.tsx:81`, `app/account/page.tsx:40`: a failed
     industry list leaves only "Don't see your industry?", so a company signs up as `other` — which drives requirements

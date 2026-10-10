@@ -13,6 +13,7 @@
 // really addressed, and `notified_at` set only on a send that actually succeeded.
 
 import { Resend } from 'resend'
+import { renderEmail, type EmailContent, type EmailBlock } from './emailFrame.ts'
 import { emailFrom } from './emailSender.ts'
 
 import { runSummaryLine, type RunSummary } from './auditRun.ts'
@@ -87,6 +88,18 @@ export async function notifyRun(
     }
   }
 
+  // THE COMPANY'S NAME, for the frame's letterhead (B5). Read separately because `audit_runs`
+  // carries only `company_id`. **A failed read is not an empty name** (§3.12, R2): the frame falls
+  // back to "Your company" and the failure is said in the log, rather than a blank line appearing
+  // under the wordmark where the customer's own name should be.
+  let companyName: string | null = null
+  if (run.company_id) {
+    const { data: co, error: coErr } = await db.from('companies')
+      .select('name').eq('id', run.company_id).maybeSingle()
+    if (coErr) console.error(`AUDIT EMAIL: could not read the company name: ${coErr.message}`)
+    companyName = co?.name ?? null
+  }
+
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
   const override = (process.env.NOTIFY_TEST_TO ?? '').trim()
   const to = override || realTo
@@ -103,24 +116,28 @@ export async function notifyRun(
       : `Your ${summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'} audit: `
         + 'nothing needs you'
 
-  const lines: string[] = []
-  if (override && override !== realTo) lines.push(`[staging: this would have gone to ${realTo || '(nobody)'}]`, '')
-  lines.push(runSummaryLine(summary), '')
+  // *** THE SAME FRAME AS EVERY OTHER EMAIL *** (`lib/emailFrame.ts`, Calendar B5). Audits' WORDS
+  // are unchanged — they are Audits' own. What is new is that they are described once, as data, and
+  // rendered as HTML and plain text from that one description, so the two cannot drift apart.
+  const blocks: EmailBlock[] = [{ kind: 'para', text: runSummaryLine(summary) }]
 
   if (run.readings_as_of) {
-    lines.push(`Read against your documents as they stood on ${String(run.readings_as_of).slice(0, 10)}.`, '')
+    blocks.push({ kind: 'note',
+      text: `Read against your documents as they stood on ${String(run.readings_as_of).slice(0, 10)}.` })
   }
 
   if (summary.attention.length) {
-    lines.push('What needs you:')
-    for (const a of summary.attention) {
-      const w = a.word ? WORD[a.word] ?? a.word : null
-      lines.push(`  ${a.title}${w ? ` — ${w}` : ''}${a.document ? ` (${a.document})` : ''}`)
-    }
-    if (summary.nothing_on_file + summary.stale > summary.attention.length) {
-      lines.push(`  …and ${summary.nothing_on_file + summary.stale - summary.attention.length} more.`)
-    }
-    lines.push('')
+    blocks.push({
+      kind: 'list',
+      heading: 'What needs you:',
+      rows: summary.attention.map((a) => {
+        const w = a.word ? WORD[a.word] ?? a.word : null
+        return { main: `${a.title}${w ? ` — ${w}` : ''}${a.document ? ` (${a.document})` : ''}` }
+      }),
+      more: summary.nothing_on_file + summary.stale > summary.attention.length
+        ? `…and ${summary.nothing_on_file + summary.stale - summary.attention.length} more.`
+        : null,
+    })
   }
 
   // *** AND THEN THE GOOD NEWS, IN ITS OWN WORDS. *** On-file and expected rows are most of what
@@ -137,31 +154,44 @@ export async function notifyRun(
       + `company like yours to hold and did not see — a suggestion, not a checked requirement`)
   }
   if (after.length) {
-    lines.push(`It also found ${after.length === 2 ? `${after[0]} and ${after[1]}` : after[0]}.`, '')
+    blocks.push({ kind: 'para',
+      text: `It also found ${after.length === 2 ? `${after[0]} and ${after[1]}` : after[0]}.` })
   }
 
   if (summary.contradictions) {
-    lines.push(summary.contradictions === 1
+    blocks.push({ kind: 'para', text: summary.contradictions === 1
       ? 'Two of your documents disagree in one place. The audit shows both and does not pick one.'
       : `Two of your documents disagree in ${summary.contradictions} places. The audit shows both `
-        + 'and does not pick one.', '')
+        + 'and does not pick one.' })
   }
   if (summary.carried || summary.closed) {
-    lines.push(`Against your last audit: ${summary.carried} still open, `
-      + `${summary.closed} no longer raised.`, '')
+    blocks.push({ kind: 'para', text: `Against your last audit: ${summary.carried} still open, `
+      + `${summary.closed} no longer raised.` })
   }
   if (summary.could_not_complete) {
     // §5.1 — when the failure is ours, say so plainly and never imply the customer did something
     // wrong. A section that did not finish is our problem and it can be run again.
-    lines.push(`${summary.could_not_complete} of ${summary.sections} part`
+    blocks.push({ kind: 'para', text: `${summary.could_not_complete} of ${summary.sections} part`
       + `${summary.sections === 1 ? '' : 's'} of this audit did not finish. That is our side, not `
-      + `yours — you can run those again from the page.`, '')
+      + `yours — you can run those again from the page.` })
   }
 
-  // The link opens THIS run's report, not the page it sits on. An email whose link lands a person
-  // on a list they then have to search is an email that made them do the work twice.
-  lines.push(`See it all: ${appUrl}/audits?run=${runId}`)
-  const text = lines.join('\n')
+  const content: EmailContent = {
+    company: companyName ?? 'Your company',
+    title: subject,
+    banner: override && override !== realTo
+      ? `[staging: this would have gone to ${realTo || '(nobody)'}]` : null,
+    blocks,
+    // The link opens THIS run's report, not the page it sits on. An email whose link lands a person
+    // on a list they then have to search is an email that made them do the work twice.
+    button: { label: 'See it all', href: `${appUrl}/audits?run=${runId}` },
+    // THE LINE THIS EMAIL DID NOT HAVE, in the shape of the one the owner approved for Documents.
+    // It goes only to the person who started the audit.
+    why: 'You get this because you asked CompliBoard to audit a folder of your documents, '
+      + 'and we\u2019ve finished.',
+  }
+
+  const { text, html } = renderEmail(content)
   if (opts.dryRun) return { notified: false, error: 'dry run — nothing was sent', to, subject, text }
 
   // The link comes from the environment, and without it nothing is sent. A wrong link is worse
@@ -185,7 +215,7 @@ export async function notifyRun(
     const resend = new Resend(key)
     const res = await resend.emails.send({
       from: emailFrom(),
-      to, subject, text,
+      to, subject, text, html,
     })
     if (res.error) return { notified: false, error: res.error.message, to, subject, text }
 

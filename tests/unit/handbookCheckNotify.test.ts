@@ -40,7 +40,11 @@ describe('the email (words proposed in the brief)', () => {
       const r = await notifyCheck(fakeDb(done, [row('r1', 's1', 'done', 'A.')]).db, 'c1', { dryRun: true })
       assert.equal(r.subject, 'Your handbook check is done: Harbor Handbook')
       assert.equal(r.to, 'person@example.com')
-      assert.equal(r.text, 'Harbor Handbook was checked against the rules that apply to you on 8 October 2026.\n\nRead the check: https://app.compliboard.com/hr?handbook=h1')
+      // Calendar B5: the shared frame (`lib/emailFrame.ts`) added the "why you got this" line that
+      // this email never had, and the link is now the frame's one green button — which in the text
+      // part prints as "Read the check: <link>", the sentence `EMAIL.readLine` always produced.
+      // HR's own words are untouched.
+      assert.equal(r.text, 'CompliBoard \u2014 Your company\nYour handbook check is done: Harbor Handbook\n\nHarbor Handbook was checked against the rules that apply to you on 8 October 2026.\n\nRead the check: https://app.compliboard.com/hr?handbook=h1\n\nYou get this because you asked CompliBoard to check your handbook, and we\u2019ve finished.')
     }))
   test('done with a failed part: the count line, from the stored rows as the page counts them',
     env({ NEXT_PUBLIC_APP_URL: 'https://app.compliboard.com', NOTIFY_TEST_TO: undefined }, async () => {
@@ -53,7 +57,11 @@ describe('the email (words proposed in the brief)', () => {
       const r = await notifyCheck(fakeDb({ ...done, status: 'failed' }).db, 'c1', { dryRun: true })
       assert.equal(r.subject, 'Your handbook check could not finish: Harbor Handbook')
       assert.equal(r.to, 'test@compliboard.com')
-      assert.equal(r.text, "[staging: this would have gone to person@example.com]\n\nWe could not finish checking Harbor Handbook. That's on our side, not yours. Press Check now to try again: https://app.compliboard.com/hr?handbook=h1")
+      // Calendar B5: the link moved out of the sentence and into the button ("Try again"), because
+      // in HTML a bare URL beside a green button going to the same place reads as a mistake.
+      // *** AND THE "why" LINE SAYS NOTHING ABOUT FINISHING HERE. *** The first version used one
+      // sentence for both cases and put "and we've finished" under "We could not finish checking".
+      assert.equal(r.text, "[staging: this would have gone to person@example.com]\n\nCompliBoard \u2014 Your company\nYour handbook check could not finish: Harbor Handbook\n\nWe could not finish checking Harbor Handbook. That's on our side, not yours. Press Check now to try again.\n\nTry again: https://app.compliboard.com/hr?handbook=h1\n\nYou get this because you asked CompliBoard to check your handbook.")
     }))
 })
 

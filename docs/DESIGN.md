@@ -103,6 +103,68 @@ done equals total.
 There is one theme. The `prefers-color-scheme: dark` block was deleted —
 a dark theme nobody designed is worse than none.
 
+### 2a. Brand — the wordmark, and the email frame
+
+*Added 9 October 2026 (Calendar B5, boards 14 and 15; the owner, on seeing the
+four plain-text emails: "this does not look like coming from a very professional
+company").*
+
+**The wordmark is two words in two colours, and it is always TEXT.**
+
+```
+Compli   #2F7D52   the app's green, the same --green the product uses
+Board    #F94300   orange
+```
+
+**No square, no badge, no logotype image** — the owner's, 9 October. In the app
+it is `components/AppLayout.tsx`'s header; in email it is
+`lib/emailFrame.ts`, which exports the two as `BRAND_GREEN` and `BRAND_ORANGE`
+so nobody retypes a hex.
+
+> ### IN EMAIL THE WORDMARK MUST BE TEXT, NOT A PICTURE.
+> Most inboxes block images by default, so a logo that is an image is a **broken
+> box** the first time anybody opens the email — on the one screen where first
+> impressions are the entire point. Text renders everywhere, loads instantly,
+> and survives the recipient's dark mode. It is also why there is no image
+> anywhere in the frame.
+
+**The email frame** (`lib/emailFrame.ts`) is one frame for all four customer
+emails — the monthly calendar email, Documents' batch email, the audit-finished
+email and the handbook-check email. Its shape, top to bottom: the wordmark, the
+company's name, a **Georgia** title, the email's own content as paragraphs and
+rows, **one green button**, quiet footnotes, a rule, and one line saying why
+this arrived.
+
+**What it may not use, and why — email HTML is not web HTML:**
+
+| Never | Because |
+|---|---|
+| a `<style>` block | Gmail's web client strips it and the email arrives unstyled |
+| `display:flex` / `grid` | Outlook renders with Word's engine and supports neither |
+| `<img>` | blocked by default: a broken box on first open |
+| a web font | same reason; Georgia and the system sans are already installed |
+| wider than 600px | cut off in older clients |
+| a second button | an email with two calls to action has none |
+| `<button>` | does nothing in an inbox; the button is a padded `<a>` |
+
+**HTML and plain text are made from ONE content object** and rendered twice, so
+they cannot drift. That is the whole reason the file exists: two bodies written
+side by side means one gets a new section and the other quietly serves an older
+email for months. A section not in the object is in neither part, and there is
+no way to add one to only one of them. `tests/unit/emailFrame.test.ts` asserts
+that every piece of content reaches both — and caught the first instance on its
+first run (the HTML had a letterhead; the plain-text part named the company
+nowhere at all).
+
+**Each section's words stay its own.** The frame holds no sentence about dates,
+audits, documents or handbooks — only the furniture, plus the "why you got this"
+line, which is the one sentence in an email that is not about the work. Three of
+the four emails had no such line; an unexplained email is the one people mark as
+spam, and all four share a sender, so one of them takes the other three down.
+
+**The feedback email stays plain** (`app/api/feedback/route.ts`): it goes to us,
+not to a customer, and a letterhead on our own inbox is noise.
+
 ## 3. Layout
 
 **900px, and the Compliance Workspace is in it.** *(Changed 3 October

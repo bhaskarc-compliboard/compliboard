@@ -14,6 +14,7 @@
 //
 // *** THIS FILE MUST NOT IMPORT `lib/auth.ts` *** (notifyRun's note): plain Node must be able to load it for the dry run.
 import { Resend } from 'resend'
+import { renderEmail, type EmailContent, type EmailBlock } from './emailFrame.ts'
 import { emailFrom } from './emailSender.ts'
 import { longDate } from './summaryWords.ts'
 import { checkParts, partsNotChecked, type RowIn } from './handbookCheckView.ts'
@@ -50,8 +51,18 @@ export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: bool
   if (check.status !== 'done' && check.status !== 'failed') return { notified: false, error: `the check is ${check.status}, not finished` }
   if (check.notified_at && !opts.dryRun) return { notified: false, error: 'already notified' }
 
-  const { data: hb } = await db.from('handbooks').select('id, name').eq('id', check.handbook_id).maybeSingle()
+  const { data: hb } = await db.from('handbooks').select('id, name, company_id').eq('id', check.handbook_id).maybeSingle()
   const name = hb?.name ?? 'Your handbook'
+  // The company's name, for the frame's letterhead (B5). A failed read is NOT an empty name: the
+  // frame falls back to "Your company" and the failure is said, rather than a blank line appearing
+  // under the wordmark where the customer's own name belongs (§3.12, R2).
+  let companyName: string | null = null
+  if (hb?.company_id) {
+    const { data: co, error: coErr } = await db.from('companies')
+      .select('name').eq('id', hb.company_id).maybeSingle()
+    if (coErr) console.error(`HANDBOOK CHECK EMAIL: could not read the company name: ${coErr.message}`)
+    companyName = co?.name ?? null
+  }
 
   // The login's address is in auth.users, read through the admin API of the client the sweep passes (notifyRun).
   let realTo = ''
@@ -67,24 +78,58 @@ export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: bool
   const to = override || realTo
   const link = handbookLink(appUrl, check.handbook_id)
 
-  const lines: string[] = []
-  if (override && override !== realTo) lines.push(`[staging: this would have gone to ${realTo || '(nobody)'}]`, '')
+  // *** THE SAME FRAME AS EVERY OTHER EMAIL *** (`lib/emailFrame.ts`, Calendar B5). HR's WORDS are
+  // unchanged — `EMAIL` above still holds every one of them. What is new is that they are described
+  // once, as data, and rendered as HTML and plain text from that one description.
+  //
+  // `readLine` and `failedLine` carry the link INSIDE the sentence, which is right in plain text and
+  // wrong in HTML, where it would print a bare URL beside a green button going to the same place. So
+  // the sentence is built without the link and the link becomes the button. The words either side of
+  // it are untouched, and `EMAIL`'s entries stay exactly as they were for the tests that read them.
+  const blocks: EmailBlock[] = []
   let subject: string
   if (check.status === 'failed') {
     subject = EMAIL.failedSubject(name)
-    lines.push(EMAIL.failedLine(name, link))
+    blocks.push({ kind: 'para', text: EMAIL.failedLine(name, link).replace(`: ${link}`, '.') })
   } else {
     subject = EMAIL.doneSubject(name)
-    lines.push(EMAIL.doneLine(name, longDate(check.finished_at ?? new Date().toISOString())), '')
+    blocks.push({ kind: 'para', text: EMAIL.doneLine(name, longDate(check.finished_at ?? new Date().toISOString())) })
     // Parts that could not be checked, counted in code from the stored rows, as the page counts them.
-    const { data: rows } = await db.from('handbook_check_sections').select('id, section_id, kind, status, word, answer_text, answer_sources').eq('check_id', checkId)
-    const { data: secs } = await db.from('handbook_sections').select('id, position').eq('handbook_id', check.handbook_id)
-    const pos = new Map(((secs ?? []) as Array<{ id: string; position: number }>).map((s) => [s.id, s.position]))
-    const failedParts = partsNotChecked(checkParts((rows ?? []) as RowIn[], (id) => pos.get(id ?? '') ?? 1e9, () => '', () => []))
-    if (failedParts) lines.push(EMAIL.partsLine(failedParts), '')
-    lines.push(EMAIL.readLine(link))
+    const { data: rows, error: rowsErr } = await db.from('handbook_check_sections').select('id, section_id, kind, status, word, answer_text, answer_sources').eq('check_id', checkId)
+    const { data: secs, error: secsErr } = await db.from('handbook_sections').select('id, position').eq('handbook_id', check.handbook_id)
+    // R2: a failed read here would count ZERO parts that could not be checked — an email saying
+    // nothing went wrong because we could not ask. Said, and the line left out rather than stated.
+    if (rowsErr || secsErr) {
+      console.error('HANDBOOK CHECK EMAIL: could not count the parts that failed: '
+        + `${rowsErr?.message ?? ''} ${secsErr?.message ?? ''}`.trim())
+    } else {
+      const pos = new Map(((secs ?? []) as Array<{ id: string; position: number }>).map((s) => [s.id, s.position]))
+      const failedParts = partsNotChecked(checkParts((rows ?? []) as RowIn[], (id) => pos.get(id ?? '') ?? 1e9, () => '', () => []))
+      if (failedParts) blocks.push({ kind: 'para', text: EMAIL.partsLine(failedParts) })
+    }
   }
-  const text = lines.join('\n')
+
+  const content: EmailContent = {
+    company: companyName ?? 'Your company',
+    title: subject,
+    banner: override && override !== realTo
+      ? `[staging: this would have gone to ${realTo || '(nobody)'}]` : null,
+    blocks,
+    button: { label: check.status === 'failed' ? 'Try again' : 'Read the check', href: link },
+    // THE LINE THIS EMAIL DID NOT HAVE, in the shape of the one the owner approved for Documents.
+    // It goes only to the person who pressed Check — the nightly check emails nobody.
+    //
+    // *** AND IT DOES NOT SAY "we've finished" WHEN WE DID NOT. *** The first version of this line
+    // was the same sentence for both cases, which put "and we've finished" two lines under "We
+    // could not finish checking Harbor Handbook". A failing test printed the two together and that
+    // is the only reason it was seen (§5.1: never claim of a job what it did not do).
+    why: check.status === 'failed'
+      ? 'You get this because you asked CompliBoard to check your handbook.'
+      : 'You get this because you asked CompliBoard to check your handbook, '
+        + 'and we\u2019ve finished.',
+  }
+
+  const { text, html } = renderEmail(content)
   if (opts.dryRun) return { notified: false, error: 'dry run — nothing was sent', to, subject, text }
 
   // notifyRun's refusals, in its order: no link, no address, no key — each said out loud, nothing stamped.
@@ -101,7 +146,7 @@ export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: bool
   }
   try {
     const resend = new Resend(key)
-    const res = await resend.emails.send({ from: emailFrom(), to, subject, text })
+    const res = await resend.emails.send({ from: emailFrom(), to, subject, text, html })
     if (res.error) return { notified: false, error: res.error.message, to, subject, text }
     // Only now. A stamp before the send is a failure nobody can see.
     await db.from('handbook_checks').update({ notified_at: new Date().toISOString() }).eq('id', checkId).is('notified_at', null)

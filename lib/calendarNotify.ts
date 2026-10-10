@@ -34,6 +34,7 @@
 import { Resend } from 'resend'
 import { emailFrom } from './emailSender.ts'
 import { formatDayShort, formatMonth, monthRange, today } from './calendarDate.ts'
+import { renderEmail, type EmailContent, type EmailBlock, type EmailRow } from './emailFrame.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any; auth?: { admin?: Record<string, any> } }
@@ -164,7 +165,7 @@ export function renderMonthlyEmail(args: {
   appUrl: string
   realTo?: string[]
   override?: string
-}): { subject: string; text: string } {
+}): { subject: string; text: string; html: string; content: EmailContent } {
   const [y, m] = args.asOf.split('-').map(Number)
   const month = formatMonth(y, m)                   // "October 2026"
   const monthOnly = month.split(' ')[0]             // "October"
@@ -189,55 +190,70 @@ export function renderMonthlyEmail(args: {
     d.state === 'not_confirmed' ? 'not confirmed' : null,
   ].filter(Boolean).join(' · ')
 
-  const lines: string[] = []
-  if (args.override && args.realTo?.length && !args.realTo.includes(args.override)) {
-    lines.push(`[staging: this would have gone to ${args.realTo.join(', ') || '(nobody)'}]`, '')
-  }
+  // *** THE CONTENT IS DESCRIBED ONCE, THEN RENDERED TWICE *** (`lib/emailFrame.ts`, B5). The words
+  // below are A5b's, approved by the owner and unchanged; what is new is that they are now DATA
+  // rather than pre-joined lines, so the HTML part and the plain-text part cannot drift apart.
+  const blocks: EmailBlock[] = []
+  const row = (d: MonthlyDate): EmailRow => ({
+    // The year shows when it is not this year's: a passed date can sit unticked for a year, and a
+    // bare "20 August" under a heading that says October 2026 points at the wrong August.
+    lead: formatDayShort(d.due_date, args.asOf),
+    main: d.title,
+    meta: d.site,
+    tag: d.state === 'not_confirmed' ? 'not confirmed' : null,
+  })
 
-  lines.push(`${args.companyName}, here is what is due in ${month}.`, '')
+  blocks.push({ kind: 'para', text: `${args.companyName}, here is what is due in ${month}.` })
 
   if (due.length) {
-    lines.push(`Due this month (${due.length}):`)
-    for (const d of due) lines.push(line(d))
-    lines.push('')
+    blocks.push({ kind: 'list', heading: `Due this month (${due.length}):`, rows: due.map(row) })
   } else {
     // R3: said only when the read SUCCEEDED and returned nothing. A read that failed never reaches
     // here — `monthlyDates` throws and the caller sends no email at all.
-    lines.push(`Nothing is due in ${monthOnly}.`, '')
+    blocks.push({ kind: 'para', text: `Nothing is due in ${monthOnly}.` })
   }
 
   if (passed.length) {
     // *** THE OWNER'S RULE (§185, A5b): NOT "passed and not done". ***
-    lines.push(`Dates that have passed (${passed.length}):`)
-    for (const d of passed) lines.push(line(d))
-    lines.push('')
-    lines.push('A gentle reminder in case any of these still need attention. If they\'re already')
-    lines.push('taken care of, you can tick them off on your CompliBoard calendar and we won\'t')
-    lines.push('list them again.', '')
+    blocks.push({ kind: 'list', heading: `Dates that have passed (${passed.length}):`, rows: passed.map(row) })
+    blocks.push({ kind: 'note', text:
+      'A gentle reminder in case any of these still need attention. If they\'re already\n'
+      + 'taken care of, you can tick them off on your CompliBoard calendar and we won\'t\n'
+      + 'list them again.' })
   }
 
   if (waiting) {
-    lines.push(`Found in your documents, not yet confirmed: ${waiting}.`)
-    lines.push('They are on your calendar, marked not confirmed. Check each one against its line')
-    lines.push('in the document.')
+    blocks.push({ kind: 'para', text:
+      `Found in your documents, not yet confirmed: ${waiting}.\n`
+      + 'They are on your calendar, marked not confirmed. Check each one against its line\n'
+      + 'in the document.' })
     // ONE LINK PER SECTION (board 12), not one per date. `?tab=confirm` is the name the board uses
-    // and the name Job B must build the tab under — pinned by a test and written into
-    // `docs/HANDOFF-CODE.md` §7, because a link to a tab that is spelled differently is a dead link
-    // in an email nobody can fix after it is sent.
-    lines.push(`${args.appUrl}/calendar?tab=confirm`, '')
+    // and the name the page answers to — pinned by a test and written into `docs/HANDOFF-CODE.md`
+    // §7, because a link to a tab spelled differently is a dead link in an email nobody can fix
+    // after it is sent.
+    blocks.push({ kind: 'link', label: 'Confirm them', href: `${args.appUrl}/calendar?tab=confirm` })
   }
 
-  lines.push(`Your calendar: ${args.appUrl}/calendar`, '')
-
-  lines.push('Dates are read from your documents and from what you add. They are not legal advice.')
-  lines.push('When in doubt, check with the agency.', '')
-
-  // WHY YOU ARE GETTING THIS. The board's next sentence, "You can turn it off in My Account", waits
-  // for that switch (§185b) — and a test asserts it is absent, so it cannot arrive early.
-  lines.push(`You get this email on the 1st of each month because you have a login at ${args.companyName}.`)
+  const content: EmailContent = {
+    company: args.companyName,
+    title: `Your dates for ${month}`,
+    banner: args.override && args.realTo?.length && !args.realTo.includes(args.override)
+      ? `[staging: this would have gone to ${args.realTo.join(', ') || '(nobody)'}]`
+      : null,
+    blocks,
+    button: { label: 'Your calendar', href: `${args.appUrl}/calendar` },
+    footnotes: [
+      'Dates are read from your documents and from what you add. They are not legal advice.',
+      'When in doubt, check with the agency.',
+    ],
+    // WHY YOU ARE GETTING THIS. The board's next sentence, "You can turn it off in My Account", waits
+    // for that switch (§185b) — and a test asserts it is absent, so it cannot arrive early.
+    why: `You get this email on the 1st of each month because you have a login at ${args.companyName}.`,
+  }
 
   // NO PRICE, EVER (§147). NEVER "compliant" (§6).
-  return { subject, text: lines.join('\n') }
+  const { html, text } = renderEmail(content)
+  return { subject, text, html, content }
 }
 
 /**
