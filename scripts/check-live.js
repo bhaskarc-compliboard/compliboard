@@ -331,6 +331,10 @@ const HR_TABLES = ['handbooks', 'handbook_sections', 'handbook_checks', 'handboo
   const made = []
   /** Every probe row carries this, so the cleanup can find them even if an assertion throws. */
   const probeKey = (suffix) => `hand:check-live-${stamp}-${suffix}`
+  // Migration 073: `date_key like source || ':%'`, so a document-sourced probe needs a key that
+  // says so. Two keys rather than one `probeKey(source, suffix)` because every existing caller is a
+  // hand date and renaming them all would be a bigger change than the two rows that need this.
+  const docKey = (suffix) => `document:check-live-${stamp}-${suffix}`
 
   // anon: nothing, on the table and on the view. A refusal must be 42501 and not some other error,
   // or a missing column would read as a closed door.
@@ -394,13 +398,21 @@ const HR_TABLES = ['handbooks', 'handbook_sections', 'handbook_checks', 'handboo
 
   // `counts_as_due` — decision 5's guardrail, read back from the database rather than recomputed here.
   {
-    const dateless = { ...mine, date_key: probeKey('no-day'), due_date: null, is_recurring: true, state: 'not_confirmed' }
+    // *** A NOT-CONFIRMED PROBE MUST COME FROM A DOCUMENT *** (migration 077, Calendar B5's gate).
+    // `mine` is a HAND date, and a hand date may never be `not_confirmed` — typing it IS the
+    // confirmation, so "confirm your own typing" cannot appear in the To confirm tab. These two
+    // probes carried `...mine` with `state: 'not_confirmed'` and started failing with 23514 the
+    // moment the constraint landed. They are not wrong about `counts_as_due`; they were building a
+    // row the product cannot make. `waiting` gives them a document-sourced base, which is the only
+    // source that can legitimately be waiting.
+    const waiting = { ...mine, source: 'document' }
+    const dateless = { ...waiting, date_key: docKey('no-day'), due_date: null, is_recurring: true, state: 'not_confirmed' }
     const { data: d1, error: e1 } = await asUser.from('calendar_events').insert(dateless).select('id, counts_as_due').maybeSingle()
     if (d1) made.push(d1.id)
     ok(`${L('counts_as_due')} a date with no day is not due`, !e1 && d1?.counts_as_due === false,
       e1 ? `${e1.code} ${e1.message}` : `counts_as_due ${d1?.counts_as_due}`)
 
-    const unfound = { ...mine, date_key: probeKey('unfound'), state: 'not_confirmed', line_verified: false }
+    const unfound = { ...waiting, date_key: docKey('unfound'), state: 'not_confirmed', line_verified: false }
     const { data: d2, error: e2 } = await asUser.from('calendar_events').insert(unfound).select('id, counts_as_due').maybeSingle()
     if (d2) made.push(d2.id)
     ok(`${L('counts_as_due')} an unfound line is not due`, !e2 && d2?.counts_as_due === false,

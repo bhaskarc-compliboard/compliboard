@@ -98,3 +98,101 @@ than invented, because it is the one sentence in the email that is not about the
 **None.** §2.6 already carries the dashboard (decisions 15, 18), the promise words (21), the import's
 retirement (17), and the email (11, with the frame added in version 5). The three other sections'
 emails are decision 11's own scope.
+
+---
+
+# B6 — THE CROSS-SECTION GATE (plan §2.5, `CLAUDE.md` §3.12)
+
+All eight parts, run at the end of Job B. **It caught two things**, both named below.
+
+| # | section | what was checked | before | after | pass |
+|---|---|---|---|---|---|
+| 1 | all | `npm run check` after every checkpoint, floor only up | 1072 | **1097** | ✓ (floor 1072→1076→1081→1083→1085→1097) |
+| 2 | Calendar | `calendar_events`, caller / service role | — | 5 / 6 | ✓ every row named below |
+| 2 | Calendar | `document_deadlines` | — | 40 / 40 | ✓ untouched |
+| 2 | Documents | `documents`, `document_scans`, `document_gaps`, `document_batches` | — | 12/12, 14/14, 25/25, 0/0 | ✓ identical both ways |
+| 2 | Audits | `audit_runs`, `audit_findings`, `audit_run_sections` | — | 0/0, 0/0, 0/0 | ✓ — **and see the note** |
+| 2 | HR | `handbooks`, `handbook_sections`, `handbook_checks`, `handbook_check_sections` | — | 1/14, 0/83, 0/31, 0/226 | ✓ tenancy, not loss |
+| 2 | Workspace | `topics`, `topic_messages`, `checklists`, `checklist_items` | — | 0/86, 0/0, 0/7, 0/38 | ✓ tenancy |
+| 2 | Company info | `companies`, `entities`, `profiles` | — | 1/6, 1/7, 1/5 | ✓ tenancy |
+| 2 | Jobs | `job_runs`, `ai_calls` | — | **ERR**/31, 2/345 | ✓ by design, proved |
+| 3 | HR, Documents | shared files changed, their free checks re-run | — | 7 files | ✓ |
+| 4 | all 8 pages | loads, shows rows, `BLOCKED` printed | — | 8/8, **BLOCKED (0)** each | ✓ |
+| 5 | all 7 cron jobs | run by hand, `job_runs` row written | — | 7× HTTP 200 | ✓ — **one slip, below** |
+| 6 | all 5 emails | still send from the address they used before | `emailFrom()` | `emailFrom()` | ✓ unchanged |
+| 7 | all | `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run check:live` | 2 ✗ | **ok** | ✓ after a fix |
+| 8 | all | which golden sets would move | — | **none** | ✓ reasoned below |
+
+## Part 2 — every calendar row named
+
+Service role sees 6; the signed-in caller sees 5. The difference is **tenancy, not a bug**: the sixth
+belongs to `Test Gamma Solvents`. Read back from the database, not from what the job thinks it wrote:
+
+```
+Cascade Specialty Chemicals  document  not_confirmed  Next annual maintenance for all 14 units        <- Job A's A3 replay
+Cascade Specialty Chemicals  document  not_confirmed  Six-year internal maintenance for W-3 and L-1   <- Job A's A3 replay
+Cascade Specialty Chemicals  hand      confirmed      Air permit annual fee            hand:jobB-...  <- THIS JOB (B2 seed)
+Cascade Specialty Chemicals  hand      confirmed      Fire extinguisher service        hand:jobB-...  <- THIS JOB (B2 seed)
+Cascade Specialty Chemicals  hand      done           Scrubber inspection              hand:jobB-...  <- THIS JOB (B2 seed)
+Test Gamma Solvents          handbook  confirmed      Open enrolment window            handbook:...   <- Job A
+```
+
+**This job's own writes: +4 seeded for the screenshots, −1 deleted by migration 077** (the
+`hand` + `not_confirmed` row that started the owner's point 6). Net +3, all three visible above and
+all three keyed `hand:jobB-`. Nothing else moved.
+
+> **THREE TEST ROWS ARE STILL ON STAGING, DELIBERATELY** — they are what makes the B7 screenshots show
+> a calendar with something in it. One statement removes them:
+> `delete from public.calendar_events where date_key like 'hand:jobB-%';`
+
+**`job_runs` is unreadable by the caller, and that is by design, not by this job.** Read rather than
+assumed: `has_table_privilege('authenticated','public.job_runs','SELECT')` is **false** and the table
+has **0 policies**. Migration 073 restated its `job_runs_job_check` CHECK and touched no grant.
+
+**Audits has 0 rows on staging**, so the audit email's new frame has no live data behind it here. Its
+render is a fixture (`scripts/calendar-b5-render.mjs`) and is labelled as one — **not** proof that a
+real audit email renders, which needs an audit run.
+
+## What the gate caught
+
+**1 — migration 077 broke two of another section's `check:live` probes.**
+
+```
+✗ counts_as_due   a date with no day is not due — 23514 ... violates "calendar_events_hand_is_confirmed"
+✗ counts_as_due   an unfound line is not due    — 23514 ... violates "calendar_events_hand_is_confirmed"
+```
+
+The probes built their rows from `mine`, a **hand** date, and set `state: 'not_confirmed'` — the exact
+combination 077 made impossible. They were not wrong about `counts_as_due`; they were building a row
+the product cannot make. Both now use a document-sourced base, and a `document:` key, because 073's
+other CHECK requires `date_key like source || ':%'`. `check:live` back to **ok**.
+
+*This is the gate doing its whole job.* `npm run check` was green the entire time — the constraint is
+in the database and the probes are in a script, so nothing in Calendar's own tests could see it.
+
+**2 — my own gate run sent a real email.**
+
+Part 5 drives each cron job by hand. I used `GET ... ?dry=1`, and **`?dry=1` is honoured on POST, not
+GET** — GET is the cron's own entry point and always sends. So `calendar-month` sent one monthly
+email. It went to `NOTIFY_TEST_TO`, not to a customer, so no harm was done; it is recorded because a
+gate that sends mail is a gate with a side effect, and the next person running part 5 should know.
+The dry path was then proved correct (POST needs `x-cron-secret`, not `Authorization`):
+
+```
+dry_run: true   counts: {"companies":6,"sent":1,"nothing_to_say":5,"no_logins":0,"failed":0}
+rendered, not sent: [ 'Your October dates: 1 due, 2 passed, 2 to confirm' ]
+```
+
+## Part 8 — no golden set moves, and why
+
+The golden sets exercise `prompts/checklist` (`golden:facts`) and `prompts/audit-agency`
+(`golden:audit`); `golden` and `golden:docs` name no prompt file. **This job edited no prompt, no
+model, no parameter and nothing that builds a model's context.** The one `prompts/` file it touched,
+`prompts/extract-dates.ts`, was **deleted** with the import route (decision 17) and appears in no
+golden set. `lib/ai.ts` shows in the changed list and its diff is **one comment** — verified:
+
+```
+- * Strips markdown fences and parses. Used by extract-dates and the document scan; review and the
++ * Strips markdown fences and parses. Used by the document scan (extract-dates, its other caller, was
++ * deleted in Calendar Job B); review and the
+```
