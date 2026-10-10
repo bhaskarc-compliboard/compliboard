@@ -1622,3 +1622,389 @@ cron, email or prompt changed, and `prompts/` is untouched so **no golden set wo
 a file nothing imports and adding one test file is the entire diff.
 
 **Still $0.00, and still nothing pushed.**
+
+---
+
+# E8 — FOR THE OWNER
+
+**One account of Job E in plain words.** You saw a lot of alarming messages while this ran. Most of
+them were the job working — a check refusing something, a test going red on purpose, a script
+catching its own mistake. Section 4 below takes every alarming moment one at a time and says whether
+anything was actually harmed. The short answer, up front:
+
+> **Nothing was harmed. No customer, no production database, no money, no lost work.** Job E read
+> the code, fixed 43 faults, and spent **$0.00**. Everything it changed is on your laptop and on
+> staging. **Nothing was pushed.** Two database changes went onto staging only.
+
+---
+
+## 1. WHAT WAS FIXED
+
+**43 items.** Every one is a case where **the product said something that was not true** because a
+question to the database came back empty and nobody checked whether it had failed. "No gaps found"
+and "we could not look" arrived as the same answer, and the product printed the first one.
+
+### Documents
+
+| item | what could go wrong before | what happens now | commit |
+|---|---|---|---|
+| **D3** | A count of what was in a folder failed, the failed count read as "empty", and **the folder was deleted** with its contents. | The count has to succeed or the delete refuses and says why. | `4b30a04` |
+| **D1** | You pressed "Read it again", the reading service refused, and **every open question that document had raised was withdrawn** — the old reading's findings gone, the new one empty. | The questions to withdraw are chosen before the new reading is saved and withdrawn only after it has been saved. A failed reading withdraws nothing. | `fdbe72a` |
+| **D2 + L1** | You renamed an agency label; the next nightly tidy-up read the old name, did not find it, and **deleted the label you had just made**. | The tidy-up reads the same corrected list the rest of the product reads, so a renamed label survives. | `f97721e` |
+| **D5** | A document whose reading found a problem, read a second time with no new problem, showed **"Current"** and was listed in the email under "nothing to do" — while the problem was still open. | A document with any open gap says **"Needs work"**. Database change 079. One real staging document moved. | `255fefe` |
+| **D6** | Any storage failure — a timeout, a dropped connection — told you *"Upload it again."* So you uploaded a **second copy**, which was then read, shown, and audited as a separate document. | A genuinely missing file still says "upload it again". Anything else says storage could not be reached, **writes no reading at all**, and tries again on the next pass. | `7040f24` |
+| **D7** | A failed read of a batch gave a summary of **0**, marked the batch finished **for good**, and emailed *"We've read your 0 documents. Nothing needs attention."* | The batch fails and can be picked up again. No email claims nothing. | `7040f24` |
+| **D8** | You answered a question about your company, a lookup failed, and the answer was filed as a plain note instead of as a fact — so the requirements engine never saw it and **the question simply disappeared**. | The lookup has to succeed. Your answer reaches the engine or you are told it did not. | `7040f24` |
+| **D9** | On the review queue: *"Nothing declared yet"*, *"0 waiting"* — and worse, **"Confirm all" could overwrite a fact you had already settled**, because the list of settled facts had failed to load and nothing was held back. | Every read is checked; a failed one stops the queue rather than emptying it. | `7040f24` |
+| **D10, D11** | A document re-read on half its context: questions you had already dismissed came back, second spellings of agency names were invented, and findings the reading **did** raise were stamped *"Not seen in the latest reading"*. | Those reads are checked, so the reading either has its context or does not run. | `7040f24` |
+| **D12, D15** | *"There are no open gaps on this document"* while the drawer on your screen listed them. The to-confirm count showing 0 and **the sidebar badge disappearing** — and nobody looks for a queue they are not told about. | Both say "couldn't load" instead of "none". | `7040f24` |
+| **D13** | **Every** unreadable document was stripped back to *"Upload a clearer copy"*, hiding the last good reading's findings, dates and checklists. | That view is now only for a document **nobody has ever read**. Otherwise the full view stays, with "Could not read" in its status. | `7040f24` |
+| **D14** | A newly named agency never entered your company's vocabulary, so "audit everything" **silently skipped a regulator** the reading had named. | Said out loud instead of silently, and the reading is kept. | `7040f24` |
+| **D-two** | A document ended up with **two current readings**, so the report page errored into *"Document not found"* about a document sitting on the page. | The switch-over is checked, so there is only ever one. | `7040f24` |
+| **O6** | A document stuck on *"Reading…"* **for ever**, and its batch never finished, so the batch email never went. Three faults in a row: the row never recorded when the reading started, the recovery sweep could not match a row with nothing recorded, and the request had no time limit so the platform killed it mid-read. | All three fixed, and the sweep now also catches a stuck row with nothing recorded. | `7040f24` |
+| **O7** | A nightly sweep that could not claim a document **re-picked the same one on the next line** — a tight loop against the database until its 800-second budget ran out, with nothing recorded to say why. | It moves on, and a run that does nothing still leaves a record. | `7040f24` |
+
+### Audits
+
+| item | what could go wrong before | what happens now | commit |
+|---|---|---|---|
+| **A1 + O1** | **"Audit again" never actually compared anything.** The button sent the link to the previous audit; the agency branch of the route dropped it. So "carried forward" and "closed" were built, tested, and unreachable — and the four faults behind them would all have switched on at once the moment that one field was restored. | The link is kept, findings are matched to the previous run by kind and title, and **closing happens last**, after everything that can still fail. | `27aedae` |
+| **A2** | A failed read of an audit run's own summary **erased the rest of it** — the summary is one record holding several things, it was read, added to and written back, and a failed read wrote back only the new part. | The read is checked and **nothing is written** if it failed; the caller is told. | `7f372d0` |
+| **A3, A4** | *"(none — this company holds no document attributed to this agency)"* and **"WHAT THE READING FOUND WRONG WITH IT: nothing"** — the sentence this whole list started from — then the section saved as **done** and emailed. | Those reads are checked. The section fails instead of claiming a clean bill of health. | `7040f24` |
+| **A6** | With one unread row, a **checklist line was audited as if it were an agency**: no document carries that name, the model was shown "(none…)", it was saved done, and the link to the previous run was lost. Four wrong answers from one unread row. | Guarded **before** any model call, so nothing is spent on a section that cannot be audited. | `7040f24` |
+| **A8** | A failed read of the findings gave every count 0 and an empty attention list — and that was **written over the real summary** and emailed. | Checked. | `7040f24` |
+| **A11** | *"None of your documents name an agency yet"* — and an "audit everything" run **finishing, done**, saying there was nothing to audit, to a company holding eleven labels. | Checked. | `7040f24` |
+| **A12** | The downloadable zip's index saying *"(a document this audit cited is no longer on file)"* **for every document** — a file you hand an inspector. | Checked. | `7040f24` |
+| **A13, A15** | *"0 documents read"*, *"Nothing was answered."*, and a database error answered as **"not found"** about your own audit. | Checked; a failure says it failed. | `7040f24` |
+| **A7** | The model returned valid data **of the wrong shape**, nothing threw, no field matched, and the audit was saved with zero findings. | The answer must carry at least one field the reader expects. It is never unwrapped, renamed or repaired — the raw text is kept. | `6df0421` |
+| **A9** | An audit whose every part hit a rate limit emailed the subject **"your audit: nothing needs you"**. Nothing had run. | The subject now says what did not finish. The body always did. | `255fefe` |
+| **A10** | An "audit everything" run where one agency's part failed made that agency show **"0 to look at — found nothing open"**, hiding the findings of the last run that did work. | The question is now *did this run finish a part for this agency*, read from the parts themselves. | `255fefe` |
+| **A14** | A checklist nobody could read shown as **"done · 0 to look at"**. | It shows the note saying why instead of a count. | `255fefe` |
+| **O2** | "Audit again" on a checklist report re-ran as **an audit of every agency** — a different and more expensive thing — because a screen label was sent as an agency name. | A template run re-runs as a template run. | `7040f24` |
+| **O3** | A failed "done" write left a part **running** with its findings already shown, and the recovery re-ran it fifteen minutes later and **inserted a second set**. | The retry clears the attempt it replaces. | `7040f24` |
+
+### Workspace and Requirements
+
+| item | what could go wrong before | what happens now | commit |
+|---|---|---|---|
+| **W1** | A database hiccup while working out which rules apply gave an **empty** set — and the engine's contract is *"this is the complete set, reconcile it"*, so an empty set is an instruction to **close every obligation the company has**. | All five reads must succeed, and an empty result with obligations still open refuses outright. | `db75f13` |
+| **W2** | A summary recorded **when** it was written but not **how far it read**. A message arriving while the model was working was newer than anything the model saw and older than the stamp — so it counted as covered, the nightly job never summarised that conversation again, **and the cleanup could delete the turn**. | A new column records how far the summary read. Database change 078, 86 of 86 staging conversations backfilled. | `0d09212` |
+| **W5** | A how-to answer researched with **"(none)"** as the title and question, then **saved and never redone** because a stored answer is returned without asking again. | The read is checked, the claim released so a second press pays for a second try, and an answer with no usable step is not stored. | `6df0421` |
+| **W6** | Every owed row saying *"Nothing yet. No document has been linked"* at once, and *"0 requirements are loaded"* about the library. | Checked. | `7040f24` |
+| **W7** | *"No conversations yet"* in **both** the Workspace and HR, about a company with eighty-six. | One function, both sections, checked. | `7040f24` |
+| **W8** | The history of what an answer replaced was lost — on the one write whose job is to preserve it. | Checked. | `7040f24` |
+| **W9** | The "facts waiting" line hidden, because a count of zero and a count that failed were treated the same. | Told apart. | `7040f24` |
+| **O9** | An answer that had **not read the conversation** was saved as its next turn, the summary built from it, and nobody could tell. | It refuses **before** the model call: nothing spent, nothing written. | `7040f24` |
+
+### HR
+
+| item | what could go wrong before | what happens now | commit |
+|---|---|---|---|
+| **H4** | A new handbook version was switched on and **the old one switched off in the same moment, before the new file had been read**. If that reading then failed, the company's readable handbook was gone from every path that could reach it. | The older version is retired only **after** the new one has been read. | `f6ebdc1` |
+| **H1** | A handbook checked with **no text in the prompt** — the failed read gave zero sections, the arithmetic then said "this is the whole handbook", and the model was asked to judge a handbook it had not been shown. Stored **done**, next check in 90 days, "your handbook check is done" emailed. | It fails by name before the model call. | `6df0421` |
+| **H2** | A handbook listed as *"Reading <handbook>"* with an **empty block** in the prompt — so the model, asked about a source that says nothing, replies that your handbook does not cover it. | Checked. | `7040f24` |
+| **H3** | **Every** current handbook looked never-checked, so each got a full check it did not need, with a false reason on it — on production that is the HR model once per handbook in one night, and it costs money. | Checked. | `7040f24` |
+| **H5** | *"a site that was removed"* told to the model about every site handbook — and that sentence is **stored with the check**, so it is still there 90 days later. | Checked. | `7040f24` |
+| **H6, H7** | *"X has not been checked yet"* about a check that finished weeks ago; *"No handbooks yet"*. | Checked. | `7040f24` |
+| **H8** | The *"N parts could not be checked"* line left out, so an email headed **"Your handbook check is done"** read as a complete check. | It says what could not be worked out. | `7040f24` |
+| **HR-read** | A wrong-shaped reply became **one untitled section holding the entire handbook** — the page said "1 section", the long-handbook path had nothing to choose between, and the nightly check had one oversized piece. Traced by running it, not assumed. | A reply with no sections, or one whose every item was dropped, is refused with "Read it again". An empty list is still allowed, because a short part may genuinely have no boundary. | `6df0421` |
+| **HR-dup** | A failed delete of a handbook's earlier sections was followed straight by the insert, so the handbook ended up with **two sets of sections** — the model handed the whole handbook twice, the budget spent twice, and a 14-part handbook shown as 28. | The reading fails instead, leaving the earlier sections intact. | `140897a` |
+| **O8** | HR's wait loop spinning against the database on the one branch with no pause, while you watched a spinner. | Fixed. | `7040f24` |
+
+### Shared — these touch every section at once
+
+| item | what could go wrong before | what happens now | commit |
+|---|---|---|---|
+| **the helper** | Nothing. This is the fix underneath 40 of the others: `lib/mustRead.ts` makes checking a read **shorter to write than not checking it**. The rule had been written down for weeks and the list still found forty-odd places breaking it. | — | `4b30a04` |
+| **C1** | The most shared item on the list: nine unchecked reads in the block that describes your company. A failure rendered as *"State: not recorded"*, *"(nothing declared yet)"*, *"(nothing confirmed yet)"* — and that block goes into **five prompts** and onto a screen. So the model was told, under a heading saying *"treat these as settled"*, that your company had declared nothing, and reasoned from that. | All nine fail, so **no model call is made on a context built from a failed read**. | `7040f24` |
+| **S1** | With web search on, the model narrates *"I'll check the permit's conditions first.**[1]**"* — and `[1]` is valid data on its own. So the citation marker became the answer, nothing threw, no field matched, and a **whole agency audit was saved as a clean bill of health** and emailed. | A citation marker is skipped when there is prose in front of it, and the search continues. | `6df0421` |
+| **S2** | Nobody looked at **why the model stopped**. An answer cut off at 16,000 tokens was saved into the conversation as a finished answer, went into the summary, and was counted as a question answered. The screen never showed it. | Only a clean stop counts as finished. What arrived is still shown — it is yours — but nothing is saved or counted, and the screen offers Try again. | `6df0421` |
+| **S4** | A sweep broken for days **finishing green** with "0 companies" — and leaving no trace at all, because a run that found nothing and errored nothing wrote no record. | A failure is recorded where somebody can find it. | `7040f24` |
+| **M5** | *"Thank you for your feedback — we read every message."* We did not have it: the mail service returns errors rather than raising them. Two more faults alongside: it could have sent to an undefined address, and a `<` in your message ate the rest of it. | Your words stay in the box on a failure. | `7040f24` |
+| **B4** | The Company information badge **vanishing** when its read failed. | It stays, with a quiet dash, so "nothing waiting" and "we could not look" are different things. | `7040f24` |
+| **35c** | A printed audit carried **"Dashboard · Audits · Compliance Workspace · HR Workspace"** down its left edge and **"Privacy Policy · Terms of Service · Contact"** at the foot — on paper you hand an inspector. | Navigation and footer links do not print, in every section. **The disclaimer deliberately still does**, and the copyright moved beneath it. | `7040f24` |
+| **B10's follow-on** | *"Read on <date>"* in Documents and Audits used **the reader's own time zone**, so a reading taken at 6pm in Oregon read as the next day to somebody opening the page from Berlin. | Both send the company's zone. The reading happened at the plant. | `7040f24` |
+| **O5** | Signup created your login first. If a later step failed you were left with **a login and no company** — you could sign in and reach nothing, and signing up again said *"already registered"*. | The order cannot change, so what was added is the undo, newest first; a failed undo names both ids in the log, because that is the one case somebody must clear by hand. | `7040f24` |
+
+### Calendar and Dashboard
+
+**Job E changed no calendar file.** Four Dashboard and Calendar items on the list (B1, B2, B3, WA1,
+AR1) had already been fixed by Jobs A–C and were confirmed as closed, not re-fixed.
+
+---
+
+## 2. WHAT WAS LEFT, AND WHY
+
+| what | why | who decides |
+|---|---|---|
+| **The three prompt wordings** (A-prompt, D4, and H4's consequence) | A prompt change is a quality change, and your rule is that those are discussed first (`CLAUDE.md` §3.1). Your own answer 3 said the wording goes to you before it goes in. Section 5 below has each one. | **you** |
+| **My Account's five** — M1, M2, M3, M4, O4 | Your answer 4: everything about My Account moves to My Account's own section. `docs/FIX-LIST-FAILURES.md` **§4a** is new and says what Job E's work bears on each, so that chat starts from something. | you, already decided |
+| **O5 was NOT moved** | It is one route away from that page, and leaving somebody with a dead account was not worth carrying to another chat. Fixed here. | — |
+| **35b** — two marketing images with "overdue" baked into the pixels | Parked by you on 9 October: the landing page is its own project once every section is done. It needs artwork, not code. | you, already decided |
+| **"Summarised 5 January" over a summary that stopped short** | Severity 3, and it is a screen, not a wrong statement about compliance. It needs a database view change and a line in two drawers. Left for the next job that touches those screens. | me, recorded |
+| **D4's cut at 40 documents** | A token-budget question. You should see a rendered block at 40, 80 and 200 before picking a number. Named in the wording below. | **you** |
+| **The audit summary's read-then-write** | The race it would close is not live — audit parts run one after another. The file says where the fix goes if they ever run at the same time. | me, recorded |
+| **Whether any of it is any GOOD** | Every proof in this job is free and mechanical: a fake database, a replay, a file read. They prove the machinery does what it says. **Not one says whether an audit's findings are right.** That is your test on Opus, and `docs/TEST-AT-FINISH-LINE.md` is where it lives. Job E called no model at all, which is why it cost nothing. | **you** |
+
+---
+
+## 3. THE CROSS-SECTION TABLE — every section, including the ones Job E did not mean to touch
+
+Row counts were taken **before and after, both as a signed-in customer and as the service role**, so
+a change that only a policy could see would still show. "As caller / as service role".
+
+| section | what was checked | before | after | pass |
+|---|---|---|---|---|
+| **all** | `npm run check` after every checkpoint, floor only up | 1128 tests | **1339** | ✓ 1144→1155→1170→1180→1197→1216→1263→1289→1335→1336→**1339** |
+| **Documents** | 8 tables' row counts; page loads; print | 12/12, 14/14, 25/25, 0/0 + 4 new | **identical** | ✓ |
+| **Audits** | `audit_runs`, `audit_findings`, `audit_sections` | 0/0, 0/0, 0/0 | **identical** | ✓ |
+| **Workspace** | 4 tables | 0/86, 0/221, 0/7, 0/38 | **identical** | ✓ |
+| **Requirements** | 4 tables | 0/0, 0/16, 205/205, 95/95 | **identical** | ✓ |
+| **HR** | 4 tables | 1/14, 0/83, 0/31, 0/226 | **identical** | ✓ |
+| **Company information** | `companies`, `entities`, `profiles` | 1/6, 1/7, 1/5 | **identical** | ✓ |
+| **Calendar** | `calendar_events`, `document_deadlines` — **a section Job E did not mean to touch at all** | 2/3, 40/40 | **identical**, and no calendar file changed | ✓ |
+| **Dashboard** | page loads with its rows, blocked list printed | loads | loads, `BLOCKED (0)` | ✓ |
+| **My Account** | page loads; **deliberately unchanged** (§4a) | loads | loads, no file changed | ✓ |
+| **Landing page** | 35b parked; print rules apply to it like everywhere | — | unchanged | ✓ |
+| **Signup** | O5's undo, by test; `check:schema`'s account-delete rule | — | undo added | ✓ |
+| **all 8 pages** | load and show their rows, with each page's blocked list **printed** | 8/8 | **8/8, `BLOCKED (0)` each** | ✓ `shots/jobE-gate-*.png` |
+| **Calendar, HR, Audits** | re-rendered **as the printer sees them** (35c) | sidebar + footer links present | **both gone, disclaimer kept** | ✓ `shots/jobE-print-*.png` |
+| **nightly jobs** | all 7 run by hand on an isolated server | 7 × 200 | **7 × 200** | ✓ |
+| **Workspace + HR** | W2 end to end through the **real** deleter | old rule: turns cleared | **skipped, 3 turns kept** | ✓ |
+| **emails** | every sender, read from the code that sends it | `emailFrom()` | unchanged | ✓ |
+| **all** | `check:live` on port 3999 (the free port) | ok, 62 probes | **ok, 62** | ✓ |
+| **all** | which golden sets would move | — | **none** | ✓ `prompts/` untouched |
+| **cost ledger** | `ai_calls` | 359 calls / $19.09 | **359 / $19.09** | ✓ unmoved |
+| **job records** | `job_runs` | 42 | 53 | ✓ grew only by the gate's own runs |
+
+**Four free checks were re-run, not assumed:** `npm run check` (typecheck, schema contracts, tests,
+build), `npm run audit:data` (**0 failed, and 4 skipped — it says so: two tables hold no rows, so
+those checks are untested, not passing**), `npm run mutation` (**all nine deliberate sabotages
+caught**), `npm run check:schema` (green, and it printed its own documented blind spot).
+
+---
+
+## 4. THE ALARMING MOMENTS, EXPLAINED
+
+**Nine things looked bad. Eight were the machinery working. One was a real mistake of mine, and it
+is the fifty-one files.**
+
+### a. The 51 numbered copies — `lib/auditRun 5.ts` beside `lib/auditRun.ts`
+
+**What it was.** Forty of them were committed by three of my own Job E commits; twelve more sat
+loose in the folder. They came from this job's own method: every fix had to be **made to fail on the
+old code first**, so each one put the old file back, proved the failure, and restored the new — and
+something duplicated the file each time, numbering the copy.
+
+**Was anything harmed? No.** Nothing imported them, and the web framework only treats an exactly
+named file as a page or a route, so **not one of them ever ran**. No customer data, no production, no
+money. What they did was lie to a reader: **seven were stale copies of the code from before the
+fixes**, so a search for a fault this job removed would have found it in a file that ships nothing.
+Three tests that scan folders were also sweeping them — including the one that keeps the database
+master key out of browser code.
+
+**What stops it now.** A check, not vigilance — I caught two of these by hand mid-job and missed
+thirty-nine more in the three commits after. `tests/unit/noStrayCopies.test.ts` fails the build on
+any such file, committed or loose, and it is proved against a planted copy so it cannot pass by
+being blind. All 51 are gone; the repository is 20,150 lines lighter. **See item 7 — the cause is
+almost certainly iCloud, and that part is yours, not mine.**
+
+### b. "The folder was deleted" (D3)
+
+**What it was.** The list said *"the count is unchecked"*. Reading it showed the consequence was that
+the folder **and its contents were deleted** when the count failed. Alarming, and real.
+**Was anything harmed?** No — this was found by reading the code, not by it happening to a customer.
+It is fixed and has a test that makes the old code delete and the new code refuse.
+
+### c. Migration 079's verify block failed twice
+
+**What it was.** A database change ships with a block that proves its own rule. Mine refused itself
+twice. **Both times the fault was my test fixture, not the rule** — once a missing field, once a
+document left in the wrong state so an earlier branch fired first. Both are recorded in the
+migration itself. **Nothing harmed:** a verify block that fails rolls the whole change back, which is
+exactly what it is for.
+
+### d. A commit whose file had not actually changed
+
+**What it was.** One edit aborted halfway, so the file was unchanged while the commit went ahead.
+**Caught, re-run, and the commit amended.** Nothing was lost; the commit now contains what its
+message says.
+
+### e. An edit of mine broke a working file — and an existing test caught it
+
+**What it was.** Editing the handbook email, I swallowed one line of structure, so a count ran inside
+the error branch. **The test suite caught it immediately.** This is the system working.
+
+### f. Seven nightly jobs returning 404
+
+**What it was.** The gate's first run showed all seven jobs failing. **They were not failing** — the
+script runs from a shell, a shell does not read the secrets file, and the jobs deliberately refuse a
+caller with no secret in a way that looks identical to being broken. The script now reads the secret
+and **refuses to run without it**, so "no secret" can never again look like "seven broken jobs".
+
+### g. The run that could have sent a real email
+
+**What it was.** The gate runs the monthly calendar job by hand, and its output said `sent: 1`
+without saying whether it was a dry run — and a previous job's slip **was** exactly that, a gate run
+that sent real mail. **Nothing was sent:** I read the line in the sending code that returns before
+the mail service is called, and the dry-run flag is now printed first in the output.
+
+### h. My own checking scripts reporting false failures
+
+**What it was.** Twice. A script of mine read the wrong level of a job's answer and reported two
+failures that were not the product's — it printed the whole answer, which is how it was caught. And
+the schema checker **refused a comment I had written**, because it reads query-shaped text and
+attributes it to the last table named. **Nothing harmed.** Both are recorded.
+
+### i. A test found ten groups of faults I had already missed by hand
+
+**What it was.** After reading those files by hand, the sweep test found **ten more groups of
+unchecked reads**, nine in one file. Alarming to read, and the best news in the job: it is why the
+sweep is a test and not a checklist.
+
+**And two more for completeness.** `npm run db:reset` / `db:restore` were **not run** at any point in
+Job E — your rule of 4 October. And nothing was ever pushed: the work sits 47 commits ahead of the
+remote, for you to look at first.
+
+---
+
+## 5. THE WORDINGS WAITING FOR YOU
+
+Three. **None of them is in the code** — `prompts/` is untouched by the whole job, which is also why
+no golden set moves. Full detail, including what else changes with each, is in §E6 above.
+
+### Wording 1 · the audit prompt — a document nobody has read is described as clean
+
+**Where:** the block the audit prompt builds for each document (`lib/audit.ts`).
+**Why:** a file uploaded, read once, and that once failed has no findings — because nobody ever got
+any. The prompt says the same thing it says about a clean document.
+
+| now | proposed |
+|---|---|
+| `WHAT THE READING FOUND WRONG WITH IT: nothing` — for every document with no open findings, **including one nobody could read** | **unchanged**, but only when a reading actually succeeded and found nothing. Then two new cases: *"WE HAVE NOT READ THIS DOCUMENT. Nothing below is known about its contents. Do not treat its absence from your findings as evidence that it complies, and do not treat it as evidence that it does not."* — and, when the latest attempt failed but an earlier one worked, *"WHAT THE LAST READING THAT COULD READ IT FOUND WRONG WITH IT: nothing (read &lt;date&gt;; the latest attempt could not read it)"* |
+
+**Why it matters:** the model then reasons about a permit nobody has read **as though a reading had
+looked and found it clean** — the more convincing of the two wrong answers.
+
+### Wording 2 · the document-reading prompt — "what this company already holds" is not what it holds
+
+**Where:** `prompts/document-scan.ts`, the held-documents list.
+**Why:** this is the list the model answers *"is this a newer version of one of these?"* against, and
+what *"what we'd expect and don't see"* is written against. Upload a folder of twelve and file 1 is
+read while 2–12 are still queued — so the model is told you do **not** hold documents you uploaded in
+the same gesture, and writes them up as missing. That list is then frozen and never re-checked.
+
+| now | proposed |
+|---|---|
+| `WHAT THIS COMPANY ALREADY HOLDS` then read documents only, cut at 40 alphabetically with no "and more", and `(nothing else on file yet)` when empty | `WHAT THIS COMPANY ALREADY HOLDS` plus *"Every document on file, including ones not read yet. A document marked 'not read yet' is held by this company — treat it as present. Do not suggest it as something they are missing."*; unread files listed by name as `— not read yet`; `...and N more on file.` when cut; and the empty case becomes **`(this is the first document on file)`** |
+
+**Two things for you to decide:** the cut at 40 — **this draft deliberately does not pick a number**,
+you should see a rendered block at 40, 80 and 200 first. And **this one would move `golden:docs`**:
+every stored document-reading answer, because the prompt gains two lines. That is the tripwire
+firing as designed, not a regression.
+
+### Wording 3 · the HR answer — two versions, one name
+
+**Where:** the "not included" line in `lib/hrAnswer.ts`. **This one is new, created by E1's H4 fix:**
+before it, an unreadable new version produced a refusal and this line never appeared.
+
+| now | proposed |
+|---|---|
+| `Not included, so not read for this answer: "Employee Handbook" (could not be read: <reason>).` — in an answer that also says it read *"Employee Handbook"* | `Not included, so not read for this answer: "Employee Handbook" (the newest version, added <date>, could not be read: <reason>; the version before it was used instead).` |
+
+Both sentences are true, of different versions of one document, and nothing says so. **No golden set
+moves** — HR has none, and the words are built in code, not in a prompt file.
+
+---
+
+## 6. SPEND, TESTS, AND WHAT IS ON STAGING BUT NOT ON PRODUCTION
+
+| | |
+|---|---|
+| **Spend for Job E** | **$0.00.** The cost ledger reads **359 calls / $19.09** — the same figure it read when the job started, and the same after the gate ran all seven nightly jobs twice. **No model was called.** Every proof is a fake database that errors, a stored real answer replayed through the shipping code, a database change's own verify block, or a file read. Your cap was $3. |
+| **Tests** | **1128 → 1339.** The floor only goes up, and it is committed, so a suite that quietly shrinks fails the build. |
+| **On staging, not production — database change 078** | A new column recording **how far a summary read** (as distinct from when it was written). Backfilled **86 of 86** staging conversations. | 
+| **On staging, not production — database change 079** | A document with any open gap now reads **"Needs work"**. It moved exactly **one real staging document** (`10-osha-300a-2025.pdf`, 2 open gaps) from "Recorded" to "Needs work". The change can only **add** that label — no document that says "Needs work" today stops saying it. |
+| **Also staging-only, from earlier jobs** | Database changes **073–077** (the Calendar jobs). Nothing from 073 onward is on production. |
+| **Other staging changes** | The gate's own by-hand runs added 11 rows to the job-record table (42 → 53). No customer-visible row moved anywhere else — every count in section 3 is identical. |
+| **Production** | **Untouched.** No query was run against it in this job, read or write. |
+| **Git** | **Nothing pushed.** 47 commits ahead of the remote. |
+
+---
+
+## 7. THE ONE CHECK: IS THIS REPOSITORY INSIDE AN iCLOUD-SYNCED FOLDER?
+
+**Read-only. Nothing was changed. The answer is yes, and it explains the numbered copies.**
+
+**The evidence, in the order I found it:**
+
+1. **`~/Library/Mobile Documents/com~apple~CloudDocs/Desktop` exists**, as a symbolic link pointing
+   at `/Users/bhaskar/Desktop`. So the real Desktop — and this repository inside it — is reachable
+   from inside the iCloud Drive container.
+2. **The iCloud daemon is running** (`bird`), and no other sync client is: no Dropbox, no Google
+   Drive, no OneDrive, and `~/Library/CloudStorage` is empty.
+3. **`brctl status` — iCloud's own status command — names this repository by path.** It lists
+   `Under /Desktop/compliboard/.git` and `Under /Desktop/compliboard/.next/...` among the items it is
+   trying to upload, and it is **failing**: *"Failed user key sync … Cannot determine iCloud Account
+   state"*, last attempt 29.8 hours ago, still marked needs-upload. One of the items it names is a
+   **git object** — the internal storage git keeps every version of your files in.
+4. **`.git` itself contains 70 numbered copies**, which I have not touched: **`.git/index 2` through
+   `.git/index 58`** (57 of them), `AUTO_MERGE 2–10`, and two copies each of the stash references.
+   `.git/index` is the file git rewrites on nearly every command — exactly the "rewritten quickly"
+   case.
+5. **The oldest of them is dated 13 June 2026**, four months before Job E, and they grow with the
+   repository (5 KB, then 94 KB, then 119 KB). **So this has been happening quietly since at least
+   June, and my job's forty are not a new thing — the stash-and-restore cycles simply gave it forty
+   opportunities in one day.**
+6. **Ten more numbered copies sit elsewhere on your Desktop**, outside this repository, in folders
+   that have nothing to do with code (`Scan 2.jpeg`, `Scan 3.jpeg`). Same pattern, same cause.
+7. There are **no `.icloud` placeholder files** in the repository and **no cloud metadata** on its
+   files, which is why this needed `brctl` to settle rather than a guess.
+
+**What this means, plainly.** iCloud is trying to sync a git repository, including `.git`. Those
+copies are its conflict copies, and the two `CALENDAR-PLAN 2.md` files you saw in chat are the same
+mechanism on a document.
+
+**And it has already broken something — found while writing this section, so the paragraph that
+first stood here saying "nothing is broken today" was wrong and is replaced.** Two of those copies
+are **git references**, and git reads everything in that folder as a reference whatever it is called:
+
+```
+$ git log --all
+fatal: bad object refs/stash 2          ← the command simply does not run
+
+$ git fsck
+error: refs/stash 2: badRefName: invalid refname format
+error: refs/stash 3: badRefName: invalid refname format
+error: refs/stash 2: invalid sha1 pointer 0000000000000000000000000000000000000000
+error: refs/stash 3: invalid sha1 pointer 0000000000000000000000000000000000000000
+```
+
+**How bad is it, exactly.** Mild, and worth fixing before it is not. **No commit is lost and no work
+is lost** — every ordinary command works (`git status`, `git log`, `git commit`, `git diff`), all 47
+commits are present, and the two broken references are copies of a *temporary* stash from this job's
+own old-code proofs, whose content was committed properly long ago. What is broken is the family of
+commands that read **every** reference: `git log --all` fails outright, and `git fsck` — the command
+you would run to ask "is my repository healthy?" — now reports four errors that have nothing to do
+with your repository's health. **I have not touched them**, because they are inside `.git` and you
+said change nothing. Deleting those two stray files is a two-second job and I will do it on your
+word.
+
+That is the point: `.git/index`, the stash references and the packed history are exactly the files a
+sync conflict can corrupt, iCloud has already made **70** copies of them, and two of those copies
+have already cost you a working command.
+
+**The fix is yours, not mine, and I have changed nothing.** The three usual options, in the order I
+would pick them: move the repository out of `~/Desktop` (something like `~/code/compliboard`) and
+re-point your editor at it; or turn off iCloud's Desktop & Documents syncing; or rename the folder to
+end in `.nosync`, which iCloud skips — the weakest of the three, because it only protects this one
+folder. **A git repository should not live in a synced folder at all**, and that is worth doing
+before the next long job, because the guard I added catches the copies, not the cause.
+
+**And one honest limit on that guard.** It watches the nine folders that hold code — `app`,
+`components`, `lib`, `tests`, `scripts`, `prompts`, `config`, `supabase`, `hooks`. It does **not**
+watch `docs/`, the repository root, or anything inside `.git`, which is where your two
+`CALENDAR-PLAN 2.md` files and all 70 of the git copies are. Extending it to `docs/` and the root is
+a one-line change and I have not made it, because this report was asked for with no code changes.
+`.git` should stay outside it either way: those files are git's business, not a test's.
+
