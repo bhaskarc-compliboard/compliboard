@@ -84,9 +84,19 @@ describe('the words (the owner\'s, Step 7)', () => {
     const ws = summaryReportPrompt('2026-10-08').split('\n')
     const situation = ws.find((l) => l.startsWith('7. "situation"'))!.slice('7. '.length)
     const facts = ws.find((l) => l.startsWith('About the facts:'))!
+    // Calendar C1: the dates paragraph is the owner's, word for word, and goes in BOTH prompts
+    // identically — directly before the facts paragraph, which stays last.
+    const dates = ws.find((l) => l.startsWith('About the dates:'))!
     assert.ok(p.startsWith("You are writing the record of one conversation about a company's employee handbooks, after the fact, for the owner or manager who had it."))
-    assert.ok(p.includes('if they said none, return an empty list.\n\n' + situation + '\n\n' + facts))
-    assert.ok(p.endsWith(facts))
+    assert.ok(p.includes('if they said none, return an empty list.\n\n' + situation + '\n\n' + dates + '\n\n' + facts),
+      'HR must carry the workspace\'s situation, dates and facts paragraphs, in that order, word for word')
+    assert.ok(p.endsWith(facts), 'the facts paragraph is still last')
+    // And the JSON shape gained the same field in both.
+    for (const [name, prompt] of [['hr', p], ['workspace', ws.join('\n')]] as const) {
+      assert.ok(prompt.includes('"dates":'), `${name} prompt has no dates field`)
+      assert.ok(prompt.includes('6 to 25 words copied exactly from the conversation that give this date'),
+        `${name} prompt does not ask for the line`)
+    }
   })
 })
 

@@ -273,3 +273,43 @@ export function dueWords(iso: string | null | undefined, asOf: string = today())
   if (n === -1) return 'Passed yesterday'
   return `Passed ${Math.abs(n)} days ago`
 }
+
+const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december']
+
+/**
+ * *** IS THIS DAY ACTUALLY IN THESE WORDS? *** — Calendar C2 check 2, board 10.
+ *
+ * A summary's date stands on a `line` copied from the conversation, and the prompt is explicit that
+ * a day must never be WORKED OUT. So a `day` the copied words do not contain is a day the model
+ * computed — "the permit is renewed annually" becoming `2027-03-15` — and that is the one failure
+ * mode that reaches a customer as a deadline they plan around.
+ *
+ * **What it asks for:** the day number, and the month by name, short name or number; plus, if the
+ * line carries a four-digit year at all, that it is the right one. It does NOT demand a particular
+ * order or punctuation, because "March 15", "15 March", "15/03" and "2027-03-15" are all the same
+ * date written by different people.
+ *
+ * **Why the year is conditional.** The prompt deliberately asks the model to resolve "15 March" to
+ * the next 15 March on or after today, so the line usually has no year to check against — and
+ * demanding one would throw away every correctly resolved date. When the line DOES carry a year, a
+ * mismatch is a real disagreement and the date is refused.
+ */
+export function dayIsInLine(day: string, line: string): boolean {
+  if (!isDayString(day)) return false
+  const [y, m, d] = day.split('-').map(Number)
+  const text = ` ${line.toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `
+
+  // The day number, on its own — not the "15" inside "2015" or "150".
+  const hasDay = new RegExp(`(?<![0-9])${d}(?:st|nd|rd|th)?(?![0-9])`).test(text)
+  if (!hasDay) return false
+
+  const name = MONTH_NAMES[m - 1]
+  const hasMonth = text.includes(` ${name} `) || text.includes(` ${name.slice(0, 3)} `)
+    || new RegExp(`(?<![0-9])0?${m}(?![0-9])`).test(text)
+  if (!hasMonth) return false
+
+  // A year only has to match if the line states one.
+  const years = [...text.matchAll(/(?<![0-9])(19|20)\d{2}(?![0-9])/g)].map((x) => Number(x[0]))
+  return years.length === 0 || years.includes(y)
+}

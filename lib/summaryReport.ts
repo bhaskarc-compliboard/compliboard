@@ -17,6 +17,15 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { today as todayIn, zoneForState, CALENDAR_TZ, isDayString, dayIsInLine, type HowOften }
+  from './calendarDate.ts'
+
+/** The words a model is likelier to write than the keys — mapped rather than refused (C2 check 3). */
+const HOW_OFTEN_WORD: Record<string, HowOften> = {
+  'every month': 'monthly', 'monthly': 'monthly',
+  'every three months': 'quarterly', 'quarterly': 'quarterly', 'every quarter': 'quarterly',
+  'every year': 'yearly', 'yearly': 'yearly', 'annually': 'yearly', 'annual': 'yearly',
+}
 // *** SERVER-SIDE ONLY, BECAUSE OF THIS IMPORT. *** The model client must never reach a browser bundle,
 // so no client file imports anything from this file but TYPES (`import type`, erased at build); the
 // display words a client needs are in `./summaryWords.ts` (tests/unit/clientImports.test.ts holds both).
@@ -64,8 +73,30 @@ export interface SummaryReport {
   facts: Array<{ key: string; value: string; quote: string | null }>
   /** Facts the check refused, and why — said, not silently lost (B3). */
   facts_dropped?: Array<{ key: string; value: string; reason: string }>
+  /** Deadlines the conversation gave, each standing on a line copied from it (Calendar C1, board 10). */
+  dates?: ReportDate[]
+  /** Dates the check refused, and how many — said in one grey line, never silently lost. */
+  dates_dropped?: Array<{ title: string; reason: string }>
   /** The sources the report's items cite, renumbered 1..k in order of first appearance (B4). */
   sources: ReportSource[]
+}
+
+/**
+ * A DEADLINE THE CONVERSATION GAVE — Calendar C1/C2, board 10.
+ *
+ * `day` is a plain `YYYY-MM-DD` or null: the conversation may say "within 30 days of hiring", and
+ * the prompt is explicit that a day must never be worked out. A date with no day goes on the
+ * calendar as a repeat whose day the person picks (board 11, Audits' pattern).
+ */
+export interface ReportDate {
+  title: string
+  day: string | null
+  how_often: HowOften | null
+  /** 6–25 words copied from the conversation. The check refuses the date if it is not found. */
+  line: string
+  sources: number[]
+  /** Set by the check when the line came from one of the person's own messages, not an answer. */
+  from_person?: true
 }
 
 export const TITLE_MAX = 70
@@ -321,6 +352,69 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
     facts.push({ key: key.slice(0, 120), value: value.slice(0, 500), quote: (quote as string).slice(0, 2000) })
   }
 
+  // ── C2 — THE DATES, AND NOTHING UNCHECKED REACHES A SCREEN ────────────────────────────────────
+  //
+  // A date is the one thing in this report a person will ACT on without re-reading the conversation:
+  // they press "Add to calendar" and it becomes a deadline they plan around. So every one of them
+  // has to stand on words that are really there — the same bar `basis` and a fact's `quote` are held
+  // to, and for the same reason (`CLAUDE.md` §3.3: the model reasons well against an artifact and
+  // invents when it has none).
+  const answerParas: string[] = []
+  for (const t of turns) if (t.role === 'assistant') for (const p of paragraphs(t)) answerParas.push(p.norm)
+  const dates: ReportDate[] = []
+  const dates_dropped: NonNullable<SummaryReport['dates_dropped']> = []
+  for (const d of (raw.dates ?? []) as unknown[]) {
+    // 5. A `dates` that is not a list, or an entry that is not an object, is handled EXACTLY as
+    //    facts are — `raw.dates ?? []` for a missing field, and a refusal for a malformed one.
+    if (!isObj(d)) return refuse('a date that is not an object')
+    const title = str(d.title), line = str(d.line)
+    const day = d.day === null || d.day === undefined ? null : str(d.day)
+    if (!title) continue                       // a date with no title is not a date
+    if (!Array.isArray(d.sources ?? [])) return refuse('a date whose sources are not a list')
+
+    // 1. THE LINE MUST BE IN THE CONVERSATION — in an answer paragraph, or in one of the person's
+    //    own messages, normalised exactly as `basis` and a fact's `quote` are.
+    const key = line ? quoteKey(line) : ''
+    const inAnswer = key.length >= 8 && answerParas.some((p) => p.includes(key))
+    const inSaid = key.length >= 8 && said.some((u) => u.includes(key))
+    if (!inAnswer && !inSaid) {
+      dates_dropped.push({ title: title.slice(0, 120),
+        reason: key ? 'its line is not in the conversation' : 'it has no line' })
+      continue
+    }
+
+    // 2. THE DAY MUST BE IN THE LINE. The model is asked to copy the words that GIVE the date, so a
+    //    day those words do not contain is a day it worked out — which the prompt forbids. A null
+    //    day passes: "within 30 days of hiring" is a real answer and the person picks the day.
+    if (day !== null) {
+      if (!isDayString(day)) {
+        dates_dropped.push({ title: title.slice(0, 120), reason: 'its day is not a real date' })
+        continue
+      }
+      if (!dayIsInLine(day, line as string)) {
+        dates_dropped.push({ title: title.slice(0, 120), reason: 'its day is not in its line' })
+        continue
+      }
+    }
+
+    // 3. HOW OFTEN STAYS ONLY IF THE LINE SAYS SO — and the DATE IS KEPT either way. A repeat the
+    //    conversation did not state is a smaller error than losing the deadline, so it is corrected
+    //    rather than refused.
+    const how_often = (['monthly', 'quarterly', 'yearly'] as const).includes(d.how_often as HowOften)
+      ? (d.how_often as HowOften)
+      : HOW_OFTEN_WORD[String(d.how_often ?? '').trim().toLowerCase()] ?? null
+    const repeats = how_often !== null && /\b(every|each|annual|annually|quarter|quarterly|month|monthly|year|yearly)\b/i
+      .test(line as string) ? how_often : null
+
+    // 4. SOURCES GO THROUGH `checkCitations`, as items do. A date the PERSON said carries none.
+    const asItem = { basis: inAnswer ? (line as string) : null, sources: cleanSourceNumbers(d.sources ?? [], count) }
+    const cited = inAnswer ? checkCitations(asItem, turns, perTurn, true) : { kept: [] as number[] }
+    dates.push({
+      title: title.slice(0, 120), day, how_often: repeats, line: (line as string).slice(0, 500),
+      sources: cited.kept, ...(inAnswer ? {} : { from_person: true as const }),
+    })
+  }
+
   // B4 — only the sources the report cites, renumbered 1..k in order of first appearance.
   const order: number[] = []
   for (const it of [...applies.flatMap((g) => g.items), ...confirm]) for (const n of it.sources) if (!order.includes(n)) order.push(n)
@@ -341,6 +435,8 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
       applies: applies.map((g) => ({ authority: g.authority, items: g.items.map(finish) })),
       to_confirm: confirm.map(finish), unanswered, facts,
       ...(facts_dropped.length ? { facts_dropped } : {}),
+      ...(dates.length ? { dates } : {}),
+      ...(dates_dropped.length ? { dates_dropped } : {}),
       sources: order.map((n, i) => ({ ...all[n - 1], n: i + 1 })),
     },
   }
@@ -439,7 +535,22 @@ export async function summariseTopic(db: Db, admin: Db, args: {
   guard: { claimedAt: string; summarisedAt: string | null }
 }): Promise<{ ok: true; report: SummaryReport; checks: ItemCheck[]; proposed: number }
   | { ok: false; error: string; skipped?: true }> {
-  const today = args.today ?? new Date().toISOString().slice(0, 10)
+  // *** THE DAY THE PROMPT IS GIVEN IS THE COMPANY'S *** (B10's zone; found by C0's impact check).
+  // It was `new Date().toISOString().slice(0, 10)` — UTC, which is not even the server's local day:
+  // a summary written at 6pm in Oregon was already dated tomorrow. That matters more now than it
+  // did, because C1 asks the model to resolve "15 March" to "the next time that day comes, ON OR
+  // AFTER TODAY" — so a wrong today can put a deadline a whole year out.
+  // Read here rather than at each of the three call sites: one place, and no caller changes.
+  let zone = CALENDAR_TZ
+  if (!args.today) {
+    const { data: co, error: coErr } = await db.from('companies')
+      .select('state').eq('id', args.companyId).maybeSingle()
+    // A failed read is not a wrong day said confidently: `zoneForState` falls back to Pacific, and
+    // the failure is said rather than swallowed (§3.12, R2).
+    if (coErr) console.error(`summariseTopic: could not read the company's state: ${coErr.message}`)
+    zone = zoneForState(co?.state as string | null)
+  }
+  const today = args.today ?? todayIn(zone)
   const hr = args.kind === 'hr'
   const turns = hr ? hrTurns(args.turns) : args.turns
   const { transcript } = numberedTranscript(turns, hr ? HR_SOURCES : undefined)

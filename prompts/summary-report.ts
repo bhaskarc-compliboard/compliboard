@@ -49,6 +49,9 @@ You are given the conversation, and one numbered list of the sources it used. Re
     { "name": "something the conversation said to check or confirm", "what_to_do": "what to check, and with whom", "basis": "6 to 20 words copied exactly from the answer that says to check it", "sources": [2] }
   ],
   "unanswered": ["a question the answer asked the person that the person did not answer"],
+  "dates": [
+    { "title": "what is due, in a few words", "day": "YYYY-MM-DD, or null if the conversation gives no day", "how_often": "every month, every three months, every year, or null", "line": "6 to 25 words copied exactly from the conversation that give this date", "sources": [1] }
+  ],
   "facts": [
     { "key": "a short snake_case name for the fact, e.g. employee_count or has_forklifts", "value": "the value, as briefly as it can be said", "quote": "the words from one of the person's own messages that say it, copied exactly" }
   ]
@@ -79,6 +82,8 @@ The rules.
 11. Write in short, simple sentences. One idea per sentence. Plain words for a small-business owner.
 
 12. Write to the person as "you". Never refer to a third party — no "the specialist", no "the assistant". Never call anything "AI", and never name the model or the product.
+
+About the dates: list each deadline the conversation gave the person for something they must do — file, renew, report, inspect, pay, post, train. Give the day the conversation states. If it states a day and a month but no year, give the next time that day comes, on or after today. If it states no day at all — "within 30 days of hiring", "every quarter" — give null; never work one out. Give how_often only when the conversation says the date comes round again, and only as often as it says. Every date has a "line": 6 to 25 words copied exactly, word for word, from the conversation — from an answer, or from the person's own message — that give this date. Cite the sources the answer used for it; for a date the person said, give an empty list. Leave out dates that are only history, such as when a rule took effect, examples, and anything a later answer withdrew. If the conversation gave no deadlines, return an empty dates array. An empty array is a correct answer and is better than a guess.
 
 About the facts: include only things the PERSON stated about their own business — their state, their headcount, what they store, what they make, what equipment they run, what they already hold a permit for. Every fact's "quote" must be copied exactly from one of the PERSON's own messages — never from an answer. Do NOT include anything the answer asserted or inferred, anything hypothetical or asked as a "what if", or general facts about regulations. If the person stated nothing about their own business, return an empty facts array. An empty array is a correct answer and is better than a guess.
 
