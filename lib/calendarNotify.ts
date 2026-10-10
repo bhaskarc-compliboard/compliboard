@@ -181,7 +181,9 @@ export function renderMonthlyEmail(args: {
 
   /** `5 November · Monthly EHS self-check · Portland plant`, and `· not confirmed` when it is. */
   const line = (d: MonthlyDate) => '  ' + [
-    formatDayShort(d.due_date),
+    // The year shows when it is not this year's: a passed date can sit unticked for a year, and a
+    // bare "20 August" under a heading that says October 2026 points at the wrong August.
+    formatDayShort(d.due_date, args.asOf),
     d.title,
     d.site,
     d.state === 'not_confirmed' ? 'not confirmed' : null,

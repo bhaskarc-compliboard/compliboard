@@ -13,7 +13,7 @@
 import { describe, test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  CALENDAR_TZ, isDayString, parseDay, toDayString, today, compareDays, daysBetween, daysUntil,
+  CALENDAR_TZ, isDayString, parseDay, toDayString, today, compareDays, daysBetween, daysUntil, formatDayShort,
   isPast, isWithin, monthOf, inMonth, monthRange, nextOccurrence, formatDay, formatMonth, dueWords,
 } from '../../lib/calendarDate.ts'
 
@@ -191,6 +191,20 @@ describe('nextOccurrence — it CLAMPS, it never overflows into the next month',
     const months: number[] = []
     for (let i = 0; i < 12; i++) { at = nextOccurrence(at, 'monthly')!; months.push(monthOf(at)!.month) }
     assert.deepEqual(months, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1])
+  })
+})
+
+describe('a day that is not this year shows its year', () => {
+  test('this year: no year. Another year: the year', () => {
+    // A passed date can sit unticked for a year, so "20 August" under a heading that says
+    // October 2026 points at the wrong August (the owner, A5b follow-on).
+    assert.equal(formatDayShort('2026-10-20', '2026-10-01'), '20 October')
+    assert.equal(formatDayShort('2025-08-20', '2026-10-01'), '20 August 2025')
+    assert.equal(formatDayShort('2027-01-05', '2026-10-01'), '5 January 2027')
+    // the year's edges, both ways
+    assert.equal(formatDayShort('2026-01-01', '2026-12-31'), '1 January')
+    assert.equal(formatDayShort('2025-12-31', '2026-01-01'), '31 December 2025')
+    assert.equal(formatDayShort(null, '2026-10-01'), '')
   })
 })
 

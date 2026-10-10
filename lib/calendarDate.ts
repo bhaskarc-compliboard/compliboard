@@ -170,10 +170,22 @@ export function formatMonth(year: number, month: number): string {
   return new Date(year, month - 1, 1, 12).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 }
 
-/** `5 November` — a day without its year, for a list already headed by the month. */
-export function formatDayShort(iso: string | null | undefined): string {
+/**
+ * `5 November` for a day in the current year, `20 August 2025` for one that is not.
+ *
+ * *** THE YEAR IS DROPPED ONLY WHEN IT CANNOT BE MISREAD *** (the owner, A5b follow-on). A list
+ * headed "October 2026" does not need the year on every line — but **a date that has passed can sit
+ * unticked for a year**, and "20 August" under that heading points at the wrong August. The year is
+ * the one piece that makes a stale date obvious, so it is kept wherever it is not this year's.
+ *
+ * `asOf` is the day the reader is reading on, so the email's own month decides, not the server's.
+ */
+export function formatDayShort(iso: string | null | undefined, asOf: string = today()): string {
   const at = parseDay(iso)
-  return at ? at.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : ''
+  if (!at) return ''
+  const sameYear = isDayString(asOf) && asOf.slice(0, 4) === String(at.getFullYear())
+  return at.toLocaleDateString('en-GB',
+    sameYear ? { day: 'numeric', month: 'long' } : { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 /**

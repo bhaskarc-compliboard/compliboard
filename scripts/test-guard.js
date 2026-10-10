@@ -86,8 +86,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 // one sender for all four emails, and R2/R3 — a read that fails sends NOTHING, never an email
 // saying "nothing is due this month") -> 1071 at A5b (board 12's words as the owner approved them,
 // and the rule that NOTHING says "overdue" or "not done" about a date — all we know is the day has
-// gone by, because people record what they did in their own calendar and not in ours, §185c).
-const FLOOR = 1071
+// gone by, because people record what they did in their own calendar and not in ours, §185c)
+// -> 1072 at A6 (a day outside the current year shows its year: a passed date can sit unticked for
+// a year, and a bare "20 August" then points at the wrong one).
+const FLOOR = 1072
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

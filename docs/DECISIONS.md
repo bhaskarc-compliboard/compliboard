@@ -12511,3 +12511,68 @@ unasked-for monthly email with no way to stop it is the definition of the thing 
 and a sender that gets marked as spam takes the other three emails down with it.
 
 `docs/HANDOFF-CODE.md` §7 carries a row so My Account's chat finds this.
+
+## 186. CALENDAR JOB A: EVERYTHING UNDERNEATH THE PAGE — 9 October 2026
+
+*Built and proved on staging; nothing pushed. The plan is `docs/CALENDAR-PLAN.md`, its decisions are
+§185, and the three rules the job added are §185a, §185b and §185c. The running report is
+`docs/reports/calendar-job-a.md`.*
+
+**Thirteen commits, `a6fbbeb` to `a9bb256`.** Migrations **073, 074, 075, 076 on STAGING ONLY**.
+Tests 960 → **1071**, the floor raised at every checkpoint by the owner's rule. **Job A's own spend:
+$0.40** of a $3 budget — one live document reading ($0.0406) and one avoidable slip ($0.36, below).
+
+### What was built
+
+| | |
+|---|---|
+| **073** | `calendar_events` learns what a date IS: `source`, `state`, `repeats_every`, `rejected_reason`, `line_verified`, the generated `counts_as_due`, `topic_id` / `audit_finding_id` / `document_deadline_id` / `entity_id` / `document_id` all composite on `(company_id, …)`, `user_id` SET NULL, `company_id` NOT NULL, and `date_key` with `unique (company_id, date_key)`. `document_dates_current_v`. `document_deadlines.quote_verified`. `job_runs` takes `calendar_month` |
+| **074–076** | What a document's dates, and then its whole identity, are read from — see §185a |
+| `lib/calendarDate.ts` | One place reads a day, at local noon, in Pacific. `nextOccurrence` clamps rather than overflowing |
+| `lib/calendarDates.ts` | The one writer: `addDate` (compare-and-set on the key), confirm, reject, `markDone` (which rolls the next one forward), `withdrawStale`, `siblingsOnDay` |
+| `lib/readableScan.ts` | §185a's rule, in one place, for the eight readers that needed it |
+| `lib/calendarNotify.ts`, `/api/jobs/calendar-month` | The monthly email, board 12's words |
+| `lib/emailSender.ts` | One `from` for all four emails (decision 22) |
+| `app/api/calendar/dates` | POST add · PATCH confirm / reject / done · GET the three tabs |
+
+### The four defects the map named, closed
+
+- **B1** the done tick never saved — it sent no token and had answered 401 since 9 September.
+- **B2** the day was off in Oregon — a date due today read "Overdue" and was missing from the
+  dashboard's next 30 days.
+- **B4** nothing made the next occurrence of a repeat, and every repeat was written "annually".
+- **B7 / B8** Audits' dates lost their source; two presses made two rows.
+
+### The five found while building, each by a check rather than by reading
+
+**None of these was in the plan. Each was found by something that ran.**
+
+1. **073's own verify block refused the owner's CHECK.** A cascaded `ON DELETE SET NULL` re-checks the
+   row, so "the source must carry its link" made deleting a conversation, document or handbook
+   impossible. The durable half moved to `date_key`'s prefix; the write-time half to `addDate`
+   (`HOW-WE-BUILD.md` §3: some invariants cannot be constraints and need a named owner).
+2. **A3's replay: a re-read withdrew a date it had just confirmed it still holds.** The calendar row
+   kept the *replaced* reading's `document_deadline_id`. The rule it produced — **the reading owns
+   the wording and the provenance; the person owns the decision** — is now how every "already" is
+   handled.
+3. **A3b: a reading that could not read a document withdrew 3 of its 4 dates.** §185a.
+4. **A3d/A3e: and took its agencies with it**, so a permit left its own agency's audit — and then,
+   once put back, the audit was handed its title and nothing else. §185a.
+5. **A4's screenshot: an audit date keys on the document**, so a re-run's press returned "already"
+   and the report could not say "On your calendar".
+
+### Two mistakes of mine, recorded because §7 says a record that hides them is worth less
+
+- **$0.36 spent for nothing.** `--only` is an argv flag, not an environment variable, so
+  `CHECK_LIVE_ONLY=calendar npm run check:live` ran the full paid path. On Haiku, through the guard,
+  so it was Haiku's bill. The right form is `npm run check:live -- --only calendar`.
+- **I asserted a cause I had not checked.** A3c's script printed "CONFIRMED, AND IT IS 074's DOING"
+  about a lost significant date. It was not: the kind comes from the current scan, so it was null
+  before 074 too. §9.1 exactly. The correction is kept in the script and the commit rather than
+  edited away.
+
+### What is NOT built
+
+The page itself (Job B): the three tabs, the drawer, To confirm with Confirm all, "Add a date",
+print. Dates in Workspace and HR summaries (step 7, a quality change). Everything in decision 20.
+**Nothing is on production**, and the monthly email reaches no customer until §185b's two gates open.

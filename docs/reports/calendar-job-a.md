@@ -393,3 +393,162 @@ And the route, against the isolated Haiku server on 3998:
 column**, not 42501, and the probe failed. An error of another kind looks exactly like a refusal and
 proves nothing, so each probe now names a column it really has. That is the rule catching my own code,
 in the file written to catch it elsewhere.
+
+---
+
+## A3 to A5b — the checkpoints after A2
+
+Each is recorded in full in its commit message and in `DECISIONS.md` §185a–§185c and §186. This
+section carries only what a later reader needs that is not in those.
+
+| Checkpoint | Commit | Tests | Job A spend |
+|---|---|---|---|
+| A3 — Documents into the calendar | `42253da` | 1024 | $0.40 |
+| A3b — a failed reading withdraws nothing | `86187b1` | 1031 | $0.40 |
+| A3c — migration 075, dates | `bd076ec` | 1034 | $0.40 |
+| A4 — Audits' button | `718b22c` | 1035 | $0.40 |
+| A3d — migration 076, identity | `69876e6` | 1038 | $0.40 |
+| A3e — the content sweep | `c02f4f2`, `621490d` | 1046 | $0.40 |
+| A5 — the monthly email | `e8c59a5` | 1066 | $0.40 |
+| A5b — board 12's words, and §185c | `a9bb256` | 1071 | $0.40 |
+| A6 / A7 — the record and the gate | this commit | **1072** | **$0.56** |
+
+---
+
+## A7 — the cross-section gate
+
+### Part 1 · `npm run check` after every checkpoint
+
+Run at each of the nine checkpoints above; the count is in the table and the floor was raised to it
+every time, by the owner's rule of 9 October. **960 → 1072**, floor **1072**. Never red at a
+checkpoint.
+
+### Part 2 · Row counts per section, before A1 and after A5
+
+Both as the signed-in caller and as the service role (`scripts/calendar-rowcounts.mjs`).
+**Caller and service role were identical on every table for every person, both times** — so no read
+narrowed.
+
+```
+  table                        testalpha       testgamma     testcascade
+  ------------------------------------------------------------------------
+  topics (workspace)                   0        23 -> 28               0
+  topics (hr)                         19              39               0
+  turns                               43      161 -> 178               0
+  documents                            0               0              12
+  document_scans                       0               0        13 -> 14
+  document_deadlines                   0               0        38 -> 40
+  document_index_v                     0               0              12
+  fact_proposals                       1              26        50 -> 54
+  company_facts                        0               0               1
+  audit_runs                           0               0               0
+  audit_sections                       0               0               0
+  audit_findings                       0               0               0
+  handbooks                            3              10               1
+  handbook_checks                      4              27               0
+  calendar_events                      0               1          0 -> 2
+
+  cells that moved: 6
+```
+
+**Every one accounted for by Job A's own writes:**
+
+| Cell | Caused by |
+|---|---|
+| `testcascade` document_scans +1, document_deadlines +2, fact_proposals +4, calendar_events +2 | A3's ONE live "Read it again" on `11-fire-extinguisher-certificate.pdf` (Haiku, $0.040617) |
+| `testgamma` topics +5, turns +17 | `check:live`'s own questions, created 18:59–19:02 UTC — the $0.36 slip that ran the full paid answer path. Checked, not assumed: the five topics are *"What is an SDS under OSHA HazCom?"*, *"What did I just ask about?"* and three more of check:live's fixed questions |
+
+Two throwaway companies from crashed replay runs were found on staging during A5 and removed; the
+replay now cleans up on `uncaughtException` and `unhandledRejection`. **6 companies**, as before.
+
+### Part 3 · The shared-file lists
+
+Read from `docs/TEST-AT-FINISH-LINE.md` HR J and `docs/HANDOFF-FROM-HR.md` §6. **Two of the files Job
+A changed are on HR's list:**
+
+| File | Whose list | Why Job A touched it | Re-run |
+|---|---|---|---|
+| `lib/documentScan.ts` | HR J, §6 (for `normaliseForQuote`) | the deadline quote check, the calendar step, and A3e's swap | HR 213 unit tests, `check:live --only hr_answer` |
+| `vercel.json` | HR J, §6 (the cron entries) | the `calendar_month` entry | the cron pin test; both HR jobs run by hand (part 5) |
+
+`normaliseForQuote` itself **moved** to `lib/normaliseQuote.ts` and is re-exported from
+`lib/documentScan.ts`, so every HR import is unchanged — HR's suite proves it.
+
+`lib/attachedDocument.ts` is on NEITHER list but is used by the Workspace **and** HR through
+`/api/chat`; A3e changed it (one swap) and both sections' checks re-ran.
+
+### Part 4 · Every page still loads, and shows its rows
+
+An isolated server on 3998 under the Haiku guard, signed in as `testcascade@example.com`.
+
+| Page | Loads | BLOCKED |
+|---|---|---|
+| `/dashboard` | ✓ "Cascade Specialty Chemicals, LLC" | (0) |
+| `/documents` | ✓ 900 column, its list, and the report drawer with its dates row | **(0)** |
+| `/audits` | ✓ both tabs | **(0)** |
+| `/compliance` | ✓ | **(0)** |
+| `/hr` | ✓ | **(0)** |
+| `/company-information` | ✓ | (0) |
+| `/calendar` | ✓ the old page, until Job B | **(0)** |
+| `/account` | ✓ | **(0)** |
+
+`BLOCKED (0): nothing — no paid route and no write was attempted` on every one: the screenshots cost
+nothing and changed nothing. Shots in `shots/calendar-a7-*.png`, and
+`shots/calendar-a7-documents-report.png` shows the drawer's new date row — *"On your calendar · not
+confirmed · Confirm"* under the date, with its source line beneath.
+
+### Part 5 · The nightly jobs
+
+```sql
+select pg_get_constraintdef(oid) from pg_constraint where conname='job_runs_job_check'
+→ CHECK ((job = ANY (ARRAY['summarise','delete','account_delete','scan_documents',
+                           'audit_sections','handbook_checks','calendar_month'])))
+```
+
+All six old names, plus `calendar_month`. Each job run by hand with `x-cron-secret`:
+
+| Job | Answer | `job_runs` |
+|---|---|---|
+| scan-documents | `"run": null`, 0 companies | none — no work, as before |
+| audit-sections | `"run": null`, 0 companies | none — no work, as before |
+| handbook-queue | queued 0, not_due 9 | **ok=true** (it records under the name `handbook_checks`, `route.ts:26`) |
+| handbook-checks | 0 pieces | none — no work, as before |
+| delete | 0 topics cleared | **ok=true** |
+| summarise (Haiku) | considered 30, summarised 30, 9 proposals, 0 errors | **ok=true** |
+| calendar-month | sent 1, nothing_to_say 5, failed 0 | **ok=true** (A5) |
+
+### Part 6 · The emails
+
+`tests/unit/calendarNotify.test.ts`: all four senders import `lib/emailSender.ts`, none holds the
+literal address any more, and **with `EMAIL_FROM` unset every one sends from exactly the address it
+used before** — so adding the constant changed no email that goes out today.
+
+### Part 7 · `check:live` on 3999 at the end
+
+`check:live: ok — 6 tenant table(s): 3 writable by a signed-in user, 3 read-only to them by design,
+all 6 refused to anon; and HR's 6 tables (066), each allowing and refusing exactly its grant.`
+Every section's table probes green, including the calendar's 19 new ones.
+
+### Part 8 · The golden sets are NOT re-run (they are paid)
+
+| Set | Would it move? | Why |
+|---|---|---|
+| **Documents'** | **No.** | `saveScan` writes one more column (`document_deadlines.quote_verified`) and then calls the calendar. **Nothing the model sees or writes changed**: no prompt, no schema, no context. The stored answers under `tests/golden/documents/runs/real-model/` are replayed through the same `saveScan` by A3's own proof, and the scan rows are byte-identical. |
+| **Audits'** | **No** for the model's output; **yes** for a fixture whose latest reading failed. | `lib/audit.ts` reads the same four tables, keyed on the readable reading instead of the current one. For every fixture — none of which has a failed reading — `readable_scan_id` **is** `scan_id`, so the input the model is handed is unchanged. The one case that would move is the one A3e was about, and it moves from *"the permit is on file and says nothing"* to the permit's actual words. |
+| **HR's** | **No.** | `normaliseForQuote` moved file and is re-exported; HR's 213 tests prove the imports. |
+
+---
+
+## What is not done, and what is owed
+
+- **The page is Job B.** The three tabs, the drawer, To confirm with Confirm all, "Add a date",
+  repeats on screen, print, and retiring the import (decision 17).
+- **Dates in Workspace and HR summaries** (step 7) — a quality change, the owner's yes first.
+- **Nothing is on production.** Migrations 073–076 are on staging only.
+- **The monthly email reaches no customer** until §185b's two gates: the sending domain (decision 22)
+  and My Account's off switch.
+- **`docs/TEST-AT-FINISH-LINE.md` Calendar H** is the one thing Job A could not test: a real re-read
+  on Opus, because no fixture holds two stored readings and A3's replay applied the drift by hand.
+- Four rows in `docs/HANDOFF-CODE.md` §7 for other sections: Audits reading every version's dates,
+  the gap-split heading's words, a never-read document's "nothing" in an audit prompt, and
+  `scripts/schema-doc.js` filing a composite key under its first column.

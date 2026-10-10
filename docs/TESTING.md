@@ -3599,3 +3599,83 @@ $ python3 -c "import zipfile; [print('0x%04x' % i.flag_bits, i.filename[:60]) fo
 `0x0800` is bit 11, and `zipOf` sets it in both the local and the central header. **Do not "fix"
 this.** It was checked before anything was changed, and changing it would break the names that
 currently work.
+
+---
+
+## Calendar — Job A, everything underneath the page (9 October 2026)
+
+**Two per feature: the perfect case, and the edge case where domain knowledge does work no script
+replicates (`docs/TESTING.md`'s own rule).** Job A built no page, so these are run through the
+Documents and Audits screens, the report drawer, and the job routes. The page's own set comes with
+Job B.
+
+**Before any of them:** the staging dev server, signed in as `testcascade@example.com` (Cascade
+Specialty Chemicals, which holds the twelve read documents). Nothing here calls a model except C-1.
+
+### C-1 · A reading's dates reach the calendar by themselves
+
+**Perfect.** Open **Company Documents**, open `11-fire-extinguisher-certificate.pdf`, press **Read it
+again**. When it finishes, the report's "Dates this document sets" shows each date with **"On your
+calendar · not confirmed · Confirm"**. Open `/calendar`: the same dates are there, and nobody pressed
+anything. *This is decision 3, the reversal, and it is the one thing a person should notice.*
+
+**Edge — and this is the one worth a domain eye.** Look at what the reading called a date. A fire
+extinguisher certificate sets a *monthly visual inspection*, a *six-year internal maintenance* and an
+*annual service* — three different obligations, two of which can fall on the same day. Check that
+they are three dates and not one, and that each line's source line is the line that actually sets it.
+**A date that is well-formed and wrong is the failure mode here**, not a date that is missing: the
+model will not invent a permit, but it will attach the wrong sentence to the right day.
+
+### C-2 · A person confirms, refuses, and ticks a date
+
+**Perfect.** On the report, press **Confirm** on a date. It reads "On your calendar". On `/calendar`
+it is no longer grey.
+
+**Edge.** Refuse one with a reason ("that is the old permit's fee"), then press **Read it again** on
+the same document. **The refused date must not come back.** That is decision 6, and it is the whole
+reason a refusal is a row rather than a dismissal: the reading will raise it again every time, and
+the person must only have to say no once.
+
+### C-3 · A reading that could not read the document
+
+**Perfect.** Upload a HEIC photo (an iPhone picture of anything). It reads "Could not read", with the
+reason and "Upload a clearer copy".
+
+**Edge — §185a, and the one a person could not find by looking.** Take a document that HAS been read
+— the ACDP permit — and have a reading fail on it (the quickest way on staging is to re-read while
+the API key is wrong, or run `scripts/calendar-a3b-failed-reread.mjs`). Then check, in this order:
+the Documents row still shows **its title, its agency and its expiry**, with the grey line *"From the
+last reading that could read this document, on <date>"*; its dates are **still on the calendar**; and
+**Audits still lists it under Oregon DEQ** with its conditions and dates. *A rate limit must never
+make a permit vanish from its agency's audit.*
+
+### C-4 · The monthly email
+
+**Perfect.** With `NOTIFY_TEST_TO` set, `POST /api/jobs/calendar-month?dry=1` with the cron secret.
+Read the whole body: the subject counts only the groups that are not zero, each line carries its site
+when it has one, and the links are `?tab=confirm` and `/calendar`.
+
+**Edge — the words, which is where a compliance product gets the tone wrong.** Check the passed
+group. It must say **"Dates that have passed"**, never "overdue" or "not done", and the line under it
+must read as a reminder rather than an accusation (§185c). Then check a date from a previous year
+shows its year. Then confirm the email says **nothing** about turning it off, because that switch
+does not exist yet (§185b).
+
+### C-5 · A read that fails sends nothing
+
+**Perfect.** `POST /api/jobs/calendar-month` normally: `job_runs` gets a row with `ok=true` and its
+counts.
+
+**Edge, and it is the one that matters most.** Run `scripts/a5-failed-read.mjs`. A company whose
+dates cannot be read must get **no email at all**, and the reason must be on `job_runs.errors` with
+the company's name. **An email saying "Nothing is due this month" built on a read that failed is a
+false statement to a customer about their own compliance** — `docs/FIX-LIST-FAILURES.md` R2 and R3.
+
+### C-6 · Audits' "Add to calendar"
+
+**Perfect.** Open a finished audit with date findings, open **Dates**, press **Add to calendar**. The
+line becomes "On your calendar" in place. Reload: it still says so.
+
+**Edge.** Press it on a second date from the *same document on the same day*. Both must be added, and
+the second must show the line naming the first — not silently merge them. *Two obligations can share
+a day; a product that merges them loses one, and nobody would ever know which.*
