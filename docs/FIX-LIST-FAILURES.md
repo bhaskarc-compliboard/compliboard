@@ -89,10 +89,15 @@ not a month.
    atomic with the insert. If it fails, a document has two current scans, the view returns two rows, and the report
    route's `.maybeSingle()` errors into "Document not found" (404). **Fix:** check the error; one statement or a
    function.
-8. **B3 · sev 3 · · · Dashboard (ours).** `app/dashboard/page.tsx:97`: "Files reviewed" counts
+8. **B3 · sev 3 · ✓ FIXED (Calendar B3, commit "Calendar B3: the dashboard's dates, and three confident zeros") · Dashboard (ours).** `app/dashboard/page.tsx:97`: "Files reviewed" counts
    `display_status !== 'could_not_read'`; 076 keeps the status from the current reading, so a failed re-read still
    drops a well-read document from the count and lists it as "Could not read". **Fix:** count documents with a
    readable reading. Goes into **Job B** (the dashboard is rebuilt there).
+   **Closed:** `filesReviewed` counts `readable_scan_id !== null`. **On today's staging data the old
+   rule and the new one both say 12** — so the fix changes no number anybody can see, and saying "the
+   counts match" would be reporting the absence of a test as proof. `scripts/calendar-b3-readable-count.mjs`
+   BUILDS the state instead (a good reading, then a failed re-read on top) and asks the view: old rule
+   NO, new rule yes. The probe is a throwaway company, deleted on exit and on a crash.
 
 ### R2 — a failed database read becomes "zero rows"
 
@@ -189,12 +194,23 @@ not a month.
     No document has been linked to this requirement."; "0 requirements are loaded". No nav link today. **Fix:** check.
 33. **W8 · sev 3 · · · Workspace.** `app/api/switches/answer/route.ts:76–81`: a failed read records the answer with
     no previous value; the overwrite history is lost. **Fix:** check before any write.
-34. **B1 · sev 2 · ✓ · Dashboard (ours).** `app/dashboard/page.tsx:64–67`: `res.ok` never checked — a 500, an
+34. **B1 · sev 2 · ✓ FIXED (Calendar B3, same commit) · Dashboard (ours).** `app/dashboard/page.tsx:64–67`: `res.ok` never checked — a 500, an
     expired session or a 404 all show "No deadlines in the next 30 days." **Goes into Job B**: the dashboard's
     calendar part is rebuilt there and must not ship this again.
-35. **B2 · sev 2 · · · Dashboard (ours).** `app/dashboard/page.tsx:57`, `:89`, `:102`: failed reads show 0 in all
+   **Closed:** `if (!cRes.ok) throw` plus a shape check, and the sentence "No deadlines in the next 30
+   days." is gone from the file. The panel now says it could not load and links to the calendar.
+35. **B2 · sev 2 · ✓ FIXED (Calendar B3, same commit) · Dashboard (ours).** `app/dashboard/page.tsx:57`, `:89`, `:102`: failed reads show 0 in all
     four counters, "No documents read yet." and a blank company name — the "confident zero" the file's own comment
     forbids. **Job B.**
+   **Closed:** each of the three reads sets its own flag (`broke.profile` / `.dates` / `.documents`),
+   and each panel says so: the four counters show **—** rather than 0, the heading falls back to "Your
+   company", and the readings list is guarded BEFORE its empty state — whose comment claimed the
+   sentence was true while nothing checked that the query had succeeded.
+   **Proved by breaking the reads, not by reading the source:** `npm run measure -- /dashboard --break
+   "/api/calendar/dates" --break "document_index_v" --break "/companies" --shot ...`. `--break` was
+   added to `scripts/measure-layout.mjs` for this and is there for the rest of this list.
+   `shots/b3-dash-good.png` is the same page with every read working — R2: a check that reports an
+   absence has to be shown seeing a presence first.
 36. **M4 · sev 2 · · · My Account and signup (ours).** `app/signup/page.tsx:81`, `app/account/page.tsx:40`: a failed
     industry list leaves only "Don't see your industry?", so a company signs up as `other` — which drives requirements
     and every prompt. It has failed once already (11 Sep). **Fix:** check `res.ok`, show an error with retry.

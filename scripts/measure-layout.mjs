@@ -63,7 +63,7 @@ import { createClient } from '@supabase/supabase-js'
 const argv = process.argv.slice(2)
 let fileChooser = false
 let path = '/compliance', email = 'testcascade@example.com', width = 1280, shot = null, waitMs = 2500
-let base = 'http://localhost:3000', allow = null, logFilter = null
+let base = 'http://localhost:3000', allow = null, logFilter = null, breakers = []
 const clicks = [], scrolls = []
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i]
@@ -76,6 +76,12 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--base') base = argv[++i].replace(/\/+$/, '')
   else if (a === '--allow') allow = argv[++i]
   else if (a === '--log') logFilter = argv[++i]
+  // *** `--break <text>` MAKES A READ FAIL, WHICH IS THE ONLY WAY TO SEE A FAILURE STATE. ***
+  // Added for Calendar B3 (fix list 34, 35, 8): three panels printed a confident zero on a failed
+  // read, and no amount of reading the source shows what the page actually DRAWS when the answer
+  // never comes. Every request whose URL contains <text> is failed, exactly as a dropped connection
+  // would be. Repeatable. `docs/FIX-LIST-FAILURES.md` roots R2 and R3 are checked with this.
+  else if (a === '--break') breakers.push(argv[++i])
   else if (a === '--scroll') scrolls.push(argv[++i])
   else if (a.startsWith('/')) path = a
   else { console.error(`unknown argument: ${a}`); process.exit(2) }
@@ -150,7 +156,8 @@ try {
     if (m.method !== 'Fetch.requestPaused') return
     const { url: u, method } = m.params.request
     if (logFilter && u.includes(logFilter) && method !== 'OPTIONS') seen.push(`${method} ${decodeURIComponent(u.replace(/^https?:\/\/[^/]+/, ''))}`)
-    const why = isBlocked(u, method)
+    const broken = breakers.find((b) => u.includes(b))
+    const why = broken ? `--break "${broken}"` : isBlocked(u, method)
     if (why) blocked.push(`${why}: ${method} ${u.replace(/\?.*$/, '')}`)
     ws.send(JSON.stringify(why
       ? { id: ++msgId, method: 'Fetch.failRequest', params: { requestId: m.params.requestId, errorReason: 'BlockedByClient' } }
