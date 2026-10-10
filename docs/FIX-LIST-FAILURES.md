@@ -396,12 +396,34 @@ not a month.
     fails has already closed findings. **Fix:** check the error; match by title as `collapseAgainstEarlier` does; skip
     for checklist runs and answers with no `findings` array; close only when the section has otherwise finished.
     **Fix together with O1** — fixing O1 alone switches A1 on.
-52. **W2 · sev 1 · ✓ · Workspace and HR.** `lib/summaryReport.ts:461` stamps `summarised_at` = the time of writing,
+52. **W2 · sev 1 · ✓ FIXED (Job E1, "Job E: W2 — a summary now says how far it read") · Workspace and HR.** `lib/summaryReport.ts:461` stamps `summarised_at` = the time of writing,
     but the turns were read minutes earlier (`app/api/topics/[id]/summarise/route.ts:76`) and the chat route does not
     look at the running summary. A message sent while "Summarise" runs counts as covered: the nightly job never
     re-summarises (`lib/topicClaim.ts:156`) and, 12 months on, the deleter's test passes (`lib/retention.ts:67`) and
     **deletes turns no summary contains**. HR conversations too. **Fix:** stamp "covers through" = the newest turn
     actually read; add `last_turn_at` to `guardSummaryWrite`.
+    **Closed by migration 078**, `topics.summary_covers_through` — the newest turn the summary
+    actually read, computed by the run from the turns in its own hand, so there is no window in it.
+    `newestTurnAt` is called **before any model call** and throws if the turns carry no `created_at`,
+    because a summary with no coverage is never cleared and re-summarised every night for ever; the
+    nightly job's own turn read gained `created_at`. Both readers now test coverage, not
+    `summarised_at`: `lib/retention.ts` (`skip_not_covered`, a new reason) and `lib/topicClaim.ts`'s
+    "spoken since". **NULL means not known and is never treated as covering** — which is what the
+    backfill leaves on every row it could not vouch for. `app/api/jobs/delete/route.ts` was also
+    changed to delete **only** on `'clear'`: it tested for the two skip reasons and deleted on
+    anything else, so W2's new reason would have fallen straight through to the delete.
+    **`last_turn_at` was NOT added to `guardSummaryWrite`**, deliberately: with the coverage stamped,
+    a summary that landed after a new turn is recorded honestly and re-summarised tonight, whereas
+    refusing the write would throw away a paid answer that is correct for the turns it read.
+    **Proof:** `tests/unit/retention.test.ts` and `tests/unit/topicClaim.test.ts` each carry the
+    shipped rule copied line for line beside the new one — *"the OLD rule cleared it, because the
+    summary was written after the turn"* — plus `newestTurnAt`'s tests in
+    `tests/unit/summaryDates.test.ts`. **Seven tests fail on the shipped files.** The end-to-end
+    staging run is in the gate's nightly-jobs part.
+    **LEFT, named:** the drawers print "Summarised 5 January" over a summary that may stop short of
+    the newest message, and say nothing about it. That needs `summary_covers_through` on
+    `topic_list_v` (a view migration) and a line in both drawers. It is severity 3, it is a screen,
+    and it goes in **E4** with the other screens.
 53. **O3 · sev 2 · · · Audits.** `lib/auditRun.ts:497`, `:546`: findings are inserted before matching and collapse;
     a later throw marks the section failed but its rows stay and show, and Retry inserts a second set. The final
     `done` update is unchecked too: a failure leaves the section "running", recovered after 15 minutes, re-run,

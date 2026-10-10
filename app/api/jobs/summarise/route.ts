@@ -74,7 +74,9 @@ export async function POST(request: NextRequest) {
   try {
     // Every topic that has been spoken in. Two queries (never summarised, summarised) as before; the
     // choice between them is one pure function, so the rules above are tested rather than described.
-    const cols = 'id, company_id, title, summarised_at, summary_source, last_turn_at, section'
+    // `summary_covers_through` is W2's (migration 078): "spoken since" is measured against how far
+    // the summary read, not against when it was written.
+    const cols = 'id, company_id, title, summarised_at, summary_covers_through, summary_source, last_turn_at, section'
     // HR CONVERSATIONS TOO, SINCE HR STEP 10 (decision 14): the one writer with kind = the topic's section (§172), so
     // an HR conversation's handbook sources are kept. Always since the HR go-live (HR Step 13); a workspace
     // conversation's call is unchanged (no kind), as before.
@@ -108,7 +110,9 @@ export async function POST(request: NextRequest) {
 
         const { data: turns, error: tErr } = await supabaseAdmin
           .from('turns')
-          .select('id, position, role, text, stopped, sources, document_id, document_name')
+          // `created_at` is W2's (migration 078): `summariseTopic` records how far it read from the
+          // turns themselves, and refuses — before any model call — if they do not carry it.
+          .select('id, position, role, text, stopped, sources, document_id, document_name, created_at')
           .eq('topic_id', topic.id).order('position', { ascending: true })
         if (tErr) throw new Error(`turns: ${tErr.message}`)
 

@@ -123,9 +123,15 @@ describe('the routes claim before any model call, and work after the reply', () 
 })
 
 describe('the nightly job\'s choice', () => {
-  const t = (id: string, o: { summarised?: number | null; source?: string | null; last?: number | null }) => ({
+  // `covers` is W2's (migration 078): how far the summary READ. Its default is whichever is earlier
+  // of the last turn and the moment the summary was written — which is what every real row looks
+  // like, and which `ago(Math.max(...))` expresses, since a bigger "ago" is an older time.
+  const t = (id: string, o: { summarised?: number | null; source?: string | null; last?: number | null
+                              covers?: number | null }) => ({
     id,
     summarised_at: o.summarised == null ? null : ago(o.summarised),
+    summary_covers_through: o.covers !== undefined ? (o.covers === null ? null : ago(o.covers))
+      : o.summarised == null || o.last == null ? null : ago(Math.max(o.summarised, o.last)),
     summary_source: o.source ?? null,
     last_turn_at: o.last == null ? null : ago(o.last),
   })
@@ -157,11 +163,56 @@ describe('the nightly job\'s choice', () => {
   })
 })
 
+// =================================================================================================
+// W2 (fix list, severity 1, migration 078) — "SPOKEN SINCE" IS MEASURED AGAINST HOW FAR THE SUMMARY
+// READ, NOT AGAINST WHEN IT WAS WRITTEN.
+//
+// A message sent while a summary was being written is newer than the turns the model saw and OLDER
+// than `summarised_at`. The old test called that "covered", so this job left the conversation alone
+// FOR GOOD — and the 12-month deleter then had a summary that passed its own test and did not
+// contain those turns (`lib/retention.ts`, and `tests/unit/retention.test.ts` has the deletion half).
+// =================================================================================================
+describe('*** W2: a turn sent while the summary was being written ***', () => {
+  const t = (o: { summarised: number; covers: number; last: number }) => ({
+    id: 'raced', summarised_at: ago(o.summarised), summary_covers_through: ago(o.covers),
+    summary_source: 'user', last_turn_at: ago(o.last),
+  })
+  /** `lib/topicClaim.ts` as it shipped: measured against `summarised_at`. */
+  const oldSpokenSince = (row: { summarised_at: string | null; last_turn_at: string }) =>
+    row.summarised_at !== null && Date.parse(row.last_turn_at) > Date.parse(row.summarised_at)
+
+  // Quiet for 30 hours. The turns were loaded, the person spoke 3 minutes later, the summary landed
+  // 2 minutes after that — so `summarised_at` is NEWER than the last turn and the coverage is older.
+  const raced = t({ summarised: 30 * HOUR, covers: 30 * HOUR + 5 * 60_000, last: 30 * HOUR + 3 * 60_000 })
+
+  test('the OLD rule called it covered, so this job never summarised it again', () => {
+    assert.equal(oldSpokenSince(raced), false, 'this is the shipped behaviour')
+  })
+
+  test('*** the new rule sees the gap and summarises it tonight ***', () => {
+    assert.deepEqual(nightlyCandidates([raced], NOW).candidates.map((c) => c.id), ['raced'])
+  })
+
+  test('a coverage we do not have counts as spoken-since, so it is summarised and becomes known', () => {
+    const unknown = { ...raced, summary_covers_through: null }
+    assert.deepEqual(nightlyCandidates([unknown], NOW).candidates.map((c) => c.id), ['raced'])
+  })
+
+  test('and a summary that DID cover the last turn is still left alone — or this is a cost regression', () => {
+    const clean = t({ summarised: 30 * HOUR, covers: 30 * HOUR + 3 * 60_000, last: 30 * HOUR + 3 * 60_000 })
+    const r = nightlyCandidates([clean], NOW)
+    assert.deepEqual(r.candidates.map((c) => c.id), [])
+    assert.deepEqual(r.userCurrent.map((c) => c.id), ['raced'], 'counted as a person\'s current summary')
+  })
+})
+
 describe('THE QUIET RULE AT ITS EDGES (HR Step 10, decision 13; decision 23)', () => {
   const NOW = Date.parse('2026-10-09T10:00:00Z')
   const at = (ms: number) => new Date(NOW - ms).toISOString()
   const topic = (id: string, last: number, summarised: number | null = null) =>
-    ({ id, last_turn_at: at(last), summarised_at: summarised == null ? null : at(summarised), summary_source: summarised == null ? null : 'nightly' })
+    ({ id, last_turn_at: at(last), summarised_at: summarised == null ? null : at(summarised),
+       summary_covers_through: summarised == null ? null : at(Math.max(summarised, last)),
+       summary_source: summarised == null ? null : 'nightly' })
   test('5 hours 59 minutes quiet: not yet. Exactly 6 hours: yes', () => {
     const r = nightlyCandidates([topic('a', 5 * 3600_000 + 59 * 60_000), topic('b', 6 * 3600_000)], NOW)
     assert.deepEqual(r.candidates.map((c) => c.id), ['b'])

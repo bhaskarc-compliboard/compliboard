@@ -466,3 +466,94 @@ lying. `app/api/handbooks/route.ts` lost its `older_not_replaced` log and `HrWor
 notice, since the save no longer has a second write to fail. **Nothing in Documents, Audits, the
 dashboard or the Calendar reads a handbook** (HR-PLAN decision 18), so nothing else is touched. No
 migration.
+
+### W2 · sev 1 · Workspace and HR — a summary now says how far it read
+
+Now `lib/summaryReport.ts:570` for the stamp, `app/api/topics/[id]/summarise/route.ts:76` and `:85`
+for the window, `lib/retention.ts:67` and `lib/topicClaim.ts:156` for the two readers. Confirmed by
+reading all four.
+
+**The window, exactly.** The route loads the turns at `:76`, claims at `:85`, calls the model, then
+writes — and the write stamps `summarised_at = new Date()`. A message sent in between is **newer than
+anything the model saw and older than `summarised_at`.** Two things read that as "covered":
+
+| reader | what it did |
+|---|---|
+| `lib/topicClaim.ts:156` | `spokenSince = last_turn_at > summarised_at` → false → the nightly job never summarised that conversation again. For good. |
+| `lib/retention.ts:67` | the 12-month deleter's one safety test was `summarised_at >= last_turn_at` → `clear` → **it deleted turns the summary does not contain** |
+
+The transcript is disposable and the summary is what survives (`WORKSPACE.md` §6.4). So what the
+deleter took was gone, and the summary never mentioned it. HR conversations use the same writer and
+the same deleter.
+
+**Migration 078 — `topics.summary_covers_through`.** The newest turn the summary actually read,
+computed by the run from the turns in its own hand, so there is no window in it at all.
+
+*Why not reuse `summarised_at`.* It is also the token both screens watch to know a summary has landed
+(`app/compliance/page.tsx:714`, `app/hr/HrWorkspace.tsx:444`: `row.summarised_at !== w.before`).
+Moving it back to the last turn's time would mean a re-summary of an unchanged conversation wrote the
+identical value and the page would never notice the new summary. And the drawers print it —
+"Summarised 5 January" is a true sentence about a different question.
+
+*The backfill is narrow and says what it assumes.* For an existing row there is no record of which
+turns its summary read. So where `summarised_at >= last_turn_at` the column is set to `last_turn_at`
+— which asserts nothing new, being exactly what both readers already believed of those rows and
+already acted on. Everywhere else it stays NULL, and **NULL means not known**, which the deleter
+treats as "do not clear". Those are the rows today's code already skipped. On staging the backfill
+reached **86 of 86** topics; the migration's verify block builds all three cases and checks that the
+two it cannot vouch for stay NULL.
+
+**The code.**
+
+1. `newestTurnAt(turns)` in `lib/summaryReport.ts`, called **before any model call**. It throws if
+   the turns carry no `created_at`, naming the fix — because a caller that forgets writes a summary
+   with no coverage, which is then never cleared and re-summarised every night for ever, a silent
+   permanent waste. Failing before the paid call costs nothing. `TurnLike` gained `created_at`.
+2. The nightly job's own turn read (`app/api/jobs/summarise/route.ts:111`) did not select
+   `created_at`; the two per-topic routes go through `loadTurns`, which does.
+3. `lib/retention.ts` tests the coverage, with a new reason `skip_not_covered` — listed separately
+   from `skip_no_summary` in the job's record, because this row *has* a summary.
+4. `lib/topicClaim.ts`'s "spoken since" tests the coverage. An unknown coverage counts as
+   spoken-since, so the conversation is summarised again and the coverage becomes known.
+5. **`app/api/jobs/delete/route.ts` deleted on anything it did not recognise.** It read
+   `if keep continue; if skip_no_summary continue;` and then deleted — so W2's new reason would have
+   fallen straight through to the delete. It now tests `if (decision !== 'clear') continue`, which is
+   what it always meant. That is a second defect, found by adding to the enum, and it would have made
+   this fix worse than no fix.
+
+**`last_turn_at` was NOT added to `guardSummaryWrite`, and the list asks for it.** With the coverage
+stamped, a summary that lands after a new turn is recorded honestly and re-summarised tonight;
+refusing the write would throw away a paid model answer that is correct for the turns it read, and
+leave the person pressing Summarise again. The guard's job — not overwriting another run's work — is
+unchanged and still holds. Recorded here rather than done quietly.
+
+**The proof.** `tests/unit/retention.test.ts` and `tests/unit/topicClaim.test.ts` each carry the
+shipped rule copied line for line beside the new one:
+
+```
+✔ the OLD rule cleared it, because the summary was written after the turn
+    (turns loaded 10:00, person speaks 10:03, summary lands 10:05)
+✔ *** the new rule skips it: the coverage stops before the last turn ***
+✔ and once it has been summarised again, covering that turn, it clears
+✔ a coverage we do not have is never a covering one — not an older row, not a new column
+✔ the old rule and the new one agree on an unraced conversation, or this would be a regression
+✔ the OLD rule called it covered, so this job never summarised it again
+✔ *** the new rule sees the gap and summarises it tonight ***
+✔ and a summary that DID cover the last turn is still left alone — or this is a cost regression
+```
+
+plus `newestTurnAt`'s own tests, including that it **throws rather than guessing**.
+**Seven tests fail on the shipped files** (checked by stashing the four). The end-to-end staging run
+— a raced topic through the real `/api/jobs/delete` — is in the gate's nightly-jobs part below.
+
+**LEFT, named and scoped.** The drawers print "Summarised 5 January" over a summary that may stop
+short of the newest message and say nothing about it. Saying so needs `summary_covers_through` on
+`topic_list_v` (a view migration) and a line in both drawers. Severity 3, and it is a screen, so it
+goes in **E4** with the other screens rather than being half-done here.
+
+**Effects on other sections, by file.** `lib/summaryReport.ts`, `lib/retention.ts`,
+`lib/topicClaim.ts`, `lib/conversation.ts` (unchanged — it already selected `created_at`),
+`app/api/jobs/summarise/route.ts`, `app/api/jobs/delete/route.ts`, migration 078,
+`lib/database.types.ts` and `docs/SCHEMA.md` (both regenerated by `db:migrate`). **HR shares every
+one of these**: `app/api/hr/topics/[id]/summarise/route.ts` needed no change because it uses
+`loadTurns`. The Calendar, Documents and Audits do not read `topics.summarised_at`.

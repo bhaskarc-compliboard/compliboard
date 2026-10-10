@@ -10,7 +10,8 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { checkReport, type TurnLike, type SummaryReport } from '../../lib/summaryReport.ts'
+import { checkReport, newestTurnAt, type TurnLike, type SummaryReport } from '../../lib/summaryReport.ts'
+import { readFileSync } from 'node:fs'
 import { dayIsInLine } from '../../lib/calendarDate.ts'
 
 // TWO sources, cited in DIFFERENT paragraphs. That matters: with only one source, a wrong
@@ -165,5 +166,55 @@ describe('check 5 — a malformed dates field behaves exactly as facts do', () =
   })
   test('an empty list is a correct answer and reaches the screen as nothing', () => {
     assert.equal(report([]).dates, undefined)
+  })
+})
+
+// =================================================================================================
+// W2 (fix list, severity 1, migration 078) — HOW FAR A SUMMARY READ IS A FACT ABOUT THE TURNS.
+// =================================================================================================
+describe('newestTurnAt — the coverage a summary records', () => {
+  const turn = (created_at: string | null) => ({ role: 'user', text: 'x', created_at })
+
+  test('the newest turn in hand, not "now" — the whole point of the column', () => {
+    assert.equal(newestTurnAt([
+      turn('2026-10-01T09:00:00Z'), turn('2026-10-01T09:05:00Z'), turn('2026-10-01T09:02:00Z'),
+    ]), '2026-10-01T09:05:00Z')
+  })
+
+  test('out of order is fine: it compares times, not positions', () => {
+    assert.equal(newestTurnAt([turn('2026-10-02T09:00:00Z'), turn('2026-10-01T09:00:00Z')]),
+      '2026-10-02T09:00:00Z')
+  })
+
+  test('*** it THROWS rather than guessing, and the message names the fix ***', () => {
+    // A caller that selects turns without `created_at` cannot record a coverage, and a summary with
+    // no coverage is never cleared and re-summarised every night for ever. It is called before any
+    // model call, so failing here costs nothing.
+    assert.throws(() => newestTurnAt([turn(null), turn(undefined as unknown as null)]),
+      /Select created_at with the turns/)
+    assert.throws(() => newestTurnAt([]), /Select created_at with the turns/)
+    assert.throws(() => newestTurnAt([turn('not a date')]), /Select created_at with the turns/)
+  })
+
+  test('one usable stamp among unusable ones is enough', () => {
+    assert.equal(newestTurnAt([turn(null), turn('2026-10-01T09:00:00Z')]), '2026-10-01T09:00:00Z')
+  })
+})
+
+describe('W2: and every caller of summariseTopic selects created_at', () => {
+  const read = (p: string) => readFileSync(p, 'utf8')
+  test('the two per-topic routes go through loadTurns, which selects it', () => {
+    assert.match(read('lib/conversation.ts'), /\.select\('id, position, role, text, sources, stopped, created_at/)
+    for (const p of ['app/api/topics/[id]/summarise/route.ts', 'app/api/hr/topics/[id]/summarise/route.ts']) {
+      assert.match(read(p), /loadTurns\(db, id\)/, p)
+    }
+  })
+  test('the nightly job reads its turns itself, so it names created_at', () => {
+    const job = read('app/api/jobs/summarise/route.ts')
+    const sel = job.slice(job.indexOf("from('turns')"), job.indexOf("from('turns')") + 300)
+    assert.match(sel, /created_at/, 'without it summariseTopic throws before any model call')
+  })
+  test('the summary write records it', () => {
+    assert.match(read('lib/summaryReport.ts'), /summary_covers_through: coversThrough/)
   })
 })

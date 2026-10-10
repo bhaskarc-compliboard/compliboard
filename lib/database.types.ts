@@ -3908,6 +3908,7 @@ export type Database = {
           status: Database["public"]["Enums"]["topic_status"]
           summarised_at: string | null
           summary: string | null
+          summary_covers_through: string | null
           summary_report: Json | null
           summary_source: string | null
           summary_started_at: string | null
@@ -3929,6 +3930,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["topic_status"]
           summarised_at?: string | null
           summary?: string | null
+          summary_covers_through?: string | null
           summary_report?: Json | null
           summary_source?: string | null
           summary_started_at?: string | null
@@ -3950,6 +3952,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["topic_status"]
           summarised_at?: string | null
           summary?: string | null
+          summary_covers_through?: string | null
           summary_report?: Json | null
           summary_source?: string | null
           summary_started_at?: string | null

@@ -44,11 +44,42 @@ import { hrSummaryPrompt } from '../prompts/hr-summary.ts'
 export interface TurnLike {
   /** The turn's row id, when it has one; a fact's proposal points at the turn its quote came from. */
   id?: string
+  /**
+   * When the turn was written. Needed to record HOW FAR a summary read (fix list W2, migration 078),
+   * so every caller of `summariseTopic` must select it — `newestTurnAt` refuses without it, before
+   * any model call.
+   */
+  created_at?: string | null
   role: string
   text: string
   stopped?: boolean | null
   sources?: Array<{ n?: number; title?: string | null; url?: string | null }> | null
   document_name?: string | null
+}
+
+/**
+ * HOW FAR A SUMMARY READ — fix list **W2**, severity 1, migration 078.
+ *
+ * The newest turn in the run's own hand. Not `new Date()`: the turns were loaded minutes before the
+ * write (the route reads them, then claims, then calls the model), so "now" is later than anything
+ * the model saw, and a message sent in between looked covered by it. Two readers acted on that —
+ * the nightly summariser left the conversation alone for good (`lib/topicClaim.ts`), and the
+ * 12-month deleter cleared turns no summary contains (`lib/retention.ts`).
+ *
+ * *** IT THROWS RATHER THAN GUESSING, AND IT IS CALLED BEFORE ANY MODEL CALL. *** A caller that
+ * selects turns without `created_at` cannot record a coverage, and a summary with no coverage is
+ * never cleared and summarised again every night for ever — a silent, permanent waste. Failing
+ * before the paid call costs nothing and names the fix.
+ */
+export function newestTurnAt(turns: TurnLike[]): string {
+  const stamps = turns
+    .map((t) => t.created_at)
+    .filter((x): x is string => typeof x === 'string' && !Number.isNaN(Date.parse(x)))
+  if (!stamps.length) {
+    throw new Error('summariseTopic: these turns carry no created_at, so how far the summary reads '
+      + 'cannot be recorded (fix list W2, migration 078). Select created_at with the turns.')
+  }
+  return stamps.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a))
 }
 
 export interface ReportSource { n: number; title: string; url: string }
@@ -535,6 +566,10 @@ export async function summariseTopic(db: Db, admin: Db, args: {
   guard: { claimedAt: string; summarisedAt: string | null }
 }): Promise<{ ok: true; report: SummaryReport; checks: ItemCheck[]; proposed: number }
   | { ok: false; error: string; skipped?: true }> {
+  // *** HOW FAR THIS SUMMARY READS, FIRST — before a penny is spent *** (W2, migration 078).
+  // Computed from the turns in hand, so there is no window between reading them and recording it.
+  const coversThrough = newestTurnAt(args.turns)
+
   // *** THE DAY THE PROMPT IS GIVEN IS THE COMPANY'S *** (B10's zone; found by C0's impact check).
   // It was `new Date().toISOString().slice(0, 10)` — UTC, which is not even the server's local day:
   // a summary written at 6pm in Oregon was already dated tomorrow. That matters more now than it
@@ -570,6 +605,8 @@ export async function summariseTopic(db: Db, admin: Db, args: {
       : renderPlainText(checked.report),
     title: checked.report.title,
     summarised_at: new Date().toISOString(),
+    // W2: when it was written, and how far it read, are different facts and now have a column each.
+    summary_covers_through: coversThrough,
     summary_source: args.source,
     // The claim ends with the write, in the same statement, so no reader ever sees the summary
     // landed and the claim still held, or the claim gone and the summary not yet there.

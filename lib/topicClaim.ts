@@ -134,6 +134,8 @@ export const IDLE_HOURS = 6
 
 export interface NightlyTopic {
   id: string; summarised_at: string | null; summary_source: string | null; last_turn_at: string | null
+  /** How far the stored summary read (migration 078, fix list W2). NULL = not known. */
+  summary_covers_through?: string | null
 }
 
 /**
@@ -153,7 +155,15 @@ export function nightlyCandidates<T extends NightlyTopic>(rows: T[], now: number
   for (const t of rows) {
     if (!t.last_turn_at) continue
     const last = Date.parse(t.last_turn_at)
-    const spokenSince = t.summarised_at !== null && last > Date.parse(t.summarised_at)
+    // *** "SPOKEN SINCE" IS MEASURED AGAINST HOW FAR THE SUMMARY READ *** — fix list W2, migration
+    // 078. It used to be measured against `summarised_at`, the time the summary was WRITTEN, which
+    // is later than the turns it read: a message sent while a summary was being written looked
+    // covered, this job left the conversation alone for good, and the 12-month deleter then had a
+    // summary that passed its test and did not contain those turns (`lib/retention.ts`).
+    // A coverage we do not have (NULL) counts as spoken-since, so the conversation is summarised
+    // again and the coverage becomes known. That is the direction that cannot lose anything.
+    const covered = t.summary_covers_through ?? null
+    const spokenSince = t.summarised_at !== null && (covered === null || last > Date.parse(covered))
     if (t.summarised_at !== null && !spokenSince) {
       if (t.summary_source === 'user') userCurrent.push(t)
       continue

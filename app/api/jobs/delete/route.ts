@@ -45,13 +45,17 @@ export async function POST(request: NextRequest) {
   const errors: Array<{ topic: string; error: string }> = []
   const removed: Array<{ topic: string; turns: number }> = []
   const skippedNoSummary: string[] = []
+  /** W2: past the line, summarised, and we cannot show the summary covers the last turn. */
+  const skippedNotCovered: string[] = []
   let turnsDeleted = 0
 
   try {
     const now = new Date()
     // Only topics past the line come back; the per-topic decision is `clearingDecision`'s.
     const { data: old, error: e1 } = await supabaseAdmin
-      .from('topics').select('id, last_turn_at, summarised_at, summary')
+      // `summary_covers_through` is W2's (migration 078): the test is how far the summary READ, not
+      // when it was written, or the deleter clears turns no summary contains.
+      .from('topics').select('id, last_turn_at, summarised_at, summary_covers_through, summary')
       .not('last_turn_at', 'is', null)
       .lt('last_turn_at', clearingCutoff(now).toISOString())
     if (e1) throw new Error(`listing topics past the retention line: ${e1.message}`)
@@ -60,8 +64,13 @@ export async function POST(request: NextRequest) {
       const id = topic.id as string
       try {
         const decision = clearingDecision(topic, now)
-        if (decision === 'keep') continue
+        // *** THE DELETE RUNS ONLY ON 'clear', NEVER ON "NOT ONE OF THE REASONS I LISTED". ***
+        // This was `if keep continue; if skip_no_summary continue;` and then deleted — so a reason
+        // added to `ClearingDecision` later would have fallen straight through to the delete. W2
+        // added one (`skip_not_covered`). The test is now what it always meant.
         if (decision === 'skip_no_summary') { skippedNoSummary.push(id); continue }
+        if (decision === 'skip_not_covered') { skippedNotCovered.push(id); continue }
+        if (decision !== 'clear') continue
 
         // *** THE COUNT IS WHAT THIS RUN DELETED, READ BACK FROM THE DELETE ITSELF. *** It used to be
         // counted first and deleted second, so two runs alive at once — Vercel "can also occasionally
@@ -91,6 +100,9 @@ export async function POST(request: NextRequest) {
     turns_deleted: turnsDeleted,
     by_topic: removed,
     skipped_no_summary: skippedNoSummary,
+    // Listed separately from "no summary": this one HAS a summary, and we cannot show it read as far
+    // as the last turn (fix list W2). The nightly summariser takes it; a later night clears it.
+    skipped_not_covered: skippedNotCovered,
   }
   await run.finish(counts, errors)
   return NextResponse.json({ job: 'delete', run: run.id, ...counts, errors })
