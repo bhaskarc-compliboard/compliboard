@@ -211,6 +211,25 @@ not a month.
    added to `scripts/measure-layout.mjs` for this and is there for the rest of this list.
    `shots/b3-dash-good.png` is the same page with every read working — R2: a check that reports an
    absence has to be shown seeing a presence first.
+35b. **B2b · sev 2 · OPEN, NEEDS NEW ARTWORK (not a code change) · Landing page (ours).**
+    **Two marketing images say "overdue" in baked pixels**, which `DECISIONS.md` §185c forbids
+    everywhere: all the product knows is that a day has gone by, and "overdue" states that the work
+    was not done. Found by LOOKING at the page during Calendar B4 — the rule had already been applied
+    to the calendar page, the dashboard and the monthly email, and nothing had looked at the picture
+    on the most public screen we have.
+    - `public/Hero2.png` — "⚠ Overdue · 3 deadlines past due", then "99 days overdue", "48 days
+      overdue", "17 days overdue" on three rows, plus "+ Add deadline".
+      Evidence: `shots/calendar-jobB-b4-hero-asset-crop.png`.
+    - `public/Audit_report_4.png` — "Update due before September 2025 — currently overdue."
+      Evidence: `shots/calendar-jobB-b4-audit-asset-overdue.png`.
+    `public/How_it_works_6.png` was checked too and is clean.
+    **Claude Code cannot fix these**: they are flattened PNGs, so the words are pixels and there is
+    no text to edit. The JSX mock beside Hero2 on the same page *was* fixed in Calendar B4 ("3 dates
+    have passed", amber not red) — which now leaves the real screen and the picture of it
+    disagreeing, and the picture is the one a visitor reads first. **The owner's call**: new artwork,
+    or drop the two panels from the images. Goes with **Job D** (release), since it is the landing
+    page.
+
 36. **M4 · sev 2 · · · My Account and signup (ours).** `app/signup/page.tsx:81`, `app/account/page.tsx:40`: a failed
     industry list leaves only "Don't see your industry?", so a company signs up as `other` — which drives requirements
     and every prompt. It has failed once already (11 Sep). **Fix:** check `res.ok`, show an error with retry.

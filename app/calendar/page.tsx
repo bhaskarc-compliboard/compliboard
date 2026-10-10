@@ -467,8 +467,12 @@ function Calendar() {
         {tab === 'list' && (
           <section>
             {!onBoard.length ? (
+              /* Decision 21, the empty state. It used to say uploading a file would add every renewal
+                 date "automatically" — three things rev 1 does not do: a date waits to be confirmed,
+                 only documents we are given can be read, and there is no alerting. */
               <Empty title="No dates yet"
-                note="Add documents in Company Documents and the dates they set will appear here, or add a date yourself." />
+                note={`Add a document in Company Documents and CompliBoard will read the dates out of it for you to confirm — or type one in yourself.${
+                  emailPromised ? ' Once there are dates here, we email you on the 1st of each month with what is due.' : ''}`} />
             ) : (
               <>
                 {passed.length > 0 && (

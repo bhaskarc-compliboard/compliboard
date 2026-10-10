@@ -63,13 +63,14 @@ import { createClient } from '@supabase/supabase-js'
 const argv = process.argv.slice(2)
 let fileChooser = false
 let path = '/compliance', email = 'testcascade@example.com', width = 1280, shot = null, waitMs = 2500
-let base = 'http://localhost:3000', allow = null, logFilter = null, breakers = []
+let base = 'http://localhost:3000', allow = null, logFilter = null, breakers = [], full = false
 const clicks = [], scrolls = []
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i]
   if (a === '--as') email = argv[++i]
   else if (a === '--width') width = Number(argv[++i])
   else if (a === '--shot') shot = argv[++i]
+  else if (a === '--full') full = true
   else if (a === '--click') clicks.push(argv[++i])
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
@@ -367,7 +368,11 @@ try {
   if (logFilter) { console.log(`  requests matching "${logFilter}": ${seen.length}`); for (const r of seen) console.log(`    ${r.slice(0, 220)}`) }
 
   if (shot) {
-    const s = await cdp(ws, 'Page.captureScreenshot', { format: 'png' })
+    // `--full` shoots the whole scrolled page rather than the viewport. Added for Calendar B4: a
+    // section far down a marketing page could not be reached by `--scroll`, because it is not
+    // rendered until it scrolls into view — so the anchor the scroll looks for does not exist yet.
+    const s = await cdp(ws, 'Page.captureScreenshot',
+      full ? { format: 'png', captureBeyondViewport: true } : { format: 'png' })
     writeFileSync(shot, Buffer.from(s.data, 'base64'))
     console.log(`  screenshot       ${shot}`)
   }

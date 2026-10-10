@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useMonthlyEmailPromised } from '@/lib/usePromise'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import { useRouter } from 'next/navigation'
@@ -22,6 +23,8 @@ export default function AccountPage() {
   const supabase = createClient()
   const router = useRouter()
 
+  // The server's answer, not the browser's: see `lib/usePromise.ts`.
+  const promised = useMonthlyEmailPromised()
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -387,7 +390,13 @@ export default function AccountPage() {
             <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl mb-6">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">What's included</p>
               <div className="space-y-2">
-                {['Unlimited compliance questions','Company Documents storage','HR Help module','Compliance Calendar','Deadline reminders'].map(item => (
+                {/* "Deadline reminders" promised alerts nothing sends — decision 21. The monthly
+                    email is the only one there is, and it is named only when it can reach somebody
+                    (`lib/emailPromise.ts`); otherwise the list simply stops at the calendar, which
+                    is true either way. */}
+                {['Unlimited compliance questions','Company Documents storage','HR Help module',
+                  'Compliance Calendar',
+                  ...(promised ? ['A monthly email of what is due'] : [])].map(item => (
                   <div key={item} className="flex items-center gap-2">
                     <span className="text-green-500 text-xs">✓</span>
                     <span className="text-sm text-gray-700">{item}</span>
@@ -418,7 +427,7 @@ export default function AccountPage() {
                 <li>Every uploaded file, and the folders holding them</li>
                 <li>Every document review, audit, and HR handbook audit</li>
                 <li>Every checklist and checklist item</li>
-                <li>Every calendar event and deadline reminder</li>
+                <li>Every date on your calendar, and what it was read from</li>
                 <li>Your compliance obligations and the evidence linked to them</li>
                 <li>Your company profile and saved audit templates</li>
                 <li>Every login on this company account, including yours</li>

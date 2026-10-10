@@ -1,9 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useMonthlyEmailPromised } from '@/lib/usePromise'
 import HomepageSection from '@/components/HomepageSection'
 
 export default function HomePage() {
+  // The monthly email is promised only when it can reach somebody. The answer is the SERVER's
+  // (`/api/promise`): `EMAIL_FROM` is not in the browser bundle, so a client-side gate could never
+  // open. It starts false, so the page never promises more than it can do while it is still asking.
+  const promised = useMonthlyEmailPromised()
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -75,23 +80,41 @@ export default function HomePage() {
       </section>
 
       {/* COMPLIANCE CALENDAR */}
+      {/*
+        *** TRUE WORDS FOR WHAT REV 1 ACTUALLY DOES — decision 21 (B15). ***
+
+        What was here promised a product nobody has built. "Never miss a renewal. Never pay a late
+        fee." is a GUARANTEE, and a date in a document we were never given is one we cannot warn
+        about — so the promise is broken by the customer's own filing cabinet, not by a bug.
+        "Dates extracted automatically", "appears on your calendar automatically" and "alerted
+        before every deadline" were wrong three more ways: a date waits for a person to confirm it
+        (decision 3), nothing is alerted before anything, and the one email is monthly.
+
+        A customer who buys on these words and then misses a renewal does not conclude they
+        misread the page. `CLAUDE.md` §6: the product is sold on being trustworthy, and a sentence
+        that oversells is the cheapest possible way to lose that.
+
+        THE SENTENCE PROMISING THE MONTHLY EMAIL IS GATED (`lib/emailPromise.ts`), because that
+        email reaches nobody until the sending domain is verified AND My Account has an off switch
+        (§185b). It is written here and simply not shown, rather than held back by hand.
+      */}
       <HomepageSection
         title="Compliance Calendar"
         background="#F0F9FF"
         steps={[
-          { label: "Upload a document or add manually", description: "Any permit, license, or compliance document with a deadline." },
-          { label: "Dates extracted automatically", description: "CompliBoard reads your document and pulls every renewal and expiry date." },
-          { label: "Added to your calendar", description: "Every deadline appears on your compliance calendar automatically." },
-          { label: "Get alerted before every deadline", description: "Monthly summaries and alerts before anything expires or comes due." },
+          { label: "Add a document, or type a date in", description: "Any permit, licence or certificate — or a date you already know about." },
+          { label: "CompliBoard reads it", description: "It finds the dates in the document and shows you the line each one came from." },
+          { label: "You confirm what is right", description: "Nothing goes on your calendar until you have agreed it belongs there." },
+          ...(promised ? [{ label: "A monthly email of what is due", description: "On the 1st, what is coming up and what has passed. No daily nagging." }] : []),
         ]}
-        headline="Never miss a renewal."
-        headlineGreen="Never pay a late fee."
-        description="CompliBoard extracts compliance deadlines from your documents automatically and adds them to your calendar. Get alerted before anything expires."
+        headline="Every date you have given us,"
+        headlineGreen="in one place you trust."
+        description="CompliBoard reads the dates out of your compliance documents and shows you the line each one came from. You decide what goes on the calendar."
         bullets={[
-          "Automatic date extraction from any document",
-          "A monthly email of what is due and what has passed",
+          "Dates read out of your documents, with the line they came from",
+          "You confirm each one — nothing appears behind your back",
+          ...(promised ? ["A monthly email of what is due and what has passed"] : []),
           "Add to Google Calendar or Outlook in one click",
-          "Recurring deadline tracking for annual renewals",
         ]}
         ctaText="Start your free trial →"
         ctaHref="/signup"
@@ -99,9 +122,15 @@ export default function HomePage() {
         {/* Calendar mock */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
           <div className="grid grid-cols-2 gap-3 p-4 border-b border-gray-100">
-            <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
-              <p className="text-xs font-semibold text-red-700">Passed</p>
-              <p className="text-xs text-red-600">3 deadlines past due</p>
+            {/* *** "3 deadlines past due" WAS §185c's EXACT PROHIBITION, ON THE MOST PUBLIC PAGE
+                WE HAVE. *** All the product knows is that a day has gone by. Whether the work was
+                done — in somebody's own diary, by the contractor, last Tuesday — it has no idea, and
+                "past due" states that it was not. Found in a screenshot during B4, after the rule
+                had already been applied to the calendar page, the dashboard and the email: a
+                marketing mock is a screen too, and nothing had looked at it. */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+              <p className="text-xs font-semibold text-amber-800">Passed</p>
+              <p className="text-xs text-amber-700">3 dates have passed</p>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
               <p className="text-xs font-semibold text-amber-700">📅 Due in 30 days</p>

@@ -11,6 +11,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { monthlyEmailPromised, MY_ACCOUNT_OFF_SWITCH_EXISTS } from '../../lib/emailPromise.ts'
 
 describe('the monthly email may be promised only when it can reach somebody', () => {
@@ -54,5 +55,46 @@ describe('the monthly email may be promised only when it can reach somebody', ()
       assert.ok(!/monthlyEmailPromised\(\)/.test(src), `${f} calls the server gate in client code`)
       assert.match(src, /useMonthlyEmailPromised\(\)/)
     }
+  })
+})
+
+/**
+ * EVERY SENTENCE THAT PROMISES THE MONTHLY EMAIL IS BEHIND THE GATE — decision 21, B4.
+ *
+ * The owner's instruction was *"Do not hold them by hand"*: the true words go in now, and the ones
+ * that promise the email appear by themselves when it can be sent. So the thing to test is not the
+ * wording — it is that no page states the promise unconditionally.
+ */
+describe('decision 21: the promise words', () => {
+  const read = (f: string) => readFileSync(f, 'utf8')
+
+  test('all three pages ask the server, and none of them promises unconditionally', () => {
+    for (const f of ['app/calendar/page.tsx', 'app/page.tsx', 'app/account/page.tsx']) {
+      const src = read(f)
+      assert.match(src, /useMonthlyEmailPromised\(\)/, `${f} does not ask`)
+      // Every mention of the monthly email sits inside a conditional on the gate's answer.
+      // COMMENTS COME OUT FIRST, whole: the per-line "starts with * or //" test missed the middle
+      // lines of a block comment, and failed on a paragraph explaining this very gate.
+      const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+      for (const line of code.split('\n')) {
+        if (!/monthly email|1st of each month|month with what is due/i.test(line)) continue
+        assert.match(line, /promised|emailPromised/,
+          `${f} promises the monthly email outside the gate:\n    ${line.trim()}`)
+      }
+    }
+  })
+
+  test('the promises rev 1 cannot keep are gone', () => {
+    const home = read('app/page.tsx').replace(/\/\*[\s\S]*?\*\//g, '')
+    for (const gone of [
+      /Never miss a renewal/, /Never pay a late fee/,
+      /alerted before (?:anything|every)/i, /Automatic date extraction/,
+      /appears on your compliance calendar automatically/,
+    ]) assert.ok(!gone.test(home), `the landing page still says ${gone}`)
+    const account = read('app/account/page.tsx').replace(/\/\*[\s\S]*?\*\//g, '')
+    assert.ok(!/'Deadline reminders'/.test(account))
+    const cal = read('app/calendar/page.tsx').replace(/\/\*[\s\S]*?\*\//g, '')
+    assert.ok(!/you never miss a deadline again/i.test(cal))
+    assert.ok(!/automatically/i.test(cal), 'the calendar page still says a date is added automatically')
   })
 })
