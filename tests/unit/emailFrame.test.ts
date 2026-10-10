@@ -138,3 +138,47 @@ describe('all four emails use the frame', () => {
     assert.ok(!src.includes('emailFrame'), 'a letterhead on our own inbox is noise')
   })
 })
+
+describe('board 14: the counts strip, the panel and the two headings', () => {
+  const withBoard14: EmailContent = {
+    ...sample,
+    blocks: [
+      { kind: 'counts', items: [{ n: 2, label: 'due this month' }, { n: 2, label: 'dates that have passed' }, { n: 2, label: 'to confirm' }] },
+      { kind: 'list', heading: 'Due this month (2):', htmlHeading: 'Due this month',
+        rows: [{ lead: '20 October', main: 'Air permit annual fee' }] },
+      { kind: 'panel',
+        button: { label: 'Confirm 2 dates', href: 'https://app.example.com/calendar?tab=confirm', textLabel: 'Confirm them' },
+        link: { label: 'See every date', href: 'https://app.example.com/calendar', textLabel: 'Your calendar' } },
+    ],
+    button: null,
+  }
+  const { html, text } = renderEmail(withBoard14)
+
+  test('the heading is quiet in HTML and keeps its count in text', () => {
+    assert.ok(html.includes('>Due this month<'), 'HTML: no colon, no count')
+    assert.ok(!html.includes('Due this month (2):'))
+    assert.ok(text.includes('Due this month (2):'), 'the text keeps its own words')
+  })
+
+  test('the counts strip is HTML-only, and the text states the same numbers its own way', () => {
+    // Named rather than discovered: it is the one block that does not reach both parts, because
+    // the text already says every number in its headings.
+    assert.ok(html.includes('due this month') && html.includes('to confirm'))
+    assert.ok(!text.includes('dates that have passed'), 'the strip must not be transcribed into the text')
+    assert.ok(text.includes('(2):'), 'but the number is still there, in the heading')
+  })
+
+  test('ONE green button, and it is the one that does something', () => {
+    const buttons = html.match(new RegExp(`background:${BRAND_GREEN}`, 'g')) ?? []
+    assert.equal(buttons.length, 1)
+    assert.ok(html.includes('Confirm 2 dates'), 'the action, not a page')
+    assert.ok(html.includes('See every date'), 'the quieter link beside it')
+    assert.ok(html.indexOf('See every date') > html.indexOf('Confirm 2 dates'), 'button first')
+  })
+
+  test('the plain text keeps A5b\'s approved wording, not the button\'s', () => {
+    assert.ok(text.includes('Confirm them: https://app.example.com/calendar?tab=confirm'))
+    assert.ok(text.includes('Your calendar: https://app.example.com/calendar'))
+    assert.ok(!text.includes('Confirm 2 dates'), 'the HTML label must not leak into the text')
+  })
+})

@@ -40,7 +40,16 @@ export const EMAIL = {
     `We could not finish checking ${name}. That's on our side, not yours. Press Check now to try again: ${link}`,
 } as const
 
-export interface NotifyResult { notified: boolean; to?: string; id?: string | null; error?: string; subject?: string; text?: string }
+export interface NotifyResult {
+  notified: boolean; to?: string; id?: string | null; error?: string; subject?: string; text?: string
+  /**
+   * The HTML part, on a DRY RUN only. Without it the only way to look at what this email would
+   * look like is to send it — which is how Calendar B5's renders came to be hand-written fixtures
+   * that said things the product never says (B8 items 2 and 3). A render is evidence only if it
+   * comes out of the code that sends.
+   */
+  html?: string
+}
 
 export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: boolean } = {}): Promise<NotifyResult> {
   const { data: check } = await db.from('handbook_checks')
@@ -130,7 +139,7 @@ export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: bool
   }
 
   const { text, html } = renderEmail(content)
-  if (opts.dryRun) return { notified: false, error: 'dry run — nothing was sent', to, subject, text }
+  if (opts.dryRun) return { notified: false, error: 'dry run — nothing was sent', to, subject, text, html }
 
   // notifyRun's refusals, in its order: no link, no address, no key — each said out loud, nothing stamped.
   if (!appUrl) {

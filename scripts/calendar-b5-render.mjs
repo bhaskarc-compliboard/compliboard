@@ -4,6 +4,13 @@
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { renderMonthlyEmail } from '../lib/calendarNotify.ts'
 import { renderEmail } from '../lib/emailFrame.ts'
+// *** THE WORDS COME FROM THE PRODUCT, NOT FROM THIS FILE. ***
+// B5's first version hand-wrote "We read 6 documents. 2 need attention, 4 are on file and need
+// nothing." — a sentence Documents does not own and has never sent. The owner caught it in the
+// render and asked whether the CODE had been rewritten. It had not: `summaryLine` was untouched and
+// `sendBatchEmail` calls it. The FIXTURE was the lie, which is worse than a bug in a way — a render
+// nobody can trust says nothing about the product. Every sentence below now comes from the module.
+import { summaryLine } from '../lib/documentBatch.ts'
 import { Resend } from 'resend'
 import { emailFrom } from '../lib/emailSender.ts'
 
@@ -36,11 +43,20 @@ console.log(`\n(subject: ${monthly.subject})`)
 // These build the SAME content objects their modules build, so the renders are faithful. They are
 // not re-implementations of the words: each sentence below is copied from the module beside it, and
 // the point of the exercise is the frame, which is shared.
+// The same shape `summariseBatch` returns, so `summaryLine` writes its real sentence.
+const batch = {
+  total: 6, needs_work: 2, expiring: 1, expired: 0, could_not_read: 0,
+  attention: [], fine: [],
+}
+console.log('\n=== DOCUMENTS — the sentence, from the product:')
+console.log('   old (B5 fixture, invented): We read 6 documents. 2 need attention, 4 are on file and need nothing.')
+console.log(`   new (lib/documentBatch.ts summaryLine): ${summaryLine(batch)}`)
+
 const documents = renderEmail({
   company: 'Cascade Specialty Chemicals, LLC',
   title: "We've read your 6 documents",
   blocks: [
-    { kind: 'para', text: 'We read 6 documents. 2 need attention, 4 are on file and need nothing.' },
+    { kind: 'para', text: summaryLine(batch) },
     { kind: 'list', heading: 'What needs attention:', rows: [
       { main: 'Certificate of Annual Maintenance — Portable Fire Extinguishers — Expiring. The annual maintenance date has passed.' },
       { main: 'Powered Industrial Truck Operator Training Record — Needs work. One operator has no evaluation on file.' },
@@ -56,22 +72,63 @@ const documents = renderEmail({
   why: 'You get this because you sent documents to CompliBoard to read, and we\u2019ve finished reading them.',
 })
 
-const audit = renderEmail({
-  company: 'Cascade Specialty Chemicals, LLC',
-  title: 'Your OSHA audit: 3 things that need you',
-  blocks: [
-    { kind: 'para', text: 'Your OSHA audit found 3 things that need you, out of 15 checked.' },
-    { kind: 'note', text: 'Read against your documents as they stood on 2026-10-08.' },
-    { kind: 'list', heading: 'What needs you:', rows: [
-      { main: 'Emergency Response Procedures — nothing on file' },
-      { main: 'Annual Hazmat Training Records — nothing on file' },
-      { main: 'Spill Response Plan — out of date (Spill_Response_Plan_2022.pdf)' },
-    ], more: '…and 2 more.' },
-    { kind: 'para', text: 'It also found 12 things on file and 2 things we would expect a company like yours to hold and did not see — a suggestion, not a checked requirement.' },
-  ],
-  button: { label: 'See it all', href: 'https://compliboard.vercel.app/audits?run=demo' },
-  why: 'You get this because you asked CompliBoard to audit a folder of your documents, and we\u2019ve finished.',
+// *** THE AUDIT EMAIL COMES OUT OF A REAL RUN, NOT A FIXTURE *** (B8 item 2).
+// B5's version hand-wrote the subject, the three rows and "…and 2 more" — a shape the code could
+// not produce — so the render showed a disagreement the product did not have and hid the one it
+// did. This builds real `audit_findings` rows, lets `summariseRun` count them and `notifyRun`
+// write the email, and takes the HTML off the dry run. Throwaway company, deleted at the end.
+import { createClient } from '@supabase/supabase-js'
+import { notifyRun } from '../lib/auditNotify.ts'
+import { summariseRun } from '../lib/auditRun.ts'
+
+const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } })
+let probeCo = null
+const cleanProbe = async () => { if (probeCo) { await db.from('companies').delete().eq('id', probeCo); probeCo = null } }
+for (const sig of ['uncaughtException', 'unhandledRejection'])
+  process.on(sig, async (e) => { await cleanProbe(); console.error(e); process.exit(1) })
+const need = (r, what) => { if (r.error) throw new Error(`${what}: ${r.error.message}`); return r.data }
+
+const pc = need(await db.from('companies').insert({ name: 'Cascade Specialty Chemicals, LLC' }).select('id').single(), 'probe company')
+probeCo = pc.id
+const prun = need(await db.from('audit_runs').insert({
+  company_id: probeCo, status: 'done', kind: 'agency', agency_label: 'Oregon OSHA',
+  readings_as_of: '2026-10-08',
+}).select('id').single(), 'probe run')
+const psec = need(await db.from('audit_sections').insert({
+  run_id: prun.id, company_id: probeCo, title: 'Oregon OSHA', status: 'done', ordinal: 1,
+}).select('id').single(), 'probe section')
+const pdoc = async (name) => need(await db.from('documents').insert({
+  company_id: probeCo, name, file_type: 'application/pdf', file_url: `${probeCo}/${name}`,
+  source: 'upload', status: 'read',
+}).select('id').single(), `probe document ${name}`)
+const dA = await pdoc('Spill_Response_Plan_2022.pdf')
+const dB = await pdoc('HazCom_Plan.pdf')
+const pf = (ordinal, title, kind, word, extra = {}) => ({
+  run_id: prun.id, section_id: psec.id, company_id: probeCo, ordinal, title, kind, word,
+  status: 'open', ...extra,
 })
+need(await db.from('audit_findings').insert([
+  pf(1, 'Emergency Response Procedures', 'finding', 'nothing_on_file'),
+  pf(2, 'Annual Hazmat Training Records', 'finding', 'nothing_on_file'),
+  pf(3, 'Spill Response Plan', 'finding', 'stale', { document_id: dA.id }),
+  pf(4, 'Your SDS binder and your HazCom plan name different chemicals', 'contradiction', null, {
+    document_id: dA.id, document_b_id: dB.id,
+    value_a: 'hydrofluoric acid, sulfuric acid, nitric acid', value_b: 'hydrofluoric acid, sulfuric acid' }),
+  pf(5, 'How many employees work past 7pm?', 'finding', 'not_a_document_question'),
+  ...Array.from({ length: 12 }, (_, i) => pf(6 + i, `On file ${i + 1}`, 'finding', 'on_file')),
+  pf(18, 'Respirator fit-test records', 'expected', null),
+  pf(19, 'Chemical inventory list', 'expected', null),
+]), 'probe findings')
+
+// notifyRun takes the summary as an argument — it does not fetch one. `summariseRun` is what the
+// sweep calls just before it, so the render follows the same two steps the product does.
+const auditSummary = await summariseRun(db, prun.id)
+const auditRes = await notifyRun(db, prun.id, auditSummary, { dryRun: true })
+if (!auditRes.html) { console.error('the audit dry run returned no html:', auditRes.error); await cleanProbe(); process.exit(1) }
+console.log(`\n=== AUDIT — from the product (subject: ${auditRes.subject})`)
+console.log(auditRes.text)
+const audit = { html: auditRes.html, text: auditRes.text }
 
 const handbook = renderEmail({
   company: 'Cascade Specialty Chemicals, LLC',
@@ -87,7 +144,7 @@ const handbook = renderEmail({
 const all = [
   ['monthly',   'Your October dates: 2 due, 2 passed, 2 to confirm', monthly],
   ['documents', "We've read your 6 documents",                       documents],
-  ['audit',     'Your OSHA audit: 3 things that need you',           audit],
+  ['audit',     auditRes.subject,                                    audit],
   ['handbook',  'Your handbook check is done: Employee Handbook',    handbook],
 ]
 for (const [name, , e] of all) writeFileSync(`shots/emails/${name}.html`, e.html)
@@ -105,3 +162,6 @@ if (SEND) {
     await new Promise(r => setTimeout(r, 700))   // Resend rate-limits bursts
   }
 }
+
+await cleanProbe()
+console.log('\nprobe company deleted.')

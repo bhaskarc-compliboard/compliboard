@@ -245,3 +245,71 @@ now the page's own measured title, not the absence of an error:
   arrive anywhere but the Resend account's own inbox is decision 22's gate, not this job's.
 - **No email was opened in a real client.** The renders are Chromium. Outlook's Word engine is the
   one that breaks layouts, and nothing here has been through it.
+
+---
+
+# B8 — the owner's six, after reviewing Job B against the boards
+
+| # | asked | answer |
+|---|---|---|
+| 1 | monthly email: button, link, counts, headings, tag | done; plain text byte-identical to A5b |
+| 2 | audit email: is the count/list disagreement the fixture or the code? | **BOTH, differently — see below** |
+| 3 | documents email: was `summaryLine` rewritten in B5? | **No. The FIXTURE was** |
+| 4 | drawer: "Not right" only for a proposed date | done, proved both ways |
+| 5 | the month's legend | done |
+| 6 | print: passed first, as-of line, not-confirmed note | done |
+
+## 2 — the fixture was wrong AND the code was wrong, in different ways
+
+**The fixture's shape was impossible.** It hand-wrote "3 things that need you", three rows and
+"…and 2 more". The old code could only print "…and N more" past **25** rows, so that email could
+never have existed. It showed a disagreement the product did not have.
+
+**And it hid the one the product did have.** Read off the lines:
+
+```
+needs_person   = nothing_on_file + stale + contradictions + not_a_document_question   auditRun.ts:1220
+attention      = rows where word is nothing_on_file OR stale, capped at 25            auditRun.ts:1240
+"…and N more"  = nothing_on_file + stale − attention.length                           auditNotify.ts
+```
+
+The subject counts **four** kinds; the list and its overflow line account for **two**. Proved on real
+rows through the product's own `summariseRun` (`scripts/calendar-b8-audit-count.mjs`, throwaway
+company, deleted on exit and on a crash):
+
+```
+needs_person (the subject's number) : 5
+attention (rows the list shows)     : 3
+OLD "…and N more" : not shown at all  -> listed 3 + 0 = 3   (subject says 5)
+NEW "…and N more" : …and 2 more.      -> listed 3 + 2 = 5   (subject says 5)
+```
+
+`more` now subtracts from `needs_person`, so the listed rows plus the overflow always add up to the
+subject, whichever kinds a run produces. Also done: the footer is the owner's line, and the date
+reads **"8 October 2026"** through `longDate` rather than `2026-10-08`.
+
+**And the renders now come out of the product.** `notifyRun` and `notifyCheck` return `html` on a
+**dry run**, so an email can be looked at without being sent. `scripts/calendar-b5-render.mjs` builds
+a real audit run and renders through `summariseRun` → `notifyRun`. A render that is hand-written is
+not evidence about anything.
+
+## 3 — the code was never rewritten; my fixture invented a sentence
+
+`summaryLine` (`lib/documentBatch.ts:120–128`) is untouched and `sendBatchEmail` calls it at `:179`.
+B5's render hand-wrote a sentence Documents has never sent:
+
+```
+old (B5 fixture, invented) : We read 6 documents. 2 need attention, 4 are on file and need nothing.
+new (the product's words)  : We've read your 6 documents: 2 need work, 1 is expiring.
+```
+
+The render now calls `summaryLine`. **Decision 11 held in the code the whole time** — it was the
+picture of the code that broke it, which is the more dangerous way round, because a wrong render is
+believed.
+
+## What is still not proved
+
+- **No email has been opened in a real client.** Outlook renders with Word's engine and is the one
+  that breaks email layouts; everything here is Chromium.
+- The audit render's staging banner reads "would have gone to (nobody)" because the probe run has no
+  `created_by`. That is truthful, not a defect.

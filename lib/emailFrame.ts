@@ -55,11 +55,32 @@ export interface EmailRow {
   tag?: string | null
 }
 
+/** A link or a button. `textLabel` keeps the plain-text wording when it differs from the HTML's. */
+export interface EmailAction { label: string; href: string; textLabel?: string }
+
 export type EmailBlock =
+  /**
+   * The three counts across the top (board 14). **HTML ONLY, deliberately.**
+   * The plain-text part carries the same numbers in its own headings — "Due this month (2):" —
+   * and the owner's rule for board 14 is that the text keeps its own order and words. So this is
+   * a second PRESENTATION of numbers the text already states, not a section missing from it; the
+   * frame's test knows about it by name rather than by accident.
+   */
+  | { kind: 'counts'; items: Array<{ n: number; label: string }> }
+  /**
+   * The grey panel at the foot: what to do, as one green button, with a quieter text link beside
+   * it. One button per email (board 14) — two calls to action are none.
+   */
+  | { kind: 'panel'; text?: string; button: EmailAction; link?: EmailAction }
   | { kind: 'para'; text: string }
   /** A quieter paragraph: the gentle reminder, the "not legal advice" lines. */
   | { kind: 'note'; text: string }
-  | { kind: 'list'; heading: string; rows: EmailRow[]; more?: string | null }
+  /**
+   * `heading` is the PLAIN-TEXT heading and stays exactly as each section wrote it
+   * ("Due this month (2):"). `htmlHeading` is the quiet uppercase label the HTML uses instead
+   * ("DUE THIS MONTH") — no colon, no count, because the count is in the strip above it.
+   */
+  | { kind: 'list'; heading: string; htmlHeading?: string; rows: EmailRow[]; more?: string | null }
   /** ONE LINK PER SECTION (board 12), never one per row: in plain text that is a wall of addresses. */
   | { kind: 'link'; label: string; href: string }
 
@@ -69,8 +90,8 @@ export interface EmailContent {
   /** The serif title, the one line that says what this email is. */
   title: string
   blocks: EmailBlock[]
-  /** The single green button. Omitted only if an email genuinely has nowhere to send you. */
-  button?: { label: string; href: string } | null
+  /** The single green button. Omitted when a `panel` block carries it instead. */
+  button?: EmailAction | null
   /** Quiet lines above the footer rule — the "not legal advice" kind. */
   footnotes?: string[]
   /**
@@ -103,6 +124,14 @@ export function renderText(c: EmailContent): string {
   // the two bodies this file exists to make impossible, found on the first run of the test.
   out.push(`CompliBoard — ${c.company}`, c.title, '')
   for (const b of c.blocks) {
+    // The counts strip is HTML-only: the text says the same numbers in its headings.
+    if (b.kind === 'counts') continue
+    if (b.kind === 'panel') {
+      if (b.text) out.push(b.text, '')
+      out.push(`${b.button.textLabel ?? b.button.label}: ${b.button.href}`, '')
+      if (b.link) out.push(`${b.link.textLabel ?? b.link.label}: ${b.link.href}`, '')
+      continue
+    }
     if (b.kind === 'para' || b.kind === 'note') { out.push(b.text, '') }
     else if (b.kind === 'list') {
       out.push(b.heading)
@@ -113,7 +142,7 @@ export function renderText(c: EmailContent): string {
       out.push(`${b.label}: ${b.href}`, '')
     }
   }
-  if (c.button) out.push(`${c.button.label}: ${c.button.href}`, '')
+  if (c.button) out.push(`${c.button.textLabel ?? c.button.label}: ${c.button.href}`, '')
   for (const f of c.footnotes ?? []) out.push(f)
   if (c.footnotes?.length) out.push('')
   out.push(c.why)
@@ -149,7 +178,36 @@ function htmlRow(r: EmailRow): string {
     + `${lead}${esc(r.main)}${meta}${tag}</td></tr>`
 }
 
+/** The green button, used by the footer button and by a panel. */
+function htmlButton(a: EmailAction): string {
+  return `<a href="${safeHref(a.href)}" style="display:inline-block;padding:11px 22px;`
+    + `background:${BRAND_GREEN};color:#ffffff;font:600 15px/1 ${SANS};`
+    + `text-decoration:none;border-radius:8px">${esc(a.label)}</a>`
+}
+
 function htmlBlock(b: EmailBlock): string {
+  if (b.kind === 'counts') {
+    // A table, not flexbox: Outlook. Equal columns by percentage so two or three both sit right.
+    const w = Math.floor(100 / Math.max(b.items.length, 1))
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" `
+      + `style="margin:0 0 22px;border-collapse:separate;border-spacing:8px 0"><tr>`
+      + b.items.map((i) => `<td width="${w}%" style="background:${PAPER};border:1px solid ${LINE};`
+        + `border-radius:10px;padding:12px 14px;text-align:center">`
+        + `<div style="font:700 24px/1.1 ${SANS};color:${INK}">${i.n}</div>`
+        + `<div style="margin-top:3px;font:400 12px/1.35 ${SANS};color:${MUTED}">${esc(i.label)}</div>`
+        + `</td>`).join('')
+      + `</tr></table>`
+  }
+  if (b.kind === 'panel') {
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" `
+      + `style="margin:4px 0 20px;background:${PAPER};border:1px solid ${LINE};border-radius:12px">`
+      + `<tr><td style="padding:16px 18px">`
+      + (b.text ? `<p style="margin:0 0 12px;font:400 14px/1.5 ${SANS};color:${INK}">${esc(b.text)}</p>` : '')
+      + htmlButton(b.button)
+      + (b.link ? `<a href="${safeHref(b.link.href)}" style="margin-left:16px;color:${MUTED};`
+        + `font:400 14px/1 ${SANS};text-decoration:underline">${esc(b.link.label)}</a>` : '')
+      + `</td></tr></table>`
+  }
   if (b.kind === 'para') {
     return `<p style="margin:0 0 16px;font:400 15px/1.55 ${SANS};color:${INK}">${esc(b.text)}</p>`
   }
@@ -164,7 +222,7 @@ function htmlBlock(b: EmailBlock): string {
     ? `<tr><td style="padding:7px 0;font:400 14px/1.45 ${SANS};color:${MUTED}">${esc(b.more)}</td></tr>`
     : ''
   return `<p style="margin:0 0 6px;font:600 12px/1.4 ${SANS};color:${MUTED};`
-    + `text-transform:uppercase;letter-spacing:.04em">${esc(b.heading)}</p>`
+    + `text-transform:uppercase;letter-spacing:.04em">${esc(b.htmlHeading ?? b.heading)}</p>`
     + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" `
     + `style="margin:0 0 20px;border-collapse:collapse">${b.rows.map(htmlRow).join('')}${more}</table>`
 }
@@ -174,12 +232,7 @@ export function renderHtml(c: EmailContent): string {
     ? `<tr><td style="padding:10px 32px;background:#fef9c3;font:400 13px/1.4 ${SANS};color:#713f12">`
       + `${esc(c.banner)}</td></tr>`
     : ''
-  const button = c.button
-    ? `<tr><td style="padding:8px 0 4px">`
-      + `<a href="${safeHref(c.button.href)}" style="display:inline-block;padding:11px 22px;`
-      + `background:${BRAND_GREEN};color:#ffffff;font:600 15px/1 ${SANS};`
-      + `text-decoration:none;border-radius:8px">${esc(c.button.label)}</a></td></tr>`
-    : ''
+  const button = c.button ? `<tr><td style="padding:8px 0 4px">${htmlButton(c.button)}</td></tr>` : ''
   const footnotes = (c.footnotes ?? []).length
     ? `<p style="margin:20px 0 0;font:400 13px/1.5 ${SANS};color:${MUTED}">`
       + (c.footnotes ?? []).map(esc).join('<br>') + `</p>`

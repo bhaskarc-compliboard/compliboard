@@ -205,8 +205,17 @@ export function renderMonthlyEmail(args: {
 
   blocks.push({ kind: 'para', text: `${args.companyName}, here is what is due in ${month}.` })
 
+  // BOARD 14's THREE COUNTS. HTML only — the plain-text part says the same numbers in its own
+  // headings ("Due this month (2):"), and the owner's rule is that the text keeps its own words.
+  blocks.push({ kind: 'counts', items: [
+    { n: due.length, label: 'due this month' },
+    { n: passed.length, label: 'dates that have passed' },
+    { n: waiting, label: 'to confirm' },
+  ] })
+
   if (due.length) {
-    blocks.push({ kind: 'list', heading: `Due this month (${due.length}):`, rows: due.map(row) })
+    blocks.push({ kind: 'list', heading: `Due this month (${due.length}):`,
+                  htmlHeading: 'Due this month', rows: due.map(row) })
   } else {
     // R3: said only when the read SUCCEEDED and returned nothing. A read that failed never reaches
     // here — `monthlyDates` throws and the caller sends no email at all.
@@ -215,7 +224,8 @@ export function renderMonthlyEmail(args: {
 
   if (passed.length) {
     // *** THE OWNER'S RULE (§185, A5b): NOT "passed and not done". ***
-    blocks.push({ kind: 'list', heading: `Dates that have passed (${passed.length}):`, rows: passed.map(row) })
+    blocks.push({ kind: 'list', heading: `Dates that have passed (${passed.length}):`,
+                  htmlHeading: 'Dates that have passed', rows: passed.map(row) })
     blocks.push({ kind: 'note', text:
       'A gentle reminder in case any of these still need attention. If they\'re already\n'
       + 'taken care of, you can tick them off on your CompliBoard calendar and we won\'t\n'
@@ -227,12 +237,29 @@ export function renderMonthlyEmail(args: {
       `Found in your documents, not yet confirmed: ${waiting}.\n`
       + 'They are on your calendar, marked not confirmed. Check each one against its line\n'
       + 'in the document.' })
-    // ONE LINK PER SECTION (board 12), not one per date. `?tab=confirm` is the name the board uses
-    // and the name the page answers to — pinned by a test and written into `docs/HANDOFF-CODE.md`
-    // §7, because a link to a tab spelled differently is a dead link in an email nobody can fix
-    // after it is sent.
-    blocks.push({ kind: 'link', label: 'Confirm them', href: `${args.appUrl}/calendar?tab=confirm` })
   }
+
+  // *** THE ONE GREEN BUTTON IS "Confirm N dates" *** (board 14, the owner). The thing this email
+  // wants is a person checking what a reading found; "Your calendar" was a button to a page, which
+  // is not an action. "See every date" sits beside it as a quiet text link, so there is still one
+  // call to action and not two.
+  //
+  // ONE LINK PER SECTION (board 12), not one per date. `?tab=confirm` is the name the board uses
+  // and the name the page answers to — pinned by a test and written into `docs/HANDOFF-CODE.md`
+  // §7, because a link to a tab spelled differently is a dead link in an email nobody can fix
+  // after it is sent.
+  //
+  // `textLabel` keeps the plain-text part EXACTLY as the owner approved it at A5b: "Confirm them:"
+  // and "Your calendar:". The HTML gained a button; the text gained nothing and lost nothing.
+  blocks.push(waiting
+    ? { kind: 'panel',
+        button: { label: `Confirm ${waiting} date${waiting === 1 ? '' : 's'}`,
+                  href: `${args.appUrl}/calendar?tab=confirm`, textLabel: 'Confirm them' },
+        link: { label: 'See every date', href: `${args.appUrl}/calendar`,
+                textLabel: 'Your calendar' } }
+    : { kind: 'panel',
+        button: { label: 'See every date', href: `${args.appUrl}/calendar`,
+                  textLabel: 'Your calendar' } })
 
   const content: EmailContent = {
     company: args.companyName,
@@ -241,7 +268,8 @@ export function renderMonthlyEmail(args: {
       ? `[staging: this would have gone to ${args.realTo.join(', ') || '(nobody)'}]`
       : null,
     blocks,
-    button: { label: 'Your calendar', href: `${args.appUrl}/calendar` },
+    // No footer button: the panel above carries the one this email has.
+    button: null,
     footnotes: [
       'Dates are read from your documents and from what you add. They are not legal advice.',
       'When in doubt, check with the agency.',

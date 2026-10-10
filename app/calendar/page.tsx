@@ -418,6 +418,14 @@ function Calendar() {
                 <button onClick={printMonth} className={TEXT_ACTION}>Print</button>
               </div>
             </div>
+            {/* BOARD 1's LEGEND. Four marks carry meaning on this grid and none of them is
+                labelled anywhere else; a dot a person has to decode is a dot that gets ignored. */}
+            <p className="no-print mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-gray-500">
+              <span><span className="text-gray-900">●</span> confirmed</span>
+              <span><span className="text-gray-500">○</span> not confirmed</span>
+              <span className="text-[var(--amber)]">● its day has passed</span>
+              <span className="text-gray-400 line-through">done</span>
+            </p>
             <div className="no-print grid grid-cols-7 border-t border-gray-200">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => (
                 <div key={d} className={`py-2 text-center text-[12px] font-medium uppercase tracking-wide text-gray-400 ${i === 0 ? '' : 'border-l border-gray-100'}`}>{d}</div>
@@ -442,24 +450,69 @@ function Calendar() {
                 </div>
               ))}
             </div>
-            {/* THE PRINTED MONTH IS THE LIST, NOT THE GRID (board 13). A grid of boxes prints as a
-                grid of boxes; what a person carries into a meeting is the dates in order. */}
-            <div className="hidden print:block">
-              <h2 className="mb-2 font-serif text-[18px]">{formatMonth(cursor.y, cursor.m)}</h2>
-              {onBoard.filter((d) => inMonth(d.due_date, cursor.y, cursor.m)).length === 0 && (
-                <p className="text-[12px] text-gray-500">Nothing is due in this month.</p>
-              )}
-              {onBoard.filter((d) => inMonth(d.due_date, cursor.y, cursor.m))
+            {/* *** THE PRINTED MONTH IS THE LIST, NOT THE GRID *** (board 13). A grid of boxes
+                prints as a grid of boxes; what a person carries into a meeting is the dates in
+                order — and, board 13 at B8, THE PASSED ONES FIRST. Somebody printing this is
+                about to be asked what has not been dealt with, and that is the top of the page. */}
+            {(() => {
+              const inThis = onBoard.filter((d) => inMonth(d.due_date, cursor.y, cursor.m))
                 .sort((a, b) => compareDays(a.due_date ?? '', b.due_date ?? ''))
-                .map((d) => (
-                  <p key={d.id} className="border-b border-gray-100 py-1.5 text-[12px]">
-                    {formatDayShort(d.due_date, now)} · {d.title}
-                    {siteName(d.entity_id) ? ` · ${siteName(d.entity_id)}` : ''}
-                    {d.state === 'not_confirmed' ? ' · not confirmed' : ''}
-                    {d.state === 'done' ? ' · done' : ''}
+              const printPassed = passed                 // every passed date, not only this month's
+              const notConfirmed = [...printPassed, ...inThis].filter((d) => d.state === 'not_confirmed').length
+              const sitesShown = [...new Set([...printPassed, ...inThis]
+                .map((d) => siteName(d.entity_id)).filter(Boolean))] as string[]
+              const Line = ({ d }: { d: CalendarDate }) => (
+                <p className="border-b border-gray-100 py-1.5 text-[12px]">
+                  {formatDayShort(d.due_date, now)} · {d.title}
+                  {siteName(d.entity_id) ? ` · ${siteName(d.entity_id)}` : ''}
+                  {d.state === 'not_confirmed' ? ' · not confirmed' : ''}
+                  {d.state === 'done' ? ' · done' : ''}
+                </p>
+              )
+              return (
+                <div className="hidden print:block">
+                  <h2 className="mb-1 font-serif text-[18px]">
+                    {companyName || 'CompliBoard'} — {formatMonth(cursor.y, cursor.m)}
+                  </h2>
+                  {/* The line under the title: when it was printed, which sites it covers, and how
+                      many dates — because a sheet of paper has no "as of" unless it says so, and a
+                      page filtered to one site looks exactly like a company with fewer dates. */}
+                  <p className="mb-3 text-[12px] text-gray-500">
+                    Printed {formatDay(now)}
+                    {' · '}{sitesShown.length ? sitesShown.join(', ') : 'all sites'}
+                    {' · '}{printPassed.length + inThis.length} date
+                    {printPassed.length + inThis.length === 1 ? '' : 's'}
+                    {notConfirmed ? `, ${notConfirmed} not confirmed` : ''}
                   </p>
-                ))}
-            </div>
+
+                  {printPassed.length > 0 && (
+                    <>
+                      <h3 className="mb-1 mt-3 text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                        Dates that have passed
+                      </h3>
+                      {printPassed.map((d) => <Line key={d.id} d={d} />)}
+                    </>
+                  )}
+
+                  <h3 className="mb-1 mt-4 text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                    {formatMonth(cursor.y, cursor.m)}
+                  </h3>
+                  {inThis.length === 0
+                    ? <p className="text-[12px] text-gray-500">Nothing is due in this month.</p>
+                    : inThis.map((d) => <Line key={d.id} d={d} />)}
+
+                  {/* A printed page is read away from the product, so the one thing it cannot leave
+                      unexplained is a date nobody has agreed to yet (§6: a verified row and a
+                      proposed one must not look the same). */}
+                  {notConfirmed > 0 && (
+                    <p className="mt-4 text-[12px] text-gray-500">
+                      “Not confirmed” means CompliBoard read the date out of one of your documents
+                      and nobody has checked it against the line it came from yet.
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
           </section>
         )}
 
@@ -596,7 +649,12 @@ function Calendar() {
                   Mark done
                 </button>
               )}
-              {open.state !== 'rejected' && (
+              {/* *** "Not right" IS FOR A DATE THE PRODUCT PROPOSED *** (decision 6, the owner at B8).
+                  A reading, a conversation, an audit or a handbook put it there, so refusing it is
+                  information: it is kept with the reason, and the next reading of that document
+                  does not raise it again. A date the person TYPED has nobody to tell — refusing
+                  your own typing is deleting it, and Delete is what that date offers. */}
+              {open.source !== 'hand' && open.state !== 'rejected' && (
                 <button disabled={busy} onClick={() => { setRejecting(open.id); setReason('') }} className={TEXT_ACTION}>
                   Not right
                 </button>

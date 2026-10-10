@@ -13,6 +13,7 @@
 // really addressed, and `notified_at` set only on a send that actually succeeded.
 
 import { Resend } from 'resend'
+import { longDate } from './summaryWords.ts'
 import { renderEmail, type EmailContent, type EmailBlock } from './emailFrame.ts'
 import { emailFrom } from './emailSender.ts'
 
@@ -44,6 +45,13 @@ export interface NotifyResult {
   error?: string
   subject?: string
   text?: string
+  /**
+   * The HTML part, on a DRY RUN only. Without it the only way to look at what this email would
+   * look like is to send it — which is how Calendar B5's renders came to be hand-written fixtures
+   * that said things the product never says (B8 items 2 and 3). A render is evidence only if it
+   * comes out of the code that sends.
+   */
+  html?: string
 }
 
 /**
@@ -123,7 +131,9 @@ export async function notifyRun(
 
   if (run.readings_as_of) {
     blocks.push({ kind: 'note',
-      text: `Read against your documents as they stood on ${String(run.readings_as_of).slice(0, 10)}.` })
+      // "8 October 2026", not "2026-10-08" — the owner, B8. A date a person reads should be
+      // written the way they write it; `longDate` is the same helper the summaries use.
+      text: `Read against your documents as they stood on ${longDate(String(run.readings_as_of))}.` })
   }
 
   if (summary.attention.length) {
@@ -134,8 +144,17 @@ export async function notifyRun(
         const w = a.word ? WORD[a.word] ?? a.word : null
         return { main: `${a.title}${w ? ` — ${w}` : ''}${a.document ? ` (${a.document})` : ''}` }
       }),
-      more: summary.nothing_on_file + summary.stale > summary.attention.length
-        ? `…and ${summary.nothing_on_file + summary.stale - summary.attention.length} more.`
+      // *** THE COUNT AND THE LIST MUST AGREE *** (the owner, B8).
+      //
+      // The subject says "N things that need you" from `needs_person`, which is
+      // `nothing_on_file + stale + contradictions + not_a_document_question` (`lib/auditRun.ts:1220`).
+      // `attention` holds only the first two, capped at 25 (`:1240`). This line used to subtract
+      // `nothing_on_file + stale` — the same two — so the subject could say 5, the list show 3,
+      // and no "…and 2 more" appear at all, because the two missing rows were contradictions.
+      // Subtracting from `needs_person` makes the listed rows plus this line always add up to the
+      // number in the subject, whichever kinds the run happened to produce.
+      more: summary.needs_person > summary.attention.length
+        ? `…and ${summary.needs_person - summary.attention.length} more.`
         : null,
     })
   }
@@ -185,14 +204,12 @@ export async function notifyRun(
     // The link opens THIS run's report, not the page it sits on. An email whose link lands a person
     // on a list they then have to search is an email that made them do the work twice.
     button: { label: 'See it all', href: `${appUrl}/audits?run=${runId}` },
-    // THE LINE THIS EMAIL DID NOT HAVE, in the shape of the one the owner approved for Documents.
-    // It goes only to the person who started the audit.
-    why: 'You get this because you asked CompliBoard to audit a folder of your documents, '
-      + 'and we\u2019ve finished.',
+    // The owner's words, B8. It goes only to the person who started the audit.
+    why: 'You get this because you asked CompliBoard to run this audit.',
   }
 
   const { text, html } = renderEmail(content)
-  if (opts.dryRun) return { notified: false, error: 'dry run — nothing was sent', to, subject, text }
+  if (opts.dryRun) return { notified: false, error: 'dry run — nothing was sent', to, subject, text, html }
 
   // The link comes from the environment, and without it nothing is sent. A wrong link is worse
   // than no email: an email that does not arrive looks unfinished, one with a dead link looks
