@@ -30,8 +30,10 @@
 'use client'
 
 import type React from 'react'
-import { useId, useState } from 'react'
-import type { ReportItem, ReportSource } from '@/lib/summaryReport'
+import { useId, useState, useEffect } from 'react'
+import type { ReportItem, ReportSource, ReportDate } from '@/lib/summaryReport'
+import { authHeaders } from '@/lib/supabase'
+import { formatDay, type HowOften } from '@/lib/calendarDate'
 import { NO_SOURCE, NO_SITUATION, AS_OF_LINE } from '@/lib/summaryWords'
 import { thingsToDo } from '@/lib/checklistView'
 import { displaySource } from '@/lib/sourceTitle'
@@ -54,6 +56,9 @@ export interface ReportLike<S extends { n: number }> {
   to_confirm: ReportItem[]
   unanswered: string[]
   sources: S[]
+  /** Deadlines the conversation gave, each checked against it (Calendar C2, board 10). */
+  dates?: ReportDate[]
+  dates_dropped?: Array<{ title: string; reason: string }>
 }
 
 /** A web page, drawn exactly as the workspace always has: a one-line link, and title + host in the list. */
@@ -84,8 +89,136 @@ export interface ReportWords {
   asOf?: (asOf: string) => string
 }
 
-export function ReportView<S extends { n: number }>({ report, factsLine, sourceShape, words }: {
-  report: ReportLike<S>; factsLine: React.ReactNode; sourceShape: SourceShape<S>; words?: ReportWords }) {
+/**
+ * *** THE DATES A CONVERSATION GAVE — Calendar C3, board 10. ***
+ *
+ * Shared by the Compliance Workspace and HR, like everything else in this file. Each date shows the
+ * words it stands on, so a person can see WHY the product thinks this is a deadline before putting
+ * it on their calendar — and nothing arrives there by itself: the note under the list says so, and
+ * it is true, because only this button writes.
+ */
+/** How often, in the words the calendar page uses, so the two screens say the same thing. */
+const HOW_OFTEN_WORDS: Record<HowOften, string> = {
+  monthly: 'every month', quarterly: 'every three months', yearly: 'every year',
+}
+
+function DatesSection({ dates, dropped, topicId, byN, sourceShape }: {
+  dates: ReportDate[]
+  dropped: Array<{ title: string; reason: string }> | undefined
+  topicId: string | undefined
+  byN: Map<number, { n: number }>
+  sourceShape: SourceShape<{ n: number }>
+}) {
+  /** `idle` → `adding` → `on`. Keyed by the date's own key parts, which is what `addDate` keys on. */
+  const [state, setState] = useState<Record<string, 'adding' | 'on' | string>>({})
+  const keyOf = (d: ReportDate) => `${d.day ?? 'no-day'}|${d.line}`
+
+  // WHICH OF THESE ARE ALREADY ON THE CALENDAR. One read when the drawer opens, not one per date.
+  // A failed read leaves every button saying "Add to calendar" — pressing it again is harmless,
+  // because `addDate` is keyed and a second press is the same date (decision 2). So the cautious
+  // direction here is to show the button, and R2 is satisfied by never claiming the opposite.
+  useEffect(() => {
+    if (!topicId) return
+    let live = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/calendar/dates?view=all', { headers: await authHeaders() })
+        if (!res.ok) return
+        const j = await res.json()
+        if (!live || !Array.isArray(j?.dates)) return
+        const here: Record<string, 'on'> = {}
+        for (const row of j.dates as Array<{ topic_id: string | null; due_date: string | null; description: string | null }>)
+          if (row.topic_id === topicId) here[`${row.due_date ?? 'no-day'}|${row.description ?? ''}`] = 'on'
+        setState((s) => ({ ...here, ...s }))
+      } catch { /* the button stays "Add to calendar", which is safe to press twice */ }
+    })()
+    return () => { live = false }
+  }, [topicId])
+
+  const add = async (d: ReportDate) => {
+    const k = keyOf(d)
+    setState((s) => ({ ...s, [k]: 'adding' }))
+    try {
+      const res = await fetch('/api/calendar/dates', {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          source: 'conversation', topic_id: topicId, title: d.title, day: d.day, line: d.line,
+          // A DATE WITH NO DAY GOES ON AS A REPEAT WHOSE DAY THE PERSON PICKS (board 11, Audits'
+          // pattern) — migration 073 requires a dateless date to repeat, and the calendar asks.
+          repeats: d.how_often !== null || d.day === null,
+          every: d.how_often,
+        }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => null)
+        setState((s) => ({ ...s, [k]: j?.error ?? 'We could not add that just now. That is our side, not yours.' }))
+        return
+      }
+      setState((s) => ({ ...s, [k]: 'on' }))
+    } catch {
+      setState((s) => ({ ...s, [k]: 'We could not add that just now. That is our side, not yours.' }))
+    }
+  }
+
+  return (
+    <section>
+      <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+        Dates found · {dates.length}
+      </h4>
+      <ul className="divide-y divide-gray-100 border-y border-gray-100">
+        {dates.map((d, i) => {
+          const st = state[keyOf(d)]
+          return (
+            <li key={i} className="py-2.5">
+              <p className="text-[15px] font-medium text-gray-900">{d.title}</p>
+              <p className="mt-0.5 text-[13px] text-gray-600">
+                {d.day ? formatDay(d.day) : <span className="text-gray-500">No day given</span>}
+                {d.how_often ? ` · ${HOW_OFTEN_WORDS[d.how_often]}` : ''}
+              </p>
+              <p className="mt-1 text-[13px] italic leading-relaxed text-gray-600">“{d.line}”</p>
+              <div className="mt-1 space-y-0.5">
+                {d.from_person
+                  ? <p className="text-[12.5px] text-gray-400">from what you said</p>
+                  : d.sources.length
+                    ? d.sources.map((n) => { const src = byN.get(n); return src ? sourceShape.link(src) : null })
+                    : <p className="text-[12.5px] text-gray-400">{NO_SOURCE}</p>}
+              </div>
+              {topicId && (
+                <div className="no-print mt-1.5">
+                  {st === 'on'
+                    ? <span className="text-[13px] text-[var(--green-ink)]">On your calendar</span>
+                    : <button type="button" disabled={st === 'adding'} onClick={() => add(d)}
+                        className="text-[13px] text-[var(--green-ink)] hover:underline disabled:text-gray-400">
+                        {st === 'adding' ? 'Adding…' : 'Add to calendar'}
+                      </button>}
+                  {st && st !== 'on' && st !== 'adding' && (
+                    <p className="mt-0.5 text-[12.5px] text-amber-900">{st}</p>
+                  )}
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      {/* The product never puts a date on somebody's calendar off its own bat. Said, because the
+          whole value of the calendar is that everything on it was agreed to (decision 3). */}
+      <p className="mt-1.5 text-[12.5px] text-gray-500">
+        Dates from a conversation go on your calendar only when you add them.
+      </p>
+      {/* What the check refused, in one grey line — said, never silently lost (C2). */}
+      {dropped && dropped.length > 0 && (
+        <p className="mt-1 text-[12.5px] text-gray-500">
+          {dropped.length} date{dropped.length === 1 ? '' : 's'} left out: {dropped[0].reason}
+          {dropped.length > 1 ? ', and others' : ''}.
+        </p>
+      )}
+    </section>
+  )
+}
+
+export function ReportView<S extends { n: number }>({ report, factsLine, sourceShape, words, topicId }: {
+  report: ReportLike<S>; factsLine: React.ReactNode; sourceShape: SourceShape<S>; words?: ReportWords; topicId?: string }) {
   const byN = new Map(report.sources.map((src) => [src.n, src]))
   const heading = 'mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400'
   const uid = useId()
@@ -146,6 +279,11 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
           <h4 className={heading}>Still to confirm</h4>
           <ul className="divide-y divide-gray-100">{report.to_confirm.map((it, i) => item(it, `c-${i}`))}</ul>
         </section>
+      )}
+      {report.dates && report.dates.length > 0 && (
+        <DatesSection dates={report.dates} dropped={report.dates_dropped} topicId={topicId}
+          byN={byN as Map<number, { n: number }>}
+          sourceShape={sourceShape as unknown as SourceShape<{ n: number }>} />
       )}
       {report.unanswered.length > 0 && (
         <section>

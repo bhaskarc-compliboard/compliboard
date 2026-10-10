@@ -93,6 +93,8 @@ function Calendar() {
   const [dates, setDates] = useState<CalendarDate[]>([])
   const [sites, setSites] = useState<Array<{ id: string; name: string }>>([])
   const [docs, setDocs] = useState<Record<string, string>>({})
+  /** Which section each conversation belongs to, so the drawer's link opens the right page. */
+  const [topicSection, setTopicSection] = useState<Record<string, string>>({})
   const [companyName, setCompanyName] = useState('')
   /**
    * *** "TODAY" IS THE COMPANY'S, AND IT COMES FROM THE SERVER *** (B10).
@@ -162,13 +164,17 @@ function Calendar() {
 
       const companyId = prof.data?.company_id
       if (companyId) {
-        const [s, c, d] = await Promise.all([
+        const [s, c, d, t] = await Promise.all([
           supabase.from('entities').select('id, name').eq('company_id', companyId).order('name'),
           supabase.from('companies').select('name').eq('id', companyId).maybeSingle(),
           supabase.from('document_index_v').select('document_id, title').eq('company_id', companyId),
+          supabase.from('topics').select('id, section').eq('company_id', companyId),
         ])
         if (s.error) throw new Error(`the sites could not be read: ${s.error.message}`)
         if (d.error) throw new Error(`the documents could not be read: ${d.error.message}`)
+        if (t.error) throw new Error(`the conversations could not be read: ${t.error.message}`)
+        setTopicSection(Object.fromEntries(((t.data ?? []) as Array<{ id: string; section: string }>)
+          .map((x) => [x.id, x.section])))
         setSites(s.data ?? [])
         setCompanyName((c.data as { name?: string } | null)?.name ?? '')
         setDocs(Object.fromEntries(((d.data ?? []) as Array<{ document_id: string; title: string }>)
@@ -271,9 +277,13 @@ function Calendar() {
         : { words: 'The document this came from was deleted.', href: null }
     }
     if (d.source === 'conversation') {
-      return d.topic_id
-        ? { words: 'the conversation it came from', href: `/compliance?topic=${d.topic_id}` }
-        : { words: 'The conversation this came from was deleted.', href: null }
+      // *** A CONVERSATION LIVES IN ONE OF TWO SECTIONS *** (Calendar C3). `topics.section` is
+      // 'workspace' or 'hr', and both summarise through the same code — so a link that always went
+      // to /compliance would open the wrong page for every HR date. Read, not assumed: staging
+      // holds 58 hr topics and 28 workspace ones.
+      if (!d.topic_id) return { words: 'The conversation this came from was deleted.', href: null }
+      const where = topicSection[d.topic_id] === 'hr' ? '/hr' : '/compliance'
+      return { words: 'the conversation it came from', href: `${where}?topic=${d.topic_id}` }
     }
     if (d.source === 'audit') {
       return d.audit_finding_id

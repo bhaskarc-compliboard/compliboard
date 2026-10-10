@@ -1458,7 +1458,8 @@ export default function CompliancePage() {
             <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
           ) : drawerReport ? (
             // Keyed by the topic: a new drawer is a new mount, so every open starts folded (Stage 2).
-            <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} sourceShape={WEB_SOURCE} />
+            <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} sourceShape={WEB_SOURCE}
+              topicId={summaryDrawer.id} />
           ) : summaryDrawer.summary ? (
             <AnswerBody text={summaryDrawer.summary} sources={[]} />
           ) : (

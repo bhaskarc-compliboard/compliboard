@@ -959,7 +959,8 @@ export default function HrWorkspace() {
               if (summaryRunning(convDrawer.id)) return <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
               if (rep?.report) {
                 return <ReportView key={convDrawer.id} report={rep.report as unknown as ReportLike<HrReportSource>}
-                  factsLine={factsLine} sourceShape={HR_SOURCE} words={HR_REPORT_WORDS} />
+                  factsLine={factsLine} sourceShape={HR_SOURCE} words={HR_REPORT_WORDS}
+                  topicId={convDrawer.id} />
               }
               return convDrawer.summary
                 ? <AnswerBody text={convDrawer.summary} sources={[]} />

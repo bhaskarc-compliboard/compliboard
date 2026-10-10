@@ -36,6 +36,12 @@ describe('the summary report draws every source through its source shape', () =>
   })
   test('the workspace passes the web shape', () => {
     const page = readFileSync('app/compliance/page.tsx', 'utf8')
-    assert.match(page, /<ReportView key=\{summaryDrawer\.id\} report=\{drawerReport\} factsLine=\{factsLine\} sourceShape=\{WEB_SOURCE\} \/>/)
+    // Calendar C3 added `topicId`, which the dates block needs to write through `addDate` and to
+    // ask which of them are already on the calendar. Matched field by field rather than as one
+    // literal line, so adding a prop does not fail a test that is about the SHAPE being the web
+    // one — but `sourceShape={WEB_SOURCE}` is still pinned, which is what this test is for.
+    assert.match(page, /<ReportView key=\{summaryDrawer\.id\} report=\{drawerReport\}/)
+    assert.match(page, /sourceShape=\{WEB_SOURCE\}/)
+    assert.match(page, /topicId=\{summaryDrawer\.id\}/)
   })
 })
