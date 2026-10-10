@@ -887,3 +887,129 @@ untouched-shape tests. `lib/answerShape.ts` is new. `lib/answerStream.ts` is the
 HR's shared reader. `lib/handbookCheck.ts`, `lib/handbookRead.ts`, `app/api/hr/answer/route.ts` are
 HR's. `app/api/chat/route.ts` and `app/api/checklist-items/[id]/how-to/route.ts` are the Workspace's.
 `lib/auditRun.ts` is Audits'. No migration.
+
+---
+
+## E3 — R3: an empty list printed as a statement
+
+The owner's §5 answer (3) holds: **the two prompt wordings are drafted in E6 and NOT applied.** What
+E3 ships is the three non-prompt items and D5, which the owner decided.
+
+### A9 · Audits — "nothing needs you" about an audit that never ran
+
+Now `lib/auditNotify.ts:113–122`. `needs_person` is counted from the **findings**, and a run whose
+every section hit a rate limit has none — because nothing ran. So the subject read
+**"Your Oregon DEQ audit: nothing needs you"**. The body has carried the *"N of M parts of this
+audit did not finish"* line all along; the subject is what a person reads in a list of mail, and it
+said the opposite.
+
+`auditSubject(summary)` is pure and exported so the wording is testable without a database or a
+send:
+
+| state | subject |
+|---|---|
+| nothing finished | `Your Oregon DEQ audit could not be finished` |
+| some finished, some did not | `Your compliance audit: 2 things that need you, and 1 of 4 parts did not finish` |
+| some finished, found nothing, one failed | `Your Oregon DEQ audit: 1 of 2 parts did not finish` |
+| a clean run | **word for word what it was** — asserted against the shipped function |
+
+"Nothing needs you" is never said when a part never ran: what that part would have found is not
+known.
+
+**And the second half, which is worse.** The retry route set the run back to `running` and cleared
+`finished_at` — but not `notified_at`. `notifyRun` refuses a run that already has one, and that
+guard is right; it is what stops a duplicate. But nothing cleared it, so **the corrected result was
+never emailed at all.** A person told "nothing needs you" about an audit whose every part had failed
+pressed Run again, it worked, and they heard nothing. One duplicate is recoverable; a correction
+nobody is told about is not.
+
+The retry now clears it, checks the write, and counts `retried_parts` on the run's summary through
+A2's `patchRunSummary` — carried forward past `summariseRun`'s replacing write, which is exactly
+what A2's entry is about — so the second email opens with *"This replaces the email we sent before:
+one part of this audit was run again, and the result below is the one that counts."*
+
+### A10 · Audits — "done" was per run, not per agency
+
+`app/api/audits/index/route.ts`. A run is `done` once every section has **settled**, and a section
+that could not complete counts as settled (`finishRunIfDone`). So an "audit everything" run where
+Oregon DEQ's section hit a rate limit was the newest **done** run for Oregon DEQ — and the page
+showed that agency as *"· 0 to look at"* and *"found nothing open"*, from a section that never ran,
+**while hiding the findings of the last run that did**.
+
+The sections carry the agency, so they are now read **before** the choice and the test is: did THIS
+run finish a section titled this agency? A template run carries no `agency_label` and still appears
+for nobody.
+
+**The amber line's own bug was worse than "can never show" — it is why it can't.** `failed` came
+from `activeSections`, which is `[]` whenever there is no active run, which is **exactly** when the
+line is drawn (`v.failed.length > 0 && !v.activeRun`). The server now names the run that failed this
+agency (`last_failed`) and the page reads the failed sections off that run. The line's words are
+unchanged.
+
+`components/AuditReport.tsx` was checked and needed **no change**: its `failed` comes from the run's
+own sections, and its "Could not complete" section shows each reason with a "Run this section again"
+button. The list's reference was to the zip's line 1130, which has moved.
+
+### A14 · Audits — a checklist nobody could read, shown as "done · 0 to look at"
+
+`createRun`'s template branch writes a done run with 0 sections and the note saying why. Both places
+the page shows such a run — the landed-checklist line and the run row in the list — now show the
+note instead of the count. A run **without** a note still shows its counts, so the note is not a new
+empty state.
+
+### D5 · Documents — a gap still open is work still to do (the owner's)
+
+**Migration 079**, and the reason is recorded as the owner's in `DECISIONS.md` §189b with the one
+condition that would reverse it.
+
+`display_status` took `needs_work` from the current reading's own status and nothing else, so a
+document read twice — the first reading finding a gap, the second finding none — showed **"Current"**
+and the batch email listed it under *"On file and nothing to do"*. `open_gap_count` has been on the
+view since 049 and already counted every open gap from any reading; **only `display_status` ignored
+it.** One branch:
+
+```sql
+when coalesce(g.open_gaps, 0) > 0 then 'needs_work'
+```
+
+**Where it sits, and why.** After `expired` and `expiring` — an expiry is the more urgent fact and a
+date nobody can argue with, so a permit that has run out still says so. Before `current`, `recorded`
+and `on_file` — the three branches that were making the false statement. `gaps_found` is untouched,
+so **no document that says "Needs work" today stops saying it**: the change can only add the label.
+
+**The view body is 076's, character for character**, with the one branch inserted — built by copying
+076's own text rather than retyping it (§9a: copy names from the artifact). A view cannot be patched.
+
+**The verify block tries the rule three ways, and proves its own fixture first:** the open gap makes
+it `needs_work`; closing the gap stops it (a branch that could only ever say "needs work" would pass
+the first check and be no better than a hardcoded label); and an expired permit with an open gap
+still says `expired`. **Its first run failed and was right to:** the probe document was left at
+`status = 'uploaded'`, so the CASE's first branch fired and it read `not_yet_read` — the check caught
+my fixture, not the rule.
+
+**It moved one real document on staging.** Read off the database after applying it:
+
+```
+title       OSHA Form 300A Summary of Work-Related Injuries and Illnesses, CY 2025, Portland Facility
+file        10-osha-300a-2025.pdf      kind record      readings 1      open_gap_count 2
+before      recorded    ("On file and nothing to do" in the batch email)
+after       needs_work
+```
+
+The other five `needs_work` documents were already `gaps_found` and did not move.
+
+### E3's proof
+
+`tests/unit/auditWords.test.ts`, 26 tests, **16 of them failing on the shipped files**. `oldSubject`
+is the shipped subject copied character for character and shows it emailing "nothing needs you" about
+an audit whose every part failed; the clean-run cases are asserted **equal** to it, so A9 cannot have
+changed a subject it was not meant to.
+
+**Effects on other sections, by file.** `lib/auditNotify.ts`, `lib/auditRun.ts`,
+`app/api/audits/index/route.ts`, `app/audits/page.tsx`,
+`app/api/audit-runs/[id]/sections/[sid]/retry/route.ts` — all Audits. Migration 079 changes
+`document_index_v`, which **Documents, Audits, the Calendar and the Workspace all read**: the Audits
+page and `lib/audit.ts` read `agencies` and `scan_id` (unchanged), `lib/documentBatch.ts` groups the
+batch email by `display_status` (which is the point), `app/documents/page.tsx` draws the label, and
+`lib/companyLabels.ts` reads `agencies`/`subjects` (unchanged). `lib/database.types.ts` and
+`docs/SCHEMA.md` regenerated by `db:migrate`. **Spend: $0.00.**

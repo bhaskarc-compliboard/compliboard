@@ -13,6 +13,7 @@ import { after } from 'next/server'
 
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
+import { patchRunSummary } from '@/lib/auditSummary'
 
 export async function POST(request: NextRequest, ctx: { params: Promise<{ id: string; sid: string }> }) {
   try {
@@ -52,8 +53,24 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
 
     // The run goes back to running, so a finished run that has a part re-queued does not go on
     // claiming it is done — and `finishRunIfDone` will claim it again when the part lands.
-    await supabaseAdmin.from('audit_runs')
-      .update({ status: 'running', finished_at: null }).eq('id', id)
+    //
+    // *** `notified_at` GOES WITH IT — fix list A9, Job E3. ***
+    // `notifyRun` refuses a run that already has one (`lib/auditNotify.ts:76`), and that guard is
+    // right: it is what stops a duplicate email. But nothing cleared it on a retry, so **the
+    // corrected result was never emailed at all.** The person was told "nothing needs you" about an
+    // audit whose every part had failed, pressed Run again, it worked, and they heard nothing. One
+    // duplicate is recoverable; a correction nobody is told about is not.
+    const { error: runErr } = await supabaseAdmin.from('audit_runs')
+      .update({ status: 'running', finished_at: null, notified_at: null }).eq('id', id)
+    if (runErr) throw runErr
+
+    // Counted on the summary so the second email can say why it is the second. There is no column
+    // for it; `patchRunSummary` keeps every other key (fix list A2) and `summariseRun` carries this
+    // one forward past the end-of-run write.
+    const patched = await patchRunSummary(supabaseAdmin, id, { add: { retried_parts: 1 } })
+    if (!patched.ok) {
+      console.warn(`audit retry ${sid}: the run's summary was left as it was — ${patched.error.message}`)
+    }
 
     after(async () => {
       try { await sweep() } catch (e) { console.error('kicked audit sweep failed:', e) }

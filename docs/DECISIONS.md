@@ -12783,3 +12783,72 @@ page**. Read, not assumed: staging holds 58 hr topics and 28 workspace ones.
 server's day, so a summary written at 6pm in Oregon was already dated tomorrow. That mattered less
 before; now the prompt resolves "15 March" to the next such day **on or after today**, so a wrong
 today puts a deadline a year out. It is §187g's zone, read once inside `summariseTopic`.
+
+---
+
+## 189. JOB E: THE FIX LIST — WHAT "A FAILURE THAT LOOKS LIKE A FACT" COST, AND THE TEN RULES THAT CAME OUT OF FIXING IT — 10 October 2026
+
+`docs/FIX-LIST-FAILURES.md` is the list; `docs/reports/fixlist-job-e.md` is the work. This section is
+only what a later chat must not have to re-derive.
+
+### 189a. THE OWNER'S FIVE ANSWERS, 10 October 2026: "yes to all."
+
+Recorded in `FIX-LIST-FAILURES.md` §5 and acted on here. (1) Readers take the latest **readable**
+reading; Job E fixes the remaining writes and screens. (2) **D5: a document with a gap still open
+from an earlier reading shows "Needs work"** — §189b. (3) The R3 prompt words are drafted and shown
+to the owner before they go in — not applied in Job E. (4) The export holds everything the deletion
+destroys, **and every My Account item moves to My Account's own section**: M1, M2, M3, M4, O4, O5.
+(5) Job E runs before Job D.
+
+### 189b. D5 — A GAP STILL OPEN IS WORK STILL TO DO. The owner's, with the reason.
+
+**Migration 079.** `document_index_v.display_status` took `needs_work` from the current reading's own
+status and nothing else, so a document read twice — the first reading finding a gap, the second
+finding none — showed **"Current"**, and the batch email listed it under *"On file and nothing to
+do"*. The gap row was still there, still `open`, still in the drawer, still a thing to do.
+
+**The owner's reason:** the gap is still open, so the person still has work. A second reading finding
+nothing is not somebody closing the first reading's finding — only a person does that, and until
+they do, "nothing to do" is a statement about their compliance that is not true.
+
+**Where the branch sits, and why.** After `expired` and `expiring` (an expiry is the more urgent fact
+and a date nobody can argue with, so a permit that has run out still says so); before every "nothing
+to do" branch (`current`, `recorded`, `on_file`), which are the ones making the false statement.
+`gaps_found` is untouched, so **no document that says "Needs work" today stops saying it** — the
+change can only add the label.
+
+**It moved one real document on staging:** `10-osha-300a-2025.pdf`, kind `record`, one reading,
+**2 open gaps**, which showed `recorded` and now shows `needs_work`.
+
+**It would be reversed if** a person's "I have dealt with this" ever stops being the only thing that
+closes a gap — if a later reading is allowed to close one, this rule becomes double-counting.
+
+### 189c. TEN RULES THE JOB PRODUCED, each from a failure in this codebase
+
+1. **A failed database read must never come back as zero rows.** `lib/mustRead.ts` makes the correct
+   thing shorter than the wrong one, because the rule alone had been in `CLAUDE.md` §3.12 for weeks
+   and the list still found forty-odd places breaking it.
+2. **A null count is not zero.** PostgREST returns `count: null` with **no error** for a table that
+   does not exist. `mustCount` refuses it.
+3. **"Nothing was said about these" is not "none of these is true."** A model answer that carried
+   none of the fields asked for closes nothing, withdraws nothing, deletes nothing (A1, D1).
+4. **An empty result never reconciles against a complete set.** `close_and_replace_obligations` is
+   told "this is everything", so an empty set closes everything (W1).
+5. **Switch over only once the new thing has succeeded** — not when it arrives (H4).
+6. **"How far did it read" and "when was it written" are different facts and need a column each**
+   (W2, migration 078).
+7. **An answer that parsed is not an answer that fits**, and `JSON.parse` succeeding on `[1]` is the
+   proof (S1, A7).
+8. **`end_turn` is the only stop reason that means finished.** No reason at all is not one (S2).
+9. **Close, withdraw and delete go LAST**, after everything that can still fail (A1, D1).
+10. **A check that reports an absence must be shown seeing a presence first**, and the proof must be
+    made to fail on the old code before it is trusted. Every item in this job ships with one.
+
+### 189d. AND TWO FOUND BY FIXING, NOT BY LOOKING
+
+- **`app/api/jobs/delete/route.ts` deleted on anything it did not recognise.** It tested for its two
+  skip reasons and deleted otherwise, so W2's new reason would have fallen straight through to the
+  delete. Adding to an enum found it; nothing else would have.
+- **The gate's own row-count script named a table that does not exist** — `audit_run_sections`; the
+  table is `audit_sections`. The same mistake as `topic_messages`, in the same file, and only
+  visible because Job C made a null count print `NO TABLE` instead of `0`.

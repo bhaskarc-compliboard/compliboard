@@ -78,6 +78,12 @@ export interface RunSummary {
   attention: Array<{ title: string; word: string | null; document: string | null }>
   agencies: string[]
   note: string | null
+  /**
+   * How many parts of this run have been RE-RUN after failing — fix list **A9**, Job E3.
+   * Carried on the summary (there is no column for it), and read by the email so a second one about
+   * the same audit says why a second one came.
+   */
+  retried_parts?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -1371,6 +1377,9 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     // runs, and summarising at the end would drop it.
     extraction_ai_call_id: (((run?.summary ?? {}) as Record<string, unknown>)
       .extraction_ai_call_id as string | null) ?? null,
+    // A9: and how many parts were re-run, for the same reason — this write replaces the summary, so
+    // a key nobody carries forward is a key that disappears when the run finishes.
+    retried_parts: Number(((run?.summary ?? {}) as Record<string, unknown>).retried_parts) || 0,
   }
 }
 

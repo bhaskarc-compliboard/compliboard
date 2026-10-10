@@ -55,6 +55,50 @@ export interface NotifyResult {
 }
 
 /**
+ * THE SUBJECT LINE — fix list **A9**, root R3, Job E3.
+ *
+ * *** THE SUBJECT COUNTS WHAT NEEDS A PERSON, NOT EVERY ROW — ruled 30 September. ***
+ * `total` includes the permit that IS on file, the date that is months away, and the expected item
+ * that is only a suggestion. A subject line that counts those is alarming and wrong.
+ *
+ * *** AND IT NOW BRANCHES ON WHAT FINISHED, WHICH IS A9. ***
+ *
+ * It used to read `needs_person ? "N things that need you" : "nothing needs you"` — and
+ * `needs_person` is counted from the FINDINGS, so a run whose every section hit a rate limit has
+ * none, and the email went out saying **"Your Oregon DEQ audit: nothing needs you"**. The body has
+ * always carried the "N of M parts did not finish" line; the subject is what a person reads in a
+ * list of mail, and it said the opposite. `CLAUDE.md` §5.1 and root R3 in one line: an empty list
+ * printed as a statement, when the truth is "not read".
+ *
+ * Pure and exported so the wording is testable without a database or a send.
+ */
+export function auditSubject(summary: RunSummary): string {
+  // A note on the run is a sentence about the audit itself — "this checklist names somebody else" —
+  // and it outranks any count, exactly as `runSummaryLine` treats it.
+  if (summary.note) return 'Your audit is done'
+
+  const who = summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'
+  const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
+  const needs = summary.needs_person
+    ? `${summary.needs_person} ${plural(summary.needs_person, 'thing that needs', 'things that need')} you`
+    : null
+  const failed = summary.could_not_complete
+    ? `${summary.could_not_complete} of ${summary.sections} `
+      + `${plural(summary.sections, 'part', 'parts')} did not finish`
+    : null
+
+  if (failed) {
+    // NOTHING FINISHED AT ALL. There is no result to report, so the subject must not describe one.
+    if (!summary.sections_done) return `Your ${who} audit could not be finished`
+    // Some did. Both halves go in the subject, and "nothing needs you" is never said when a part
+    // of the audit never ran — what those parts would have found is not known.
+    return needs ? `Your ${who} audit: ${needs}, and ${failed}`
+      : `Your ${who} audit: ${failed}`
+  }
+  return needs ? `Your ${who} audit: ${needs}` : `Your ${who} audit: nothing needs you`
+}
+
+/**
  * One email per finished run, to the login that started it.
  *
  * *** `notified_at` IS THE GUARD AND IT IS SET ONLY AFTER A SUCCESSFUL SEND. *** A row stamped
@@ -112,17 +156,7 @@ export async function notifyRun(
   const override = (process.env.NOTIFY_TEST_TO ?? '').trim()
   const to = override || realTo
 
-  // *** THE SUBJECT COUNTS WHAT NEEDS A PERSON, NOT EVERY ROW — ruled 30 September. ***
-  // `total` includes the permit that IS on file, the date that is months away, and the expected
-  // item that is only a suggestion. A subject line that counts those is alarming and wrong.
-  const subject = summary.note
-    ? 'Your audit is done'
-    : summary.needs_person
-      ? `Your ${summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'} audit: `
-        + `${summary.needs_person} thing${summary.needs_person === 1 ? '' : 's'} that need`
-        + `${summary.needs_person === 1 ? 's' : ''} you`
-      : `Your ${summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'} audit: `
-        + 'nothing needs you'
+  const subject = auditSubject(summary)
 
   // *** THE SAME FRAME AS EVERY OTHER EMAIL *** (`lib/emailFrame.ts`, Calendar B5). Audits' WORDS
   // are unchanged — they are Audits' own. What is new is that they are described once, as data, and
@@ -193,6 +227,15 @@ export async function notifyRun(
     blocks.push({ kind: 'para', text: `${summary.could_not_complete} of ${summary.sections} part`
       + `${summary.sections === 1 ? '' : 's'} of this audit did not finish. That is our side, not `
       + `yours — you can run those again from the page.` })
+  }
+  // *** WHY A SECOND EMAIL CAME ABOUT ONE AUDIT *** (A9, Job E3). The retry clears `notified_at`,
+  // so a corrected run is emailed — and an email that arrives with no explanation of why it is the
+  // second one reads like a mistake.
+  if (summary.retried_parts) {
+    blocks.push({ kind: 'para', text: `This replaces the email we sent before: `
+      + `${summary.retried_parts === 1 ? 'one part' : `${summary.retried_parts} parts`} of this `
+      + `audit ${summary.retried_parts === 1 ? 'was' : 'were'} run again, and the result below is `
+      + `the one that counts.` })
   }
 
   const content: EmailContent = {

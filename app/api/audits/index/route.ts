@@ -83,20 +83,7 @@ export async function GET(request: NextRequest) {
         (dl.recurs && !dl.due_on) || (typeof dl.due_on === 'string' && dl.due_on <= soon))
     }
 
-    // ---- the last DONE run per agency, and any run still going ----
-    const doneByAgency = new Map<string, Record<string, unknown>>()
-    const activeByAgency = new Map<string, Record<string, unknown>>()
-    for (const r of runs) {
-      // An "all agencies" run carries every label in one string; its SECTIONS are what belong to
-      // one agency, so the page reads those rather than splitting the label back apart.
-      const labels = String(r.agency_label ?? '').split(' · ').map((x) => x.trim()).filter(Boolean)
-      for (const l of labels) {
-        if (r.status === 'done' && !doneByAgency.has(l)) doneByAgency.set(l, r)
-        if (r.status !== 'done' && !activeByAgency.has(l)) activeByAgency.set(l, r)
-      }
-    }
-
-    // ---- sections, for progress and for could-not-complete ----
+    // ---- sections, read FIRST, because the last-done-run-per-agency depends on them ----
     const runIds = runs.map((r) => r.id as string)
     let sections: Array<Record<string, unknown>> = []
     if (runIds.length) {
@@ -106,6 +93,54 @@ export async function GET(request: NextRequest) {
         .in('run_id', runIds).order('ordinal')
       if (error) throw new Error(`audit_sections: ${error.message}`)
       sections = (data ?? []) as unknown as Array<Record<string, unknown>>
+    }
+
+    /** Which agencies each run finished a section for, and which it failed. A10, Job E3. */
+    const doneTitles = new Map<string, Set<string>>()
+    const failedTitles = new Map<string, Set<string>>()
+    for (const sec of sections) {
+      const runId = String(sec.run_id)
+      const title = String(sec.title ?? '')
+      if (!title) continue
+      const into = sec.status === 'done' ? doneTitles : sec.status === 'could_not_complete' ? failedTitles : null
+      if (!into) continue
+      if (!into.has(runId)) into.set(runId, new Set())
+      into.get(runId)!.add(title)
+    }
+
+    // ---- the last run that FINISHED THIS AGENCY'S SECTION, and any run still going ----
+    //
+    // *** "DONE" IS PER AGENCY, NOT PER RUN — fix list A10, root R3, Job E3. ***
+    //
+    // This took the newest run whose STATUS was done, for any agency it carried. A run is done once
+    // every section has SETTLED, and a section that could not complete counts as settled
+    // (`finishRunIfDone`) — so an "audit everything" run where Oregon DEQ's section hit a rate limit
+    // was the newest done run for Oregon DEQ. The page then showed that agency as **"· 0 to look at"**
+    // and "found nothing open", from a section that never ran, **and hid the findings of the last run
+    // that did**. An empty list printed as a statement, which is exactly R3.
+    //
+    // The sections carry the agency, so the test is: did THIS run finish a section titled this
+    // agency? A template run has no `agency_label` at all and so appears here for nobody, unchanged.
+    const doneByAgency = new Map<string, Record<string, unknown>>()
+    const activeByAgency = new Map<string, Record<string, unknown>>()
+    /** Agencies whose newest done run failed them, so the page can say so rather than show a zero. */
+    const failedByAgency = new Map<string, Record<string, unknown>>()
+    for (const r of runs) {
+      // An "all agencies" run carries every label in one string; its SECTIONS are what belong to
+      // one agency, so the page reads those rather than splitting the label back apart.
+      const labels = String(r.agency_label ?? '').split(' · ').map((x) => x.trim()).filter(Boolean)
+      const id = String(r.id)
+      for (const l of labels) {
+        if (r.status === 'done') {
+          if (doneTitles.get(id)?.has(l) && !doneByAgency.has(l)) doneByAgency.set(l, r)
+          // The newest done run that FAILED this agency, kept whether or not an older one succeeded:
+          // "the last audit did not finish this part" is true of the newest attempt either way.
+          if (failedTitles.get(id)?.has(l) && !failedByAgency.has(l) && !doneByAgency.has(l)) {
+            failedByAgency.set(l, r)
+          }
+        }
+        if (r.status !== 'done' && !activeByAgency.has(l)) activeByAgency.set(l, r)
+      }
     }
 
     // ---- the open findings of each agency's last done run, by word ----
@@ -165,6 +200,10 @@ export async function GET(request: NextRequest) {
       open_findings: openFindings,
       last_done: Object.fromEntries([...doneByAgency.entries()].map(([l, r]) => [l, r.id])),
       active: Object.fromEntries([...activeByAgency.entries()].map(([l, r]) => [l, r.id])),
+      // A10: the newest run whose section for this agency DID NOT FINISH, when no newer one did.
+      // The page's amber line reads this instead of the active run's sections, which were always
+      // empty when there was no active run — so the line could never show.
+      last_failed: Object.fromEntries([...failedByAgency.entries()].map(([l, r]) => [l, r.id])),
       runs: runs.map((r) => ({
         ...r,
         closed_count: closedByRun.get(r.id as string) ?? 0,

@@ -321,23 +321,54 @@ not a month.
     expected list against what is held when the page shows it. **PARTLY FIXED in A3e** (`lib/documentScan.ts:453`):
     a document whose re-read failed is listed from its readable reading. **Still open:** queued documents, the cut
     at 40, the frozen expected list. **Quality change: the prompt goes to the owner.**
-41. **A9 · sev 2 · ✓ · Audits.** `lib/auditNotify.ts:96–103`: the subject ignores failed sections — an audit whose
+41. **A9 · sev 2 · ✓ FIXED (Job E3, "Job E: A9, A10, A14 and D5") · Audits.** `lib/auditNotify.ts:96–103`: the subject ignores failed sections — an audit whose
     every section hit a rate limit is emailed as "Your Oregon DEQ audit: nothing needs you". After Retry, the
     corrected result is never emailed (`:66`, `notified_at` already set). **Fix:** branch the subject on what
     finished; re-notify after a retry.
-42. **A10 · sev 2 · ✓ (index) / · (page) · Audits.** `app/api/audits/index/route.ts:91`: "Where you stand" takes the
+    **Closed, both halves.** `auditSubject(summary)` is pure and exported: nothing finished →
+    *"Your <X> audit could not be finished"*; some did → both halves, *"2 things that need you, and
+    1 of 4 parts did not finish"*; and **"nothing needs you" is never said when a part never ran**,
+    because what that part would have found is not known. A clean run's subject is word for word
+    what it was, asserted against the shipped function. The retry now clears `notified_at` — nothing
+    did, so **the corrected result was never emailed at all** — and counts `retried_parts` on the
+    summary (carried forward past `summariseRun`'s replacing write), so the second email says
+    *"This replaces the email we sent before"* rather than arriving unexplained.
+42. **A10 · sev 2 · ✓ FIXED (Job E3, same commit) · Audits.** `app/api/audits/index/route.ts:91`: "Where you stand" takes the
     newest **done** run, even when that agency's section in it failed, so it shows "· 0 to look at" and "found nothing
     open" and hides the last good run's findings. The amber "parts did not finish" line can never show
     (`app/audits/page.tsx:456`, `:663`, `:666`). Same in `components/AuditReport.tsx:1130`. **Fix:** per agency, the
     newest run whose section for that agency is done.
-43. **A14 · sev 3 · ✓ (run) / · (page) · Audits.** `lib/auditRun.ts:216–227`, `app/audits/page.tsx:571`, `:760`: a
+    **Closed:** the sections are read **before** the last-done-run choice is made, and the test is
+    "did THIS run finish a section titled this agency?". A template run carries no `agency_label`
+    and so still appears for nobody. **And the amber line's own bug was worse than "can never show"
+    — it is WHY:** `failed` came from `activeSections`, which is `[]` whenever there is no active
+    run, which is exactly when the line is drawn. The server now names the run that failed this
+    agency (`last_failed`) and the page reads the failed sections off that run; the line's words are
+    unchanged. `components/AuditReport.tsx` was checked and needed **no change**: its `failed` comes
+    from the run's **own** sections, and its "Could not complete" section shows each reason with a
+    "Run this section again" button.
+43. **A14 · sev 3 · ✓ FIXED (Job E3, same commit) · Audits.** `lib/auditRun.ts:216–227`, `app/audits/page.tsx:571`, `:760`: a
     checklist that could not be read (rate limit) becomes a done run with 0 sections, shown "done · 0 to look at";
     the note saying why is not shown. **Fix:** show the note instead of a count.
-44. **D5 · sev 2 · ✓ · Documents — needs Documents' rule.** `supabase/migrations/049_significant_date_at_read_time.
+    **Closed, in both places the page shows such a run:** the landed-checklist line and the run row
+    in the list. A run with a note shows the note; a run without one still shows its counts, so the
+    note is not a new empty state.
+44. **D5 · sev 2 · ✓ FIXED (Job E3, migration 079, THE OWNER'S DECISION — `DECISIONS.md` §189b) · Documents.** `supabase/migrations/049_significant_date_at_read_time.
     sql:76`, `:92–94` (the latest `document_index_v` in the zip; 074–076 replaced it since — check): `needs_work`
     comes only from the reading's own status, never from gaps still open from earlier readings, so a re-read that
     says "no gaps" shows "Current", and the batch email lists it under "On file and nothing to do"
     (`lib/documentBatch.ts:112`, `:189`). **The owner decides** (§5).
+    **The owner's answer, 10 October: yes.** Migration 079 adds one branch —
+    `when coalesce(g.open_gaps, 0) > 0 then 'needs_work'` — **after** `expired`/`expiring` (an
+    expiry is the more urgent fact and a date nobody can argue with) and **before** `current`,
+    `recorded` and `on_file`, the three branches that were making the false statement. `gaps_found`
+    is untouched, so no document that says "Needs work" today stops saying it: this can only add
+    the label. `open_gap_count` has been on the view since 049 and already counted every open gap
+    from any reading; only `display_status` ignored it.
+    **It moved one real document on staging:** `10-osha-300a-2025.pdf`, kind `record`, one reading,
+    **2 open gaps**, which showed `recorded` — and which the batch email listed under "On file and
+    nothing to do". The reason is recorded as the owner's in `DECISIONS.md` §189b, with the one
+    condition that would reverse it.
 
 ### R4 — an answer that did not finish or did not fit, saved as complete
 

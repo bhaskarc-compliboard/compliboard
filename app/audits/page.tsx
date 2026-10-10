@@ -74,6 +74,8 @@ interface Index {
   sections: Section[]
   open_findings: Finding[]
   last_done: Record<string, string>
+  /** A10: the newest run whose section for this agency did not finish, when no newer one did. */
+  last_failed: Record<string, string>
   active: Record<string, string>
   runs: Run[]
   banners: string[]
@@ -453,7 +455,17 @@ function Audits() {
       on_file: findings.filter((f) => f.word === 'on_file').length,
     }
     const needs = byWord.nothing_on_file + byWord.stale + byWord.contradiction + byWord.not_a_document_question
-    const failed = activeSections.filter((s) => s.status === 'could_not_complete')
+    // *** THIS LINE COULD NEVER SHOW — fix list A10, Job E3. ***
+    // It was `activeSections.filter(...)`, and `activeSections` is `[]` whenever there is no active
+    // run — which is precisely when it is drawn (`!v.activeRun`). So the amber "N parts of the last
+    // audit did not finish" was unreachable, and a section that failed looked like a section that
+    // found nothing. The server now says which run failed this agency (`last_failed`), and the
+    // failed sections are read off THAT run.
+    const failedRunId = idx.last_failed?.[label] ?? null
+    const failed = failedRunId
+      ? idx.sections.filter((s) => s.run_id === failedRunId && s.title === label
+                                   && s.status === 'could_not_complete')
+      : []
     return { docs, lastRun, activeRun, mine, k, n: activeSections.length, byWord, needs, failed }
   }
 
@@ -566,9 +578,16 @@ function Audits() {
               </p>
             )}
             {!runningTemplate && landedTemplate && (
+              /* *** A NOTE ON THE RUN REPLACES THE COUNT — fix list A14, root R3, Job E3. ***
+                 A checklist the reading could not read becomes a DONE run with 0 sections and a note
+                 saying why (`lib/auditRun.ts`'s `createRun`, template branch). This line said
+                 "is done · 0 to look at", which is a statement about an audit that never happened,
+                 and the note was shown nowhere. */
               <p className="no-print mb-4 text-[13px] text-gray-600">
-                Your audit against {checklistTitle(landedTemplate, idx)} is done
-                {' · '}{needsOf(landedTemplate.summary)} to look at{' · '}
+                {landedTemplate.summary?.note
+                  ? <>Your audit against {checklistTitle(landedTemplate, idx)}: {landedTemplate.summary.note}{' · '}</>
+                  : <>Your audit against {checklistTitle(landedTemplate, idx)} is done
+                     {' · '}{needsOf(landedTemplate.summary)} to look at{' · '}</>}
                 <button onClick={() => {
                   setSeenTemplate((x) => [...x, landedTemplate.id]); setParam('run', landedTemplate.id)
                 }} className={ACTION_GREEN}>Open</button>
@@ -756,6 +775,10 @@ function Audits() {
                           <p className="mt-0.5 text-[12px] text-gray-500">
                             {r.status !== 'done'
                               ? `Running · ${r.estimate ?? idx.estimate}`
+                              /* A14: a run with a note is a run that could not be done. The note is
+                                 the whole answer; a count beside it would be a count of nothing. */
+                              : r.summary?.note
+                              ? r.summary.note
                               : <>
                                   {needsOf(r.summary)} to look at
                                   {` · ${r.summary?.sections_done ?? 0} of ${r.section_count} section${r.section_count === 1 ? '' : 's'}`}
