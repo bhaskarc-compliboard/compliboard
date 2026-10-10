@@ -12719,3 +12719,67 @@ the dashboard already use — and the monthly job reads each company's zone **in
 
 **Reversed if** the product ever needs one company's calendar shown in another's zone — it does not,
 and the opposite (a traveller's browser deciding) is the bug this avoids.
+
+## 188. CALENDAR JOB C: DATES IN WORKSPACE AND HR SUMMARIES — 9 October 2026
+
+Plan decision 13, board 10. A summary now lists the deadlines the conversation gave, each standing
+on words copied from it, and the person decides which go on the calendar.
+`docs/reports/calendar-job-c.md` is the run's record; this is what should outlive it.
+
+### 188a. The same paragraph in both prompts, because the same file reads them
+
+`lib/summaryReport.ts` serves the Compliance Workspace **and** HR, and the nightly job drives both.
+So the dates paragraph is the owner's words in `prompts/summary-report.ts` and
+`prompts/hr-summary.ts` **identically**, and a test asserts HR carries the Workspace's situation,
+dates and facts paragraphs in that order, word for word. **Reversed if** the two sections ever need
+different wording — and then the test is what forces that to be a decision rather than a drift.
+
+### 188b. ⚡ A DATE IS THE ONE THING IN A SUMMARY A PERSON ACTS ON WITHOUT RE-READING IT
+
+They press "Add to calendar" and plan around it. So five checks run before one reaches a screen
+(`checkReport`): the **line** must be in the conversation; the **day** must be in the line;
+**how often** survives only if the line says so; **sources** go through `checkCitations`; a
+malformed field behaves exactly as `facts` does. A date that fails is dropped and counted, said in
+one grey line.
+
+**The second check is the one that matters most.** The prompt forbids working a day out, so a day
+the copied words do not contain is a day the model computed — "renewed annually" becoming
+`2027-03-15`. `dayIsInLine` asks for the day number and the month, and for a year **only if the
+line states one**, because the prompt deliberately resolves a bare "15 March" to the next such day.
+
+**And the third keeps the date.** An unstated repeat is cleared rather than refused: losing a real
+deadline is worse than losing its cadence.
+
+### 188c. "Made to fail first" means watching it fail
+
+Every check was broken in turn and this file watched go red — and **check 4's test did not fail**.
+It cited `[1, 7]` against a conversation with one source, so `cleanSourceNumbers` dropped 7 as out
+of range before `checkCitations` ran: the test passed with the check disabled and proved nothing.
+The fixture now holds two sources cited in **different paragraphs**, so the number is valid but
+belongs elsewhere. **A test written to cover a check, and never seen to fail, covers nothing.**
+
+### 188d. An empty list is a correct answer, and the hardest one to trust
+
+C4's first run returned no dates for all four cases, two of which were chosen for having deadlines.
+Four empty answers is either right four times or a pipeline that cannot see, **and the two look
+identical**. A case with an unmistakable date was added first; it returned two, so the zeros meant
+something.
+
+**And one of those zeros was the best possible answer.** The federal hazmat conversation says
+*"Don't assume it's July 1 unless that's what your certificate says"* — it **refuses** to give this
+person a date. A model that emitted "1 July" there would have invented the exact deadline the
+answer warned against. That is the failure this feature could cause, and it is now step 2 of the
+owner's Opus test (`docs/TEST-AT-FINISH-LINE.md`).
+
+### 188e. A conversation lives in one of two sections
+
+`topics.section` is `'workspace'` or `'hr'`, and both summarise through the same code. The calendar
+drawer's link back always went to `/compliance`, so **every HR date would have opened the wrong
+page**. Read, not assumed: staging holds 58 hr topics and 28 workspace ones.
+
+### 188f. The prompt's "today" is the company's
+
+`summariseTopic` gave the model `new Date().toISOString().slice(0, 10)` — UTC, not even the
+server's day, so a summary written at 6pm in Oregon was already dated tomorrow. That mattered less
+before; now the prompt resolves "15 March" to the next such day **on or after today**, so a wrong
+today puts a deadline a year out. It is §187g's zone, read once inside `summariseTopic`.

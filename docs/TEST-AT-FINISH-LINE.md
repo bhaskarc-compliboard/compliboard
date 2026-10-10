@@ -289,6 +289,26 @@ the first two after HR's yardstick makes it stale:
 
 ---
 
+### Dates in a summary — ON OPUS (Calendar Job C, decision 13, board 10)
+
+**Why this one needs the owner and cannot be a script.** Job C was built and proved on Haiku, which
+shows the machinery works: the line is found in the conversation, the day is in the line, a repeat
+is only kept when stated, citations are checked. **None of that says the dates are the RIGHT ones.**
+Haiku also varied between two runs on the same conversation — 0 dates once, 1 the next — so what a
+good model makes of a real conversation is the open question.
+
+1. Open a conversation that gave you a real deadline. Summarise it. Under **Dates found · N**, read
+   each date's line and ask: *did the conversation really give me this, for something I must do?*
+2. **The one to watch for is a date the conversation refused to give.** Staging has one: the federal
+   hazmat registration thread says "Don't assume it's July 1 unless that's what your certificate
+   says." Haiku correctly returned nothing. **A model that offers "1 July" there has invented the
+   deadline the answer warned against**, and that is the failure this whole feature could cause.
+3. A conversation with no deadlines must show no Dates section at all.
+4. Press **Add to calendar** on one, then press it again after reopening the drawer: it must say
+   **On your calendar** and there must be ONE date on the calendar, not two.
+5. On the calendar, open that date: "From a conversation" must link back to the conversation — and
+   for an HR conversation it must open **/hr**, not /compliance.
+
 ## Calendar
 
 *Started 9 October 2026 by the Calendar chat, during Job A. The plan is `docs/CALENDAR-PLAN.md`; the decisions are
@@ -411,3 +431,10 @@ judges are produced by Documents' reading.
 ---
 
 <!-- Other sections: add your part below, in the same shape (A to J). -->
+
+### Calendar — a date that came from a conversation (Job C)
+
+Covered in HR's part above, steps 4 and 5, because that is where the date is created. The calendar's
+side of it: the date arrives **confirmed** (a person pressed for it, decision 3), it carries the
+conversation's line as its description, and a date the conversation gave no day for arrives as a
+repeat with no day — the calendar asks for the day, it is not invented.

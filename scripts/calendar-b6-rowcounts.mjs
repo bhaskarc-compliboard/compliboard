@@ -26,7 +26,9 @@ const SECTIONS = {
   'Documents':           ['documents', 'document_scans', 'document_gaps', 'document_batches'],
   'Audits':              ['audit_runs', 'audit_findings', 'audit_run_sections'],
   'HR':                  ['handbooks', 'handbook_sections', 'handbook_checks', 'handbook_check_sections'],
-  'Workspace':           ['topics', 'topic_messages', 'checklists', 'checklist_items'],
+  // `turns` is the Workspace's messages table. The name `topic_messages` was wrong from B6 and
+  // nothing said so, because a missing table counted as zero.
+  'Workspace':           ['topics', 'turns', 'checklists', 'checklist_items'],
   'Company information': ['companies', 'entities', 'profiles'],
   'Jobs and cost':       ['job_runs', 'ai_calls'],
 }
@@ -38,7 +40,13 @@ for (const [section, tables] of Object.entries(SECTIONS)) {
       const { count, error } = await db.from(t).select('*', { count: 'exact', head: true })
       // *** AN ERROR IS NOT A ZERO *** (R2). A count that could not be taken is printed as ERR, so
       // a permission that broke can never be read as "the table emptied".
-      return error ? `ERR ${error.code ?? ''}`.trim() : String(count ?? 0)
+      if (error) return `ERR ${error.code ?? ''}`.trim()
+      // *** AND NEITHER IS A NULL COUNT. *** A table that does not exist comes back `count: null`
+      // with NO error from PostgREST, so this printed a confident `0` for `topic_messages` — a
+      // table this product has never had — from B6 until Calendar C5 looked at it. The gate's own
+      // script had the failure the gate exists to catch.
+      if (count === null) return 'NO TABLE'
+      return String(count)
     }
     rows.push([section, t, await one(caller), await one(svc)])
   }
