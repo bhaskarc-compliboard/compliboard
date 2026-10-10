@@ -18,6 +18,7 @@ import { startReadingNow } from '@/lib/handbookStart'
 import { READ_REASONS } from '@/lib/handbooks'
 import { hrAnswerPrompt, hrAnswerMessage } from '@/prompts/hr-answer'
 import { HR_SELECT_PROMPT, hrSelectMessage } from '@/prompts/hr-select'
+import { finishedCleanly } from '@/lib/answerShape'
 
 export const maxDuration = 800
 
@@ -195,6 +196,22 @@ export async function POST(request: NextRequest) {
           for await (const ev of askAIOpenStream(hrAnswerPrompt(), messages,
                        { task: 'hr', maxTokens: 16000, signal: request.signal, ledger: { companyId, task: 'hr' }, maxSearches })) {
             if (ev.type === 'done') {
+              // *** S2 (fix list, root R4, Job E): an answer that did not finish is not an answer. ***
+              // The stream ends on `max_tokens`, `refusal` and `pause_turn` as surely as on
+              // `end_turn`, and this branch acted the same either way: the half-answer was saved
+              // into the conversation with a check record attached — a record of a check made over
+              // text the model never finished writing — and counted as a question answered
+              // (decision 9). What arrived is still sent, because it is the person's; nothing is
+              // saved and nothing is counted, and the page's "stopped early … Try again" block
+              // says so (`lib/answerStream.ts`).
+              const finish = finishedCleanly(ev.stopReason)
+              if (!finish.complete) {
+                console.warn(`hr answer: the answer did not finish — ${finish.why} `
+                  + `(stop_reason=${ev.stopReason ?? 'none'}); nothing saved, nothing counted`)
+                send({ type: 'done', research: ev.answer.text, sources: [], topicId,
+                       incomplete: finish.why })
+                continue
+              }
               let raw = ev.answer.text
               // TEST PATH ONLY (never on production): one quote that is in no handbook, to prove it is dropped.
               if (process.env.NODE_ENV !== 'production' && process.env.HR_TEST_BAD_QUOTE === '1') {

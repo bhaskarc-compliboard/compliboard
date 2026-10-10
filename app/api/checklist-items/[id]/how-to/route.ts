@@ -33,6 +33,7 @@ import { requireCompany } from '@/lib/auth'
 import { askAIOpenStream, extractJsonText, modelForTask, effortForHowto, searchLimit, type SearchResult } from '@/lib/ai'
 import { howToPrompt, howToInput } from '@/prompts/how-to'
 import { checkHowTo, stripMarkers } from '@/lib/howTo'
+import { finishedCleanly } from '@/lib/answerShape'
 import { HOWTO_LOCK_MS } from '@/lib/checklistView'
 
 export const maxDuration = 300
@@ -84,7 +85,20 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   // in the same update) or calls release(). The client is the caller's, built per request.
   after(async () => {
     try {
-      const { data: list } = await db.from('checklists').select('title, question').eq('id', item.checklist_id ?? '').maybeSingle()
+      // *** THE CHECKLIST'S OWN TITLE IS THE ONLY CONTEXT THIS CALL HAS *** — fix list W5,
+      // severity 2, root R2, Job E. This was `const { data: list } = …`. A failed read sent the
+      // model `CHECKLIST TITLE: (none)` and `QUESTION: (none)`, so the research was done about an
+      // item with no subject around it — and the answer was **saved and never redone**, because
+      // `:61` above returns a stored `howto` without asking anything. One failed read, one wrong
+      // answer, kept for good. Checked, and the claim released so the next press can try again.
+      const listRes = await db.from('checklists').select('title, question').eq('id', item.checklist_id ?? '').maybeSingle()
+      if (listRes.error) {
+        console.error(`how-to: the checklist could not be read: ${listRes.error.message}; `
+          + 'nothing was researched, and the claim is released so it can be tried again')
+        await release()
+        return
+      }
+      const list = listRes.data
       const stored = Array.isArray(item.sources) ? (item.sources as Array<{ title?: string; url?: string }>) : []
       const sources = stored.length
         ? stored.filter((s) => s?.url).map((s) => ({ title: s.title ?? null, url: String(s.url) }))
@@ -95,6 +109,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       let raw = ''
       let returned: SearchResult[] = []
       let failure: string | null = null
+      let stopReason: string | null = null
       for await (const ev of askAIOpenStream(
         howToPrompt(today),
         [{ role: 'user', content: howToInput({
@@ -109,12 +124,22 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       )) {
         if (ev.type === 'done') {
           raw = ev.answer.text
+          stopReason = ev.stopReason
           // What the search returned, plus what the answer cited (every citation is a search result).
           returned = [...ev.searched, ...ev.answer.sources.map((s) => ({ url: s.url, title: s.title }))]
         } else if (ev.type === 'error') failure = ev.message
       }
       if (failure || !raw) {
         console.error('how-to: the call failed:', failure ?? 'no text')
+        await release()
+        return
+      }
+      // S2, in this file too: the stream ends on `max_tokens` as surely as on `end_turn`, and a
+      // truncated answer that happens to parse would be saved and never redone.
+      const finish = finishedCleanly(stopReason)
+      if (!finish.complete) {
+        console.error(`how-to: the answer did not finish — ${finish.why} `
+          + `(stop_reason=${stopReason ?? 'none'}); nothing saved, the claim released`)
         await release()
         return
       }
@@ -129,6 +154,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       const checked = checkHowTo(parsed, returned, { today, model })
       if (!checked.ok) {
         console.error('how-to: shape refused:', checked.error, raw.slice(0, 3000))
+        await release()
+        return
+      }
+      // *** AND A RESULT WITH NO STEPS IS NOT A RESULT *** (W5's second half). `checkHowTo` accepts
+      // `steps: []` — every step may be dropped for a link the search never returned, which is the
+      // right thing for it to do per step and the wrong thing to store: "How do I do this?" would
+      // then show an empty answer for ever, because `:61` never asks again. The claim is released
+      // and a second press pays for a second try, which is the honest outcome.
+      if (!checked.result.steps.length) {
+        console.error(`how-to: the answer had no usable step (${checked.result.dropped} `
+          + 'dropped); nothing saved, the claim released')
         await release()
         return
       }

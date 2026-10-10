@@ -743,3 +743,147 @@ but the first real re-audit after this ships is the first time those two numbers
 
 **E1's spend: $0.00.** The ledger reads 359 calls / $19.09, unmoved from the start of the job,
 including the gate's own run of all seven nightly jobs.
+
+---
+
+## E2 — R4: answers that did not finish, or did not fit
+
+Six items, one commit, because five of them meet in two new seams: `lib/answerShape.ts`
+(`answerWith`, `finishedCleanly`) and the citation-marker skip in `extractJsonText`.
+
+### S1 · Shared → Audits, Documents — the model's own citation became the answer
+
+Now `lib/ai.ts:548` (`extractJsonText`). Confirmed: `const start = … Math.min(firstBrace, firstBracket)`.
+
+**The whole failure in four lines.** With web search on, the model narrates: *"I'll check the permit's
+conditions first.**[1]**"*. `[1]` is the first `[` in the string. The balanced walk ended one
+character later. The "JSON" returned was `[1]`. **`JSON.parse('[1]')` succeeds** — so nothing threw,
+`lib/auditRun.ts`'s only guard was `if (!obj)`, the array passed it, `shapeFindings` found none of
+its fields, and the section was saved **done with zero findings** and emailed as *"found nothing
+that needs you"*. A whole agency audit, paid for, recorded as a clean bill of health.
+
+**The fix, and the clause a test forced into it.** An opener whose balanced slice is a citation
+marker — `[1]`, `[12]`, `[1, 2]` — is skipped **when there is prose in front of it**, and the search
+goes on after it. That last clause is the discriminator: a citation marker is by definition inside a
+sentence, so something non-blank always precedes it, while a reply that simply *is* `[1,2]` is an
+answer. `tests/unit/documentScan.test.ts` has asserted since Documents Run 2 that `[1,2]` survives
+fences and trailing words, and **the first version of this fix broke that test** — which is how the
+clause was found rather than reasoned about.
+
+**`stripMarkers` was not used, and the list suggests it.** It deletes `[\d+]` from prose. Over a
+whole reply it would delete `"sources": [1]` — a legitimate field in this product's own JSON shapes,
+and exactly the same characters. The skip only ever declines to *start* a value at a marker; it never
+edits one. That is written into `lib/ai.ts` beside the code.
+
+### A7 · Audits — valid JSON of the wrong shape
+
+`lib/answerShape.ts` `answerWith(parsed, fields)`: a plain object carrying **at least one** of the
+fields asked for. Not all of them — a real audit legitimately omits `contradictions` when it found
+none, and demanding every key would fail good answers; carrying **none** of several is not an
+omission, it is a different document. The fields come from the shaper that will read them, so the
+check and the shaping cannot drift:
+
+```ts
+const FIELDS = isTemplate ? (['lines'] as const) : KINDS.map((k) => k.field)
+```
+
+**It does not unwrap, rename or repair.** A guess at what the model meant is a quiet rewrite of a
+regulatory answer, and `CRITIC-PASS.md`'s rule applies — a silent fix destroys the evidence. The raw
+text is still kept on the row, and the reason now names what the answer **did** carry, so
+`{"result": …}` is diagnosable from the row instead of reading as "a shape we could not read".
+
+### S2 · Shared → Workspace, HR — nobody looked at the stop reason
+
+**E0's open question, answered.** The list says of the chat route *"it passes `stopReason` to the
+screen; whether the screen shows it — not checked"*. Checked: `stopReason` appears **nowhere** in the
+codebase outside the one line that sends it. The screen did not show it.
+
+So an answer cut off at 16,000 tokens was saved into the conversation as an answer, went into the
+summary from there, and was counted as a question answered. `askAI` retries on `max_tokens`;
+`askAIOpenStream` does not, so a stream's truncation is final.
+
+`finishedCleanly(stopReason)`: `end_turn` and `stop_sequence` are complete; `max_tokens`, `refusal`,
+`pause_turn`, `tool_use`, an unknown reason, and **no reason at all** are not, each with its own
+sentence. Four callers act on it:
+
+| caller | before | now |
+|---|---|---|
+| `app/api/chat/route.ts` | saved the turn, bumped `questions_answered` | still SENDS what arrived — it is the person's — and saves nothing, counts nothing, flags `incomplete` |
+| `lib/answerStream.ts` | `done` on any `done` event | `stopped_early`, whose block already says the answer is incomplete, that nothing was saved, and offers Try again |
+| `app/api/hr/answer/route.ts` | saved it with a **check record** attached | the same as the chat route |
+| `lib/handbookCheck.ts` | stored the piece **done**: `checked_at`, the 90-day date, the email | `fail(…)`, which puts the rows back for a retry |
+
+The chat's new path reuses the page's existing `stopped_early` block on purpose: it is the same thing
+one layer down, and its sentence *"Nothing was saved for it"* stays true because nothing is saved.
+
+### H1 · HR — a handbook checked with no text in the prompt
+
+`lib/handbookCheck.ts:295`. The sections read was `const { data: secsRaw } = …`.
+
+**The arithmetic that made it invisible:** a failed read gave `secs = []`, so `mine = []`, so
+`whole` was `0 === 0` — **true** — and the prompt told the model it held the entire handbook, with
+nothing in it. `CLAUDE.md` §3.3 names the model enumerating from nothing as the known-bad mode; this
+handed it nothing and then stored the answer **done**, with `checked_at` set, the next check in 90
+days and the "your handbook check is done" email sent.
+
+Now `tryRows`, and `if (!mine.length) fail(…)` by name before the model call — because a handbook
+whose sections were deleted between the queue and the claim reads back as zero rows with **no
+error** and produces the same empty prompt. `fail` was moved above the input assembly so both guards
+can use it.
+
+### W5 · Workspace — researched with no subject, and kept for ever
+
+`app/api/checklist-items/[id]/how-to/route.ts:87`. The checklist read was unchecked, so a failure
+sent the model `CHECKLIST TITLE: (none)` and `QUESTION: (none)` — and the answer was **saved and
+never redone**, because `:61` returns a stored `howto` without asking anything. One failed read, one
+wrong answer, kept.
+
+Both halves closed: the read is checked and the claim released, so a second press pays for a second
+try; and a result with **no usable step** is not stored. `checkHowTo` accepts `steps: []` because
+every step may be dropped for a link the search never returned — right per step, wrong to keep,
+since an empty answer would then show for ever. S2's guard is in this route too, before the parse,
+because a truncated answer that happens to parse is the dangerous case.
+
+### HR-read · HR — the HYPOTHESIS, traced
+
+The list says *"a wrong-shape reply becomes `[]` sections; not traced beyond that. E0 traces it."*
+**Traced by running it**, in `tests/unit/answerFinish.test.ts`:
+
+```
+no anchors → cutAtAnchors returns no cuts
+           → sectionsFromCuts falls back to [{ start: 0, title: null }]
+           → ONE untitled section holding the entire handbook
+           → proveCoverage(text, that) === null   ← it PASSES
+```
+
+So the handbook was stored `read`, the page said **1 section**, the long-handbook selection path had
+nothing to choose between, and the nightly check had one oversized piece to do in a single call.
+Nothing about the handbook's *text* was false, which is why it is not R3 — but *"we read it into one
+section"* is still a statement about a call whose answer we did not get.
+
+`modelOutline` now throws on a reply with no `sections` field and on a list whose every item was
+dropped, which lands in `readHandbook`'s catch as `could_not_read` with a reason and "Read it again"
+— wording HR already shows. **An empty list is still allowed**: `{"sections": []}` is the model
+saying a short part has no boundary in it, and that must stay possible; a partial drop is logged
+rather than silent.
+
+### E2's proof
+
+| file | tests | fail on the shipped code |
+|---|---|---|
+| `tests/unit/answerShape.test.ts` | 22 | **5** |
+| `tests/unit/answerFinish.test.ts` | 25 | **14** |
+
+Both carry the shipped logic: `oldGuard` is `lib/auditRun.ts`'s `if (!obj)` copied exactly and shows
+it accepting `[1]`; the chat group reproduces `sawDone = true` on any `done` event; H1's group
+asserts `0 === 0` is true, which is the whole of it.
+
+**Floor 1216 → 1263. No prompt file changed** (`git diff --name-only … -- prompts/` is empty), so no
+golden set would move. **Spend: $0.00** — every proof here is free.
+
+**Effects on other sections, by file.** `lib/ai.ts` (`extractJsonText`) is read by the document scan,
+the audit, the handbook outline and the checklist path — all four are covered above or by the
+untouched-shape tests. `lib/answerShape.ts` is new. `lib/answerStream.ts` is the Workspace's and
+HR's shared reader. `lib/handbookCheck.ts`, `lib/handbookRead.ts`, `app/api/hr/answer/route.ts` are
+HR's. `app/api/chat/route.ts` and `app/api/checklist-items/[id]/how-to/route.ts` are the Workspace's.
+`lib/auditRun.ts` is Audits'. No migration.

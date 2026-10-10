@@ -546,7 +546,7 @@ export async function askAIJson<T = any>(
  * not reimplemented at a call site.
  */
 export function extractJsonText(raw: string): string {
-  let cleaned = raw
+  const cleaned = raw
     .replace(/```json\n?/g, '')
     .replace(/```\n?/g, '')
     .trim()
@@ -555,62 +555,107 @@ export function extractJsonText(raw: string): string {
   // ("I'll search for...") in a text block before the actual JSON answer.
   // Extract just the JSON object/array itself, tolerating any narration
   // wrapped around it, rather than assuming the whole response is pure JSON.
-  const firstBrace = cleaned.indexOf('{')
-  const firstBracket = cleaned.indexOf('[')
-  const start = firstBrace === -1 ? firstBracket : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
+  //
+  // *** AND THAT NARRATION IS CITED, WHICH IS WHAT BROKE THIS — fix list S1, root R4, Job E. ***
+  //
+  // With search on, the narrated sentence carries citation markers: *"I'll check the permit's
+  // conditions first.[1]"*. `[1]` is then the first `[` in the string, the balanced walk below ended
+  // one character later, and the "JSON" this function returned was **`[1]`**. `JSON.parse('[1]')`
+  // SUCCEEDS. The caller got an array holding the number 1, found none of its own fields in it, and
+  // `lib/auditRun.ts` saved the section **done with zero findings** — a whole agency audit, paid
+  // for, recorded as "nothing needs you". The only thing the caller guarded against was an
+  // exception, and there wasn't one.
+  //
+  // So an opener whose balanced value is a CITATION MARKER **and has prose in front of it** is
+  // skipped, and the search goes on after it. `[1]`, `[12]` and `[1, 2]` (two markers the model ran
+  // together) all match.
+  //
+  // *** "WITH PROSE IN FRONT OF IT" IS THE WHOLE DISCRIMINATOR, AND A TEST FOUND IT. *** A citation
+  // marker is by definition inside a sentence, so something non-blank always precedes it. A reply
+  // that simply IS `[1,2]` — an array of numbers and nothing else — is an answer, and
+  // `tests/unit/documentScan.test.ts` has asserted since Documents Run 2 that it survives fences
+  // and trailing words. Without this clause the first version of S1's fix broke it.
+  //
+  // *** WHY THAT IS SAFE AND STRIPPING THE MARKERS WOULD NOT BE. *** `stripMarkers`
+  // (`lib/howTo.ts`) deletes `[\d+]` from prose, and running it over a whole response would corrupt
+  // the answer: `"sources": [1]` is a legitimate field in this product's own JSON shapes and is
+  // exactly the same characters. The skip only ever declines to START a value at a marker; it never
+  // edits one. And **no prompt here asks for a bare array of numbers as the whole answer** — the
+  // audit wants an object, the handbook outline an array of objects, the scan an object — so a
+  // candidate of that shape can be refused outright.
+  //
+  // The second half of S1 is the caller's: `lib/answerShape.ts`, because a result that parses and
+  // carries none of the fields asked for must be refused there too, however it arose.
+  let from = 0
+  for (;;) {
+    const brace = cleaned.indexOf('{', from)
+    const bracket = cleaned.indexOf('[', from)
+    const start = brace === -1 ? bracket : (bracket === -1 ? brace : Math.min(brace, bracket))
+    if (start < 0) break
+    const slice = balancedSlice(cleaned, start)
+    const prosedBefore = cleaned.slice(0, start).trim().length > 0
+    if (slice !== null && prosedBefore && CITATION_MARKER.test(slice)) { from = start + 1; continue }
+    return slice ?? cleaned
+  }
+  return cleaned
+}
 
-  // *** A BALANCED SCAN, NOT `lastIndexOf`. ***
-  //
-  // The previous version took everything from the first opener to the LAST closer in the
-  // string. That is right whenever the model's own braces balance, and wrong the moment they
-  // do not — and the way they fail is always the same: one extra `}` after the object is
-  // already complete. Measured over Documents Run 2, five of eighteen stored answers ended
-  //
-  //     "could_not_read": { "reason": null, "way_forward": null }
-  //       }
-  //     }
-  //
-  // with one closer too many. `lastIndexOf` swept that stray brace in, `JSON.parse` refused
-  // the whole thing, and five complete, correct readings — kind, status, gaps, facts, every
-  // top-level key present — were thrown away and charged for. 28% of the answers bought.
-  //
-  // Walking to the FIRST opener's matching closer ends at the end of the value and ignores
-  // whatever follows, whether that is a stray brace, a closing fence, or a paragraph of advice.
-  // Strings are honoured so a `}` inside `"way_forward"` text cannot close the object, and
-  // backslash escapes are honoured so a `\"` inside a string cannot end it — a quote inside a
-  // quoted regulatory sentence is common and would otherwise unbalance the count.
-  //
-  // Text that already parsed is unaffected: for a response whose braces balance, the matching
-  // closer IS the last one, so this produces the identical slice.
-  if (start >= 0) {
-    const open = cleaned[start]
-    const close = open === '{' ? '}' : ']'
-    let depth = 0
-    let inString = false
-    let escaped = false
-    let end = -1
-    for (let i = start; i < cleaned.length; i++) {
-      const ch = cleaned[i]
-      if (escaped) { escaped = false; continue }
-      if (ch === '\\') { if (inString) escaped = true; continue }
-      if (ch === '"') { inString = !inString; continue }
-      if (inString) continue
-      if (ch === open) depth++
-      else if (ch === close) {
-        depth--
-        if (depth === 0) { end = i; break }
-      }
-    }
-    // An unterminated value — the model was cut off mid-object — has no matching closer. Fall
-    // back to the old sweep rather than returning nothing, so a truncated answer still reaches
-    // `JSON.parse` and fails there with its own message, the way it did before.
-    if (end === -1) end = cleaned.lastIndexOf(close)
-    if (end > start) {
-      cleaned = cleaned.slice(start, end + 1)
+/** `[1]`, `[12]`, `[1, 2]` — a citation marker, never a JSON answer this product asks for. */
+const CITATION_MARKER = /^\[\s*\d+(?:\s*,\s*\d+)*\s*\]$/
+
+/**
+ * The value starting at `start`, opener to matching closer — or, when the model was cut off
+ * mid-object, everything up to the last closer in the string.
+ *
+ * *** A BALANCED SCAN, NOT `lastIndexOf`. ***
+ *
+ * The version before this took everything from the first opener to the LAST closer. That is right
+ * whenever the model's own braces balance, and wrong the moment they do not — and the way they fail
+ * is always the same: one extra `}` after the object is already complete. Measured over Documents
+ * Run 2, five of eighteen stored answers ended
+ *
+ *     "could_not_read": { "reason": null, "way_forward": null }
+ *       }
+ *     }
+ *
+ * with one closer too many. `lastIndexOf` swept that stray brace in, `JSON.parse` refused the whole
+ * thing, and five complete, correct readings — kind, status, gaps, facts, every top-level key
+ * present — were thrown away and charged for. 28% of the answers bought.
+ *
+ * Walking to the FIRST opener's matching closer ends at the end of the value and ignores whatever
+ * follows, whether that is a stray brace, a closing fence, or a paragraph of advice. Strings are
+ * honoured so a `}` inside `"way_forward"` text cannot close the object, and backslash escapes are
+ * honoured so a `\"` inside a string cannot end it — a quote inside a quoted regulatory sentence is
+ * common and would otherwise unbalance the count.
+ *
+ * Text that already parsed is unaffected: for a response whose braces balance, the matching closer
+ * IS the last one, so this produces the identical slice.
+ *
+ * Returns null when there is no closer of the right kind at all, so the caller can fall back to the
+ * whole string and let `JSON.parse` fail with its own message, the way it did before.
+ */
+function balancedSlice(text: string, start: number): string | null {
+  const open = text[start]
+  const close = open === '{' ? '}' : ']'
+  let depth = 0
+  let inString = false
+  let escaped = false
+  let end = -1
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i]
+    if (escaped) { escaped = false; continue }
+    if (ch === '\\') { if (inString) escaped = true; continue }
+    if (ch === '"') { inString = !inString; continue }
+    if (inString) continue
+    if (ch === open) depth++
+    else if (ch === close) {
+      depth--
+      if (depth === 0) { end = i; break }
     }
   }
-
-  return cleaned
+  // An unterminated value — the model was cut off mid-object — has no matching closer.
+  if (end === -1) end = text.lastIndexOf(close)
+  return end > start ? text.slice(start, end + 1) : null
 }
 
 /* ===========================================================================

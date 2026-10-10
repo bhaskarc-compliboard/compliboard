@@ -152,10 +152,17 @@ describe('each citation\'s passage (lib/ai.ts citedPassages), and the workspace 
   })
   test('THE WORKSPACE\'S FINISHED MESSAGE carries exactly the fields it did before: the new field never reaches it', () => {
     const chat = readFileSync('app/api/chat/route.ts', 'utf8')
-    const m = chat.match(/send\(\{ type: 'done', ([\s\S]*?)\}\);/)
-    assert.ok(m, 'the research path\'s done message')
-    const keys = m![1].split(',').map((k) => k.trim().split(':')[0].trim()).filter(Boolean)
-    assert.deepEqual(keys, ['research', 'sources', 'topicId', 'stopReason', 'outputTokens'])
+    // TWO done messages since Job E2's S2 fix: the first for an answer that did not finish — which
+    // saves nothing, counts nothing and carries `incomplete` so the page shows its "stopped early"
+    // block — and the second for one that did. Both are checked, because the field this test exists
+    // to keep out (HR's `cited`) must stay out of either.
+    const msgs = [...chat.matchAll(/send\(\{ type: 'done', ([\s\S]*?)\}\);/g)]
+    assert.equal(msgs.length, 2, 'the research path\'s two done messages')
+    const keysOf = (m: RegExpMatchArray) =>
+      m[1].split(',').map((k) => k.trim().split(':')[0].trim()).filter(Boolean)
+    assert.deepEqual(keysOf(msgs[0]),
+      ['research', 'sources', 'topicId', 'stopReason', 'outputTokens', 'incomplete'])
+    assert.deepEqual(keysOf(msgs[1]), ['research', 'sources', 'topicId', 'stopReason', 'outputTokens'])
     assert.ok(!/ev\.cited/.test(chat), 'app/api/chat/route.ts never reads the cited passages')
     assert.match(chat, /saveAssistantTurn\(db, \{ topicId: convoTopicId, companyId,\s*text: ev\.answer\.text, sources: ev\.answer\.sources, position: answerPosition \}\)/)
   })

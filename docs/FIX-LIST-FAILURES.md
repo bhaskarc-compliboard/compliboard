@@ -226,9 +226,15 @@ not a month.
 30. **H5, H6 · sev 2 · · · HR.** `lib/hrAnswer.ts:124`, `lib/handbookCheck.ts:302–303` (a failed sites read tells
     the model every site handbook "applies to a site that was removed", stored with the check); `lib/hrAnswer.ts:
     611–617` (behind `HR_ANSWER_USES_CHECK`, off: "X has not been checked yet"). **Fix:** throw.
-31. **W5 · sev 2 · · · Workspace.** `app/api/checklist-items/[id]/how-to/route.ts:87`: a failed read sends "CHECKLIST
+31. **W5 · sev 2 · ✓ FIXED (Job E2, "Job E: S1, A7, S2, H1, W5 and HR-read") · Workspace.** `app/api/checklist-items/[id]/how-to/route.ts:87`: a failed read sends "CHECKLIST
     TITLE: (none)" to the model, and the result is saved and **never redone** (`:61`); a zero-step result is kept for
     good too. **Fix:** check, release the claim.
+    **Closed, both halves.** The checklist read is checked and a failure releases the claim, so the
+    next press can try again rather than a wrong answer being saved for good — `:61` returns a
+    stored `howto` without asking anything. And a result with **no usable step** is not stored:
+    `checkHowTo` accepts `steps: []` because every step may be dropped for a link the search never
+    returned, which is right per step and wrong to keep, since an empty answer would then show for
+    ever. S2's stop-reason guard is in this route too, before the parse.
 32. **W6 · sev 2 · · · Requirements.** `app/api/obligations/route.ts:63–69`, `:112`: every owed row says "Nothing yet.
     No document has been linked to this requirement."; "0 requirements are loaded". No nav link today. **Fix:** check.
 33. **W8 · sev 3 · · · Workspace.** `app/api/switches/answer/route.ts:76–81`: a failed read records the answer with
@@ -335,29 +341,76 @@ not a month.
 
 ### R4 — an answer that did not finish or did not fit, saved as complete
 
-45. **S1 · sev 2 · ✓ mechanism / HYPOTHESIS frequency · Shared → Audits, Documents.** `lib/ai.ts:557–559`
+45. **S1 · sev 2 · ✓ FIXED (Job E2, same commit) · Shared → Audits, Documents.** `lib/ai.ts:557–559`
     (`extractJsonText` starts at the first `{` **or** `[`): if a cited sentence before the JSON carries a marker like
     `[1]`, the "JSON" found is `[1]`, `JSON.parse` succeeds, and the agency audit finds no fields — the section is
     saved **done with zero findings** (`lib/auditRun.ts:449`, `:615`, `:547`). `stripMarkers` (`lib/howTo.ts:101`)
     exists for exactly this and only two callers use it. The document scan shares the path (HYPOTHESIS: its
     structured output may prevent prose first). **Fix:** strip markers inside `extractJsonText`; callers reject a
     result that is not a plain object with their keys.
-46. **A7 · sev 2 · ✓ mechanism · Audits.** `lib/auditRun.ts:449`, `:463`, `:615`, `:546`: only a parse failure fails
+    **Closed, in two halves.** `extractJsonText` no longer STARTS a value at a citation marker: an
+    opener whose balanced slice is `[1]`, `[12]` or `[1, 2]` **and has prose in front of it** is
+    skipped and the search goes on. The "prose in front of it" clause is the whole discriminator and
+    a test found it — a reply that simply IS `[1,2]` is an answer, and
+    `tests/unit/documentScan.test.ts` has asserted since Documents Run 2 that it survives fences
+    and trailing words; the first version of this fix broke that test. **`stripMarkers` was NOT
+    used**, deliberately: it deletes `[\d+]` from prose, and over a whole reply it would delete
+    `"sources": [1]`, a legitimate field in this product's own JSON. The second half is the caller's
+    (A7's entry). **Proof:** `tests/unit/answerShape.test.ts`, 22 tests — the cited reply, two
+    markers run together, a comma-joined one, and five that the legitimate shapes are untouched.
+    5 fail on the shipped files.
+46. **A7 · sev 2 · ✓ FIXED (Job E2, same commit) · Audits.** `lib/auditRun.ts:449`, `:463`, `:615`, `:546`: only a parse failure fails
     a section; valid JSON of the wrong shape (wrapped object, renamed key, `[]`) becomes zero findings, a done
     section, and "found nothing that needs you". Checklist runs handle this honestly; agency runs do not. **Fix:**
     require the keys before shaping; otherwise fail and keep the raw text.
-47. **S2 · sev 2 · ✓ (chat) / · (others) · Shared → Workspace, HR.** `lib/ai.ts:518` returns no stop reason;
+    **Closed:** `lib/answerShape.ts` `answerWith(parsed, fields)` — a plain object carrying **at
+    least one** of the fields asked for. Not all of them: a real audit legitimately omits
+    `contradictions` when it found none, and demanding every key would fail good answers; carrying
+    NONE of several is a different document. The fields come from the shaper that will read them
+    (`KINDS` for an agency section, `['lines']` for a checklist one), so the check and the shaping
+    cannot drift. **It does not unwrap, rename or repair** — a guess at what the model meant is a
+    quiet rewrite of a regulatory answer (`CRITIC-PASS.md`). The raw text is still kept on the row,
+    and the reason now names what the answer DID carry, so `{"result": …}` is diagnosable from it.
+47. **S2 · sev 2 · ✓ FIXED (Job E2, same commit) · Shared → Workspace, HR.** `lib/ai.ts:518` returns no stop reason;
     the stream's `done` carries `stopReason` but no caller acts on `max_tokens`, `refusal` or `pause_turn`:
     `app/api/chat/route.ts:496–508` saves the turn and counts "questions answered" (it passes `stopReason` to the
     screen; whether the screen shows it — not checked); `app/api/hr/answer/route.ts:197`; `lib/handbookCheck.ts:357`
     stores a piece cut off at 16,000 tokens as done, so later sections show no findings. **Fix:** anything other than
     `end_turn` is incomplete — marked as such, or failed.
-48. **H1 · sev 2 · ✓ · HR.** `lib/handbookCheck.ts:294–299`: if the sections read fails, `secs` and `mine` are empty,
+    **E0's open question, answered: the screen did NOT show it.** `stopReason` appeared nowhere in
+    the codebase outside the one line that sent it.
+    **Closed:** `finishedCleanly(stopReason)` in `lib/answerShape.ts` — `end_turn` and
+    `stop_sequence` are complete; everything else, and **no reason at all**, is not. Four callers
+    act on it. The chat route and the HR answer route still SEND what arrived (it is the person's)
+    and save nothing, count nothing; `lib/answerStream.ts` turns that into `stopped_early`, whose
+    block on the page already says the answer is incomplete, that nothing was saved, and offers Try
+    again — the same treatment a dropped connection already had. `lib/handbookCheck.ts` fails the
+    piece instead of storing it done, so `checked_at`, the 90-day date and the "check is done" email
+    cannot follow from a half-read handbook. The how-to route releases its claim.
+48. **H1 · sev 2 · ✓ FIXED (Job E2, same commit) · HR.** `lib/handbookCheck.ts:294–299`: if the sections read fails, `secs` and `mine` are empty,
     `whole` is true, and the model is asked to check a handbook with no text; the answer passes `:357`, the check is
     stored done, `checked_at` set, the next check in 90 days, and the "check is done" email goes. **Fix:** throw;
     `if (!mine.length) fail(...)` before the call.
-49. **HR-read · sev 2 · HYPOTHESIS · HR.** `lib/handbookRead.ts:48`: a wrong-shape reply becomes `[]` sections; not
+    **Closed:** the sections read goes through `tryRows` and a failure fails the piece; and
+    `if (!mine.length) fail(...)` is there by name, before the model call, because a handbook whose
+    sections were deleted between the queue and the claim reads back as zero rows with **no error**
+    and gives the same empty prompt. `fail` was moved above the input assembly so both guards can
+    use it. The arithmetic that made this invisible: `secs = []` gave `mine = []`, so `whole` was
+    `0 === 0` — **true** — and the prompt told the model it held the entire handbook.
+49. **HR-read · sev 2 · ✓ TRACED AND FIXED (Job E2, same commit) · HR.** `lib/handbookRead.ts:48`: a wrong-shape reply becomes `[]` sections; not
     traced beyond that. E0 traces it.
+    **Traced, and it is real.** Zero anchors → `cutAtAnchors` returns no cuts → `sectionsFromCuts`
+    falls back to `[{ start: 0, title: null }]`, **one untitled section holding the entire
+    handbook** — and `proveCoverage` PASSES it, because one section covering the whole text is
+    exactly what it looks for. So the handbook was stored `read`, the page said **1 section**, the
+    long-handbook selection path had nothing to choose between, and the nightly check had one
+    oversized piece. Nothing about the text was false, which is why it was not R3; "we read it into
+    one section" is still a statement about a call whose answer we did not get.
+    **Closed:** `modelOutline` throws on a reply with no `sections` field, and on a list whose every
+    item was dropped — which lands in `readHandbook`'s catch as `could_not_read` with a reason and
+    "Read it again", which HR already shows. **An empty list is still allowed**: `{"sections": []}`
+    is the model saying a short part has no boundary in it, and a partial drop is logged rather than
+    silent. The trace is RUN, not described, in `tests/unit/answerFinish.test.ts`.
 
 ### R5 — switched off before the replacement is ready
 

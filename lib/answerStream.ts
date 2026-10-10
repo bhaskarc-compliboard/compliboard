@@ -61,6 +61,8 @@ export async function readAnswerStream(
   // THE FLAG THE OLD CODE DID NOT HAVE.
   let sawDone = false
   let failure: string | null = null
+  /** S2: the route said the answer did not finish, and why. */
+  let incomplete: string | null = null
 
   try {
     for await (const line of lines) {
@@ -85,10 +87,21 @@ export async function readAnswerStream(
         phase = 'searching'
         onProgress({ text, searches, phase })
       } else if (ev.type === 'done') {
-        sawDone = true
+        // *** A `done` EVENT IS NOT PROOF THE ANSWER FINISHED *** — fix list S2, root R4, Job E.
+        // The route sends `done` whenever the model's stream ended, and it ends on `max_tokens`,
+        // `refusal` and `pause_turn` as surely as on `end_turn`. `incomplete` is the route's own
+        // word for "it did not finish, and here is why" — it saves nothing and counts nothing in
+        // that case, so this returns `stopped_early`, whose block on the page already says the
+        // answer is incomplete, that nothing was saved, and offers Try again. Exactly the treatment
+        // a dropped connection gets, which is the same thing happening a layer down.
         text = String(ev.research ?? text)
         sources = (ev.sources as StreamSource[]) ?? []
         topicId = ev.topicId ? String(ev.topicId) : null
+        if (typeof ev.incomplete === 'string' && ev.incomplete) {
+          incomplete = ev.incomplete
+        } else {
+          sawDone = true
+        }
       } else if (ev.type === 'error') {
         failure = String(ev.message ?? 'The answer stopped part-way through.')
       }
@@ -113,6 +126,7 @@ export async function readAnswerStream(
   }
 
   if (failure) return { kind: 'failed', text, message: failure }
+  if (incomplete) return { kind: 'stopped_early', text }
   if (sawDone) return { kind: 'done', text, sources, topicId }
   // THE READER ENDED AND NOTHING SAID THE ANSWER WAS FINISHED.
   if (wasAbortedByUser()) return { kind: 'stopped_by_user', text }

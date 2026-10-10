@@ -26,6 +26,7 @@ import { auditAgencyPrompt, auditTemplatePrompt, type PreviousFinding } from '..
 import { countLines, type TemplateSection, type ExtractedTemplate } from './auditTemplate.ts'
 import { patchRunSummary } from './auditSummary.ts'
 import { mustRow, mustRows } from './mustRead.ts'
+import { answerWith } from './answerShape.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -448,8 +449,24 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       task: 'audit', ledger: { companyId: sec.company_id, task: 'audit' },
     })
     const raw = answer.text ?? ''
+    // *** PARSED, AND THEN CHECKED THAT IT FITS *** — fix list S1 and A7, root R4, Job E.
+    //
+    // `if (!obj)` below used to catch only an EXCEPTION. Valid JSON of the wrong shape sailed past
+    // it: `[1]` (a citation marker `extractJsonText` mistook for the answer — S1), a wrapped object,
+    // a renamed key, a bare `[]` (A7). `shapeFindings` then found no fields, wrote no rows, and the
+    // section was saved **done with zero findings** and emailed as "found nothing that needs you".
+    // A whole agency audit, paid for, recorded as a clean bill of health.
+    //
+    // The fields are the ones this run's shaper actually reads, so the check and the shaping cannot
+    // drift: `KINDS` for an agency section, `lines` for a checklist one.
+    const FIELDS = isTemplate ? (['lines'] as const) : KINDS.map((k) => k.field)
     let obj: Record<string, unknown> | null = null
-    try { obj = JSON.parse(extractJsonText(raw)) as Record<string, unknown> } catch { obj = null }
+    let shapeWhy = 'the audit came back as something we could not read at all'
+    try {
+      const fits = answerWith(JSON.parse(extractJsonText(raw)), FIELDS)
+      if (fits.ok) obj = fits.obj
+      else shapeWhy = fits.why
+    } catch { obj = null }
 
     // The ledger row, found by time and polled, because `recordAICall` is deliberately not awaited
     // (`lib/documentScan.ts` says the same in more words). A missing link loses the receipt, never
@@ -468,8 +485,10 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
         model, prompt_sha256: promptSha, input_sha256: built.sha256, ai_call_id: aiCallId,
         raw_text: raw.slice(0, 20000), json_parsed: false, handles: built.input.handles,
       }).eq('id', sectionId)
+      // The reason names WHAT came back (S1/A7): "it carried \"result\"" is diagnosable and
+      // "a shape we could not read" is not. The raw text is kept either way, above.
       return await fail('The audit came back in a shape we could not read. Nothing was recorded '
-        + 'for this agency; the answer itself is kept so it can be looked at.')
+        + `for this agency; the answer itself is kept so it can be looked at. (${shapeWhy}.)`)
     }
 
     const shaped = isTemplate

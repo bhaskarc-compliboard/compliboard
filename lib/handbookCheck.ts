@@ -27,6 +27,8 @@
  */
 import { createHash } from 'node:crypto'
 import { askAIOpenStream, modelForTask, type OpenMessage, type OpenStreamEvent } from './ai.ts'
+import { finishedCleanly } from './answerShape.ts'
+import { tryRows } from './mustRead.ts'
 import { buildCompanyContext } from './companyContext.ts'
 import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
 import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
@@ -284,6 +286,14 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
     if (!hb) return { gone: true as const }
     return { gone: false as const, check, hb }
   }
+  // Defined before the input is built, not after: H1's guards below need it, and a failure while
+  // assembling the prompt is the same kind of failure as one during the call.
+  const fail = async (why: string) => {
+    console.error(`handbook check ${checkId}: ${why}`)
+    const f = await failRows(admin, rows, why)
+    return { status: f.failed ? 'failed' as const : 'retry' as const, rows: rows.length, reason: why }
+  }
+
   const before = await live()
   if (before.gone) return { status: 'gone', rows: 0 }
   if (!['queued', 'checking'].includes(before.check.status)) return { status: 'skipped', rows: 0 }
@@ -292,10 +302,29 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
 
   // ---- the input: the answer route's, with this piece's sections ----
   const company = (await buildCompanyContext(admin, companyId, { parts: ['company', 'declared', 'confirmed'] })).block
-  const { data: secsRaw } = await admin.from('handbook_sections').select('id, position, title, page_from, page_to, text')
-    .eq('handbook_id', hb.id).order('position')
-  const secs = (secsRaw ?? []) as SectionRow[]
+  // *** THE SECTIONS ARE THE CHECK'S WHOLE INPUT, SO THE READ IS CHECKED *** — fix list H1,
+  // severity 2, root R2, Job E.
+  //
+  // This was `const { data: secsRaw } = …`. A failed read gave `secs = []`, so `mine = []` and
+  // `whole` was **true** (0 === 0) — and the model was asked to check a handbook **with no text in
+  // the prompt at all**. The answer it gave came back, passed, and was stored DONE: `checked_at`
+  // set, the next check in 90 days, and the "your handbook check is done" email sent about a
+  // handbook nobody had read a word of. `CLAUDE.md` §3.3 — the model enumerating from nothing is
+  // the named bad mode, and this handed it nothing on purpose.
+  const read = tryRows<SectionRow>("the handbook's sections", await admin.from('handbook_sections')
+    .select('id, position, title, page_from, page_to, text').eq('handbook_id', hb.id).order('position'))
+  if (!read.ok) return fail(`The handbook's sections could not be read: ${read.error.message}`)
+  const secs = read.rows
   const mine = secs.filter((s) => rows.some((r) => r.section_id === s.id))
+  // *** AND AN EMPTY INPUT IS REFUSED EVEN WHEN THE READ SUCCEEDED. *** A handbook whose sections
+  // were deleted between the queue and the claim reads back as zero rows with no error, and the
+  // outcome is the same prompt with nothing in it. The list asks for this guard by name:
+  // `if (!mine.length) fail(...)` before the call.
+  if (!mine.length) {
+    return fail(secs.length
+      ? 'None of the sections this piece was queued for are on the handbook any more.'
+      : 'The handbook has no sections stored, so there is nothing to check it against.')
+  }
   const whole = mine.length === secs.length
   let applies = 'Every site'
   if (hb.scope === 'site') {
@@ -338,11 +367,6 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
   const model = modelForTask('hr_check')
   const system = hrAnswerPrompt()
   const receipt = { model, prompt_sha256: sha(system), input_sha256: sha(String(messages[0].content)) }
-  const fail = async (why: string) => {
-    console.error(`handbook check ${checkId}: ${why}`)
-    const f = await failRows(admin, rows, why)
-    return { status: f.failed ? 'failed' as const : 'retry' as const, rows: rows.length, reason: why }
-  }
 
   // THE ANSWER ROUTE'S CALL: no search limit (AI_SEARCH_MAX_HR is the answer route's; the check has none).
   let ev: Extract<OpenStreamEvent, { type: 'done' }> | null = null
@@ -355,6 +379,17 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
     return fail(`The call failed: ${e instanceof Error ? e.message : String(e)}`)
   }
   if (!ev || !ev.answer.text.trim()) return fail('The answer came back empty')
+
+  // *** A PIECE THAT DID NOT FINISH IS NOT A PIECE THAT WAS CHECKED *** — fix list S2, root R4,
+  // Job E. The stream ends on `max_tokens` as surely as on `end_turn`, and this went on to store
+  // the half-answer as **done**: `checked_at` set, the next check in 90 days, the "check is done"
+  // email sent, and the sections after the cut shown with no findings — a handbook the product said
+  // it had read and had only half read. `fail` puts the rows back for a retry (or fails them after
+  // the last one), which is the behaviour the piece already has for a call that threw.
+  const finish = finishedCleanly(ev.stopReason)
+  if (!finish.complete) {
+    return fail(`The check did not finish: ${finish.why} (stop_reason=${ev.stopReason ?? 'none'})`)
+  }
 
   // The ledger row, found by time and polled, as `lib/auditRun.ts` does: recordAICall is not awaited.
   let aiCallId: string | null = null

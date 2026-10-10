@@ -25,6 +25,7 @@ import { CLAIM_LOCK_MS } from './topicClaim.ts'
 import { READ_REASONS } from './handbooks.ts'
 import { askAIJson } from './ai.ts'
 import { hrOutlinePrompt } from '../prompts/hr-outline.ts'
+import { answerWith } from './answerShape.ts'
 import {
   cutAtAnchors, wordSections, proveCoverage, pageStarts, joinPages, sectionPages, looksLikeScan,
   outlineParts, sha256, type Anchor, type Section,
@@ -38,6 +39,28 @@ export type Outline = (text: string, part: { index: number; count: number; pageF
 /**
  * THE OUTLINE CALL: task 'hr_check', ledger 'hr_check' (the brief), the part's TEXT only. Its reply is
  * checked here — anything that is not a list of {title, anchor} strings is dropped, never trusted.
+ *
+ * *** AND A WRONG-SHAPE REPLY IS NOW A FAILED READING, NOT AN EMPTY OUTLINE *** — fix list
+ * **HR-read**, root R4, Job E2, which the list carried as a HYPOTHESIS and asked E0 to trace.
+ *
+ * **Traced, and it is real.** `const list = Array.isArray(reply?.sections) ? reply.sections : []`
+ * turned any reply that was not the shape asked for into zero anchors. Follow that through:
+ * `cutAtAnchors` with no anchors returns no cuts; `sectionsFromCuts` then falls back to
+ * `[{ start: 0, title: null }]` — **one untitled section holding the entire handbook** — and
+ * `proveCoverage` passes it, because one section covering the whole text is exactly what it is
+ * looking for. So the handbook was stored `read`, the page said it had **1 section**, the long-
+ * handbook selection path had nothing to select between, and the nightly check had one oversized
+ * piece to check in a single call.
+ *
+ * None of that is false about the handbook's TEXT, which is why it was not R3 — but "we read it into
+ * one section" is a statement about a call whose answer we did not get, and the honest outcome is
+ * `could_not_read` with a reason and "Read it again", which HR already shows.
+ *
+ * *** AN EMPTY LIST IS STILL ALLOWED. *** `{"sections": []}` is the model saying this part has no
+ * section boundary in it, which is a real answer about a short part and must stay possible; a part
+ * with none simply contributes no cut. What is refused is a reply with no `sections` field at all,
+ * and a `sections` list whose every item was dropped — both of which mean the shape was wrong
+ * rather than the part being plain.
  */
 export function modelOutline(companyId: string): Outline {
   return async (text, part) => {
@@ -47,8 +70,26 @@ export function modelOutline(companyId: string): Outline {
     }
     const reply = await askAIJson<{ sections?: unknown }>(hrOutlinePrompt(part), text,
       { task: 'hr_check', ledger: { companyId, task: 'hr_check' }, maxTokens: 8000 })
-    const list = Array.isArray(reply?.sections) ? reply.sections : []
-    return list.filter((x): x is Anchor => !!x && typeof (x as Anchor).title === 'string' && typeof (x as Anchor).anchor === 'string')
+    const where = `part ${part.index} of ${part.count}`
+    const fits = answerWith(reply, ['sections'])
+    if (!fits.ok) throw new Error(`the outline of ${where} came back wrong: ${fits.why}`)
+    if (!Array.isArray(fits.obj.sections)) {
+      throw new Error(`the outline of ${where} came back wrong: "sections" is not a list`)
+    }
+    const list = fits.obj.sections as unknown[]
+    const kept = list.filter((x): x is Anchor =>
+      !!x && typeof (x as Anchor).title === 'string' && typeof (x as Anchor).anchor === 'string')
+    if (list.length && !kept.length) {
+      throw new Error(`the outline of ${where} came back wrong: ${list.length} section(s), none of `
+        + 'them a title and an anchor')
+    }
+    if (kept.length < list.length) {
+      // Some kept, some not: the reply is usable and what was dropped is said out loud rather than
+      // vanishing, which is the rule the rest of this codebase applies to a dropped row.
+      console.warn(`handbook outline: ${list.length - kept.length} of ${list.length} section(s) in `
+        + `${where} were not a title and an anchor, and were dropped`)
+    }
+    return kept
   }
 }
 

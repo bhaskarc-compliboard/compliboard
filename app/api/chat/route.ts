@@ -45,6 +45,7 @@ import { splitForAnswer, scenarioBlock, jurisdictionLine,
 import { buildCompanyContext } from '@/lib/companyContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
+import { finishedCleanly } from '@/lib/answerShape';
 
 /**
  * The facts THIS turn asserted, for the turn the server is about to seal.
@@ -495,6 +496,27 @@ export async function POST(request: NextRequest) {
                          { task: 'prose', maxTokens: 16000, signal: request.signal,
                            ledger: { companyId, task: 'research' } })) {
               if (ev.type === 'done') {
+                // *** AN ANSWER THAT DID NOT FINISH IS NOT AN ANSWER *** — fix list S2, root R4,
+                // Job E. `stopReason` was sent to the screen on the line below and **nothing read
+                // it** (checked: it appeared nowhere else in the codebase). So an answer cut off at
+                // 16,000 tokens was saved into the conversation as an answer, went into the summary
+                // from there, and was counted as a question answered. `askAI` retries on
+                // `max_tokens`; `askAIOpenStream` does not, so the stream's truncation is final.
+                //
+                // The half-answer is still SENT — what arrived is the person's and they may want it
+                // — but it is not saved, not counted, and the client shows its "This answer stopped
+                // early … Try again" block, which `lib/answerStream.ts` now returns for this case.
+                // That is the same treatment a dropped connection already got, and it keeps that
+                // block's sentence ("Nothing was saved for it") true.
+                const finish = finishedCleanly(ev.stopReason);
+                if (!finish.complete) {
+                  console.warn(`chat: the answer did not finish — ${finish.why} `
+                    + `(stop_reason=${ev.stopReason ?? 'none'}); nothing saved, nothing counted`);
+                  send({ type: 'done', research: ev.answer.text, sources: ev.answer.sources,
+                         topicId: convoTopicId, stopReason: ev.stopReason,
+                         outputTokens: ev.outputTokens, incomplete: finish.why });
+                  continue;
+                }
                 completed = true;
                 send({ type: 'done', research: ev.answer.text, sources: ev.answer.sources,
                        topicId: convoTopicId,
