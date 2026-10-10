@@ -324,3 +324,67 @@ auditing what the person named. `tests/unit/documentScanCalendar.test.ts` had tw
 naming `readableScanIds(admin, companyId)` in this file; both were updated to the stronger shape
 (`document_index_v` present, `document_scans` absent), and the updated test was checked to **fail**
 on the shipped `lib/companyLabels.ts`. No migration; the view already existed.
+
+### A2 · sev 1 · Audits — a failed read of a run's summary erased the run
+
+Now `lib/auditRun.ts:513–523` and `:538–544` (the fix list's `:513–514`, `:538–539`). Both were
+read-modify-write of one jsonb column:
+
+```ts
+const { data: cur } = await db.from('audit_runs').select('summary')…   // error discarded
+const prevSummary = (cur?.summary ?? {}) as Record<string, unknown>    // a failure becomes {}
+await db.from('audit_runs').update({ summary: { ...prevSummary, …mine } })
+```
+
+**The list marks it "sev 1 (small)". It is not small.** A failed read did not lose the patch — it
+lost everything else. `audit_runs.summary` is where several things live that have no column of their
+own: the run's note (*"This checklist names Cascade Analytical, not you"*), the extraction's receipt
+`extraction_ai_call_id`, the words a rule reshaped or refused, the duplicates earlier sections
+collapsed, and the counts `summariseRun` writes at the end. Spreading `{}` wrote a summary holding
+only the three keys that step was adding, and **nothing recomputes the rest** — the report and the
+email then read what was left.
+
+**The fix:** `lib/auditSummary.ts`, a seam of its own, because the only way to prove this is to make
+the read fail and `runSection` cannot be handed a database that errors on one statement.
+`patchRunSummary` reads through `mustRow` and, on a failure, **writes nothing** and returns the
+failure for the caller to warn about. A section that read documents, called a model and saved its
+findings must not be marked `could_not_complete` because a bookkeeping read failed — but it must not
+write a summary built on one either. The keys that step would have added are lost; that is the lesser
+loss, said out loud, instead of the note and receipt being lost silently.
+
+**Two more reads of the same column, checked for the same reason** (both in A2's own sentence):
+`finishRunIfDone`'s collapse count — the write there *replaces* the summary, so a failed read would
+store `collapsed_duplicates: 0` for good — and `summariseRun`'s read of the run, which is what
+carries the note, the receipt and the reshaped lists forward, and whose result is written back over
+`summary`. Both now `mustRow`. `summariseRun`'s other two reads are fix-list **A8** and are left for
+E4 with their own proof: a failed findings read stores an all-zero summary and emails "nothing needs
+you", which is a different failure needing a different sentence.
+
+**The SQL route was considered and not taken.** The list offers `summary || patch`, which would also
+close a read-modify-write race. That race is not live — the sweep claims one company at a time and
+runs its sections one after another (`app/api/jobs/audit-sections/route.ts`), which `lib/auditRun.ts`
+states at the first call site. Taking it means a migration and two functions to express "append to
+this list" and "add to this number", for atomicity nothing is contending for. `lib/auditSummary.ts`
+records that, and is where the fix goes if sections ever run concurrently.
+
+**The proof: `tests/unit/auditSummary.test.ts`, 15 tests.** `oldPatch` is the shipped
+read-modify-write, copied line for line:
+
+```
+✔ with the read working, it keeps everything and appends
+✔ *** with the read FAILING: the summary becomes one key ***
+    assert.deepEqual(Object.keys(out), ['reshaped_to_dates'])
+    out.note === undefined                  — the run's note is gone, and nothing recomputes it
+    out.extraction_ai_call_id === undefined  — so is the extraction receipt
+    out.collapsed_duplicates === undefined   — and so is an earlier section's count
+```
+
+and the last group reads `lib/auditRun.ts` itself; **three of the 15 fail on the shipped file**.
+`mergeSummary` is pure, so what it does to each kind of key is tested without a database — including
+a key held in the wrong shape by an older version of the code, where `[...7]` would throw and
+`7 + [..]` would produce a string.
+
+**Effects on other sections, by file.** `lib/auditRun.ts` only; `lib/auditSummary.ts` is new. The
+run's summary is read by `components/AuditReport.tsx`, `app/audits/page.tsx`,
+`app/api/audits/index/route.ts` and `lib/auditNotify.ts` (the email's subject) — none changed, and
+all four now read a summary that cannot have been built on a failed read. No migration.

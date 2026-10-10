@@ -149,9 +149,25 @@ not a month.
     `app/account/page.tsx:75`: a failed load shows a blank name (or a blank form with no error); Save then writes
     `full_name: ''` over the stored name (`route.ts:116–118`). **Fix:** GET returns 500 on any read error; the page
     shows it and disables Save.
-14. **A2 · sev 1 (small) · ✓ · Audits.** `lib/auditRun.ts:513–514`, `:538–539`: a failed read of the run's summary
+14. **A2 · sev 1 · ✓ FIXED (Job E1, "Job E: A2 — a failed read of a run's summary erased the run") · Audits.** `lib/auditRun.ts:513–514`, `:538–539`: a failed read of the run's summary
     merges `{}` and writes it back, erasing the run's note ("This checklist names X…"), the extraction receipt and
     earlier sections' counts. **Fix:** check the error, or patch the summary in SQL (`summary || patch`).
+    **Closed, and it is not small.** Both call sites go through `lib/auditSummary.ts`'s
+    `patchRunSummary`, which reads through `mustRow` and **writes nothing at all** on a failure,
+    returning it for the caller to warn about — a section that read documents, called a model and
+    saved its findings must not be failed for a bookkeeping read, but it must not write a summary
+    built on one either. Two more reads of the same column were checked for the same reason:
+    `finishRunIfDone`'s collapse count (that write REPLACES the summary) and `summariseRun`'s own
+    read of the run, which carries the note, the receipt and the reshaped lists forward.
+    **Proof:** `tests/unit/auditSummary.test.ts`, 15 tests. `oldPatch` is the shipped
+    read-modify-write copied line for line and shows the summary becoming **one key** on a failed
+    read — note, receipt and the earlier section's count gone. Three tests fail on the shipped
+    `lib/auditRun.ts`.
+    **The SQL route was NOT taken**, with a reason: it needs a migration and two functions to express
+    "append to this list" and "add to this number", and the only thing it buys beyond this is
+    atomicity for a read-modify-write race that is not live — the sweep claims one company at a time
+    and runs its sections one after another (`app/api/jobs/audit-sections/route.ts`). If sections ever
+    run concurrently, `lib/auditSummary.ts` is where that fix goes, and it says so.
 15. **C1 · sev 2 · ✓ (311) / · · Shared — every section.** `lib/companyContext.ts:232, 234, 276, 300, 311, 340, 357,
     369, 384`: none of the eight reads checks `error`. A failure is rendered as a statement — "State: not recorded",
     "(no sites recorded)", "(nothing declared yet…)", "(nothing confirmed yet)", labels "(none yet)", and the

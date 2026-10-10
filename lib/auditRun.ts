@@ -24,6 +24,8 @@ import { askAIWithCitations, extractJsonText, modelForTask } from './ai.ts'
 import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
 import { auditAgencyPrompt, auditTemplatePrompt, type PreviousFinding } from '../prompts/audit-agency.ts'
 import { countLines, type TemplateSection, type ExtractedTemplate } from './auditTemplate.ts'
+import { patchRunSummary } from './auditSummary.ts'
+import { mustRow } from './mustRead.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -510,17 +512,18 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     // column for it on a section, so it accumulates on the run's `summary` jsonb — read-modify-write,
     // which is safe because the sweep claims one company at a time and runs its sections one after
     // another (`app/api/jobs/audit-sections/route.ts`). `summariseRun` carries it forward.
-    if (reshaped.length || droppedUndated.length || droppedWordless.length) {
-      const { data: cur } = await db.from('audit_runs').select('summary').eq('id', sec.run_id).maybeSingle()
-      const prevSummary = (cur?.summary ?? {}) as Record<string, unknown>
-      const was = (k: string) => (Array.isArray(prevSummary[k]) ? prevSummary[k] as unknown[] : [])
-      await db.from('audit_runs').update({
-        summary: { ...prevSummary,
-          reshaped_to_dates: [...was('reshaped_to_dates'), ...reshaped],
-          dropped_undated: [...was('dropped_undated'), ...droppedUndated],
-          dropped_wordless: [...was('dropped_wordless'), ...droppedWordless],
-        },
-      }).eq('id', sec.run_id)
+    // A2, Job E: through `patchRunSummary`, which keeps every key it is not adding. The old shape
+    // read `summary` without checking the error and spread `{}` on a failure — writing a summary
+    // holding only these three keys and erasing the run's note, the extraction receipt and every
+    // earlier section's counts. `lib/auditSummary.ts` says why it returns the failure instead of
+    // throwing.
+    {
+      const r = await patchRunSummary(db, sec.run_id, { append: {
+        reshaped_to_dates: reshaped, dropped_undated: droppedUndated, dropped_wordless: droppedWordless,
+      } })
+      if (!r.ok) {
+        console.warn(`audit section ${sectionId}: the run's summary was left as it was — ${r.error.message}`)
+      }
     }
     if (droppedUndated.length || droppedWordless.length) {
       // Said out loud as well as stored, the same as a mapped word: these are items the model
@@ -536,12 +539,11 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       ? await collapseAgainstEarlier(db, sec, raisedInRun, obj)
       : 0
     if (collapsedHere) {
-      const { data: cur } = await db.from('audit_runs').select('summary').eq('id', sec.run_id).maybeSingle()
-      const prev = (cur?.summary ?? {}) as Record<string, unknown>
-      await db.from('audit_runs').update({
-        summary: { ...prev,
-          collapsed_duplicates: (Number(prev.collapsed_duplicates) || 0) + collapsedHere },
-      }).eq('id', sec.run_id)
+      const r = await patchRunSummary(db, sec.run_id, { add: { collapsed_duplicates: collapsedHere } })
+      if (!r.ok) {
+        console.warn(`audit section ${sectionId}: ${collapsedHere} collapsed duplicate(s) were not `
+          + `counted on the run — ${r.error.message}`)
+      }
     }
 
     await db.from('audit_sections').update({
@@ -1008,9 +1010,13 @@ export async function finishRunIfDone(db: Db, runId: string):
    * read the running total each section added.
    */
   const summary = await summariseRun(db, runId)
-  const { data: runNow } = await db.from('audit_runs').select('summary').eq('id', runId).maybeSingle()
-  const collapsed = Number(((runNow?.summary ?? {}) as Record<string, unknown>)
-    .collapsed_duplicates) || 0
+  // A2, Job E: checked. This write REPLACES the summary with `summariseRun`'s result plus this
+  // count, so a failed read here would not merely under-report the collapse — it would store a run
+  // whose collapse count says 0 when sections closed duplicates, for good, because nothing
+  // recomputes it. `mustRow` throws, the run stays unfinished, and the recovery re-runs it.
+  const runNow = mustRow<{ summary: Record<string, unknown> | null }>("the audit run's summary",
+    await db.from('audit_runs').select('summary').eq('id', runId).maybeSingle())
+  const collapsed = Number((runNow?.summary ?? {}).collapsed_duplicates) || 0
 
   // How fresh the evidence was: the newest reading any section was shown. Read from the scans of
   // the documents the sections recorded, not from the run's own clock — the run's date says when we
@@ -1185,12 +1191,24 @@ async function collapseAgainstEarlier(
  * the banner and the email cannot disagree.
  */
 export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
-  const [{ data: rows }, { data: secs }, { data: run }] = await Promise.all([
+  const [{ data: rows }, { data: secs }, runRes] = await Promise.all([
     db.from('audit_findings').select('title, kind, word, status, passed, document_id, same_as')
       .eq('run_id', runId).order('ordinal'),
     db.from('audit_sections').select('title, status').eq('run_id', runId).order('ordinal'),
     db.from('audit_runs').select('previous_run_id, summary').eq('id', runId).maybeSingle(),
   ])
+  // *** A2, Job E: THIS READ IS THE ONE THAT CARRIES THE RUN'S OWN WORDS FORWARD. ***
+  // The note ("this checklist names somebody else"), the extraction's receipt, and the lists of
+  // words a rule reshaped or refused exist nowhere else — see the four `run?.summary` reads at the
+  // bottom of this function. The result of this call is then WRITTEN BACK over `summary` by
+  // `finishRunIfDone`, so a failure here does not lose a read: it erases the run's note and receipt
+  // permanently. `mustRow` throws, the run stays unfinished, and nothing is overwritten.
+  //
+  // `rows` and `secs` are fix-list item A8 and are checked in E4, with their own proof — a failed
+  // findings read stores an all-zero summary and emails "nothing needs you", which is a different
+  // failure needing a different sentence.
+  const run = mustRow<{ previous_run_id: string | null; summary: Record<string, unknown> | null }>(
+    "the audit run's summary", runRes)
   const f = rows ?? []
   const sections = secs ?? []
 
