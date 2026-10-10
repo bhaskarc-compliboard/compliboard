@@ -285,7 +285,9 @@ describe('every reader of a document\'s CONTENT takes the readable reading (§18
   test('the shared libraries swapped: the run\'s date, an attachment, the labels, the scan\'s context', async () => {
     assert.match(await read('lib/auditRun.ts'), /readableScanIds\(db, runCo\.company_id/)
     assert.match(await read('lib/attachedDocument.ts'), /readableScanForDocument\(db, t\.document_id\)/)
-    assert.match(await read('lib/companyLabels.ts'), /readableScanIds\(admin, companyId\)/)
+    // `lib/companyLabels.ts` went one further in Job E (fix list D2): it reads `document_index_v`,
+    // which carries the readable-reading rule in SQL AND applies the person's corrections, so it no
+    // longer calls `readableScanIds` at all. Asserted below in its own test.
     assert.match(await read('lib/documentScan.ts'), /readableScanIds\(db, company\.id\)/)
   })
 
@@ -295,8 +297,18 @@ describe('every reader of a document\'s CONTENT takes the readable reading (§18
     // took "Oregon DEQ" with it and the agency dropped out of "audit everything" — a company losing
     // its own vocabulary because a reading service refused for a minute. Proved on staging in
     // `scripts/calendar-a3b-failed-reread.mjs`: removed 0, and the label is still there.
+    //
+    // *** AND IN JOB E, fix list D2: it must not read a RAW SCAN EITHER. *** A rename is written to
+    // `document_corrections`, never into a scan, so a renamed label appeared in no scan and the next
+    // delete pruned it. Both rules are satisfied by one read of `document_index_v`, which takes
+    // identity from the readable reading and then applies corrections.
+    // `scripts/fixlist-d2-rename.mjs` proves it on staging: on the shipped code the renamed agency
+    // was removed and "audit everything" would audit nothing.
     const labels = await read('lib/companyLabels.ts')
-    assert.match(labels, /readableScanIds\(admin, companyId\)/)
+    assert.match(labels, /from\('document_index_v'\)/,
+      "pruneOrphanLabels must decide 'in use' from the view that applies corrections")
+    assert.ok(!/from\('document_scans'\)/.test(labels),
+      'a raw scan carries no correction, so a renamed label would look like an orphan')
     assert.ok(!/\.eq\('is_current', true\)/.test(labels),
       'pruneOrphanLabels must not decide an orphan from the CURRENT reading')
   })

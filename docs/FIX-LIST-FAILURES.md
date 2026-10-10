@@ -75,7 +75,10 @@ not a month.
    "audit everything" stops auditing that agency. **Fix:** alive = carried by the latest **readable** reading (see
    also D2, R6).
    **FIXED in A3e** (`621490d`): `lib/companyLabels.ts:64` now uses `readableScanIds(admin, companyId)`; the replay
-   (failed re-read → delete another document) shows removed 0 and "Oregon DEQ" still there. **D2 is still open.**
+   (failed re-read → delete another document) shows removed 0 and "Oregon DEQ" still there.
+   **SUPERSEDED IN JOB E1 by D2's fix**, which reads `document_index_v` instead — the same readable
+   rule, in SQL, plus the corrections `readableScanIds` could not see. `readableScanIds` is no longer
+   called from this file, and `scripts/fixlist-d2-rename.mjs` re-proves the L1 case through the new read.
 3. **D6 · sev 2 · ✓ · Documents.** `app/api/document-scan/route.ts:88–96` (and `app/api/jobs/scan-documents/route.ts:
    211–218`): **any** storage download error is told to the person as *"Upload it again — the record is here but the
    file is not"*, which makes them create a duplicate, and it is saved as a failed reading that replaces a good one
@@ -371,11 +374,19 @@ not a month.
 
 ### R6 — a renamed label the rest of the code cannot see
 
-55. **D2 · sev 1 · ✓ · Documents → Audits.** `app/api/company-labels/route.ts:126–135`: a rename writes the new name
+55. **D2 · sev 1 · ✓ FIXED (Job E1, "Job E: D2 and L1 — a renamed label deleted by the next tidy-up") · Documents → Audits.** `app/api/company-labels/route.ts:126–135`: a rename writes the new name
     into `document_corrections` and `company_labels` only, never into a scan. `pruneOrphanLabels`
     (`lib/companyLabels.ts:57`) reads raw scans, so the next delete of **any** document deletes the renamed label —
     the old name is already gone — and the company loses that agency from "audit everything". **Fix:** decide "in
     use" from `document_index_v`, which applies corrections (one fix with L1).
+    **Closed:** `pruneOrphanLabels` now reads `document_index_v.agencies, subjects` — one read that
+    carries BOTH rules, because the view takes a document's identity from the readable reading
+    (migration 076, L1) and then applies the person's corrections on top (D2). It no longer touches
+    `document_scans` at all. **Proof:** `scripts/fixlist-d2-rename.mjs`, free, on staging, run twice.
+    On the shipped code: *"removed 1 — agency:Oregon Department of Environmental Quality"* and
+    `"audit everything" would audit: (nothing)` — immediately after the person told us what to call
+    it. On the fix: removed 0, the renamed agency still audited, **and the two labels no document
+    carries are still pruned**, which a fix that pruned nothing would have passed everything else.
 
 ---
 

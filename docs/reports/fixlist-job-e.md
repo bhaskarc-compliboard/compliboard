@@ -253,3 +253,74 @@ the comparison does not rest on remembering what the old code did — 6 open que
 only, so nothing else changes. Company information (`app/api/company-information/route.ts`) and the
 sidebar badge (`components/AppLayout.tsx:77`) read `fact_proposals` and now keep their rows through a
 failed re-read; neither file changed. No migration.
+
+### D2 (with L1) · sev 1 · Documents → Audits — a renamed label deleted by the next tidy-up
+
+Now `app/api/company-labels/route.ts:102–136` for the rename and `lib/companyLabels.ts:58` for the
+prune. Confirmed by reading both.
+
+**The failure, and why it is not a bug in the rename.** The rename route writes the new name into
+`document_corrections` and `company_labels` and **never into a scan** — deliberately, and
+`document_corrections`' own description says why: *"the scan row is never edited, so what the model
+said stays readable and a re-scan cannot undo a person."* `pruneOrphanLabels` read raw
+`document_scans`. So after a rename:
+
+```
+document_index_v.agencies  (corrections applied) = ["Oregon Department of Environmental Quality"]
+document_scans.agencies    (the raw reading)     = ["Oregon DEQ"]
+```
+
+the old name was gone from `company_labels`, the new name was in no scan, and the next delete of
+**any** document — which is when pruning runs (`app/api/documents/route.ts:302`) — deleted the
+renamed label. `auditAgenciesFor` reads `company_labels`, so the company lost that agency from "audit
+everything" immediately after telling us what to call it. It **deletes**, which is why it is
+severity 1.
+
+**The fix is one read.** `document_index_v.agencies, subjects` carries both rules at once: the view
+takes a document's identity from the reading that could read it (migration 076 — that is L1) and then
+applies the person's corrections field by field (that is D2). `lib/companyLabels.ts` no longer touches
+`document_scans`, and no longer calls `readableScanIds` either: the rule it was standing in for now
+arrives in the same read, from SQL, where it is defined.
+
+**The proof: `scripts/fixlist-d2-rename.mjs`** — free, no model called, a throwaway company, run
+twice. The rename is performed exactly as the route performs it (a correction row per carrying
+document, the old vocabulary row deleted, the new one inserted), because the route needs a session
+and the code under test is the prune.
+
+On the shipped code:
+
+```
+· a person renames "Oregon DEQ" → "Oregon Department of Environmental Quality" (1 document corrected)
+· pruneOrphanLabels after a document delete: removed 1 — agency:Oregon Department of Environmental Quality
+   the company's vocabulary: subject:Air quality
+   "audit everything" would audit: (nothing)
+ ✗ the renamed agency was pruned
+ ✗ "audit everything" no longer audits that agency
+ ✗ a failed re-read made the renamed agency an orphan and it was deleted
+```
+
+On the fix:
+
+```
+· pruneOrphanLabels after a document delete: removed 0
+   "audit everything" would audit: Oregon Department of Environmental Quality
+ ✓ the renamed agency survives a document delete
+ ✓ "audit everything" still audits it, under its new name
+ ✓ the two labels no document carries are still pruned
+ ✓ ...and the renamed one is still there
+ ✓ a failed re-read leaves the vocabulary alone (L1, and the rename survives with it)
+```
+
+The subject `Air quality` survived on the old code too, and that is the useful contrast: it was never
+renamed, so the raw scan still carried it. Only the corrected name was invisible.
+
+**The third block is the one that keeps the function honest.** Two labels no document carries —
+the `Test Gamma Solvents` case in `lib/companyLabels.ts`'s own header, which is why the prune exists
+— are still removed. A fix that pruned nothing would have passed every other check in the script.
+
+**Effects on other sections, by file.** `lib/audit.ts:117` (`auditAgenciesFor`) and the Audits page
+group by `company_labels`, so this changes what "audit everything" audits — in the direction of
+auditing what the person named. `tests/unit/documentScanCalendar.test.ts` had two A3e assertions
+naming `readableScanIds(admin, companyId)` in this file; both were updated to the stronger shape
+(`document_index_v` present, `document_scans` absent), and the updated test was checked to **fail**
+on the shipped `lib/companyLabels.ts`. No migration; the view already existed.

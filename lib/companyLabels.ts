@@ -18,9 +18,12 @@
  * for an audit of everything and is billed for a model call per phantom regulator, each of which can
  * only answer "nothing on file" about a rule that was never theirs.
  *
- * WHAT COUNTS AS AN ORPHAN. A label whose exact `(kind, label)` pair appears in no `is_current`
- * scan of the company. Compared exactly, because that is how `lib/audit.ts` compares an agency label
- * when it scopes an audit — a looser comparison here would keep labels that an audit cannot use.
+ * WHAT COUNTS AS AN ORPHAN. A label whose exact `(kind, label)` pair appears on no document in
+ * `document_index_v` — the view, which takes a document's identity from the reading that COULD read
+ * it and then applies the person's own corrections on top. Not raw `document_scans`: that read is
+ * what fix-list items L1 and D2 were, and the block in the function says what each of them cost.
+ * Compared exactly, because that is how `lib/audit.ts` compares an agency label when it scopes an
+ * audit — a looser comparison here would keep labels that an audit cannot use.
  *
  * *** AND IT NEEDS THE SERVICE ROLE, WHICH IS A FACT ABOUT THE PRODUCT AND NOT A SHORTCUT. ***
  * Read back with `has_table_privilege` rather than from a grant list (`role_table_grants` returns
@@ -32,8 +35,6 @@
  * and only the server writes one. That rule is right and is not being changed. It means this prune
  * is a server action, so every caller passes a service-role client and says why.
  */
-import { readableScanIds } from './readableScan.ts'
-
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -56,19 +57,34 @@ export interface PruneResult {
  */
 export async function pruneOrphanLabels(admin: Db, companyId: string): Promise<PruneResult> {
   try {
-    // *** THE READING THAT COULD READ IT (§185a, A3e), AND HERE IT DELETES THINGS. ***
-    // `is_current` would be a failed reading, whose `agencies` and `subjects` are empty — so a
-    // reading service that refused for a minute would make every label that document carried look
-    // like an orphan, and this function would PRUNE them. A label is the company's own vocabulary
-    // and the Audits page groups by it.
-    const readableIds = await readableScanIds(admin, companyId)
-    const { data: scans, error: sErr } = readableIds.length
-      ? await admin.from('document_scans').select('agencies, subjects').in('id', readableIds)
-      : { data: [], error: null }
-    if (sErr) return { removed: 0, labels: [], error: `reading the scans: ${sErr.message}` }
+    // *** IN USE MEANS "IN USE ACCORDING TO `document_index_v`" — fix list D2 and L1, root R6. ***
+    //
+    // Two reasons this one read has to be the view and not `document_scans`, and each of them has
+    // cost a company an agency out of "audit everything":
+    //
+    //   L1 — THE READING THAT COULD READ IT (§185a, A3e). `is_current` may be a failed reading,
+    //        whose `agencies` and `subjects` are empty, so a reading service that refused for a
+    //        minute made every label that document carried look like an orphan — and this function
+    //        DELETES. Fixed in A3e by `readableScanIds`; the view carries the same rule in SQL
+    //        (`readable_scan_id`, migration 076), which is where it is defined.
+    //   D2 — A RENAMED LABEL IS INVISIBLE IN A RAW SCAN. `app/api/company-labels/route.ts` writes a
+    //        rename into `document_corrections` and `company_labels` and **never into a scan** — on
+    //        purpose: a reading is what the reading said, and a person's correction is a separate,
+    //        newer fact. `document_index_v` applies those corrections field by field; raw
+    //        `document_scans` rows do not. So after a rename the old name was gone from
+    //        `company_labels` and the new name appeared in no scan, and the next delete of **any**
+    //        document pruned the renamed label. The company lost that agency from "audit
+    //        everything", having just told us what to call it.
+    //
+    // The comparison is still exact, for the reason the header gives: `lib/audit.ts` matches an
+    // agency label exactly when it scopes an audit, and this read is now looking at the same
+    // corrected values that `lib/audit.ts` reads.
+    const { data: rowsInUse, error: sErr } = await admin.from('document_index_v')
+      .select('agencies, subjects').eq('company_id', companyId)
+    if (sErr) return { removed: 0, labels: [], error: `reading the documents: ${sErr.message}` }
 
     const alive = new Set<string>()
-    for (const sc of (scans ?? []) as Array<{ agencies: string[] | null; subjects: string[] | null }>) {
+    for (const sc of (rowsInUse ?? []) as Array<{ agencies: string[] | null; subjects: string[] | null }>) {
       for (const a of sc.agencies ?? []) alive.add(`agency:${a}`)
       for (const b of sc.subjects ?? []) alive.add(`subject:${b}`)
     }
@@ -88,7 +104,7 @@ export async function pruneOrphanLabels(admin: Db, companyId: string): Promise<P
     const named = orphans.map((l) => `${l.kind}:${l.label}`)
     // Said out loud as well as done: a label disappearing from a company's vocabulary is a change to
     // what an audit of everything will audit, and a change like that should be greppable.
-    console.warn(`company ${companyId}: removed ${named.length} orphan label(s) no current reading `
+    console.warn(`company ${companyId}: removed ${named.length} orphan label(s) no document still `
       + `carries — ${named.slice(0, 6).join(' · ')}${named.length > 6 ? ` · +${named.length - 6} more` : ''}`)
     return { removed: named.length, labels: named }
   } catch (error) {
