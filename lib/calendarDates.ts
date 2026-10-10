@@ -361,6 +361,34 @@ export async function confirmDate(db: Db, args: {
 }
 
 /**
+ * Set how often a date repeats, AND NOTHING ELSE.
+ *
+ * *** PICKING "every month" IS NOT CONFIRMING *** (the owner, Job B; decision 6). `confirmDate` can
+ * also settle `every`, which is right when a person presses Confirm and chooses in the same breath —
+ * but the drawer offers the three periods on a date that is still waiting to be confirmed, and
+ * tapping one there must not quietly agree to the date itself. Confirming is its own press, with its
+ * own button, because confirming is the person saying *"yes, this really is one of my obligations"*
+ * and nothing else should be able to say it for them.
+ *
+ * It also fills the gap decision 9 leaves open: the reading says only THAT a date repeats, never how
+ * often, so "how often" is the one field a person is expected to supply before the date is useful.
+ */
+export async function setHowOften(db: Db, args: {
+  companyId: string; id: string; every: HowOften | null
+}): Promise<ChangeResult> {
+  const row = await mine(db, args.companyId, args.id)
+  if (!row) return NOT_FOUND
+  if (args.every && !row.is_recurring) {
+    return { ok: false, error: 'That date does not repeat.', status: 400 }
+  }
+  const { data, error } = await db.from('calendar_events')
+    .update({ repeats_every: args.every })
+    .eq('id', args.id).eq('company_id', args.companyId).select(DATE_COLUMNS).single()
+  if (error) return { ok: false, error: error.message, status: 400 }
+  return { ok: true, date: data as CalendarDate }
+}
+
+/**
  * "Not right" — kept, never deleted, with the reason on the row (decision 6).
  *
  * The reason is REQUIRED, and 073 refuses a rejected row without one. It is what the next reading is

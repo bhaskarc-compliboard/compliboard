@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse, connection } from 'next/server'
 import { requireCompany } from '@/lib/auth'
 import {
-  addDate, confirmDate, rejectDate, markDone, listDates, siblingsOnDay,
+  addDate, confirmDate, rejectDate, markDone, listDates, siblingsOnDay, setHowOften,
   DATE_SOURCES, type DateSource, type HowOften,
 } from '@/lib/calendarDates'
 import { isDayString } from '@/lib/calendarDate'
@@ -153,6 +153,18 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: 'A repeat is monthly, quarterly or yearly.' }, { status: 400 })
       }
       const r = await confirmDate(db, { companyId, id, day, every })
+      return r.ok ? NextResponse.json({ date: r.date })
+        : NextResponse.json({ error: r.error }, { status: r.status })
+    }
+
+    if (action === 'how_often') {
+      // Its own action, not a flavour of confirm: picking a period on a not-confirmed date saves the
+      // period and leaves the date waiting (decision 6, the owner's point 5 in Job B).
+      const every = body.every ?? null
+      if (every !== null && !HOW_OFTEN.includes(every)) {
+        return NextResponse.json({ error: 'A repeat is monthly, quarterly or yearly.' }, { status: 400 })
+      }
+      const r = await setHowOften(db, { companyId, id, every })
       return r.ok ? NextResponse.json({ date: r.date })
         : NextResponse.json({ error: r.error }, { status: r.status })
     }

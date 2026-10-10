@@ -33,7 +33,7 @@ import { Sheet } from '@/components/Sheet'
 import { Empty } from '@/components/Empty'
 import { PRIMARY, OUTLINE, TEXT_ACTION } from '@/components/buttonStyles'
 import { printWithFrame } from '@/lib/printFrame'
-import { monthlyEmailPromised } from '@/lib/emailPromise'
+import { useMonthlyEmailPromised } from '@/lib/usePromise'
 import {
   today, formatDay, formatDayShort, formatMonth, monthRange, inMonth, isPast, dueWords,
   compareDays, nextOccurrence, isDayString, type HowOften,
@@ -115,6 +115,9 @@ function Calendar() {
   const [changing, setChanging] = useState(false)
 
   const now = today()
+  /** *** THE ANSWER COMES FROM THE SERVER *** (`/api/promise`): `EMAIL_FROM` is invisible to the
+   *  browser, so a client-side gate could never open. It starts false, which is the safe way round. */
+  const emailPromised = useMonthlyEmailPromised()
 
   /**
    * *** ?tab=confirm, EXACTLY — the monthly email already links to it *** (A5b, pinned by a test in
@@ -212,6 +215,7 @@ function Calendar() {
   const doneDates = useMemo(() => onBoard.filter((d) => d.state === 'done')
     .sort((a, b) => compareDays(b.due_date ?? '', a.due_date ?? '')), [onBoard])
 
+  const fromDocuments = useMemo(() => toConfirm.filter((d) => d.source === 'document').length, [toConfirm])
   const open = openId ? dates.find((d) => d.id === openId) ?? null : null
 
   // ---------------------------------------------------------------------------
@@ -357,14 +361,16 @@ function Calendar() {
           */}
           <p className="mt-1 text-[14px] text-gray-500">
             When CompliBoard reads a document, the dates it sets appear here for you to confirm.
-            {monthlyEmailPromised() && ' On the 1st of each month we email you what is due.'}
+            {emailPromised && ' On the 1st of each month we email you what is due.'}
           </p>
         </div>
 
+        {/* HR's own notice (`app/hr/HrWorkspace.tsx:652-657`): amber, one line, an inline action.
+            Decision 16 has no red panels on this page. */}
         {loadError && (
-          <div className="no-print mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm text-red-700">We couldn’t load your calendar. That is our side, not yours.</p>
-            <button onClick={() => { setLoading(true); load() }} className={`mt-1 ${TEXT_ACTION}`}>Try again</button>
+          <div className="no-print mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            We couldn’t load your calendar. That is our side, not yours.
+            <button onClick={() => { setLoading(true); load() }} className="ml-3 text-xs underline">Try again</button>
           </div>
         )}
 
@@ -382,9 +388,9 @@ function Calendar() {
           } />
 
         {notice && (
-          <div className="no-print mb-4 flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm text-red-700">{notice}</p>
-            <button onClick={() => setNotice(null)} className="text-sm text-red-500 hover:text-red-700">Close</button>
+          <div className="no-print mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {notice}
+            <button onClick={() => setNotice(null)} className="ml-3 text-xs underline">Dismiss</button>
           </div>
         )}
 
@@ -414,7 +420,7 @@ function Calendar() {
             </div>
             <div className="no-print grid grid-cols-7 border-t border-gray-200">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => (
-                <div key={d} className={`py-2 text-center text-[11px] font-medium uppercase tracking-wide text-gray-400 ${i === 0 ? '' : 'border-l border-gray-100'}`}>{d}</div>
+                <div key={d} className={`py-2 text-center text-[12px] font-medium uppercase tracking-wide text-gray-400 ${i === 0 ? '' : 'border-l border-gray-100'}`}>{d}</div>
               ))}
               {month.map((cell, i) => (
                 <div key={i} className={`min-h-[84px] border-t border-gray-100 p-1.5 ${i % 7 === 0 ? '' : 'border-l'}`}>
@@ -424,12 +430,12 @@ function Calendar() {
                         cell.iso === now ? 'bg-gray-900 text-white' : 'text-gray-600'}`}>{cell.day}</p>
                       {cell.dates.slice(0, 3).map((d) => (
                         <button key={d.id} onClick={() => setOpenId(d.id)}
-                          className={`block w-full truncate text-left text-[11px] leading-5 ${dotClass(d)}`}>
+                          className={`block w-full truncate text-left text-[12px] leading-5 ${dotClass(d)}`}>
                           {d.state === 'not_confirmed' ? '○ ' : '● '}{d.title}
                         </button>
                       ))}
                       {cell.dates.length > 3 && (
-                        <p className="text-[11px] text-gray-400">+{cell.dates.length - 3} more</p>
+                        <p className="text-[12px] text-gray-400">+{cell.dates.length - 3} more</p>
                       )}
                     </>
                   )}
@@ -468,12 +474,12 @@ function Calendar() {
                 {passed.length > 0 && (
                   <>
                     {/* §185c: "Dates that have passed", never "overdue" or "not done". */}
-                    <h3 className="mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    <h3 className="mb-1 mt-2 text-[12px] font-semibold uppercase tracking-wide text-gray-400">
                       Dates that have passed
                     </h3>
                     <p className="mb-2 text-[12px] text-gray-500">
                       A gentle reminder in case any of these still need attention. If they’re already
-                      taken care of, you can mark them done and we won’t list them again.
+                      taken care of, you can tick them off and we won’t list them again.
                     </p>
                     <div className="divide-y divide-gray-100 border-y border-gray-100">
                       {passed.map((d) => <Row key={d.id} d={d} />)}
@@ -482,7 +488,7 @@ function Calendar() {
                 )}
                 {ahead.length > 0 && (
                   <>
-                    <h3 className="mb-1 mt-6 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Ahead</h3>
+                    <h3 className="mb-1 mt-6 text-[12px] font-semibold uppercase tracking-wide text-gray-400">Ahead</h3>
                     <div className="divide-y divide-gray-100 border-y border-gray-100">
                       {ahead.map((d) => <Row key={d.id} d={d} />)}
                     </div>
@@ -514,8 +520,12 @@ function Calendar() {
             ) : (
               <>
                 <div className="mb-4 flex items-center justify-between gap-4">
+                  {/* "found in your documents" counts the dates that CAME from one. Migration 077
+                      makes a hand-added date impossible here, and the route confirms every other
+                      source on arrival — so in practice this is all of them; it is counted rather
+                      than assumed, because the sentence is a claim. */}
                   <p className="text-[13px] text-gray-600">
-                    {toConfirm.length} date{toConfirm.length === 1 ? '' : 's'} found in your documents.
+                    {fromDocuments} date{fromDocuments === 1 ? '' : 's'} found in your documents.
                     Check each one against the line it came from.
                   </p>
                   <button disabled={busy} onClick={() => confirmAll(toConfirm)} className={PRIMARY}>
@@ -607,7 +617,7 @@ function Calendar() {
           }>
           <section className="space-y-4">
             <div>
-              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Where it came from</h4>
+              <h4 className="text-[12px] font-semibold uppercase tracking-wide text-gray-400">Where it came from</h4>
               <p className="mt-1 text-[13px] text-gray-700">
                 {SOURCE_WORDS[open.source]}
                 {(() => {
@@ -625,13 +635,13 @@ function Calendar() {
 
             {open.state === 'rejected' && open.rejected_reason && (
               <div>
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">You said</h4>
+                <h4 className="text-[12px] font-semibold uppercase tracking-wide text-gray-400">You said</h4>
                 <p className="mt-1 text-[13px] text-gray-700">{open.rejected_reason}</p>
               </div>
             )}
 
             <div>
-              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">How often</h4>
+              <h4 className="text-[12px] font-semibold uppercase tracking-wide text-gray-400">How often</h4>
               {!open.is_recurring ? (
                 <p className="mt-1 text-[13px] text-gray-700">It happens once.</p>
               ) : (
@@ -639,7 +649,7 @@ function Calendar() {
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     {HOW_OFTEN.map((h) => (
                       <button key={h.key} disabled={busy}
-                        onClick={() => act({ id: open.id, action: 'confirm', every: h.key })}
+                        onClick={() => act({ id: open.id, action: 'how_often', every: h.key })}
                         className={`rounded-md border px-2.5 py-1 text-[12px] ${
                           open.repeats_every === h.key
                             ? 'border-[var(--green)] bg-green-50 text-[var(--green-ink)]'
@@ -670,7 +680,7 @@ function Calendar() {
                 .sort((a, b) => compareDays(b.due_date ?? '', a.due_date ?? ''))
               return earlier.length ? (
                 <div>
-                  <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Done before</h4>
+                  <h4 className="text-[12px] font-semibold uppercase tracking-wide text-gray-400">Done before</h4>
                   <ul className="mt-1 space-y-0.5">
                     {earlier.map((d) => (
                       <li key={d.id} className="text-[13px] text-gray-600">{formatDay(d.due_date)}</li>
