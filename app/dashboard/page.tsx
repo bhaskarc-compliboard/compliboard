@@ -164,7 +164,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <AppLayout title="Dashboard">
+      <AppLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-sm text-gray-400">Loading...</div>
         </div>
@@ -173,7 +173,7 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout title="Dashboard">
+    <AppLayout>
       <div className="p-6 max-w-5xl mx-auto">
 
         {/* Welcome header */}

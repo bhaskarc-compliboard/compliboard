@@ -344,11 +344,11 @@ function Calendar() {
     { company: companyName || 'CompliBoard', type: `Calendar — ${formatMonth(cursor.y, cursor.m)}` })
 
   if (loading) {
-    return <AppLayout title="Calendar"><div className="p-8 text-[14px] text-gray-400">Loading your calendar…</div></AppLayout>
+    return <AppLayout><div className="p-8 text-[14px] text-gray-400">Loading your calendar…</div></AppLayout>
   }
 
   return (
-    <AppLayout title="Calendar">
+    <AppLayout>
       <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
         <div className="no-print pt-6">
           <h1 className="font-serif text-[28px] font-normal text-gray-900">Calendar</h1>
