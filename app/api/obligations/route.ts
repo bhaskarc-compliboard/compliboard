@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
 import { writeObligations } from '@/lib/obligationWriter'
+import { mustRow, mustRows, mustCount } from '@/lib/mustRead'
 
 /**
  * GET /api/obligations — M6's only data source.
@@ -30,11 +31,15 @@ export async function GET(request: NextRequest) {
   const { companyId, db } = authed.auth
 
   try {
-    const { data: company } = await db
+    // A15's shape (E4): "Company not found" from a failed read is a claim about their own
+    // company, and `.single()` reports a missing row and a broken query the same way — so
+    // `maybeSingle` tells them apart, as `lib/obligationWriter.ts` does for the same reason (W1).
+    const company = mustRow<{ id: string; industry: string | null; state: string | null
+                              obligations_computed_at: string | null }>('your company', await db
       .from('companies')
       .select('id, industry, state, obligations_computed_at')
       .eq('id', companyId)
-      .single()
+      .maybeSingle())
 
     if (!company) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
 
@@ -60,14 +65,23 @@ export async function GET(request: NextRequest) {
       .is('applicable_to', null)
     if (error) throw new Error(error.message)
 
-    const [{ data: evidence }, { data: agencyRows }] = await Promise.all([
+    // *** W6 (root R2, Job E4): A FAILED EVIDENCE READ MADE EVERY OWED ROW SAY "NOTHING YET." ***
+    // The page's line for a requirement with no evidence is "Nothing yet. No document has been
+    // linked to this requirement." — true when there is none, and a flat untruth for all of them at
+    // once when the read failed. `obligation_evidence_state` is the view that filters expiry so no
+    // consumer can forget it (§3.2); reading it as empty says every requirement is unproven.
+    const [evidenceRes, agencyRes] = await Promise.all([
       db.from('obligation_evidence_state')
         .select('obligation_id, live_evidence, expired_evidence, contradicting_evidence, next_expiry')
         .eq('company_id', companyId),
       db.from('agencies').select('id, short_name'),
     ])
-    const evidenceFor = Object.fromEntries((evidence ?? []).map((e) => [e.obligation_id, e]))
-    const agencyName = Object.fromEntries((agencyRows ?? []).map((a) => [a.id, a.short_name]))
+    const evidenceFor = Object.fromEntries(
+      mustRows<Record<string, unknown>>('what you have shown for each requirement', evidenceRes)
+        .map((e) => [e.obligation_id as string, e]))
+    const agencyName = Object.fromEntries(
+      mustRows<{ id: string; short_name: string }>('the regulators', agencyRes)
+        .map((a) => [a.id, a.short_name]))
 
     const shaped = (rows ?? []).map((o) => {
       const rt = o.requirement_templates as unknown as {
@@ -97,8 +111,9 @@ export async function GET(request: NextRequest) {
 
     // The coverage strip's inputs. Facts about the LIBRARY, not about this customer —
     // which is the distinction §58.3 draws, and the only numbers this response carries.
-    const [{ count: requirements }, { count: agencies }, { count: verified },
-           { count: switchesTotal }, { count: switchesFromDocuments }] = await Promise.all([
+    // W6's second half: the coverage strip. "0 requirements are loaded" is a statement about the
+    // LIBRARY, and `mustCount` also refuses a null count with no error.
+    const [reqCount, agencyCount, verifiedCount, swCount, swDocCount] = await Promise.all([
       db.from('requirement_templates').select('*', { count: 'exact', head: true }).is('effective_to', null),
       db.from('agencies').select('*', { count: 'exact', head: true }),
       db.from('requirement_templates').select('*', { count: 'exact', head: true }).is('effective_to', null).eq('status', 'verified'),
@@ -109,8 +124,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       rows: shaped,
       coverage: {
-        requirements: requirements ?? 0, agencies: agencies ?? 0, verified: verified ?? 0,
-        switchesTotal: switchesTotal ?? 0, switchesFromDocuments: switchesFromDocuments ?? 0,
+        requirements: mustCount('the requirement library', reqCount),
+        agencies: mustCount('the regulators', agencyCount),
+        verified: mustCount('the verified requirements', verifiedCount),
+        switchesTotal: mustCount('the facts we track', swCount),
+        switchesFromDocuments: mustCount('the facts read from documents', swDocCount),
       },
       computedAt,
     })

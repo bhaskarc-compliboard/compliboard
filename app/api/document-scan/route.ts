@@ -41,8 +41,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { runDocumentScan, saveScan, buildScanContext, failedScan } from '@/lib/documentScan'
+import { fileIsMissing, FILE_GONE, STORAGE_UNREACHABLE } from '@/lib/storageMiss'
 
 const BUCKET = 'company-documents'
+
+/**
+ * O6 (Job E4): the scan takes 20 to 100 seconds and this route had NO `maxDuration`, so the
+ * platform's default killed it mid-reading — and the row it had just marked `reading` could not be
+ * recovered, because `reading_since` was null. 800 is what the sweep uses for the same work.
+ */
+export const maxDuration = 800
 
 export async function POST(request: NextRequest) {
   const authed = await requireCompany(request)
@@ -81,20 +89,56 @@ export async function POST(request: NextRequest) {
   // still says `uploaded` for that whole time tells the person nothing is happening, and the
   // page shows this column as its status word. Written first so the truth is on the row while
   // the work is in flight, not once it is over.
-  await db.from('documents').update({ status: 'reading' }).eq('id', documentId)
+  //
+  // *** AND `reading_since` GOES WITH IT — fix list O6, PROVED in Job E4, not a hypothesis. ***
+  //
+  // Three legs, all read on the live tree:
+  //   1. this update wrote `status: 'reading'` and **not** `reading_since`;
+  //   2. the recovery in `app/api/jobs/scan-documents/route.ts` filters the stalled rows on
+  //      `reading_since` being EARLIER than its cutoff — and in SQL a less-than comparison
+  //      **never matches NULL**;
+  //      (the query is not quoted here on purpose: `npm run check:schema` reads query-shaped text
+  //      and attributes it to the last table this file named, which it did on the first draft of
+  //      this comment — a false report, and a fair one.)
+  //   3. this route had no `maxDuration`, so a 20-to-100-second scan outlives the platform's
+  //      default and is killed.
+  // Put together: the platform kills the request, the row says "Reading…", and **nothing can ever
+  // recover it** — the document sticks for ever and `finishBatchIfDone` never settles its batch, so
+  // the batch email never goes either. One null column.
+  //
+  // `maxDuration` is set below for leg 3. The recovery also learns to see a null (leg 2), because a
+  // path that forgets this line again must not be invisible a second time.
+  const { error: claimErr } = await db.from('documents')
+    .update({ status: 'reading', reading_since: new Date().toISOString() }).eq('id', documentId)
+  if (claimErr) {
+    // Said, not thrown: the reading itself can still go ahead, and the row's status is the only
+    // thing lost. A silent failure here is what O6 was.
+    console.error(`document-scan: ${documentId} could not be marked as being read: ${claimErr.message}`)
+  }
 
   try {
     const { data: blob, error: dlError } = await db.storage.from(BUCKET).download(doc.file_url)
     if (dlError || !blob) {
+      // *** D6 (Job E4): THE TWO REASONS A DOWNLOAD FAILS ARE TOLD APART. ***
+      // `lib/storageMiss.ts` says why at length. In short: "upload it again" is right when the
+      // object is gone and makes a person upload a SECOND COPY when storage was merely
+      // unreachable — and it wrote a failed reading over a good one either way.
+      if (!fileIsMissing(dlError)) {
+        // Storage was unreachable. **No reading is written**, so nothing replaces what the last
+        // good reading said, and the row goes back to `uploaded` so the sweep picks it up again.
+        console.error(`document-scan: storage unreachable for ${documentId}: ${dlError?.message ?? 'no file'}`)
+        await db.from('documents').update({ status: 'uploaded' }).eq('id', documentId)
+        return NextResponse.json({ scan_id: null, status: 'uploaded',
+          could_not_read: { reason: STORAGE_UNREACHABLE.reason, way_forward: STORAGE_UNREACHABLE.wayForward } })
+      }
       // The file is not where its row says it is. That IS a product failure and it is said out
       // loud on the row rather than thrown, because the document still exists and still needs a
       // status somebody can act on.
-      const reason = 'We could not fetch the stored file for this document.'
-      const wayForward = 'Upload it again — the record is here but the file is not.'
       // Written as a scan so the reason is ON THE ROW and survives a reload.
-      const { scanId } = await saveScan(supabaseAdmin, failedScan(reason, wayForward),
+      const { scanId } = await saveScan(supabaseAdmin, failedScan(FILE_GONE.reason, FILE_GONE.wayForward),
         { documentId, companyId, entityId: doc.entity_id ?? null })
-      return NextResponse.json({ scan_id: scanId, status: 'could_not_read', could_not_read: { reason, way_forward: wayForward } })
+      return NextResponse.json({ scan_id: scanId, status: 'could_not_read',
+        could_not_read: { reason: FILE_GONE.reason, way_forward: FILE_GONE.wayForward } })
     }
 
     const context = await buildScanContext(db, company, documentId)

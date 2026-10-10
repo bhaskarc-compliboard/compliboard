@@ -313,3 +313,30 @@ export function dayIsInLine(day: string, line: string): boolean {
   const years = [...text.matchAll(/(?<![0-9])(19|20)\d{2}(?![0-9])/g)].map((x) => Number(x[0]))
   return years.length === 0 || years.includes(y)
 }
+
+/**
+ * *** A TIMESTAMP'S DAY, IN THE COMPANY'S ZONE *** — Calendar B10's follow-on, recorded for Job E
+ * in `docs/FIX-LIST-FAILURES.md` and fixed in E4.
+ *
+ * `formatDay` above is for a DAY STRING (`2027-01-05`), which has no zone in it and needs none. This
+ * is for a `timestamptz` — `document_scans.scanned_at`, `audit_runs.readings_as_of` — and those DO
+ * have a zone, so the day they fall on depends on who is looking.
+ *
+ * Documents' *"Read on 8 October 2026"* and Audits' *"Readings as of 8 October 2026"* were formatted
+ * with no `timeZone` at all, which means the BROWSER's. B10 settled the rule for the calendar: a
+ * reading at 6pm in Oregon is the 8th, and it must read as the 8th to somebody opening the page from
+ * a hotel in Berlin, because the reading happened at the plant and the plant's day is the one the
+ * record is about. The same sentence was wrong in two other sections, and this is the one formatter
+ * they now share.
+ *
+ * `tz` falls back to `CALENDAR_TZ` the way `zoneForState` does, so a page that has not been given a
+ * zone yet behaves as it did before rather than showing nothing.
+ */
+export function formatMoment(iso: string | null | undefined, tz: string = CALENDAR_TZ): string {
+  if (!iso) return ''
+  const at = new Date(String(iso).length === 10 ? `${String(iso)}T00:00:00Z` : String(iso))
+  if (Number.isNaN(at.getTime())) return ''
+  return at.toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: tz,
+  })
+}

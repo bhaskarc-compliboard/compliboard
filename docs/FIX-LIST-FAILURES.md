@@ -79,12 +79,12 @@ not a month.
    **SUPERSEDED IN JOB E1 by D2's fix**, which reads `document_index_v` instead — the same readable
    rule, in SQL, plus the corrections `readableScanIds` could not see. `readableScanIds` is no longer
    called from this file, and `scripts/fixlist-d2-rename.mjs` re-proves the L1 case through the new read.
-3. **D6 · sev 2 · ✓ · Documents.** `app/api/document-scan/route.ts:88–96` (and `app/api/jobs/scan-documents/route.ts:
+3. **D6 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `app/api/document-scan/route.ts:88–96` (and `app/api/jobs/scan-documents/route.ts:
    211–218`): **any** storage download error is told to the person as *"Upload it again — the record is here but the
    file is not"*, which makes them create a duplicate, and it is saved as a failed reading that replaces a good one
    (then D1). **Fix:** that wording only for object-not-found; for anything else, say storage was unreachable, write
    no reading, leave the document queued.
-4. **D13 · sev 3 · · · Documents.** `components/DocumentReport.tsx:500`: after a failed re-read the drawer shows only
+4. **D13 · sev 3 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `components/DocumentReport.tsx:500`: after a failed re-read the drawer shows only
    the reason and "Upload a clearer copy"; it hides the earlier reading's open gaps, checklists, dates and facts.
    `app/api/documents/index/route.ts:69–73` reads `expected_missing` from the current scan too. "Upload a clearer
    copy" is the wrong advice for a rate limit. **Fix:** the drawer shows the last readable reading under the grey
@@ -99,7 +99,7 @@ not a month.
    `:1020–1022` takes the report's "readings as of" date from `is_current` scans. **Fix:** the readable reading.
    **FIXED in A3e**: `:1026` now reads the readable reading; `:586`, `:774` needed no change, because
    `lib/audit.ts:234` now fills `scan_id` with the readable scan.
-7. **D-two · sev 2 · · · Documents.** `lib/documentScan.ts:744`: the `is_current: false` update is unchecked and not
+7. **D-two · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `lib/documentScan.ts:744`: the `is_current: false` update is unchecked and not
    atomic with the insert. If it fails, a document has two current scans, the view returns two rows, and the report
    route's `.maybeSingle()` errors into "Document not found" (404). **Fix:** check the error; one statement or a
    function.
@@ -136,16 +136,16 @@ not a month.
    `writeObligations` against a fake database and logs every RPC attempted; **8 of its 11 tests
    fail on the shipped code**, the first with `Missing expected rejection` — the old code did not
    throw, it called `close_and_replace_obligations(0 obligations)`.
-11. **M2 · sev 1 · ✓ · My Account (ours).** `app/api/account/route.ts:356–360` (profiles read unchecked → no login
+11. **M2 · sev 1 · ➜ MOVED TO MY ACCOUNT'S SECTION (the owner's §5 answer 4, 10 October) · NOT FIXED HERE · My Account (ours).** `app/api/account/route.ts:356–360` (profiles read unchecked → no login
     deleted, the company row still is), `:137` (a failed storage list = "no files"; files stay in the bucket; more
     than 1000 in a folder are missed), `:424–426` (`deleteUser` errors ignored). The response says `success: true`.
     The person asked us to delete their data and we kept some and said we did not. **Fix:** check every error and
     stop before deleting rows; page the storage list; check each `deleteUser`.
-12. **M1 · sev 1 · ✓ · My Account (ours).** `app/api/account/export/route.ts:61–63`: a failed table read becomes
+12. **M1 · sev 1 · ➜ MOVED TO MY ACCOUNT'S SECTION (the owner's §5 answer 4, 10 October) · NOT FIXED HERE · My Account (ours).** `app/api/account/export/route.ts:61–63`: a failed table read becomes
     `[]` and its count 0 (also profiles `:109`, checklist_items `:117`, obligation_evidence `:123`). The cancel screen
     says "Take your records first", and the deletion after it is permanent. **Fix:** fail the whole export if any read
     fails. *(See also O4: the export leaves whole tables out.)*
-13. **M3 · sev 1 (small) · ✓ save / · load · My Account (ours).** `app/api/account/route.ts:57` and
+13. **M3 · sev 1 (small) · ➜ MOVED TO MY ACCOUNT'S SECTION (the owner's §5 answer 4, 10 October) · NOT FIXED HERE · My Account (ours).** `app/api/account/route.ts:57` and
     `app/account/page.tsx:75`: a failed load shows a blank name (or a blank form with no error); Save then writes
     `full_name: ''` over the stored name (`route.ts:116–118`). **Fix:** GET returns 500 on any read error; the page
     shows it and disables Save.
@@ -168,62 +168,62 @@ not a month.
     atomicity for a read-modify-write race that is not live — the sweep claims one company at a time
     and runs its sections one after another (`app/api/jobs/audit-sections/route.ts`). If sections ever
     run concurrently, `lib/auditSummary.ts` is where that fix goes, and it says so.
-15. **C1 · sev 2 · ✓ (311) / · · Shared — every section.** `lib/companyContext.ts:232, 234, 276, 300, 311, 340, 357,
+15. **C1 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Shared — every section.** `lib/companyContext.ts:232, 234, 276, 300, 311, 340, 357,
     369, 384`: none of the eight reads checks `error`. A failure is rendered as a statement — "State: not recorded",
     "(no sites recorded)", "(nothing declared yet…)", "(nothing confirmed yet)", labels "(none yet)", and the
     dismissed-gaps block left out. It feeds Workspace answers, HR answers, the handbook check (kept 90 days), document
     scans (which then re-raise gaps a person dismissed — D10), drafts, audits (A5) and the Company information screen
     (D9). **Fix:** throw on any error, so no model call is made on a context built from a failed read. *The single most
     shared item on this list.*
-16. **A3 · sev 2 · ✓ · Audits.** `lib/audit.ts:135`: the document list read is unchecked; a failure tells the model
+16. **A3 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** `lib/audit.ts:135`: the document list read is unchecked; a failure tells the model
     "(none — this company holds no document any reading attributed to this agency)" (`:325`) and "(nothing else on
     file)" (`:408`), the section is saved done and the result emailed. **Fix:** throw.
-17. **A4 · sev 2 · ✓ · Audits.** `lib/audit.ts:163–180`: the five evidence reads (gaps, conditions, deadlines,
+17. **A4 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** `lib/audit.ts:163–180`: the five evidence reads (gaps, conditions, deadlines,
     expected, proposals) never read `error`. A failed gaps read prints "found wrong with it: nothing" (`:339`); the
     others silently drop. **Fix:** check all five and throw.
-18. **A6 · sev 2 · ✓ · Audits.** `lib/auditRun.ts:382–384`: if the run row cannot be read, a checklist section is
+18. **A6 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** `lib/auditRun.ts:382–384`: if the run row cannot be read, a checklist section is
     audited as an agency named after the checklist line; no document carries it; the model sees "(none…)"; saved
     done; the previous-run link is lost. **Fix:** `fail(...)` when `error || !runRow`.
-19. **A8 · sev 2 · ✓ · Audits.** `lib/auditRun.ts:1179–1186`: the end-of-run summary is computed from three
+19. **A8 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** `lib/auditRun.ts:1179–1186`: the end-of-run summary is computed from three
     unchecked reads; a failed findings read stores an all-zero summary for good and emails "nothing needs you".
     **Fix:** check all three and throw before marking the run done.
-20. **A11 · sev 2 · · · Audits.** `lib/audit.ts:117` (agency list, `company_labels`): a failure makes a specific
+20. **A11 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** `lib/audit.ts:117` (agency list, `company_labels`): a failure makes a specific
     audit refuse with "None of your documents name an agency yet" (`app/api/audit-runs/route.ts:126–127`) and an
     "all" audit finish as "No document on file names an agency yet…" (`lib/auditRun.ts:287–293`). **Fix:** throw.
-21. **A12, A13 · sev 2 · · · Audits.** `app/api/audit-runs/[id]/documents/route.ts:104–109`, `:136–142` (the zip's
+21. **A12, A13 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** `app/api/audit-runs/[id]/documents/route.ts:104–109`, `:136–142` (the zip's
     index.txt says "(a document this audit cited is no longer on file)" for every document — a file a person may
     hand an inspector) and `app/api/audit-runs/[id]/route.ts:33–44`, `:71–76` (the drawer says "no longer on file",
     "0 documents read", "Nothing was answered."). **Fix:** check errors, return 500.
-22. **D7 · sev 2 · ✓ · Documents.** `lib/documentBatch.ts:60`, `:65–67`: a failed read gives a batch summary of 0;
+22. **D7 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `lib/documentBatch.ts:60`, `:65–67`: a failed read gives a batch summary of 0;
     `app/api/jobs/scan-documents/route.ts:327–335` stores it, marks the batch done for good and emails "We've read your
     0 documents. Nothing needs attention." **Fix:** throw; mark done only when the summary counts every document.
-23. **D8 · sev 2 · · · Documents.** `app/api/to-confirm/route.ts:313–314`: a failed `switches` lookup makes a
+23. **D8 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `app/api/to-confirm/route.ts:313–314`: a failed `switches` lookup makes a
     company-question answer (e.g. has employees) a plain fact; the obligation engine never sees it and the question
     disappears. **Fix:** check, return 500.
-24. **D9 · sev 2 · · · Company information.** `app/api/company-information/route.ts:51–53`, `:78–80`, `:107–109`
+24. **D9 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Company information.** `app/api/company-information/route.ts:51–53`, `:78–80`, `:107–109`
     (and C1): a failure shows "Nothing declared yet" / "Nothing confirmed yet", "0 waiting", "Merge X … on 0
     documents?"; worse, a proposal that contradicts a settled fact is not lifted out, so **Confirm all overwrites the
     settled value** (`app/company-information/page.tsx:221–227`, `:255`). **Fix:** C1 plus checks here; "Couldn't
     load".
-25. **D10, D11 · sev 2 · · · Documents.** The scan's context reads (`lib/documentScan.ts:453–456` open gaps; C1's
+25. **D10, D11 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** The scan's context reads (`lib/documentScan.ts:453–456` open gaps; C1's
     labels, keys, corrections, dismissed) — a failure re-raises dismissed gaps and coins second spellings of agencies.
     `lib/documentScan.ts:810–812`, `:831`, `:880–883`: a failed read of the fresh or prior gaps stamps "Not seen in
     the latest reading" on gaps the reading did raise, doubles `open_gap_count`, or says "The latest reading did not
     raise this" for all. **Fix:** throw; never scan on a partial context.
-26. **D12, D15 · sev 2–3 · · · Documents.** `app/api/document-checklist/route.ts:55` ("There are no open gaps on
+26. **D12, D15 · sev 2–3 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `app/api/document-checklist/route.ts:55` ("There are no open gaps on
     this document" while the drawer lists them); `app/api/documents/report/route.ts:35–60` (nine reads, sections
     vanish under "Needs work"); `app/api/to-confirm/route.ts:74`, `:78` (count 0, the badge disappears — also B4).
     **Fix:** check, return 500.
-27. **D14 · sev 3 · · · Documents → Audits.** `lib/documentScan.ts:972`: the `company_labels` upsert result is not
+27. **D14 · sev 3 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents → Audits.** `lib/documentScan.ts:972`: the `company_labels` upsert result is not
     checked; a new agency never enters the vocabulary, so "audit everything" skips it. **Fix:** check, throw.
-28. **H2 · sev 2 · · · HR.** `lib/hrAnswer.ts:153–155`: a read handbook whose sections fail to load is still listed
+28. **H2 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · HR.** `lib/hrAnswer.ts:153–155`: a read handbook whose sections fail to load is still listed
     as used ("Reading <handbook>"), with an empty block in the prompt; the model then says the handbook does not cover
     the question. HYPOTHESIS for the model's wording. **Fix:** throw; a read handbook with no sections is "not used",
     with a reason.
-29. **H3 · sev 2 · · · HR.** `lib/handbookCheck.ts:553–556`: if the nightly job's read of finished checks fails,
+29. **H3 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · HR.** `lib/handbookCheck.ts:553–556`: if the nightly job's read of finished checks fails,
     every current handbook of every company looks never checked; each gets a full Opus check with a false reason, and
     its next date is reset. **Fix:** throw. *(Costs money when it happens.)*
-30. **H5, H6 · sev 2 · · · HR.** `lib/hrAnswer.ts:124`, `lib/handbookCheck.ts:302–303` (a failed sites read tells
+30. **H5, H6 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · HR.** `lib/hrAnswer.ts:124`, `lib/handbookCheck.ts:302–303` (a failed sites read tells
     the model every site handbook "applies to a site that was removed", stored with the check); `lib/hrAnswer.ts:
     611–617` (behind `HR_ANSWER_USES_CHECK`, off: "X has not been checked yet"). **Fix:** throw.
 31. **W5 · sev 2 · ✓ FIXED (Job E2, "Job E: S1, A7, S2, H1, W5 and HR-read") · Workspace.** `app/api/checklist-items/[id]/how-to/route.ts:87`: a failed read sends "CHECKLIST
@@ -235,9 +235,9 @@ not a month.
     `checkHowTo` accepts `steps: []` because every step may be dropped for a link the search never
     returned, which is right per step and wrong to keep, since an empty answer would then show for
     ever. S2's stop-reason guard is in this route too, before the parse.
-32. **W6 · sev 2 · · · Requirements.** `app/api/obligations/route.ts:63–69`, `:112`: every owed row says "Nothing yet.
+32. **W6 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Requirements.** `app/api/obligations/route.ts:63–69`, `:112`: every owed row says "Nothing yet.
     No document has been linked to this requirement."; "0 requirements are loaded". No nav link today. **Fix:** check.
-33. **W8 · sev 3 · · · Workspace.** `app/api/switches/answer/route.ts:76–81`: a failed read records the answer with
+33. **W8 · sev 3 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Workspace.** `app/api/switches/answer/route.ts:76–81`: a failed read records the answer with
     no previous value; the overwrite history is lost. **Fix:** check before any write.
 34. **B1 · sev 2 · ✓ FIXED (Calendar B3, same commit) · Dashboard (ours).** `app/dashboard/page.tsx:64–67`: `res.ok` never checked — a 500, an
     expired session or a 404 all show "No deadlines in the next 30 days." **Goes into Job B**: the dashboard's
@@ -276,7 +276,7 @@ not a month.
     sections are done. the whole app idea changed since that landing page was made"*). The landing page is
     rewritten as its own project once every section is done; these two images go with it.
 
-35c. **P1 · sev 3 · OPEN, PRE-EXISTING, EVERY SECTION · the app shell (ours).**
+35c. **P1 · sev 3 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · the app shell (ours).**
     **Every printed page carries the left navigation and the footer links.** `app/globals.css`'s
     `@media print` block hides only `.no-print`, and `components/AppLayout.tsx`'s sidebar is not
     marked with it — the header at `:220` is, the sidebar is not. So a printed audit, handbook,
@@ -292,12 +292,12 @@ not a month.
     check (§3.12). The disclaimer line in the footer is marked print-visible **on purpose**
     (`AppLayout.tsx:298`) and must survive any fix.
 
-36. **M4 · sev 2 · · · My Account and signup (ours).** `app/signup/page.tsx:81`, `app/account/page.tsx:40`: a failed
+36. **M4 · sev 2 · ➜ MOVED TO MY ACCOUNT'S SECTION (the owner's §5 answer 4, 10 October) · NOT FIXED HERE · My Account and signup (ours).** `app/signup/page.tsx:81`, `app/account/page.tsx:40`: a failed
     industry list leaves only "Don't see your industry?", so a company signs up as `other` — which drives requirements
     and every prompt. It has failed once already (11 Sep). **Fix:** check `res.ok`, show an error with retry.
-37. **M5 · sev 2 · · · Shared.** `components/AppLayout.tsx:134–139`, `app/api/feedback/route.ts:10`: "Thank you for
+37. **M5 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Shared.** `components/AppLayout.tsx:134–139`, `app/api/feedback/route.ts:10`: "Thank you for
     your feedback" whether or not the email went (Resend returns errors, it does not throw). **Fix:** check both.
-38. **The rest, sev 3:** A15 (database errors shown as "not found" — `app/api/audit-runs/[id]/route.ts:26–31`, the
+38. **The rest, sev 3 · ✓ ALL SEVEN FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items"):** A15 (database errors shown as "not found" — `app/api/audit-runs/[id]/route.ts:26–31`, the
     retry route, audit-findings, audit-checklist, the zip route); W7 (`lib/topicList.ts:63` → "No conversations
     yet" in both Workspace and HR); W9 (`app/compliance/page.tsx:365–368`, facts-waiting line hidden); H7
     (`app/hr/HrWorkspace.tsx:197–199`, `lib/handbookCheckView.ts:74, 104, 108` → "No handbooks yet", "Not checked
@@ -520,7 +520,7 @@ not a month.
     the newest message, and say nothing about it. That needs `summary_covers_through` on
     `topic_list_v` (a view migration) and a line in both drawers. It is severity 3, it is a screen,
     and it goes in **E4** with the other screens.
-53. **O3 · sev 2 · · · Audits.** `lib/auditRun.ts:497`, `:546`: findings are inserted before matching and collapse;
+53. **O3 · sev 2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** `lib/auditRun.ts:497`, `:546`: findings are inserted before matching and collapse;
     a later throw marks the section failed but its rows stay and show, and Retry inserts a second set. The final
     `done` update is unchecked too: a failure leaves the section "running", recovered after 15 minutes, re-run,
     duplicated. **Fix:** write findings and status together, or delete the section's rows on failure/retry.
@@ -555,25 +555,52 @@ not a month.
   used to pass the client's id straight through unchecked; that is closed too. **Fixed in the same
   commit as A1 and not a minute before**, because this one field is what kept A1's four faults from
   ever running in the app.
-- **O2 · ✓ · Audits.** "Audit again" on a checklist report posts `kind: 'agency'` (`components/AuditReport.tsx:549`):
+- **O2 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Audits.** "Audit again" on a checklist report posts `kind: 'agency'` (`components/AuditReport.tsx:549`):
   a multi-section checklist re-runs as an all-agencies audit; a one-section one gets a 400.
-- **O4 · ✓ · My Account (ours).** The export leaves out whole tables while the page says "Download everything we hold
+- **O4 · ➜ MOVED TO MY ACCOUNT'S SECTION (the owner's §5 answer 4, 10 October) · NOT FIXED HERE · My Account (ours).** The export leaves out whole tables while the page says "Download everything we hold
   on your company": conversations (topics, turns), fact proposals, company facts, company switches, the document
   readings (scans, gaps, conditions, deadlines, corrections), audit runs and findings, company labels. It still
   exports old tables (`audits`, `hr_audits`, `document_reviews`). The deletion that follows destroys all of them.
   **The owner decides** what the export holds (§5).
-- **O5 · · · Signup (ours).** `app/api/signup/route.ts:29–60` creates the login first; if the company or profile
+- **O5 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Signup (ours).** `app/api/signup/route.ts:29–60` creates the login first; if the company or profile
   insert fails there is no rollback — a login with no company, and a retry says "already registered".
-- **O6 · HYPOTHESIS · Documents.** `app/api/document-scan/route.ts:84` sets `reading` with `reading_since` null and
+- **O6 · ✓ PROVED AND FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `app/api/document-scan/route.ts:84` sets `reading` with `reading_since` null and
   the route has no `maxDuration`; if the platform kills it, the stuck-row recovery
   (`app/api/jobs/scan-documents/route.ts:147–148`, `.lt('reading_since', …)`) never matches a null — the row says
   "Reading…" for ever and its batch never finishes.
-- **O7 · · · Documents.** `app/api/jobs/scan-documents/route.ts:182–188`: a claim update that errors `continue`s and
+- **O7 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Documents.** `app/api/jobs/scan-documents/route.ts:182–188`: a claim update that errors `continue`s and
   re-selects the same company at once — a tight loop on the database until the time budget ends.
-- **O8 · · · HR.** `app/api/hr/answer/route.ts:125–146`: the wait loop's reads are unchecked; a failed read means
+- **O8 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · HR.** `app/api/hr/answer/route.ts:125–146`: the wait loop's reads are unchecked; a failed read means
   "reload" with no sleep — a tight loop until the 800-second limit.
-- **O9 · · · Workspace and HR.** `app/api/chat/route.ts:341–344`, `app/api/hr/answer/route.ts:88`: if loading the
+- **O9 · ✓ FIXED (Job E4 and E5, "Job E: the rest of R2, printing, and section 4's items") · Workspace and HR.** `app/api/chat/route.ts:341–344`, `app/api/hr/answer/route.ts:88`: if loading the
   history fails, the answer runs with no earlier turns but is saved into the conversation as if it continued it.
+
+---
+
+## 4a. ⚡ MY ACCOUNT'S SECTION — SIX ITEMS, MOVED, NOT FIXED
+
+**The owner's §5 answer 4, 10 October 2026:** *"the export holds everything the deletion destroys —
+and every My Account item moves to My Account's own section, the next one after Calendar: M1, M2,
+M3, M4, O4, O5 (the export, account deletion, the name field, the industry list, signup), so that
+page is worked once."*
+
+**Job E did not fix five of them.** They are listed here together so the next chat has one place to
+start from, with what Job E learned that bears on them.
+
+| item | sev | what it is | what Job E's work bears on it |
+|---|---|---|---|
+| **M1** | 1 | `app/api/account/export/route.ts`: a failed table read becomes `[]` and its count 0, under a screen that says "Take your records first" — before a permanent deletion | `lib/mustRead.ts` is the tool: `mustRows` on every read, and **fail the whole export if any read fails**. A partial export under that sentence is the worst shape on the list |
+| **M2** | 1 | `app/api/account/route.ts`: the profiles read unchecked (no login deleted, the company row gone), a failed storage list read as "no files", `deleteUser` errors ignored — and the answer says `success: true` | the same tool, plus the storage list needs **paging** (more than 1000 in a folder are missed). `success: true` over a partial deletion is M2's whole point |
+| **M3** | 1 (small) | a failed load shows a blank name, and Save then writes `full_name: ''` over the stored one | `mustRow`; GET answers 500; the page shows it and disables Save |
+| **M4** | 2 | a failed industry list leaves only "Don't see your industry?", so a company signs up as `other` — which drives requirements and every prompt | `res.ok`, an error with a retry. It has failed once already (11 Sep) |
+| **O4** | — | the export leaves out whole tables while the page says "Download everything we hold on your company" | **the owner has decided it**: everything the deletion destroys. `app/api/account` DELETE's own table list is the inventory, and `npm run check:schema` already enforces that list against every `company_id` table |
+| **O5** | — | signup created the login first with no rollback | **FIXED in Job E5** — it was one route, away from the My Account page, and leaving a person with a dead account was not worth carrying. The undo is in `app/api/signup/route.ts` |
+
+**And one thing Job E found that belongs to that chat.** `app/api/account/route.ts` DELETE is the
+only place that names every table carrying a `company_id`, and `scripts/check-schema-contracts.js`
+enforces it. **Migrations 078 and 079 added no table**, so that list is still complete — but a chat
+working My Account should run `npm run check:schema` first and read what it says, because that check
+is the only thing standing between a new table and a deletion that misses it.
 
 ---
 

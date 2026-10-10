@@ -11,6 +11,7 @@
  *   appendHandbookSources   history for a follow-up: each source behind its marker, handbook quotes included.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { mustRow, mustRows } from './mustRead.ts'
 import type { Source, CitedPassage } from './ai.ts'
 import { normaliseForQuote } from './documentScan.ts'
 import { findReturned, labelFor } from './howTo.ts'
@@ -121,8 +122,14 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
   const current = (rows ?? []) as HandbookRowForAnswer[]
   if (!current.length) return { ok: false, refusal: HR_REFUSALS.none }
 
-  const { data: sites } = await db.from('entities').select('id, name').eq('company_id', companyId)
-  const siteName = new Map(((sites ?? []) as Array<{ id: string; name: string }>).map((s) => [s.id, s.name]))
+  // *** H5 (root R2, Job E4): A FAILED SITES READ TOLD THE MODEL EVERY SITE HANDBOOK APPLIED TO A
+  // SITE THAT WAS REMOVED. *** `applies()` below falls back to that exact phrase, which is a real
+  // state (migration 066 keeps scope 'site' with no site on purpose) — and the sentence goes into
+  // the prompt, and `lib/handbookCheck.ts` stores it WITH the check, so it is still there 90 days
+  // later. A company with two plants was told both of them were gone.
+  const sites = mustRows<{ id: string; name: string }>('your sites',
+    await db.from('entities').select('id, name').eq('company_id', companyId))
+  const siteName = new Map(sites.map((s) => [s.id, s.name]))
   const applies = (h: HandbookRowForAnswer) => h.scope === 'company' ? 'Every site'
     : (h.entity_id && siteName.get(h.entity_id)) || 'a site that was removed'
 
@@ -150,9 +157,15 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
     const mine: Omit<Block, 'id'>[] = []
     let secs: SectionRow[] = []
     if (h.status === 'read') {
-      const { data } = await db.from('handbook_sections').select('id, position, title, page_from, page_to, text')
-        .eq('handbook_id', h.id).order('position')
-      secs = (data ?? []) as SectionRow[]
+      // *** H2 (root R2, Job E4): A HANDBOOK LISTED AS USED, WITH NOTHING IN IT. ***
+      // Unchecked, a failed read gave no sections, so the handbook was still named in "Reading
+      // <handbook>" and its block in the prompt was EMPTY — and the model, asked a question against
+      // a source that says nothing, answers that the handbook does not cover it. The person is told
+      // their own handbook is silent on something it may say plainly. `mustRows` throws; the route's
+      // catch shows HR's own failure line, and nothing is said about the handbook's contents.
+      secs = mustRows<SectionRow>(`what is in "${h.name}"`,
+        await db.from('handbook_sections').select('id, position, title, page_from, page_to, text')
+          .eq('handbook_id', h.id).order('position'))
       for (const s of secs) {
         mine.push({ handbookId: h.id, handbookName: h.name, applies: applies(h), sectionId: s.id, title: s.title ?? h.name,
           pageFrom: s.page_from, pageTo: s.page_to, stored: s.text })
@@ -608,15 +621,23 @@ export interface StoredCheck {
 export async function storedChecks(db: Db, used: HandbookUsed[]): Promise<StoredCheck[]> {
   const out: StoredCheck[] = []
   for (const u of used) {
-    const { data: check } = await db.from('handbook_checks').select('id, finished_at')
-      .eq('handbook_id', u.id).eq('status', 'done').order('finished_at', { ascending: false }).limit(1).maybeSingle()
+    // *** H6 (root R2, Job E4): A FAILED READ HERE SAYS "X HAS NOT BEEN CHECKED YET." ***
+    // `continue` on a null `check` is right when there genuinely is none; on a failed read it is
+    // the same sentence about a check that finished weeks ago, and it goes in the answer. (The
+    // switch `HR_ANSWER_USES_CHECK` is off today, which is why this is severity 2 and not 1 — it is
+    // still the wrong behaviour the moment it is switched on.)
+    const check = mustRow<{ id: string; finished_at: string }>(`the check of "${u.name}"`,
+      await db.from('handbook_checks').select('id, finished_at')
+        .eq('handbook_id', u.id).eq('status', 'done').order('finished_at', { ascending: false }).limit(1).maybeSingle())
     if (!check) continue
-    const [{ data: rows }, { data: secs }] = await Promise.all([
+    const [rowsRes, secsRes] = await Promise.all([
       db.from('handbook_check_sections').select('section_id, answer_text, answer_sources').eq('check_id', check.id).not('answer_text', 'is', null),
       db.from('handbook_sections').select('id, position').eq('handbook_id', u.id),
     ])
-    const pos = new Map(((secs ?? []) as Array<{ id: string; position: number }>).map((s) => [s.id, s.position]))
-    const parts = ((rows ?? []) as Array<{ section_id: string; answer_text: string; answer_sources: StoredCheck['parts'][number]['sources'] | null }>)
+    const pos = new Map(mustRows<{ id: string; position: number }>(`the parts of "${u.name}"`, secsRes)
+      .map((s) => [s.id, s.position]))
+    const parts = mustRows<{ section_id: string; answer_text: string; answer_sources: StoredCheck['parts'][number]['sources'] | null }>(
+      `what the check of "${u.name}" found`, rowsRes)
       .sort((a, b) => (pos.get(a.section_id) ?? 1e9) - (pos.get(b.section_id) ?? 1e9))
       .map((r) => ({ text: r.answer_text, sources: r.answer_sources ?? [] }))
     if (parts.length) out.push({ handbookId: u.id, handbookName: u.name, checkId: check.id, finishedAt: check.finished_at, parts })

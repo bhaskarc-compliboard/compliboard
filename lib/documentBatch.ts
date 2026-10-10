@@ -15,6 +15,7 @@
 import { Resend } from 'resend'
 import { renderEmail, type EmailContent, type EmailBlock } from './emailFrame.ts'
 import { emailFrom } from './emailSender.ts'
+import { mustRows } from './mustRead.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -59,17 +60,23 @@ const WORD: Record<string, string> = {
  * the drawer opens — so a correction made before the email goes out is in the email.
  */
 export async function summariseBatch(db: Db, batchId: string): Promise<BatchSummary> {
-  const { data: docs } = await db.from('documents').select('id').eq('batch_id', batchId)
-  const ids = ((docs ?? []) as Array<{ id: string }>).map((d) => d.id)
+  // *** D7 (root R2, Job E4): A FAILED READ MADE A BATCH OF 0 DOCUMENTS, AND IT WAS EMAILED. ***
+  // Both of these were `{ data: … }`. A failed FIRST read gave `ids = []` and returned the
+  // all-zero summary below; `app/api/jobs/scan-documents/route.ts` then stored it, **marked the
+  // batch done for good** — nothing re-opens a done batch — and emailed *"We've read your 0
+  // documents. Nothing needs attention."* A failed SECOND read gave the same counts over a real
+  // list. Both throw now: the batch stays open and the next pass summarises it properly.
+  const docs = mustRows<{ id: string }>('the documents in this batch',
+    await db.from('documents').select('id').eq('batch_id', batchId))
+  const ids = docs.map((d) => d.id)
   if (!ids.length) {
     return { total: 0, read: 0, needs_work: 0, expiring: 0, expired: 0, could_not_read: 0, attention: [], fine: [] }
   }
-  const { data: rows } = await db.from('document_index_v')
-    .select('document_id, title, file_name, display_status, could_not_read_reason')
-    .in('document_id', ids).order('title')
-  const raw = (rows ?? []) as Array<{
+  const raw = mustRows<{
     title: string; file_name: string; display_status: string; could_not_read_reason: string | null
-  }>
+  }>('what those documents came to', await db.from('document_index_v')
+    .select('document_id, title, file_name, display_status, could_not_read_reason')
+    .in('document_id', ids).order('title'))
 
   // *** TWO DOCUMENTS WITH ONE TITLE NEED THE FILE NAME, OR THE EMAIL CONTRADICTS ITSELF. ***
   // Measured on the first real batch: 06a and 06b are the same forklift log, one clean and one

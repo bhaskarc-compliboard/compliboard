@@ -28,7 +28,7 @@
 import { createHash } from 'node:crypto'
 import { askAIOpenStream, modelForTask, type OpenMessage, type OpenStreamEvent } from './ai.ts'
 import { finishedCleanly } from './answerShape.ts'
-import { tryRows } from './mustRead.ts'
+import { tryRows, mustRow, mustRows } from './mustRead.ts'
 import { buildCompanyContext } from './companyContext.ts'
 import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
 import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
@@ -181,9 +181,12 @@ export async function failRows(admin: Db, rows: Array<{ id: string; attempts: nu
 export async function recoverStuck(admin: Db, now = Date.now()): Promise<{ putBack: number; failed: number; released: number }> {
   const before = new Date(now - STUCK_AFTER_MS).toISOString()
   let putBack = 0, failed = 0, released = 0
-  const { data: stuck } = await admin.from('handbook_check_sections')
-    .select('id, attempts').eq('status', 'checking').lt('claimed_at', before)
-  for (const r of (stuck ?? []) as Array<{ id: string; attempts: number }>) {
+  // Every read in the recovery and the claim is checked (S4's class, Job E4): an empty list from a
+  // failure looks exactly like "nothing to recover" and "nothing to claim", and this sweep's row is
+  // only written when it finds work — so a broken night left no trace.
+  const stuck = mustRows<Record<string, unknown>>('the checks that stalled', await admin.from('handbook_check_sections')
+    .select('id, attempts').eq('status', 'checking').lt('claimed_at', before))
+  for (const r of stuck as Array<{ id: string; attempts: number }>) {
     const { data } = r.attempts < MAX_ATTEMPTS
       ? await admin.from('handbook_check_sections').update({ status: 'queued', claimed_at: null, started_at: null })
           .eq('id', r.id).eq('status', 'checking').lt('claimed_at', before).select('id')
@@ -192,20 +195,29 @@ export async function recoverStuck(admin: Db, now = Date.now()): Promise<{ putBa
         }).eq('id', r.id).eq('status', 'checking').lt('claimed_at', before).select('id')
     if (data?.length) { if (r.attempts < MAX_ATTEMPTS) putBack++; else failed++ }
   }
-  const { data: idle } = await admin.from('handbook_check_sections').update({ claimed_at: null })
-    .eq('status', 'queued').lt('claimed_at', before).select('id')
-  released = idle?.length ?? 0
+  const idle = mustRows<{ id: string }>('the checks whose claim went stale',
+    await admin.from('handbook_check_sections').update({ claimed_at: null })
+    .eq('status', 'queued').lt('claimed_at', before).select('id'))
+  released = idle.length
   return { putBack, failed, released }
 }
 
 /** The owner's rule for a newer version: the old version's QUEUED rows are cancelled, and so is its check. */
 export async function cancelCheck(admin: Db, checkId: string, reason: string): Promise<number> {
-  const { data } = await admin.from('handbook_check_sections').update({
-    status: 'cancelled', failed_reason: reason, claimed_at: null, finished_at: new Date().toISOString(),
-  }).eq('check_id', checkId).eq('status', 'queued').select('id')
-  await admin.from('handbook_checks').update({ status: 'cancelled', finished_at: new Date().toISOString() })
+  // Checked (E4): this returns the number cancelled, and the caller reports it. A failed write
+  // returning 0 reads as "there was nothing to cancel", and the rows stay `queued` for ever.
+  const cancelled = mustRows<{ id: string }>('the parts being cancelled',
+    await admin.from('handbook_check_sections').update({
+      status: 'cancelled', failed_reason: reason, claimed_at: null, finished_at: new Date().toISOString(),
+    }).eq('check_id', checkId).eq('status', 'queued').select('id'))
+  const { error: ckErr } = await admin.from('handbook_checks')
+    .update({ status: 'cancelled', finished_at: new Date().toISOString() })
     .eq('id', checkId).in('status', ['queued', 'checking'])
-  return data?.length ?? 0
+  if (ckErr) {
+    console.error(`handbook check ${checkId}: its parts were cancelled but the check itself was `
+      + `not — ${ckErr.message}`)
+  }
+  return cancelled.length
 }
 
 /**
@@ -227,9 +239,9 @@ export async function finishCheckIfDone(admin: Db, checkId: string): Promise<{ f
 
   const status = sections.every((r) => r.status === 'failed') ? 'failed' : 'done'
   const finishedAt = new Date()
-  const { data: claimed } = await admin.from('handbook_checks').update({ status, finished_at: finishedAt.toISOString() })
-    .eq('id', checkId).in('status', ['queued', 'checking']).select('handbook_id')
-  if (!claimed?.length) return { finished: false, done, total: sections.length }
+  const claimed = mustRows<{ handbook_id: string }>('this check', await admin.from('handbook_checks').update({ status, finished_at: finishedAt.toISOString() })
+    .eq('id', checkId).in('status', ['queued', 'checking']).select('handbook_id'))
+  if (!claimed.length) return { finished: false, done, total: sections.length }
   if (status === 'done') {
     const next = new Date(finishedAt.getTime() + NEXT_CHECK_DAYS * 86_400_000)
     await admin.from('handbooks').update({ checked_at: finishedAt.toISOString(), next_check_at: next.toISOString() })
@@ -270,19 +282,26 @@ const pagesOf = (a: number | null, b: number | null) => (a == null ? '' : a === 
  */
 export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } = {}): Promise<PieceResult> {
   const ask = opts.ask ?? askAIOpenStream
-  const { data: rowsRaw } = await admin.from('handbook_check_sections')
-    .select('id, check_id, company_id, kind, section_id, status, attempts').in('id', rowIds)
-  const rows = ((rowsRaw ?? []) as Array<{ id: string; check_id: string; company_id: string; kind: string; section_id: string | null; status: string; attempts: number }>)
+  const rowsRaw = mustRows<Record<string, unknown>>("this piece's own rows", await admin.from('handbook_check_sections')
+    .select('id, check_id, company_id, kind, section_id, status, attempts').in('id', rowIds))
+  const rows = (rowsRaw as unknown as Array<{ id: string; check_id: string; company_id: string; kind: string; section_id: string | null; status: string; attempts: number }>)
     .filter((r) => r.status === 'queued' && r.kind === 'section')
-  if (!rows.length) return { status: rowsRaw?.length ? 'skipped' : 'gone', rows: 0 }
+  if (!rows.length) return { status: rowsRaw.length ? 'skipped' : 'gone', rows: 0 }
   const checkId = rows[0].check_id
   const companyId = rows[0].company_id
 
   const live = async () => {
-    const { data: check } = await admin.from('handbook_checks').select('id, handbook_id, status').eq('id', checkId).maybeSingle()
+    // A failed read here returns `gone: true` — "the check is no longer there" — about a row that
+    // is. The piece is then skipped with its rows left `checking`, and only the stuck recovery gets
+    // it back fifteen minutes later. Thrown, so the sweep's catch records it (E4).
+    const check = mustRow<{ id: string; handbook_id: string; status: string }>('this check',
+      await admin.from('handbook_checks').select('id, handbook_id, status').eq('id', checkId).maybeSingle())
     if (!check) return { gone: true as const }
-    const { data: hb } = await admin.from('handbooks')
-      .select('id, name, scope, entity_id, is_current, page_count, extracted_text, version_of, created_at').eq('id', check.handbook_id).maybeSingle()
+    const hb = mustRow<{ id: string; name: string; scope: string; entity_id: string | null
+                         is_current: boolean; page_count: number | null; extracted_text: string | null
+                         version_of: string | null; created_at: string }>(
+      'this handbook', await admin.from('handbooks')
+      .select('id, name, scope, entity_id, is_current, page_count, extracted_text, version_of, created_at').eq('id', check.handbook_id).maybeSingle())
     if (!hb) return { gone: true as const }
     return { gone: false as const, check, hb }
   }
@@ -328,7 +347,12 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
   const whole = mine.length === secs.length
   let applies = 'Every site'
   if (hb.scope === 'site') {
-    const { data: site } = hb.entity_id ? await admin.from('entities').select('name').eq('id', hb.entity_id).maybeSingle() : { data: null }
+    // *** H5, the check's half (Job E4): "a site that was removed" IS A STATEMENT, and it is
+    // stored WITH the check for 90 days. A failed read made it about a plant that is there.
+    const site = hb.entity_id
+      ? mustRow<{ name: string }>('the site this handbook covers',
+          await admin.from('entities').select('name').eq('id', hb.entity_id).maybeSingle())
+      : null
     applies = site?.name ?? 'a site that was removed'
   }
   // As the answer loader marks them (`lib/hrAnswer.ts` loadHandbooksForAnswer): a Word file has no page count.
@@ -395,7 +419,8 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
   let aiCallId: string | null = null
   for (let i = 0; i < 5 && !aiCallId; i++) {
     if (i) await new Promise((r) => setTimeout(r, 250))
-    const { data: call } = await admin.from('ai_calls').select('id').eq('company_id', companyId).eq('task', 'hr_check')
+    // The ledger poll stays tolerant, and says when the lookup itself failed (E4).
+    const { data: call, error: callErr } = await admin.from('ai_calls').select('id').eq('company_id', companyId).eq('task', 'hr_check')
       .gte('created_at', startedAt).order('created_at', { ascending: false }).limit(1).maybeSingle()
     aiCallId = call?.id ?? null
   }
@@ -466,35 +491,40 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
     for (;;) {
       if (clock() - startedAt > BUDGET_MS - RESERVE_MS) { c.stopped_for_time = true; break }
       if (opts.maxPieces != null && c.pieces >= opts.maxPieces) break
-      const { data: open } = await admin.from('handbook_checks').select('id, company_id, created_at')
-        .in('status', ['queued', 'checking']).order('created_at', { ascending: true }).limit(50)
+      const open = mustRows<{ id: string; company_id: string; created_at: string }>(
+      'the checks waiting to run', await admin.from('handbook_checks').select('id, company_id, created_at')
+        .in('status', ['queued', 'checking']).order('created_at', { ascending: true }).limit(50))
       let companyId: string | null = null
-      for (const ck of (open ?? []) as Array<{ id: string; company_id: string }>) {
+      for (const ck of open) {
         if (visited.has(ck.company_id)) continue
-        const { data: q } = await admin.from('handbook_check_sections').select('id')
-          .eq('check_id', ck.id).eq('status', 'queued').is('claimed_at', null).limit(1)
-        if (q?.length) { companyId = ck.company_id; break }
+        const q = mustRows<{ id: string }>('the parts waiting on that check',
+        await admin.from('handbook_check_sections').select('id')
+          .eq('check_id', ck.id).eq('status', 'queued').is('claimed_at', null).limit(1))
+        if (q.length) { companyId = ck.company_id; break }
       }
       if (!companyId) break
       visited.add(companyId)
 
       const nowIso = new Date(clock()).toISOString()
-      const { data: claimedRaw } = await admin.from('handbook_check_sections').update({ claimed_at: nowIso })
+      const claimedRaw = mustRows<Record<string, unknown>>('the parts this run claimed',
+        await admin.from('handbook_check_sections').update({ claimed_at: nowIso })
         .eq('company_id', companyId).eq('status', 'queued').is('claimed_at', null)
-        .select('id, check_id, kind, section_id')
-      const claimed = (claimedRaw ?? []) as Array<{ id: string; check_id: string; kind: 'section' | 'not_covered'; section_id: string | null }>
+        .select('id, check_id, kind, section_id'))
+      const claimed = claimedRaw as unknown as Array<{ id: string; check_id: string; kind: 'section' | 'not_covered'; section_id: string | null }>
       if (!claimed.length) continue
       await run.open()
       c.companies++
       try {
         // Order: the older check first; within a check, its sections by position, then the "not covered" row.
         const checkIds = [...new Set(claimed.map((r) => r.check_id))]
-        const { data: checks } = await admin.from('handbook_checks').select('id, created_at').in('id', checkIds)
+        const checks = mustRows<{ id: string; created_at: string }>('those checks',
+        await admin.from('handbook_checks').select('id, created_at').in('id', checkIds))
         const created = new Map(((checks ?? []) as Array<{ id: string; created_at: string }>).map((x) => [x.id, x.created_at]))
         const sectionIds = claimed.map((r) => r.section_id).filter(Boolean) as string[]
         const sizes = new Map<string, { position: number; chars: number }>()
         if (sectionIds.length) {
-          const { data: secs } = await admin.from('handbook_sections').select('id, position, text').in('id', sectionIds)
+          const secs = mustRows<{ id: string; position: number; text: string }>('those handbook parts',
+      await admin.from('handbook_sections').select('id, position, text').in('id', sectionIds))
           for (const s of (secs ?? []) as Array<{ id: string; position: number; text: string }>) sizes.set(s.id, { position: s.position, chars: s.text.length })
         }
         const ordered = [...checkIds].sort((a, b) => (created.get(a) ?? '').localeCompare(created.get(b) ?? ''))
@@ -585,10 +615,19 @@ export async function queueDueChecks(admin: Db, now = Date.now()): Promise<{
     .select('id, company_id, version_of, next_check_at').eq('is_current', true).eq('status', 'read')
   if (error) throw new Error(`queueDueChecks: ${error.message}`)
   const list = (books ?? []) as Array<{ id: string; company_id: string; version_of: string | null; next_check_at: string | null }>
-  const { data: done } = list.length
-    ? await admin.from('handbook_checks').select('handbook_id').in('handbook_id', list.map((b) => b.id)).eq('status', 'done')
-    : { data: [] }
-  const checked = new Set(((done ?? []) as Array<{ handbook_id: string }>).map((d) => d.handbook_id))
+  // *** H3 (root R2, Job E4): A FAILED READ HERE CHECKS EVERY HANDBOOK OF EVERY COMPANY AGAIN,
+  // AND IT COSTS MONEY. *** Unchecked, `checked` was empty, so `dueReason` returned
+  // 'new_handbook' or 'new_version' for every current, read handbook in the product — each one
+  // getting a full check it did not need, with a **false reason** recorded on it, and its
+  // `next_check_at` reset so the real 90-day schedule moved. On production this is the HR model,
+  // once per handbook, in one night. The first read of this function already throws; this one
+  // is the half that was free to be wrong.
+  const checkedRows = list.length
+    ? mustRows<{ handbook_id: string }>('which handbooks have been checked',
+        await admin.from('handbook_checks').select('handbook_id')
+          .in('handbook_id', list.map((b) => b.id)).eq('status', 'done'))
+    : []
+  const checked = new Set(checkedRows.map((d) => d.handbook_id))
   const out = { queued: [] as Array<{ handbook: string; reason: QueueReason; check: string }>, skippedOpen: [] as string[], notDue: 0 }
   for (const b of list) {
     const reason = dueReason(b, checked.has(b.id), now)

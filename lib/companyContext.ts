@@ -55,6 +55,7 @@
  * `gateContext.ts`'s own header was written about.
  */
 import { createHash } from 'node:crypto'
+import { mustRow, mustRows } from './mustRead.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -229,13 +230,33 @@ export async function buildCompanyContext(
   const documentId = opts.documentId ?? null
 
   // --- company and its sites -------------------------------------------------
-  const { data: companyRow } = await db.from('companies')
-    .select('name, industry, city, state, scan_result').eq('id', companyId).maybeSingle()
-  const { data: siteRows } = await db.from('entities')
+  // *** EVERY READ IN THIS FUNCTION IS CHECKED — fix list C1, root R2, Job E4. ***
+  //
+  // *** THE SINGLE MOST SHARED ITEM ON THE LIST, and the one with the worst failure mode. *** Nine
+  // reads here, none of which looked at `error`, and every one of them is rendered as a STATEMENT:
+  // "State: not recorded", "(no sites recorded)", "(nothing declared yet…)", "(nothing confirmed
+  // yet)", labels "(none yet)", and the dismissed-gaps block simply left out. That block then goes
+  // into a prompt — Workspace answers, HR answers, the handbook check (kept 90 days), the document
+  // scan (which re-raises gaps a person dismissed, D10), drafts, audits (A5) — and onto the Company
+  // information screen (D9).
+  //
+  // So a failed read did not degrade an answer. It told the model, in a block headed "treat these
+  // as settled", that a company had declared nothing and confirmed nothing — and the model
+  // reasoned from that. `CLAUDE.md` §3.3: enumerating from nothing is the known-bad mode, and this
+  // was the one place that could hand it nothing while looking full.
+  //
+  // It THROWS, which is the fix the list asks for: **no model call is made on a context built from
+  // a failed read.** Every caller already has a catch; the screens that must say "Couldn't load"
+  // instead are D9's and are fixed with it.
+  const companyRow = mustRow<{ name: string; industry: string | null; city: string | null
+                              state: string | null; scan_result: unknown }>(
+    'your company', await db.from('companies')
+      .select('name, industry, city, state, scan_result').eq('id', companyId).maybeSingle())
+  const siteRows = mustRows<Record<string, unknown>>('your sites', await db.from('entities')
     .select('id, name, address, state, county, city, is_primary')
-    .eq('company_id', companyId).order('name')
+    .eq('company_id', companyId).order('name'))
 
-  const sites: ContextSite[] = ((siteRows ?? []) as Array<Record<string, unknown>>).map((s) => ({
+  const sites: ContextSite[] = siteRows.map((s) => ({
     id: s.id as string,
     name: s.name as string,
     address: (s.address as string) ?? null,
@@ -273,10 +294,11 @@ export async function buildCompanyContext(
   // `scope` and `entity_id` are what make the two lines different statements.
   let declared: DeclaredFact[] = []
   if (want.has('declared')) {
-    const { data: rows } = await db.from('company_switches')
-      .select('switch_id, value, scope, entity_id, source, switches(label, question_plain)')
-      .eq('company_id', companyId).order('switch_id').order('entity_id', { nullsFirst: true })
-    declared = ((rows ?? []) as Array<Record<string, unknown>>).map((r) => {
+    const rows = mustRows<Record<string, unknown>>('the facts you have told us',
+      await db.from('company_switches')
+        .select('switch_id, value, scope, entity_id, source, switches(label, question_plain)')
+        .eq('company_id', companyId).order('switch_id').order('entity_id', { nullsFirst: true }))
+    declared = rows.map((r) => {
       const sw = (r.switches ?? null) as { label?: string; question_plain?: string } | null
       const entityId = (r.entity_id as string) ?? null
       return {
@@ -297,10 +319,10 @@ export async function buildCompanyContext(
   let confirmed: ConfirmedFact[] = []
   let confirmedKeys: string[] = []
   if (want.has('confirmed') || want.has('keys')) {
-    const { data: rows } = await db.from('company_facts')
-      .select('key, value, basis, entity_id, as_of, source_document_id, source_proposal_id')
-      .eq('company_id', companyId).order('key').order('entity_id', { nullsFirst: true })
-    const factRows = (rows ?? []) as Array<Record<string, unknown>>
+    const factRows = mustRows<Record<string, unknown>>('the facts you have confirmed',
+      await db.from('company_facts')
+        .select('key, value, basis, entity_id, as_of, source_document_id, source_proposal_id')
+        .eq('company_id', companyId).order('key').order('entity_id', { nullsFirst: true }))
     confirmedKeys = factRows.map((f) => f.key as string)
 
     // The source document's title, so a confirmed fact can say where it came from. One query for
@@ -308,9 +330,10 @@ export async function buildCompanyContext(
     const docIds = [...new Set(factRows.map((f) => f.source_document_id as string).filter(Boolean))].sort()
     const titleById = new Map<string, string>()
     if (docIds.length) {
-      const { data: docRows } = await db.from('document_index_v')
-        .select('document_id, title, file_name').in('document_id', docIds).order('document_id')
-      for (const d of (docRows ?? []) as Array<Record<string, unknown>>) {
+      const docRows = mustRows<Record<string, unknown>>('your documents\' titles',
+        await db.from('document_index_v')
+          .select('document_id, title, file_name').in('document_id', docIds).order('document_id'))
+      for (const d of docRows) {
         titleById.set(d.document_id as string,
           ((d.title as string) || (d.file_name as string) || '') as string)
       }
@@ -337,9 +360,9 @@ export async function buildCompanyContext(
   // --- labels ----------------------------------------------------------------
   let labels: { agencies: string[]; subjects: string[] } = { agencies: [], subjects: [] }
   if (want.has('labels')) {
-    const { data: rows } = await db.from('company_labels')
-      .select('kind, label').eq('company_id', companyId).order('kind').order('label')
-    const all = (rows ?? []) as Array<{ kind: string; label: string }>
+    const all = mustRows<{ kind: string; label: string }>('your agencies and subjects',
+      await db.from('company_labels')
+        .select('kind, label').eq('company_id', companyId).order('kind').order('label'))
     labels = {
       agencies: all.filter((l) => l.kind === 'agency').map((l) => l.label),
       subjects: all.filter((l) => l.kind === 'subject').map((l) => l.label),
@@ -354,11 +377,12 @@ export async function buildCompanyContext(
   // enters the context, only the fact that its name is in circulation.
   let keys: string[] = []
   if (want.has('keys')) {
-    const { data: usedKeys } = await db.from('fact_proposals')
-      .select('switch_key').eq('company_id', companyId)
-      .in('status', ['proposed', 'accepted']).order('switch_key')
+    const usedKeys = mustRows<{ switch_key: string }>('the facts already named',
+      await db.from('fact_proposals')
+        .select('switch_key').eq('company_id', companyId)
+        .in('status', ['proposed', 'accepted']).order('switch_key'))
     keys = [...new Set([
-      ...((usedKeys ?? []) as Array<{ switch_key: string }>).map((k) => k.switch_key),
+      ...usedKeys.map((k) => k.switch_key),
       ...confirmedKeys,
     ].filter(Boolean))].sort()
   }
@@ -366,13 +390,14 @@ export async function buildCompanyContext(
   // --- this document, when one is named --------------------------------------
   let document: ContextDocument | null = null
   if (want.has('document') && documentId) {
-    const { data: corrRows } = await db.from('document_corrections')
-      .select('field, new_value, reason, created_at, id')
-      .eq('document_id', documentId)
-      .order('created_at', { ascending: false }).order('id', { ascending: false })
+    const corrRows = mustRows<Record<string, unknown>>('your corrections to this document',
+      await db.from('document_corrections')
+        .select('field, new_value, reason, created_at, id')
+        .eq('document_id', documentId)
+        .order('created_at', { ascending: false }).order('id', { ascending: false }))
     const seen = new Set<string>()
     const corrections: ContextDocument['corrections'] = []
-    for (const c of (corrRows ?? []) as Array<Record<string, unknown>>) {
+    for (const c of corrRows) {
       const field = c.field as string
       if (seen.has(field)) continue          // the list is newest-first, so the first wins
       seen.add(field)
@@ -381,14 +406,18 @@ export async function buildCompanyContext(
     }
     corrections.sort((a, b) => a.field.localeCompare(b.field))
 
-    const { data: dismissed } = await db.from('document_gaps')
-      .select('title, dismissed_reason')
-      .eq('document_id', documentId).eq('status', 'dismissed').order('title')
+    // *** THE ONE THAT RE-RAISES WHAT A PERSON DISMISSED *** (D10). A failed read here left the
+    // dismissed-gaps block out of the scan's prompt entirely, so the next reading raised a gap the
+    // person had already said no to — and nothing anywhere said why.
+    const dismissed = mustRows<Record<string, unknown>>('the findings you have dismissed',
+      await db.from('document_gaps')
+        .select('title, dismissed_reason')
+        .eq('document_id', documentId).eq('status', 'dismissed').order('title'))
 
     document = {
       documentId,
       corrections,
-      dismissedGaps: ((dismissed ?? []) as Array<Record<string, unknown>>).map((g) => ({
+      dismissedGaps: dismissed.map((g) => ({
         title: g.title as string,
         reason: (g.dismissed_reason as string) ?? null,
       })),

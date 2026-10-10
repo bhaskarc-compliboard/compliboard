@@ -22,6 +22,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { deflateRawSync, crc32 } from 'node:zlib'
 
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { mustRow, mustRows } from '@/lib/mustRead'
 
 const BUCKET = 'company-documents'
 
@@ -97,18 +98,24 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     const { db } = authed.auth
     const { id } = await ctx.params
 
-    const { data: run } = await db.from('audit_runs')
-      .select('id, agency_label, finished_at, created_at').eq('id', id).maybeSingle()
+    // *** A12 AND A15: THE ZIP A PERSON HANDS AN INSPECTOR *** (root R2, Job E4).
+    // All three reads were `{ data: … }`. A failed one made `index.txt` say
+    // "(a document this audit cited is no longer on file)" **for every document** — about files
+    // sitting in the bucket — or answered "This audit read no documents, so there is nothing to
+    // download." A database error shown as "not found" is A15; a false sentence inside a file an
+    // inspector reads is worse than either.
+    const run = mustRow<Record<string, unknown>>('this audit', await db.from('audit_runs')
+      .select('id, agency_label, finished_at, created_at').eq('id', id).maybeSingle())
     if (!run) return NextResponse.json({ error: 'That audit was not found.' }, { status: 404 })
 
-    const [{ data: secs }, { data: finds }] = await Promise.all([
+    const [secsRes, findsRes] = await Promise.all([
       db.from('audit_sections').select('documents_read').eq('run_id', id).order('ordinal'),
       db.from('audit_findings')
         .select('title, word, kind, document_id, document_b_id, locator')
         .eq('run_id', id).order('ordinal'),
     ])
-    const findings = ((finds ?? []) as unknown as Array<Record<string, unknown>>)
-    const read = [...new Set(((secs ?? []) as unknown as Array<{ documents_read: string[] | null }>)
+    const findings = mustRows("this audit's findings", findsRes) as unknown as Array<Record<string, unknown>>
+    const read = [...new Set((mustRows("this audit's parts", secsRes) as unknown as Array<{ documents_read: string[] | null }>)
       .flatMap((s) => s.documents_read ?? []))]
 
     // The report's own order, computed the same way `citationOrder` does in the drawer, so page N

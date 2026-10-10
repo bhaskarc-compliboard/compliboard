@@ -30,6 +30,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { mustRow, mustRows, mustCount } from '@/lib/mustRead'
 import { buildCompanyContext } from '@/lib/companyContext'
 
 /** The fourteen `switches.domain` values as words a person reads. Nothing is invented: these are
@@ -54,30 +55,41 @@ export async function GET(request: NextRequest) {
 
     // The question's own metadata, for grouping and for the editor. Ordered, like every read that
     // feeds a rendering.
+    // *** D9 (root R2, Job E4): EVERY READ ON THIS SCREEN IS CHECKED. ***
+    // `buildCompanyContext` now throws on any of its nine reads (C1), and these four do too — so
+    // the catch below answers 500 and the page says it could not load, instead of drawing
+    // "Nothing declared yet", "Nothing confirmed yet", "0 waiting" and
+    // "Merge X … on 0 documents?" over a company that has told us ninety-five facts.
+    //
+    // *** AND THE WORST OF IT IS NOT A WORD ON A SCREEN. *** With the context empty, a proposal
+    // that CONTRADICTS a settled fact is not lifted out of the queue — nothing is there to
+    // contradict — so **Confirm all overwrites the settled value** (`app/company-information/page.tsx`).
+    // A failed read turns a review queue into a bulk overwrite.
     const ids = [...new Set(ctx.parts.declared.map((d) => d.switchId))].sort()
-    const { data: swRows } = ids.length
-      ? await db.from('switches')
-          .select('id, domain, value_type, allowed_values').in('id', ids).order('id')
-      : { data: [] }
-    const meta = Object.fromEntries((swRows ?? []).map((s: Record<string, unknown>) =>
-      [s.id as string, s]))
+    const swRows = ids.length
+      ? mustRows<Record<string, unknown>>('the questions behind your facts', await db.from('switches')
+          .select('id, domain, value_type, allowed_values').in('id', ids).order('id'))
+      : []
+    const meta = Object.fromEntries(swRows.map((s) => [s.id as string, s]))
 
     // Where in the document each confirmed fact was read. One query for all of them.
     const propIds = [...new Set(ctx.parts.confirmed.map((f) => f.sourceProposalId).filter(Boolean))].sort()
-    const { data: propRows } = propIds.length
-      ? await db.from('fact_proposals')
-          .select('id, locator').in('id', propIds as string[]).order('id')
-      : { data: [] }
-    const locatorById = Object.fromEntries((propRows ?? []).map((p: Record<string, unknown>) =>
+    const propRows = propIds.length
+      ? mustRows<Record<string, unknown>>('where each fact was read', await db.from('fact_proposals')
+          .select('id, locator').in('id', propIds as string[]).order('id'))
+      : []
+    const locatorById = Object.fromEntries(propRows.map((p) =>
       [p.id as string, (p.locator as string) ?? null]))
 
     // *** WAITING IS COUNTED IN PROPOSALS, NOT KEYS, AND THE HEADER SAYS SO. ***
     // The sidebar badge counts QUESTION LINES (what the page shows); this number is the raw count
     // of pending readings, which is what "M waiting" in the header means. The two differ on purpose
     // and each is labelled where it appears.
-    const { count: waiting } = await db.from('fact_proposals')
+    // `mustCount`, which also refuses a NULL count with no error — "0 waiting" over a queue of
+    // twelve is the same false statement either way.
+    const waiting = mustCount('how many answers are waiting', await db.from('fact_proposals')
       .select('*', { count: 'exact', head: true })
-      .eq('company_id', companyId).eq('status', 'proposed')
+      .eq('company_id', companyId).eq('status', 'proposed'))
 
     return NextResponse.json({
       company: ctx.parts.company,
@@ -105,11 +117,14 @@ export async function GET(request: NextRequest) {
       // to touch one document or twelve. Counted off `document_index_v`, so corrections already
       // made are reflected.
       labelCounts: await (async () => {
-        const { data } = await db.from('document_index_v')
-          .select('agencies, subjects').eq('company_id', companyId)
+        // Checked: the confirm sentence says "on N documents", and a person deciding whether to
+        // merge two agency names is deciding whether to touch one document or twelve. "0" from a
+        // failed read is the number that makes the decision look free.
+        const data = mustRows<Record<string, unknown>>('your documents', await db.from('document_index_v')
+          .select('agencies, subjects').eq('company_id', companyId))
         const out: { agency: Record<string, number>; subject: Record<string, number> } =
           { agency: {}, subject: {} }
-        for (const d of (data ?? []) as unknown as Array<Record<string, unknown>>) {
+        for (const d of data) {
           for (const a of (Array.isArray(d.agencies) ? d.agencies as string[] : [])) {
             out.agency[a] = (out.agency[a] ?? 0) + 1
           }
@@ -125,7 +140,7 @@ export async function GET(request: NextRequest) {
         settled: ctx.parts.declared.length + ctx.parts.confirmed.length,
         declared: ctx.parts.declared.length,
         confirmed: ctx.parts.confirmed.length,
-        waiting: waiting ?? 0,
+        waiting,
       },
     })
   } catch (error) {
@@ -229,8 +244,9 @@ export async function POST(request: NextRequest) {
       // A site was named: it must be this company's. The composite FK from migration 055 would
       // refuse another company's site anyway; this turns a 23503 into a sentence.
       if (entityId) {
-        const { data: site } = await db.from('entities')
-          .select('id').eq('id', entityId).eq('company_id', companyId).maybeSingle()
+        // A15's shape (E4): a failed read must not answer "site not found" about their own site.
+        const site = mustRow<{ id: string }>('that site', await db.from('entities')
+          .select('id').eq('id', entityId).eq('company_id', companyId).maybeSingle())
         if (!site) return NextResponse.json({ error: 'Site not found' }, { status: 404 })
       }
 

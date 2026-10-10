@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Drawer, printDrawer } from '@/components/Drawer'
+import { formatMoment } from '@/lib/calendarDate'
 import { authHeaders } from '@/lib/supabase'
 
 interface DocRef { title: string; file_name: string; kind?: string | null; display_status?: string | null }
@@ -89,7 +90,9 @@ interface Run {
 }
 interface Report { run: Run; sections: Section[]; findings: Finding[]
   /** id -> title, for every document the run read or held. */
-  documents?: Record<string, DocRef> }
+  documents?: Record<string, DocRef>
+  /** B10's follow-on (Job E4): the COMPANY's zone, for every timestamp this drawer prints. */
+  timezone?: string }
 
 const WORD: Record<string, string> = {
   nothing_on_file: 'nothing on file',
@@ -118,6 +121,12 @@ function needsOf(s: RunSummary | null | undefined): number {
     + (s.not_a_document_question ?? 0)
 }
 
+/**
+  * A DAY STRING's day — `2027-01-05`, which carries no zone and needs none.
+  * `readings_as_of` is a TIMESTAMP and goes through `formatMoment` with the company's zone instead
+  * (B10's follow-on, Job E4): the drawer printed it in the BROWSER's zone, so one audit read
+  * "8 October" at the plant and "9 October" to anybody east of it.
+  */
 const fmt = (iso: string | null | undefined) => {
   if (!iso) return ''
   const d = new Date(String(iso).length === 10 ? `${iso}T00:00:00` : String(iso))
@@ -561,11 +570,31 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   async function auditAgain() {
     setBusy(true)
     try {
+      // *** O2 (fix list §4, Job E4): "AUDIT AGAIN" POSTED `kind: 'agency'` FOR A CHECKLIST. ***
+      //
+      // `agency` above is a LABEL FOR THE SCREEN — "Audit of everything" for a multi-section run,
+      // or `run.agency_label`, which a template run does not have at all. Pressing Audit again on a
+      // checklist report therefore asked for an AGENCY audit: a multi-section checklist re-ran as an
+      // audit of every agency (a different, more expensive thing than the person asked for), and a
+      // one-section one got a 400 saying none of their documents mention "All agencies".
+      //
+      // A template run is re-run as a template run, against the same checklist document — which is
+      // what the run itself records in `template_document_id`.
+      const again = run.kind === 'template'
+        ? { kind: 'template', template_document_id: run.template_document_id,
+            previous_run_id: run.id, scope: run.scope }
+        : { kind: 'agency', agency: everything ? 'all' : agency,
+            previous_run_id: run.id, scope: run.scope }
+      if (run.kind === 'template' && !run.template_document_id) {
+        // The checklist it was run against is not on the row, so there is nothing to run again.
+        // Said, rather than posting a request that cannot mean what the button says.
+        setNotice('We cannot find the checklist this audit was run against, so it cannot be run again.')
+        return
+      }
       const res = await fetch('/api/audit-runs', {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({ kind: 'agency', agency: everything ? 'all' : agency,
-                               previous_run_id: run.id, scope: run.scope }),
+        body: JSON.stringify(again),
       })
       const json = await res.json()
       if (!res.ok) { setNotice(json?.error ?? 'We could not start that audit just now.'); return }
@@ -663,10 +692,10 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     + `${run.section_count} section${run.section_count === 1 ? '' : 's'} · `
     + `${docsRead.length} document${docsRead.length === 1 ? '' : 's'} read`
     + (docsUnread.length ? `, ${docsUnread.length} held unread` : '')
-    + (run.readings_as_of ? ` · readings as of ${fmt(run.readings_as_of)}` : '')
+    + (run.readings_as_of ? ` · readings as of ${formatMoment(run.readings_as_of, rep.timezone)}` : '')
   // ON PAPER (board 10): one line of this audit's own dates, absolute. Sections and documents print in the body.
   const printDates = `Audited ${fmt(run.finished_at ?? run.created_at)}`
-    + (run.readings_as_of ? ` · Readings as of ${fmt(run.readings_as_of)}` : '')
+    + (run.readings_as_of ? ` · Readings as of ${formatMoment(run.readings_as_of, rep.timezone)}` : '')
 
   const footer = (
     <>
@@ -977,7 +1006,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
           </p>
         )}
         {run.readings_as_of && (
-          <p className="mt-2 text-[12px] text-gray-500">Readings as of {fmt(run.readings_as_of)}</p>
+          <p className="mt-2 text-[12px] text-gray-500">Readings as of {formatMoment(run.readings_as_of, rep.timezone)}</p>
         )}
         <p className="mt-1 text-[12px] text-gray-500">
           Company information as of {fmt(run.readings_as_of ?? run.created_at)}

@@ -32,7 +32,7 @@ import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts
 import { addDate, withdrawStale } from './calendarDates.ts'
 import { readableScanIds } from './readableScan.ts'
 import { normaliseForQuote } from './normaliseQuote.ts'
-import { tryRows } from './mustRead.ts'
+import { tryRows, mustRows } from './mustRead.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -454,20 +454,30 @@ export async function buildScanContext(
   // THE READING THAT COULD READ IT (§185a, A3e). `is_current` would list a document whose latest
   // reading failed with a null title and a null kind, so the version question ("is this a newer
   // version of one of these?") would be asked against a list with a blank line in it.
+  // *** D10 (root R2, Job E4): A SCAN IS NEVER RUN ON A PARTIAL CONTEXT. ***
+  // Both of these were `{ data: … }`. A failed `existing` read told the model the company holds
+  // nothing, so "is this a newer version of one of these?" was asked against an empty list — and
+  // `buildCompanyContext` above now throws for the same reason (C1), which is what stops the
+  // labels, keys, corrections and dismissed gaps going missing too.
   const readableIds = await readableScanIds(db, company.id)
-  const { data: existing } = readableIds.length
-    ? await db.from('document_scans')
-        .select('title, kind, document_id').in('id', readableIds).order('title').limit(40)
-    : { data: [] }
+  const existing = readableIds.length
+    ? mustRows<{ title: string | null; kind: string | null; document_id: string }>(
+        'what you already hold', await db.from('document_scans')
+          .select('title, kind, document_id').in('id', readableIds).order('title').limit(40))
+    : []
   // THE GAPS THAT ARE STILL OPEN ON THIS DOCUMENT, WITH THEIR IDS — Run 6.
   //
   // Shown to the scan so a new reading can say which old finding each of its gaps IS, rather
   // than leaving us to guess from the wording. Ordered by id so the same state renders the same
   // prompt string, like everything else in this function.
-  const { data: openGaps } = documentId
-    ? await db.from('document_gaps').select('id, title, citation')
-        .eq('document_id', documentId).eq('status', 'open').order('id')
-    : { data: [] }
+  // A failed read here loses the `same_as_gap_id` handoff: the new reading cannot say which old
+  // finding each of its gaps IS, so Run 6's carry-forward silently stops and a person's checklist
+  // is left attached to a gap the new reading has replaced.
+  const openGaps = documentId
+    ? mustRows<{ id: string; title: string; citation: string | null }>(
+        "this document's open findings", await db.from('document_gaps').select('id, title, citation')
+          .eq('document_id', documentId).eq('status', 'open').order('id'))
+    : []
 
   return {
     company: {
@@ -780,9 +790,12 @@ export async function saveScan(
   let billedSearches: number | null = null
   for (let attempt = 0; linkLedger && attempt < 5 && !aiCallId; attempt++) {
     if (attempt) await new Promise((r) => setTimeout(r, 250))
-    const { data: call } = await db.from('ai_calls')
+    // The ledger poll stays tolerant (the paragraph above says why), and now says when the LOOKUP
+    // itself failed rather than letting that look like a write still in flight (E4).
+    const { data: call, error: callErr } = await db.from('ai_calls')
       .select('id, searches').eq('company_id', companyId).eq('task', 'document_scan')
       .gte('created_at', scan.started_at).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    if (callErr) console.warn(`document scan: the ledger row could not be looked up: ${callErr.message}`)
     aiCallId = call?.id ?? null
     billedSearches = call?.searches ?? null
   }
@@ -790,8 +803,22 @@ export async function saveScan(
     console.warn('document scan: saved with no ai_calls link — the ledger write had not landed')
   }
 
-  // Only the newest scan of a document is current.
-  await db.from('document_scans').update({ is_current: false }).eq('document_id', documentId)
+  // *** D-two (root R1, Job E4): THIS WRITE IS CHECKED. ***
+  // Only the newest scan of a document is current — and if clearing the old flag failed while the
+  // insert below succeeded, the document had **two current scans**. `document_index_v` then
+  // returned two rows for it, and the report route's `.maybeSingle()` errored into
+  // **"Document not found" (404)** — a document a person can see on the page, telling them it is
+  // not there. Thrown, so the reading is not written at all and the row keeps the state it had.
+  //
+  // It is still two statements rather than one. Making it atomic means a function or a deferred
+  // unique index, and what that would buy over this is the window between these two lines — during
+  // which no scan is current, which every reader already handles (`s.id is null` → not_yet_read).
+  // Recorded rather than done: the failure this item is about is the one that LASTS.
+  const { error: clearErr } = await db.from('document_scans')
+    .update({ is_current: false }).eq('document_id', documentId)
+  if (clearErr) {
+    throw new Error(`the earlier readings could not be set aside, so this one was not saved: ${clearErr.message}`)
+  }
 
   const { data: row, error } = await db.from('document_scans').insert({
     document_id: documentId, company_id: companyId,
@@ -854,17 +881,23 @@ export async function saveScan(
   // ALL of the document's open gaps are loaded, not only the ones carrying a checklist: a gap
   // with a draft on it and no checklist has work on it too, and one with neither still has to be
   // closed rather than left open for `open_gap_count` to keep counting.
-  const { data: priorLinks } = await db.from('checklists')
-    .select('id, document_gap_id').eq('document_id', documentId).not('document_gap_id', 'is', null)
-  const carry = (priorLinks ?? []) as Array<{ id: string; document_gap_id: string }>
-  const { data: priorOpen } = await db.from('document_gaps')
-    .select('id, title, citation, draft_text, draft_created_at, draft_ai_call_id')
-    .eq('document_id', documentId).eq('status', 'open')
+  // *** D11 (root R2, Job E4): THESE TWO DECIDE WHAT "THE LATEST READING DID NOT RAISE THIS"
+  // MEANS. *** Unchecked, a failed `priorOpen` read made `priorGaps` empty — so no earlier gap was
+  // matched, none was carried, and every one of them was left open with its checklist attached to a
+  // finding the new reading has replaced; `open_gap_count` then counted both sets and the drawer
+  // showed each gap twice. A failed `priorLinks` read lost the checklists' side of the same handoff.
+  const carry = mustRows<{ id: string; document_gap_id: string }>('your checklists',
+    await db.from('checklists')
+      .select('id, document_gap_id').eq('document_id', documentId).not('document_gap_id', 'is', null))
+  const priorOpen = mustRows<Record<string, unknown>>("this document's earlier findings",
+    await db.from('document_gaps')
+      .select('id, title, citation, draft_text, draft_created_at, draft_ai_call_id')
+      .eq('document_id', documentId).eq('status', 'open'))
   type PriorGap = {
     id: string; title: string; citation: string | null
     draft_text: string | null; draft_created_at: string | null; draft_ai_call_id: string | null
   }
-  const priorGaps = (priorOpen ?? []) as PriorGap[]
+  const priorGaps = priorOpen as unknown as PriorGap[]
   const key = (s: string | null) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
   if (scan.gaps.length) {
@@ -878,9 +911,11 @@ export async function saveScan(
     if (e) throw new Error(`document_gaps: ${e.message}`)
 
     if (priorGaps.length) {
-      const { data: freshRows } = await db.from('document_gaps')
-        .select('id, title, citation, ordinal').eq('scan_id', scanId).order('ordinal')
-      const fresh = (freshRows ?? []) as Array<{ id: string; title: string; citation: string | null; ordinal: number }>
+      // Checked (D11): an empty list here stamps "Not seen in the latest reading" on gaps the
+      // reading DID raise, and doubles `open_gap_count`.
+      const fresh = mustRows<{ id: string; title: string; citation: string | null; ordinal: number }>(
+        "this reading's own findings", await db.from('document_gaps')
+          .select('id, title, citation, ordinal').eq('scan_id', scanId).order('ordinal'))
       // The model's answer, by position: scan.gaps[i] became the row with ordinal i + 1.
       const namedBy = new Map<string, string>()   // old gap id → new gap id
       const allowed = new Set(priorGaps.map((p) => p.id))
@@ -1079,9 +1114,20 @@ export async function saveScan(
     ...scan.identity.subjects.map((l) => ({ kind: 'subject', label: l })),
   ]
   if (labels.length) {
-    await db.from('company_labels')
+    // *** D14 (root R2, Job E4): THE UPSERT'S RESULT IS CHECKED. ***
+    // `company_labels` is the company's vocabulary and `auditAgenciesFor` reads it to decide what
+    // "audit everything" audits. A failed upsert meant a new agency NEVER ENTERED the vocabulary,
+    // so the reading named a regulator, the document carried it, and the audit skipped it — with
+    // nothing anywhere saying why. Said out loud rather than thrown: the reading itself is saved
+    // and valuable, and the next reading of any document re-offers the same labels.
+    const { error: labelErr } = await db.from('company_labels')
       .upsert(labels.map((l) => ({ company_id: companyId, ...l })),
               { onConflict: 'company_id,kind,label', ignoreDuplicates: true })
+    if (labelErr) {
+      console.error(`document scan ${documentId}: ${labels.length} label(s) did not reach the `
+        + `company's vocabulary, so an audit of everything may skip them — ${labelErr.message}: `
+        + labels.map((l) => `${l.kind}:${l.label}`).join(' · '))
+    }
   }
 
   await db.from('documents')

@@ -23,6 +23,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { formatMoment } from '@/lib/calendarDate'
 import { authHeaders } from '@/lib/supabase'
 import { Drawer, printDrawer } from '@/components/Drawer'
 import { DRAFT_NOTICE } from '@/prompts/document-draft'
@@ -38,6 +39,8 @@ interface Row {
   scan_status: string | null; document_status: string; could_not_read_reason: string | null
   summary: string | null; version_of: string | null; version_confirmed: boolean
   scan_id: string | null; open_gap_count: number; display_status: string
+  /** 076: the reading the identity came from, or null when no reading has ever succeeded (D13). */
+  readable_scan_id?: string | null
 }
 interface Gap {
   id: string; ordinal: number; title: string; description: string | null; fix: string | null
@@ -88,6 +91,8 @@ interface Report {
   versions: Version[]; sites: Array<{ id: string; name: string }>
   labels: Array<{ kind: string; label: string }>
   checklists: ChecklistLink[]
+  /** B10's follow-on (Job E4): the COMPANY's zone, for every timestamp this drawer prints. */
+  timezone?: string
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -106,6 +111,10 @@ const DATE_LABEL: Record<string, string> = {
 }
 const KINDS = ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other']
 
+/**
+ * A DAY STRING's day — `2027-01-05`, which carries no zone and needs none.
+ * A TIMESTAMP's day goes through `fmtAt` below, which takes the company's zone (B10's follow-on).
+ */
 const fmt = (iso: string | null | undefined) => {
   if (!iso) return ''
   const d = new Date(String(iso).length === 10 ? `${iso}T00:00:00` : String(iso))
@@ -375,6 +384,14 @@ export default function DocumentReport({
   }
 
   const { row, scan } = r
+  /**
+   * A TIMESTAMP's day, in the COMPANY's zone — B10's follow-on, Job E4. `scanned_at` is a
+   * `timestamptz`, so "Read on 8 October" depends on who is looking; this printed it in the
+   * BROWSER's zone, which means a reading taken at 6pm at the plant read as the 9th to anybody
+   * east of it. The zone comes from the server with the report (`timezone`), so the drawer cannot
+   * draw a date before it knows which day it is.
+   */
+  const fmtAt = (iso: string | null | undefined) => formatMoment(iso, r.timezone)
   const kind = row.kind
   const isProgram = kind === 'program' || kind === 'policy'
   const isPermit = kind === 'permit' || kind === 'certificate'
@@ -393,13 +410,13 @@ export default function DocumentReport({
     row.file_name,
     row.document_status === 'reading' ? 'Reading…'
       : row.document_status === 'uploaded' ? 'Queued to be read again'
-      : row.scanned_at ? `read ${fmt(row.scanned_at)}` : null,
+      : row.scanned_at ? `read ${fmtAt(row.scanned_at)}` : null,
   ].filter(Boolean).join(' · ')
   // ON PAPER (board 10): one line of this document's own dates, absolute — its own date (DATE_LABEL,
   // e.g. "Revised 1 February 2021") and when it was read. Kind, agency and site print in the body.
   const printDates = [
     row.doc_date ? `${(row.doc_date_kind && DATE_LABEL[row.doc_date_kind]) || 'Dated'} ${fmt(row.doc_date)}` : null,
-    row.scanned_at ? `Read ${fmt(row.scanned_at)}` : null,
+    row.scanned_at ? `Read ${fmtAt(row.scanned_at)}` : null,
   ].filter(Boolean).join(' · ')
 
   const footer = (
@@ -506,8 +523,19 @@ export default function DocumentReport({
     </div>
   ) : null
 
-  /* ── a document we could not read: the reason, the way forward, nothing else ── */
-  if (row.display_status === 'could_not_read') {
+  /* ── a document we could not read ──────────────────────────────────────────
+     *** D13 (fix list, root R1, Job E4): THIS VIEW IS NOW ONLY FOR A DOCUMENT NOBODY HAS EVER
+     READ. *** It used to be the view for EVERY `could_not_read` document, showing the reason and
+     "Upload a clearer copy" and nothing else — so a document read well last week and refused by a
+     rate limit this morning lost its open gaps, its checklists, its dates and its facts from the
+     screen, and the only advice offered was to go and change a file that was never the problem.
+     Migration 076 put the identity back and A3e put the gaps and dates back; this is the drawer,
+     which was still hiding all of it.
+     When a readable reading exists the full view below is drawn instead, under the grey line it
+     already has ("From the last reading that could read this document, on <date>") and with
+     "Could not read" still in its Status section — so the failure is not hidden either. */
+  const everRead = !!row.readable_scan_id
+  if (row.display_status === 'could_not_read' && !everRead) {
     return (
       <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}
         printType="Document report" printDates={printDates}
@@ -519,8 +547,18 @@ export default function DocumentReport({
           {row.could_not_read_reason
             || 'We could not read this clearly enough to rely on.'}
         </p>
+        {/* *** THE WAY FORWARD, IN THE RIGHT ORDER (D13). *** "Upload a clearer copy" was the only
+            thing offered, and it is the wrong advice for every failure that is ours — a rate limit,
+            a refused request, a storage hiccup. We cannot always tell which happened (the way
+            forward the reading wrote is not stored, only its reason), so both are offered, the
+            cheap and usually-correct one first, with the sentence that stops somebody uploading a
+            duplicate of a file that is fine. */}
+        <p className="mt-4 text-[13px] text-gray-500">
+          If that reads like something at our end, press Read it again below — nothing about your
+          file needs changing.
+        </p>
         <button onClick={() => onPickFile()}
-          className="mt-4 text-[14px] text-gray-600 underline hover:text-gray-900">Upload a clearer copy</button>
+          className="mt-2 text-[14px] text-gray-600 underline hover:text-gray-900">Upload a clearer copy</button>
       </Drawer>
     )
   }
@@ -1020,7 +1058,7 @@ export default function DocumentReport({
 
       {/* 10 ── the quiet last line */}
       <p className="mt-8 border-t border-gray-100 pt-3 text-[12px] leading-relaxed text-gray-400">
-        Read on {fmt(row.scanned_at)}. Quotes are word for word from the document and anything we
+        Read on {fmtAt(row.scanned_at)}. Quotes are word for word from the document and anything we
         worked out is marked inferred.{' '}
         {scan?.searches != null ? `${scan.searches} source${scan.searches === 1 ? '' : 's'} looked up. ` : ''}
         Read by {scan?.model ?? 'a model'}. Not legal advice.

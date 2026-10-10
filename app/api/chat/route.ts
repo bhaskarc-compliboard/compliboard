@@ -46,6 +46,7 @@ import { buildCompanyContext } from '@/lib/companyContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
 import { finishedCleanly } from '@/lib/answerShape';
+import { mustRows } from '@/lib/mustRead';
 
 /**
  * The facts THIS turn asserted, for the turn the server is about to seal.
@@ -341,8 +342,26 @@ export async function POST(request: NextRequest) {
           }
           history = pairs;
         } catch (e) {
-          // A conversation that cannot be reloaded still answers the question in front of it.
+          // *** O9 (fix list §4, Job E4): AN ANSWER THAT IGNORED THE CONVERSATION WAS FILED
+          // INSIDE IT. ***
+          //
+          // This used to read "A conversation that cannot be reloaded still answers the question in
+          // front of it" and carry on with `history = []`. The answer was then **saved as the next
+          // turn of that conversation** — so the transcript showed a reply that had not read a word
+          // of what came before, the summary was built from it, and a person re-reading the thread
+          // could not tell. A question asked in the middle of a conversation is not the same
+          // question asked alone, and this is the one place the difference was invisible.
+          //
+          // So it refuses, BEFORE the model call: nothing is spent, nothing is written, and the
+          // person is told plainly whose problem it is and that asking again is the way on (§5.1).
+          // The old choice — answer anyway — is reversed deliberately: it was only defensible while
+          // the answer was not kept, and it always was.
           console.error('could not load stored turns for history:', e);
+          return NextResponse.json({
+            error: 'We could not read the earlier messages in this conversation, so we have not '
+              + 'answered — an answer that had not read them would be a worse one. That is our '
+              + 'side, not yours. Please ask again.',
+          }, { status: 503 });
         }
       }
 
@@ -709,7 +728,11 @@ export async function POST(request: NextRequest) {
       // Arizona` came back `stated_in_question` on turn 1 and `hypothetical` on turn 2 (§104).
       if (g.outcome === 'proceed') {
         // scope decides whether a scenario fact REPLACES the business's value or ADDS to it.
-        const { data: scopeRows } = await db.from('switches').select('id, scope');
+        // Checked (E4): this map decides which facts the model is told are per-site. An empty one
+    // makes every site-scoped fact look company-wide — a two-plant company's air permit described
+    // as the whole company's, in a prompt.
+    const scopeRows = mustRows<{ id: string; scope: string }>('the facts we track',
+      await db.from('switches').select('id, scope'));
         const scopeOf = Object.fromEntries(
           (scopeRows ?? []).map((r) => [r.id, r.scope as SwitchScope])) as Record<string, SwitchScope>;
 

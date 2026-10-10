@@ -16,6 +16,7 @@
 import { Resend } from 'resend'
 import { renderEmail, type EmailContent, type EmailBlock } from './emailFrame.ts'
 import { emailFrom } from './emailSender.ts'
+import { mustRow } from './mustRead.ts'
 import { longDate } from './summaryWords.ts'
 import { checkParts, partsNotChecked, type RowIn } from './handbookCheckView.ts'
 
@@ -34,6 +35,9 @@ export const EMAIL = {
   doneSubject: (name: string) => `Your handbook check is done: ${name}`,
   doneLine: (name: string, date: string) => `${name} was checked against the rules that apply to you on ${date}.`,
   partsLine: (n: number) => `${n} part${n === 1 ? '' : 's'} could not be checked. Press Check now to try again.`,
+  /** H8: we could not work out whether every part was checked. Said, never left to look complete. */
+  partsUnknown: 'We could not work out whether every part was checked. Open the handbook to see '
+    + 'where it stands — that is our side, not yours.',
   readLine: (link: string) => `Read the check: ${link}`,
   failedSubject: (name: string) => `Your handbook check could not finish: ${name}`,
   failedLine: (name: string, link: string) =>
@@ -52,15 +56,26 @@ export interface NotifyResult {
 }
 
 export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: boolean } = {}): Promise<NotifyResult> {
-  const { data: check } = await db.from('handbook_checks')
-    .select('id, handbook_id, status, requested_by, notified_at, finished_at').eq('id', checkId).maybeSingle()
+  // Checked (E4): a failed read answers "no check <id>" — a sentence about a row that is there,
+  // and the sweep then treats it as nothing to send and moves on, so the email never goes.
+  const check = mustRow<{ id: string; handbook_id: string; status: string
+                          requested_by: string | null; notified_at: string | null
+                          finished_at: string | null }>('this handbook check',
+    await db.from('handbook_checks')
+      .select('id, handbook_id, status, requested_by, notified_at, finished_at').eq('id', checkId).maybeSingle())
   if (!check) return { notified: false, error: `no check ${checkId}` }
   // Only a check someone pressed. The nightly check (step 10) has nobody to tell.
   if (!check.requested_by) return { notified: false, error: 'nobody pressed this check, so nobody is emailed' }
   if (check.status !== 'done' && check.status !== 'failed') return { notified: false, error: `the check is ${check.status}, not finished` }
   if (check.notified_at && !opts.dryRun) return { notified: false, error: 'already notified' }
 
-  const { data: hb } = await db.from('handbooks').select('id, name, company_id').eq('id', check.handbook_id).maybeSingle()
+  // A failed read here names the handbook "Your handbook" in a subject line about a specific one.
+  // Said, and the fallback kept, because the email itself is still worth sending.
+  const hbRead = await db.from('handbooks').select('id, name, company_id').eq('id', check.handbook_id).maybeSingle()
+  if (hbRead.error) {
+    console.error(`HANDBOOK CHECK EMAIL: could not read the handbook's name: ${hbRead.error.message}`)
+  }
+  const hb = hbRead.data
   const name = hb?.name ?? 'Your handbook'
   // The company's name, for the frame's letterhead (B5). A failed read is NOT an empty name: the
   // frame falls back to "Your company" and the failure is said, rather than a blank line appearing
@@ -79,7 +94,12 @@ export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: bool
   if (!admin) {
     console.error('HANDBOOK CHECK EMAIL: the client given to notifyCheck cannot read auth.users. Pass the service-role client.')
   } else {
-    const { data: user } = await admin.getUserById(check.requested_by as string)
+    // Checked (E4): with no address this returns "nobody to tell" — a sentence about a login that
+    // exists. The email cannot go either way; what changes is that the reason is the right one.
+    const { data: user, error: userErr } = await admin.getUserById(check.requested_by as string)
+    if (userErr) {
+      console.error(`HANDBOOK CHECK EMAIL: the login on this check could not be read: ${userErr.message}`)
+    }
     realTo = user?.user?.email ?? ''
   }
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
@@ -111,6 +131,11 @@ export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: bool
     if (rowsErr || secsErr) {
       console.error('HANDBOOK CHECK EMAIL: could not count the parts that failed: '
         + `${rowsErr?.message ?? ''} ${secsErr?.message ?? ''}`.trim())
+      // *** H8 (Job E4): AND THE EMAIL SAYS SO, INSTEAD OF LEAVING THE LINE OUT. ***
+      // Leaving it out is better than printing a zero, which is what the list found — but an email
+      // headed "Your handbook check is done" with nothing else said reads as a complete check. The
+      // truth is that we do not know, and R3's rule is to say "not read" when it was not read.
+      blocks.push({ kind: 'para', text: EMAIL.partsUnknown })
     } else {
       const pos = new Map(((secs ?? []) as Array<{ id: string; position: number }>).map((s) => [s.id, s.position]))
       const failedParts = partsNotChecked(checkParts((rows ?? []) as RowIn[], (id) => pos.get(id ?? '') ?? 1e9, () => '', () => []))

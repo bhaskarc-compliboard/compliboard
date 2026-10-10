@@ -13,6 +13,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { requireCompany } from '@/lib/auth'
+import { mustRow } from '@/lib/mustRead'
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -34,7 +35,9 @@ export async function PATCH(request: NextRequest) {
 
     // Ownership on the caller's client: another company's finding is not there, and not-there is
     // 404 so an id cannot be probed (§3.6).
-    const { data: found } = await db.from('audit_findings').select('id, status').eq('id', id).maybeSingle()
+    // A15 (Job E4): a database error shown as "not found" is a claim about the person's own data.
+    const found = mustRow<{ id: string; status: string }>('that finding',
+      await db.from('audit_findings').select('id, status').eq('id', id).maybeSingle())
     if (!found) return NextResponse.json({ error: 'That finding was not found.' }, { status: 404 })
 
     // Guarded on it still being open, so two taps do not overwrite the first reason.

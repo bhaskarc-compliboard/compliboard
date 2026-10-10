@@ -78,7 +78,12 @@ describe('who uses it', () => {
       const src = readFileSync(`app/api/jobs/${file}/route.ts`, 'utf8')
       assert.match(src, new RegExp(`const run = lazyJobRun\\(supabaseAdmin, '${job}'\\)`))
       assert.ok(!/startJobRun/.test(src))
-      assert.match(src, /if \(stuck\?\.length\) await run\.open\(\)/)
+      // The row is opened WHEN work is found, and the expression that says so differs by sweep:
+      // `stuck.length` in the audit one (whose read goes through `mustRows` since fix list S4), and
+      // `all.length` in the document one, where O6 made the recovery two reads — the rows with an
+      // old claim, plus the rows with NO claim, which `lt` could never match. Either spelling; the
+      // assertion is about the lazy open, not the variable's name.
+      assert.match(src, /if \((?:stuck|all)\??\.length\) await run\.open\(\)/)
       assert.match(src, /if \(!queue\.length\) continue\n\s*await run\.open\(\)/)
     })
   }

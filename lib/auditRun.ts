@@ -389,8 +389,18 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     // *** A TEMPLATE SECTION IS A DIFFERENT QUESTION OVER THE SAME EVIDENCE. ***
     // The run's kind decides. A template section is shown EVERY document the company holds, because
     // a checklist spans regulators; the sentinel `'*'` is what `buildAuditInput` takes to mean that.
-    const { data: runRow } = await db.from('audit_runs')
+    // *** A6: IF THE RUN ROW CANNOT BE READ, THE SECTION IS NOT AN AUDIT *** (root R2, Job E4).
+    // Unchecked, `runRow` was null and everything downstream took its default: `isTemplate` false,
+    // so a CHECKLIST section was audited as an agency named after a checklist line; no document
+    // carries that name, so the model was shown "(none…)"; the section was saved DONE; and the link
+    // to the previous run was lost, so nothing carried or closed. Four wrong answers from one
+    // unread row. `fail(...)` when the row is not there OR could not be read — the two are
+    // different and both mean this section cannot be audited.
+    const runRead = await db.from('audit_runs')
       .select('kind, template_lines, previous_run_id, template_document_id').eq('id', sec.run_id).maybeSingle()
+    if (runRead.error) return await fail(`This audit's own row could not be read: ${runRead.error.message}`)
+    const runRow = runRead.data
+    if (!runRow) return await fail('This audit\'s own row is no longer there, so the part could not be run.')
     const isTemplate = runRow?.kind === 'template'
 
     const built = await buildAuditInput(db, sec.company_id, isTemplate ? '*' : sec.title,
@@ -480,9 +490,13 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     let aiCallId: string | null = null
     for (let i = 0; i < 5 && !aiCallId; i++) {
       if (i) await new Promise((r) => setTimeout(r, 250))
-      const { data: call } = await db.from('ai_calls')
+      // The LEDGER POLL is deliberately tolerant — "a missing link loses the receipt, never the
+      // answer" — but a failed read is now SAID, so a receipt lost to a broken query is not
+      // indistinguishable from one the write had not landed yet (E4).
+      const { data: call, error: callErr } = await db.from('ai_calls')
         .select('id').eq('company_id', sec.company_id).eq('task', 'audit')
         .gte('created_at', startedAt).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (callErr) console.warn(`audit section ${sectionId}: the ledger row could not be looked up: ${callErr.message}`)
       aiCallId = call?.id ?? null
     }
 
@@ -578,7 +592,14 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       }
     }
 
-    await db.from('audit_sections').update({
+    // *** O3 (fix list §4, Job E4): THE "DONE" WRITE IS CHECKED. ***
+    // It was unchecked. A failure left the section saying **running** with its findings already
+    // inserted and shown — so the stuck-row recovery picked it up fifteen minutes later, re-ran it,
+    // and INSERTED A SECOND SET of the same findings. The report then showed every finding twice,
+    // and the duplicate pass (`collapseAgainstEarlier`) cannot help: it collapses across sections,
+    // not across two runs of one section. `fail(...)` instead, which marks the section
+    // `could_not_complete` with a reason a person can read and offers Run again.
+    const { error: doneErr } = await db.from('audit_sections').update({
       status: 'done', could_not_complete_reason: null,
       finished_at: new Date().toISOString(),
       model, prompt_sha256: promptSha, input_sha256: built.sha256, ai_call_id: aiCallId,
@@ -586,6 +607,9 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       handles: built.input.handles,
       documents_read: readIds, documents_held_unread: unreadIds,
     }).eq('id', sectionId)
+    if (doneErr) {
+      return await fail(`The audit finished but its own row would not save: ${doneErr.message}`)
+    }
 
     // *** AND ONLY NOW ARE THE PREVIOUS RUN'S UNCLAIMED FINDINGS CLOSED *** (A1 fault 4). Every
     // step that could throw has succeeded and the section is done, so nothing is closed by a
@@ -955,10 +979,13 @@ async function previousOpenFindings(db: Db, companyId: string, previousRunId: st
 
   // Only the sections of the previous run that were about THIS agency: a DEQ section must not be
   // asked to match an OSHA finding.
-  const { data: secs } = await db.from('audit_sections')
-    .select('id, title').eq('company_id', companyId).eq('run_id', previousRunId)
-  const mine = new Set((secs ?? []).filter((s: { title: string }) => s.title === agency)
-    .map((s: { id: string }) => s.id))
+  // Checked (E4): an empty list here means NONE of the previous run's findings belongs to this
+  // agency, so the matcher is given nothing to carry — and A1's closing then has nothing to claim.
+  // The read above already throws; this one decided which of its rows counted.
+  const secs = mustRows<{ id: string; title: string }>("the previous audit's parts",
+    await db.from('audit_sections')
+      .select('id, title').eq('company_id', companyId).eq('run_id', previousRunId))
+  const mine = new Set(secs.filter((s) => s.title === agency).map((s) => s.id))
 
   return (data ?? []).filter((f: { section_id: string }) => mine.has(f.section_id))
     .map((f: { id: string; title: string; word: string | null; kind: string }, i: number) => ({
@@ -1124,7 +1151,11 @@ export async function finishRunIfDone(db: Db, runId: string):
     // THE READING THAT COULD READ IT (§185a, A3e). `is_current` would date this audit to a reading
     // that read nothing — "your documents as they stood on <today>" when today's attempt failed is a
     // sentence that is simply untrue, and it is printed at the top of the report and in the email.
-    const { data: runCo } = await db.from('audit_runs').select('company_id').eq('id', runId).maybeSingle()
+    // Checked (E4): with no company the readable readings are not looked up at all, so
+    // `readings_as_of` lands null and the report and the email drop "your documents as they stood
+    // on <date>" — a missing sentence on a record somebody files.
+    const runCo = mustRow<{ company_id: string }>('this audit', await db.from('audit_runs')
+      .select('company_id').eq('id', runId).maybeSingle())
     const readableIds = runCo?.company_id
       ? await readableScanIds(db, runCo.company_id as string, readIds) : []
     const { data: newest } = readableIds.length
@@ -1149,7 +1180,12 @@ export async function finishRunIfDone(db: Db, runId: string):
 
 /** Every document any section of this run recorded as read, deduplicated. */
 async function sectionDocumentIds(db: Db, runId: string): Promise<string[]> {
-  const { data } = await db.from('audit_sections').select('documents_read').eq('run_id', runId)
+  // Checked (E4): this feeds `readings_as_of`, which the report and the email print as "your
+  // documents as they stood on <date>". A failed read made that date null, which the frame then
+  // leaves out — a missing sentence rather than a wrong one, but the run is marked done either way
+  // and nothing would ever put it back.
+  const { data, error } = await db.from('audit_sections').select('documents_read').eq('run_id', runId)
+  if (error) throw new Error(`sectionDocumentIds: ${error.message}`)
   const rows = (data ?? []) as Array<{ documents_read: string[] | null }>
   return [...new Set(rows.flatMap((s) => s.documents_read ?? []))]
 }
@@ -1288,12 +1324,21 @@ async function collapseAgainstEarlier(
  * the banner and the email cannot disagree.
  */
 export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
-  const [{ data: rows }, { data: secs }, runRes] = await Promise.all([
+  const [findingsRes, sectionsRes, runRes] = await Promise.all([
     db.from('audit_findings').select('title, kind, word, status, passed, document_id, same_as')
       .eq('run_id', runId).order('ordinal'),
     db.from('audit_sections').select('title, status').eq('run_id', runId).order('ordinal'),
     db.from('audit_runs').select('previous_run_id, summary').eq('id', runId).maybeSingle(),
   ])
+  // *** A8: AN ALL-ZERO SUMMARY, STORED FOR GOOD, AND EMAILED AS "NOTHING NEEDS YOU." ***
+  // (root R2, Job E4.) Both of these were `{ data: … }` with no error. A failed FINDINGS read gave
+  // every count 0 and an empty `attention` list; `finishRunIfDone` then WROTE that over the run's
+  // summary — nothing recomputes it — and `notifyRun` emailed the result. A failed SECTIONS read
+  // gave `sections: 0, sections_done: 0, could_not_complete: 0`, which is A9's subject reading
+  // "nothing needs you" from a different direction. `mustRows` throws, the run stays unfinished,
+  // and the recovery re-runs it.
+  const rows = mustRows<Record<string, unknown>>("this audit's findings", findingsRes)
+  const secs = mustRows<{ title: string; status: string }>("this audit's parts", sectionsRes)
   // *** A2, Job E: THIS READ IS THE ONE THAT CARRIES THE RUN'S OWN WORDS FORWARD. ***
   // The note ("this checklist names somebody else"), the extraction's receipt, and the lists of
   // words a rule reshaped or refused exist nowhere else — see the four `run?.summary` reads at the
@@ -1310,11 +1355,14 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
   const sections = secs ?? []
 
   const titleById = new Map<string, string>()
-  const docIds = [...new Set(f.map((r: { document_id: string | null }) => r.document_id).filter(Boolean))]
+  const docIds = [...new Set(f.map((r) => r.document_id as string | null).filter(Boolean))]
   if (docIds.length) {
-    const { data: docs } = await db.from('document_index_v')
-      .select('document_id, title, file_name').in('document_id', docIds)
-    for (const d of docs ?? []) titleById.set(d.document_id, d.title || d.file_name)
+    // Checked (E4): a failed read here leaves `attention`'s rows with `document: null`, so the
+    // email and the report name a finding with no document beside it — "we found this somewhere".
+    const docs = mustRows<{ document_id: string; title: string | null; file_name: string | null }>(
+      'the titles of your documents', await db.from('document_index_v')
+        .select('document_id, title, file_name').in('document_id', docIds))
+    for (const d of docs) titleById.set(d.document_id, (d.title || d.file_name) ?? '')
   }
 
   const count = (p: (r: Record<string, unknown>) => boolean) => f.filter(p).length

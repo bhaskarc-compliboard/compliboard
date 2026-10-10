@@ -17,6 +17,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { mustRow } from '@/lib/mustRead'
 
 /** The four words that mean a person has something to do. `on_file` is not one of them. */
 const NEEDS_PERSON = new Set(['nothing_on_file', 'stale', 'not_a_document_question'])
@@ -32,8 +33,9 @@ export async function POST(request: NextRequest) {
     const only: string[] = Array.isArray(body?.finding_ids) ? body.finding_ids.map(String) : []
     if (!runId) return NextResponse.json({ error: 'Give a run_id.' }, { status: 400 })
 
-    const { data: run } = await db.from('audit_runs')
-      .select('id, agency_label, finished_at, created_at').eq('id', runId).maybeSingle()
+    // A15 (Job E4), as above.
+    const run = mustRow<Record<string, unknown>>('that audit', await db.from('audit_runs')
+      .select('id, agency_label, finished_at, created_at').eq('id', runId).maybeSingle())
     if (!run) return NextResponse.json({ error: 'That audit was not found.' }, { status: 404 })
 
     let q = db.from('audit_findings')

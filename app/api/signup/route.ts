@@ -34,6 +34,31 @@ export async function POST(request: NextRequest) {
     if (authError) throw authError
     if (!authData.user) throw new Error('Signup failed')
 
+    /**
+     * *** O5 (fix list §4, Job E4): THERE WAS NO WAY BACK. ***
+     *
+     * The login is created first, then the company, then the profile — and if either of the last
+     * two failed, the login was left behind with **no company and no profile**. `requireCompany`
+     * finds no `profiles` row for it, so the person can sign in and reach nothing; and signing up
+     * again answers **"already registered"**, because the login exists. A dead end, from one
+     * refused insert, with no way out that does not involve us.
+     *
+     * The order cannot be changed — `profiles.id` IS the login's id, so the login must exist
+     * first — so what is added is the way back: each failure undoes what this request made, newest
+     * first, and the person is told to try again. `auth.admin.deleteUser` is the one call that can,
+     * and it is the same call `/api/account` DELETE uses (§3.6's named-statement rule).
+     *
+     * An undo that itself fails is LOUD: the half-made account is named in the log with both ids,
+     * because that is the one case somebody has to clear by hand.
+     */
+    const undoLogin = async (why: string) => {
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(authData.user!.id)
+      if (error) {
+        console.error(`SIGNUP LEFT A LOGIN WITH NO COMPANY — clear it by hand: `
+          + `user ${authData.user!.id} (${email}). ${why}. The undo also failed: ${error.message}`)
+      }
+    }
+
     const { data: companyData, error: companyError } = await supabaseAdmin
       .from('companies')
       .insert({
@@ -52,12 +77,25 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single()
-    if (companyError) throw companyError
+    if (companyError) {
+      await undoLogin(`the company row was refused: ${companyError.message}`)
+      throw companyError
+    }
 
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({ id: authData.user.id, company_id: companyData.id, full_name: '' })
-    if (profileError) throw profileError
+    if (profileError) {
+      // The company row goes too: nobody is in it, and a company with no profile is a row that
+      // every per-company sweep would pick up for ever.
+      const { error: coErr } = await supabaseAdmin.from('companies').delete().eq('id', companyData.id)
+      if (coErr) {
+        console.error(`SIGNUP LEFT AN EMPTY COMPANY — clear it by hand: company ${companyData.id} `
+          + `(${companyName}). ${coErr.message}`)
+      }
+      await undoLogin(`the profile was refused: ${profileError.message}`)
+      throw profileError
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

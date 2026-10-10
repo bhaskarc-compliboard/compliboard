@@ -44,6 +44,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { mustRow, mustRows } from '@/lib/mustRead'
 // The question lines, in one place — the sidebar badge counts the lines the Company information page
 // and a badge computed from anything else promises a different amount of work from the one on
 // screen. lib/confirmationQueue.ts says why that is a file.
@@ -71,21 +72,23 @@ export async function GET(request: NextRequest) {
     if (!authed.ok) return authed.response
     const { companyId, db } = authed.auth
 
-    const { data: proposals } = await db.from('fact_proposals')
+    // *** D15 (root R2, Job E4): A FAILED READ MADE THE QUEUE EMPTY AND THE BADGE VANISH. ***
+    // Unchecked, this returned `count: 0` and no keys, so the sidebar badge disappeared and the
+    // page said there was nothing to confirm — about a company with twelve readings waiting. The
+    // badge going missing is the quiet half: nobody looks for a queue they are not told about.
+    const rows = mustRows<Row>('the answers waiting for you', await db.from('fact_proposals')
       .select('*').eq('company_id', companyId).eq('status', 'proposed')
-      .order('created_at', { ascending: false }).order('id', { ascending: false })
-
-    const rows = (proposals ?? []) as Row[]
+      .order('created_at', { ascending: false }).order('id', { ascending: false }))
     const docIds = [...new Set(rows.map((r) => r.document_id).filter(Boolean))]
     const topicIds = [...new Set(rows.map((r) => r.topic_id).filter(Boolean))]
 
     const [docs, topics, switches, sites] = await Promise.all([
       docIds.length
         ? db.from('document_index_v').select('document_id, title').in('document_id', docIds)
-        : { data: [] },
+        : { data: [], error: null },
       topicIds.length
         ? db.from('topics').select('id, title').in('id', topicIds)
-        : { data: [] },
+        : { data: [], error: null },
       // Which keys name a switch decides where a confirmation goes, and the page says so on the
       // row rather than surprising somebody after they click.
       db.from('switches').select('id').in('id', [...new Set(rows.map((r) => r.switch_key))]),
@@ -93,10 +96,15 @@ export async function GET(request: NextRequest) {
       // that feeds a rendering.
       db.from('entities').select('id, name').eq('company_id', companyId).order('name'),
     ])
-    const docTitle = Object.fromEntries((docs.data ?? []).map((d: Row) => [d.document_id, d.title]))
-    const topicTitle = Object.fromEntries((topics.data ?? []).map((t: Row) => [t.id, t.title]))
-    const isSwitch = new Set((switches.data ?? []).map((s: Row) => s.id))
-    const siteName = Object.fromEntries((sites.data ?? []).map((e: Row) => [e.id, e.name]))
+    // All four checked (D15). `isSwitch` is the one that changes what a press DOES: a key that
+    // names a switch goes through `/api/switches/answer` and recomputes obligations, and a key that
+    // does not becomes a plain company fact. A failed read made every key look like the second
+    // kind, so the obligation engine never saw the answer and the question simply disappeared —
+    // which is D8, from the other end.
+    const docTitle = Object.fromEntries(mustRows<Row>('your documents', docs).map((d) => [d.document_id, d.title]))
+    const topicTitle = Object.fromEntries(mustRows<Row>('your conversations', topics).map((t) => [t.id, t.title]))
+    const isSwitch = new Set(mustRows<Row>('the facts we track', switches).map((s) => s.id))
+    const siteName = Object.fromEntries(mustRows<Row>('your sites', sites).map((e) => [e.id, e.name]))
 
     // ---- one entry per key, every proposal under it as a source ----
     const byKey = new Map<string, Row[]>()
@@ -264,13 +272,15 @@ export async function POST(request: NextRequest) {
     // quote the person is not looking at.
     let group: Row[] = []
     if (key) {
-      const { data } = await db.from('fact_proposals')
+      // Checked (E4): an empty group below answers 404, which would tell a person the answer they
+      // are looking at is not there — a claim about their own data, made from a failed read.
+      group = mustRows<Row>('the answers under this question', await db.from('fact_proposals')
         .select('*').eq('company_id', companyId).eq('switch_key', key).eq('status', 'proposed')
-        .order('created_at', { ascending: false })
-      group = (data ?? []) as Row[]
+        .order('created_at', { ascending: false }))
     } else {
-      const { data } = await db.from('fact_proposals').select('*').eq('id', proposalId).maybeSingle()
-      if (data) group = [data as Row]
+      const one = mustRow<Row>('that answer',
+        await db.from('fact_proposals').select('*').eq('id', proposalId).maybeSingle())
+      if (one) group = [one]
     }
     if (!group.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -310,8 +320,14 @@ export async function POST(request: NextRequest) {
       }, { status: 409 })
     }
 
-    const { data: sw } = await db.from('switches')
-      .select('id, scope, value_type, allowed_values').eq('id', settledKey).maybeSingle()
+    // *** D8 (root R2, Job E4): A FAILED SWITCH LOOKUP TURNED AN ANSWER INTO A PLAIN FACT. ***
+    // Unchecked, `sw` was null and the `else` branch below wrote the answer into `company_facts`
+    // instead of through `/api/switches/answer` — so the determination and the switch row were
+    // never written, **the obligation engine never saw the answer**, and the question vanished from
+    // the queue without ever having been settled. The person answered; nothing moved.
+    const sw = mustRow<{ id: string; scope: string; value_type: string; allowed_values: string[] | null }>(
+      'the question this answers', await db.from('switches')
+        .select('id, scope, value_type, allowed_values').eq('id', settledKey).maybeSingle())
 
     if (sw) {
       // THE EXISTING DECLARED-FACT PATH, NOT A COPY OF IT. `/api/switches/answer` writes the

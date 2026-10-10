@@ -39,6 +39,19 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
       }, { status: 400 })
     }
 
+    // *** O3 (fix list §4, Job E4): THIS SECTION'S OLD ROWS GO FIRST. ***
+    // `runSection` inserts findings BEFORE matching and collapsing, so a section that failed after
+    // the insert left its rows in the table, showing on the report. Running it again inserted a
+    // SECOND set, and the duplicate pass cannot help: it collapses across sections, not across two
+    // attempts at one. So the attempt being replaced is cleared before the section is re-queued —
+    // the rows belong to an attempt that did not finish, and nothing else points at them.
+    //
+    // Deleted rather than closed, deliberately: `closed` is the history of a finding that WAS
+    // raised and then was not (§3.2), and these were never a finished answer about anything.
+    const { error: oldRows } = await supabaseAdmin.from('audit_findings')
+      .delete().eq('section_id', sid).eq('run_id', id)
+    if (oldRows) throw oldRows
+
     // The reason is cleared with the status, because 058 refuses a queued section that carries one —
     // the constraint is what makes "a reason means it failed" true rather than hoped for.
     const { data: back, error } = await supabaseAdmin.from('audit_sections')

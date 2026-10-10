@@ -28,6 +28,8 @@ import { fromUserAnswer } from '@/lib/switchDetermination'
 import { newlyUnblocked, establishedFrom, type SwitchRow, type Established } from '@/lib/switchAsk'
 import { switchesIn, type Expression } from '@/lib/appliesExpression'
 import { writeObligations } from '@/lib/obligationWriter'
+import { mustRow, mustRows } from '@/lib/mustRead'
+import type { SwitchValueType } from '@/lib/resolve'
 
 export async function POST(request: NextRequest) {
   const authed = await requireCompany(request)
@@ -46,10 +48,13 @@ export async function POST(request: NextRequest) {
     // at read time in `coerceFact` — one place, not two (§43).
     const value = String(rawValue)
 
-    const { data: sw } = await db
+    // A15's shape (E4): a failed read answering "that is not a question we track" is a claim.
+    const sw = mustRow<{ id: string; scope: string; value_type: string
+                         allowed_values: string[] | null; question_plain: string | null }>(
+      'the question being answered', await db
       .from('switches')
       .select('id, scope, value_type, allowed_values, question_plain, determination_source, depends_on_switch, depends_on_value')
-      .eq('id', switchId).maybeSingle()
+      .eq('id', switchId).maybeSingle())
     if (!sw) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     // --- the two refusals, both before any write ---
@@ -62,8 +67,8 @@ export async function POST(request: NextRequest) {
         { error: 'This question is about one site. Tell us which one.' }, { status: 400 })
     }
     if (entityId) {
-      const { data: site } = await db
-        .from('entities').select('id').eq('id', entityId).eq('company_id', companyId).maybeSingle()
+      const site = mustRow<{ id: string }>('that site', await db
+        .from('entities').select('id').eq('id', entityId).eq('company_id', companyId).maybeSingle())
       if (!site) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
     if (sw.value_type === 'enum' && (sw.allowed_values ?? []).length > 0
@@ -73,13 +78,22 @@ export async function POST(request: NextRequest) {
     }
 
     // --- what was true before, for the delta and for §49's overwrite history ---
-    const { data: beforeRows } = await db
-      .from('company_switches').select('switch_id, entity_id, value, state').eq('company_id', companyId)
-    const { data: allSwitches } = await db.from('switches').select('id, scope, value_type, allowed_values, question_plain, determination_source, depends_on_switch, depends_on_value')
-    const valueTypeOf = Object.fromEntries((allSwitches ?? []).map((x) => [x.id, x.value_type]))
+    // *** W8 (root R2, Job E4): THE OVERWRITE HISTORY IS WRITTEN FROM THIS READ. ***
+    // Unchecked, a failed read gave no `priorRow`, so `fromUserAnswer` recorded the answer as if
+    // nothing had been there before — and §49's history of "it used to say 42, a person changed it
+    // to 38" was lost, silently, on the one write that is supposed to preserve it. The `switches`
+    // read matters as much: with no value types, `establishedFrom` sees nothing as established, so
+    // `newlyUnblocked` tells the person their answer unlocked nothing.
+    const beforeRows = mustRows<{ switch_id: string; entity_id: string | null; value: string | null; state: string }>(
+      'the facts you have told us', await db
+        .from('company_switches').select('switch_id, entity_id, value, state').eq('company_id', companyId))
+    const allSwitches = mustRows<Record<string, unknown>>('the facts we track',
+      await db.from('switches').select('id, scope, value_type, allowed_values, question_plain, determination_source, depends_on_switch, depends_on_value'))
+    const valueTypeOf = Object.fromEntries(
+      allSwitches.map((x) => [x.id as string, x.value_type as SwitchValueType]))
     // Same one definition as the ask route and `splitFacts` — §43.
-    const before: Established = establishedFrom(beforeRows ?? [], valueTypeOf)
-    const priorRow = (beforeRows ?? []).find(
+    const before: Established = establishedFrom(beforeRows, valueTypeOf)
+    const priorRow = beforeRows.find(
       (r) => r.switch_id === switchId && (r.entity_id ?? null) === entityId)
 
     const det = fromUserAnswer(switchId, value, sw.question_plain ?? switchId,
@@ -113,8 +127,10 @@ export async function POST(request: NextRequest) {
     const after: Established = { ...before }
     after[entityId ? `${switchId}@${entityId}` : switchId] = value
 
-    const { data: obsBefore } = await db
-      .from('obligations').select('status').eq('company_id', companyId).is('applicable_to', null)
+    // Checked (E4): these two counts are shown to the person as "what your answer moved", and a
+    // failed BEFORE read makes every status look newly opened.
+    const obsBefore = mustRows<{ status: string }>('your current requirements', await db
+      .from('obligations').select('status').eq('company_id', companyId).is('applicable_to', null))
     const countBy = (rows: Array<{ status: string }> | null) => {
       const o: Record<string, number> = {}
       for (const r of rows ?? []) o[r.status] = (o[r.status] ?? 0) + 1
@@ -126,14 +142,14 @@ export async function POST(request: NextRequest) {
     const statusAfter = countBy(written.obligations.map((o) => ({ status: o.status })))
 
     // --- what this answer unlocked. ONE LEVEL, never a cascade (§54) ---
-    const { data: reqs } = await db
-      .from('requirement_templates').select('id, applies_expression').is('effective_to', null)
-    const requirementSwitches = (reqs ?? []).map((r) => ({
+    const reqs = mustRows<{ id: string; applies_expression: unknown }>('the requirement library',
+      await db.from('requirement_templates').select('id, applies_expression').is('effective_to', null))
+    const requirementSwitches = reqs.map((r) => ({
       requirementId: r.id,
       switchIds: r.applies_expression ? switchesIn(r.applies_expression as unknown as Expression) : [],
     }))
     const unblocked = newlyUnblocked(
-      (allSwitches ?? []) as SwitchRow[], before, after, requirementSwitches, entityId)
+      allSwitches as unknown as SwitchRow[], before, after, requirementSwitches, entityId)
 
     return NextResponse.json({
       written: true,

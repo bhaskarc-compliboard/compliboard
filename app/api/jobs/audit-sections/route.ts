@@ -19,6 +19,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { supabaseAdmin } from '@/lib/auth'
+import { mustRows } from '@/lib/mustRead'
 import { requireCronSecret } from '@/lib/jobAuth'
 // A ROW ONLY WHEN THERE WAS WORK OR AN ERROR — not one every five minutes saying nothing (`lib/jobRun.ts`).
 import { lazyJobRun } from '@/lib/jobRun'
@@ -72,16 +73,22 @@ export async function sweep() {
   try {
     // ---- recover anything abandoned, before anything else ----
     const stuckBefore = new Date(Date.now() - STUCK_AFTER_MS).toISOString()
-    const { data: stuck } = await supabaseAdmin.from('audit_sections')
-      .select('id').eq('status', 'running').lt('claimed_at', stuckBefore)
-    if (stuck?.length) await run.open()
-    for (const s of (stuck ?? []) as Array<{ id: string }>) {
+    // *** S4 (root R2, Job E4): "NO WORK" AND "THE SWEEP IS BROKEN" LOOKED IDENTICAL. ***
+    // Every read in this loop was `{ data: … }`. A failure anywhere made the sweep finish green
+    // with `companies: 0` — and `lib/jobRun.ts` writes NO ROW for a run that found nothing and
+    // errored nothing, so a sweep broken for days left no trace at all. That silence is what
+    // `job_runs` exists to prevent. Thrown, so the catch records one whole row with the error.
+    const stuck = mustRows<{ id: string }>('the audits that stalled', await supabaseAdmin
+      .from('audit_sections').select('id').eq('status', 'running').lt('claimed_at', stuckBefore))
+    if (stuck.length) await run.open()
+    for (const s of stuck) {
       // Guarded on the claim still being old, so a run that picked it up between the SELECT and
       // the UPDATE is not robbed of it (§4).
-      const { data: back } = await supabaseAdmin.from('audit_sections')
-        .update({ status: 'queued', claimed_at: null })
-        .eq('id', s.id).eq('status', 'running').lt('claimed_at', stuckBefore).select('id')
-      if (back?.length) recovered++
+      const back = mustRows<{ id: string }>('that part of the audit',
+        await supabaseAdmin.from('audit_sections')
+          .update({ status: 'queued', claimed_at: null })
+          .eq('id', s.id).eq('status', 'running').lt('claimed_at', stuckBefore).select('id'))
+      if (back.length) recovered++
     }
 
     for (;;) {
@@ -91,14 +98,16 @@ export async function sweep() {
       // audit started at nine finishes before one started at ten. Ordered by the RUN's creation,
       // not the section's, because sections of one run are written in one statement and share a
       // timestamp — ordering on that would be arbitrary within a run.
-      const { data: nextRuns } = await supabaseAdmin.from('audit_runs')
-        .select('id, company_id, created_at').in('status', ['queued', 'running'])
-        .order('created_at', { ascending: true }).limit(50)
+      const nextRuns = mustRows<{ id: string; company_id: string; created_at: string }>(
+        'the audits waiting to run', await supabaseAdmin.from('audit_runs')
+          .select('id, company_id, created_at').in('status', ['queued', 'running'])
+          .order('created_at', { ascending: true }).limit(50))
       let companyId: string | null = null
-      for (const r of (nextRuns ?? []) as Array<{ id: string; company_id: string }>) {
-        const { data: q } = await supabaseAdmin.from('audit_sections')
-          .select('id').eq('run_id', r.id).eq('status', 'queued').is('claimed_at', null).limit(1)
-        if (q?.length) { companyId = r.company_id; break }
+      for (const r of nextRuns) {
+        const q = mustRows<{ id: string }>('the parts waiting on that audit', await supabaseAdmin
+          .from('audit_sections')
+          .select('id').eq('run_id', r.id).eq('status', 'queued').is('claimed_at', null).limit(1))
+        if (q.length) { companyId = r.company_id; break }
       }
       if (!companyId) break
 
@@ -111,20 +120,23 @@ export async function sweep() {
       // "running" on four rows when one is running and three are waiting — the product describing
       // work that is not happening. `runSection` sets `running` on the one it is actually doing.
       const nowIso = new Date().toISOString()
-      const { data: claimed } = await supabaseAdmin.from('audit_sections')
-        .update({ claimed_at: nowIso })
-        .eq('company_id', companyId).eq('status', 'queued').is('claimed_at', null)
-        .select('id, run_id, ordinal')
-      const queue = ((claimed ?? []) as Array<{ id: string; run_id: string; ordinal: number }>)
+      // The CLAIM's own result: an empty list here means another run took them, which `continue`
+      // handles — a failed write must not look like that, or this loop spins on one company.
+      const queue = mustRows<{ id: string; run_id: string; ordinal: number }>(
+        'the parts this run claimed', await supabaseAdmin.from('audit_sections')
+          .update({ claimed_at: nowIso })
+          .eq('company_id', companyId).eq('status', 'queued').is('claimed_at', null)
+          .select('id, run_id, ordinal'))
       if (!queue.length) continue
       await run.open()   // work found: the row exists before any section runs
       companies++
 
       // Run order, then ordinal: an older run's sections before a newer run's, and within a run
       // the order they were created in. The run's own created_at decides, read once.
-      const { data: runRows } = await supabaseAdmin.from('audit_runs')
-        .select('id, created_at').in('id', [...new Set(queue.map((s) => s.run_id))])
-      const createdAt = new Map((runRows ?? []).map((r: { id: string; created_at: string }) => [r.id, r.created_at]))
+      const runRows = mustRows<{ id: string; created_at: string }>('those audits',
+        await supabaseAdmin.from('audit_runs')
+          .select('id, created_at').in('id', [...new Set(queue.map((s) => s.run_id))]))
+      const createdAt = new Map(runRows.map((r) => [r.id, r.created_at]))
       queue.sort((a, b) => (createdAt.get(a.run_id) ?? '').localeCompare(createdAt.get(b.run_id) ?? '')
         || a.ordinal - b.ordinal)
 

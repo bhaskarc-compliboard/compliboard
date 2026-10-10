@@ -12,6 +12,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
+import { mustRow, mustRows } from '@/lib/mustRead'
+import { zoneForState } from '@/lib/calendarDate'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,8 +26,14 @@ export async function GET(request: NextRequest) {
 
     // The index row carries the corrected values and the computed status; everything else hangs
     // off it. Read through `authed.db`, so another company's document is simply not there.
-    const { data: row } = await db
-      .from('document_index_v').select('*').eq('document_id', documentId).maybeSingle()
+    // *** D12 (root R2, Job E4) AND A15'S SHAPE: A DATABASE ERROR IS NOT "NOT FOUND". ***
+    // Unchecked, this answered **"Document not found"** about a document sitting on the page the
+    // person just clicked — a claim about their own data, from a failure (§5.1). And the eleven
+    // reads below were each `{ data: … }`: a failed one made a whole SECTION of the report vanish
+    // under "Needs work" with nothing to say it had, which is a report somebody may hand an
+    // inspector. All twelve are checked; the catch answers 500 and says it is our side.
+    const row = mustRow<Record<string, unknown>>('this document', await db
+      .from('document_index_v').select('*').eq('document_id', documentId).maybeSingle())
     if (!row) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
 
     // *** THE GAPS SPLIT USES THE READING THAT COULD READ IT (§185a, A3e; the owner's yes). ***
@@ -39,7 +47,7 @@ export async function GET(request: NextRequest) {
     // Ordered, every one of them. An unordered list re-shuffles when an unrelated row is
     // updated, and a report a person is reading must not rearrange itself.
     const [scan, gaps, conditions, deadlines, facts, corrections, versions, sites, labels, lists, dates] = await Promise.all([
-      scanId ? db.from('document_scans').select('*').eq('id', scanId).maybeSingle() : { data: null },
+      scanId ? db.from('document_scans').select('*').eq('id', scanId).maybeSingle() : { data: null, error: null },
       // EVERY gap row for this document, not only the current scan's. A gap from an earlier
       // reading that still carries somebody's checklist has to stay reachable — the route sorts
       // them into "now" and "from earlier readings" below.
@@ -87,7 +95,9 @@ export async function GET(request: NextRequest) {
         .not('document_deadline_id', 'is', null),
     ])
 
-    const all = versions.data ?? []
+    const all = mustRows<Record<string, unknown>>('your documents', versions) as unknown as Array<{
+      document_id: string; title: string; file_name: string; doc_date: string | null
+      uploaded_at: string; version_of: string | null; version_confirmed: boolean | null }>
     const chain = all.filter((v) =>
       v.document_id === documentId ||
       v.document_id === row.version_of ||
@@ -104,23 +114,34 @@ export async function GET(request: NextRequest) {
     // open, and a finding left open that the report does not show is a finding we have quietly
     // dropped. Superseded and dismissed rows are excluded — those were answered, one by the
     // next reading and one by a person.
-    const allGaps = (gaps.data ?? []) as Array<Record<string, unknown>>
+    const allGaps = mustRows<Record<string, unknown>>("this document's findings", gaps)
     const current = allGaps.filter((g) => g.scan_id === scanId)
-    const listedGapIds = new Set((lists.data ?? []).map((c: Record<string, unknown>) => c.document_gap_id))
+    const listRows = mustRows<Record<string, unknown>>('your checklists', lists)
+    const listedGapIds = new Set(listRows.map((c) => c.document_gap_id))
     const earlier = allGaps.filter((g) =>
       g.scan_id !== scanId && (listedGapIds.has(g.id) || g.status === 'open'))
 
+    // *** THE COMPANY'S ZONE, FOR "READ ON <DATE>" *** — B10's follow-on, Job E4. `scanned_at` is a
+    // timestamptz, so the day it falls on depends on who is looking; the drawer was formatting it in
+    // the BROWSER's zone. Sent with the report rather than fetched separately, so the drawer cannot
+    // draw a date before it knows which day it is. A failed read falls back to Pacific inside
+    // `zoneForState`, and says so.
+    const coRead = await db.from('companies').select('state').eq('id', companyId).maybeSingle()
+    if (coRead.error) console.error(`documents report: could not read the company's state: ${coRead.error.message}`)
+    const timezone = zoneForState(coRead.data?.state as string | null)
+
     return NextResponse.json({
+      timezone,
       row,
-      scan: scan.data ?? null,
+      scan: mustRow<Record<string, unknown>>('this reading', scan),
       gaps: current,
       earlierGaps: earlier,
-      conditions: conditions.data ?? [],
+      conditions: mustRows("this document's conditions", conditions),
       // The view names its key `deadline_id`; the report has always called it `id` and the drawer's
       // button sends it back as `deadline_id`. Mapped here rather than renamed in the component, so
       // the one place that knows about the view is the route that reads it.
-      deadlines: ((deadlines.data ?? []) as Array<Record<string, unknown>>).map((d) => {
-        const ev = ((dates.data ?? []) as Array<Record<string, unknown>>)
+      deadlines: mustRows<Record<string, unknown>>("this document's dates", deadlines).map((d) => {
+        const ev = mustRows<Record<string, unknown>>('your calendar', dates)
           .find((e) => e.document_deadline_id === d.deadline_id)
         return {
           id: d.deadline_id, title: d.title, due_on: d.due_on, source_line: d.source_line,
@@ -144,14 +165,14 @@ export async function GET(request: NextRequest) {
       }),
       // The date of the reading those dates came from, for the drawer's one line. Null when they are
       // the current reading's, which is every ordinary case.
-      dates_from_reading_at: ((deadlines.data ?? []) as Array<Record<string, unknown>>)
+      dates_from_reading_at: mustRows<Record<string, unknown>>("this document's dates", deadlines)
         .find((d) => d.from_an_earlier_reading === true)?.scanned_at ?? null,
-      facts: facts.data ?? [],
-      corrections: corrections.data ?? [],
+      facts: mustRows('the facts read in this document', facts),
+      corrections: mustRows('your corrections', corrections),
       versions: chain,
-      sites: sites.data ?? [],
-      labels: labels.data ?? [],
-      checklists: (lists.data ?? []).map((c: Record<string, unknown>) => {
+      sites: mustRows('your sites', sites),
+      labels: mustRows('your agencies and subjects', labels),
+      checklists: listRows.map((c) => {
         // Only the top-level items. `/api/substeps` breaks one item into children that live
         // in this same table under a `parent_item_index`, and the checklist page has always
         // counted parents only — a report saying "3 of 19" beside a page saying "3 of 7" is

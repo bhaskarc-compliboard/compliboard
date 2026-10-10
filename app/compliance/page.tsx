@@ -362,10 +362,20 @@ export default function CompliancePage() {
     if (!drawerTopicId) return
     let live = true
     ;(async () => {
-      const { count } = await supabase.from('fact_proposals')
+      // *** W9 (root R2, Job E4): A COUNT WE COULD NOT TAKE IS NOT ZERO. ***
+      // `count ?? 0` hid the facts-waiting line entirely on a failed read — and a null count comes
+      // back from PostgREST with NO error for a table that is not there, so `?? 0` covered both.
+      // `null` here means "not known" and the line is simply not drawn, which is what it already
+      // does while the count is in flight; what is new is that a FAILURE no longer renders as the
+      // claim "this conversation proposed nothing".
+      const { count, error } = await supabase.from('fact_proposals')
         .select('id', { count: 'exact', head: true })
         .eq('topic_id', drawerTopicId).eq('status', 'proposed')
-      if (live) setDrawerFacts(count ?? 0)
+      if (error || count === null) {
+        console.error('the facts waiting on this conversation could not be counted:', error?.message ?? 'no count')
+        return
+      }
+      if (live) setDrawerFacts(count)
     })()
     return () => { live = false }
   }, [drawerTopicId, supabase])

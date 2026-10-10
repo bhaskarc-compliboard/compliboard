@@ -29,6 +29,7 @@
  */
 import { createHash } from 'node:crypto'
 import { readableScans } from './readableScan.ts'
+import { mustRows } from './mustRead.ts'
 import { buildCompanyContext, siteWhere, type CompanyContextParts } from './companyContext.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,9 +116,15 @@ export interface BuiltAuditInput {
  *  rather than a guess at what an agency is called: the label is the company's own vocabulary
  *  (`company_labels`), not a canonical list, and the canonical one does not exist yet. */
 export async function auditAgenciesFor(db: Db, companyId: string): Promise<string[]> {
-  const { data } = await db.from('company_labels')
-    .select('label').eq('company_id', companyId).eq('kind', 'agency').order('label')
-  return ((data ?? []) as Array<{ label: string }>).map((l) => l.label)
+  // *** A FAILED READ IS NOT "NO AGENCIES" — fix list A11, root R2, Job E4. ***
+  // This fed two sentences, both of them statements: a specific audit refused with "None of your
+  // documents name an agency yet" (`app/api/audit-runs/route.ts`), and an "audit everything" run
+  // FINISHED, done, with "No document on file names an agency yet, so there is nothing to audit."
+  // (`lib/auditRun.ts`). A company holding eleven labels was told it had none, and the second case
+  // wrote a finished run saying so.
+  return mustRows<{ label: string }>('your agencies', await db.from('company_labels')
+    .select('label').eq('company_id', companyId).eq('kind', 'agency').order('label'))
+    .map((l) => l.label)
 }
 
 export async function buildAuditInput(
@@ -133,12 +140,15 @@ export async function buildAuditInput(
     parts: ['company', 'confirmed', 'labels', 'keys'],
   })
 
-  const { data: indexRows } = await db.from('document_index_v')
+  // *** A3: A FAILED DOCUMENT LIST BECAME "THIS COMPANY HOLDS NOTHING" *** (root R2, Job E4).
+  // Unchecked, this told the model "(none — this company holds no document any reading attributed
+  // to this agency)" and "(nothing else on file)" — then the section was saved DONE and the result
+  // emailed. The whole value of an audit is that it reasons against the artifacts; with none it is
+  // §3.3's known-bad mode, and the answer reads exactly as confidently.
+  const all = mustRows<Record<string, unknown>>('your documents', await db.from('document_index_v')
     .select('document_id, title, file_name, kind, agencies, site_name, doc_date, doc_date_kind, '
           + 'significant_date, significant_date_kind, scan_status, display_status, summary, scan_id')
-    .eq('company_id', companyId).order('title').order('document_id')
-
-  const all = (indexRows ?? []) as Array<Record<string, unknown>>
+    .eq('company_id', companyId).order('title').order('document_id'))
   // *** `'*'` MEANS EVERY DOCUMENT — Audits Run 4b. ***
   // A template audit is measured against a checklist that spans regulators (case 13's own form
   // covers the air permit, the forklifts and the extinguishers), so scoping it to one agency label
@@ -185,20 +195,20 @@ export async function buildAuditInput(
       ? db.from('document_gaps')
           .select('document_id, title, description, fix, citation, basis, ordinal')
           .in('scan_id', scanIds).eq('status', 'open').order('document_id').order('ordinal')
-      : { data: [] },
+      : { data: [], error: null },
     scanIds.length
       ? db.from('document_conditions')
           .select('document_id, condition_ref, title, evidence_expected, ordinal')
           .in('scan_id', scanIds).order('document_id').order('ordinal')
-      : { data: [] },
+      : { data: [], error: null },
     scanIds.length
       ? db.from('document_deadlines')
           .select('document_id, title, due_on, recurs')
           .in('scan_id', scanIds).order('document_id').order('title')
-      : { data: [] },
+      : { data: [], error: null },
     scanIds.length
       ? db.from('document_scans').select('document_id, expected_missing').in('id', scanIds).order('document_id')
-      : { data: [] },
+      : { data: [], error: null },
     // *** WHAT THE READING PROPOSED AND NOBODY HAS CONFIRMED — Audits Run 1b. ***
     // `status = 'proposed'` only. An `accepted` one is already in `confirmed_facts` by way of
     // `company_facts`, and a `rejected` one is a proposal a person has answered NO to — putting
@@ -210,7 +220,7 @@ export async function buildAuditInput(
           .select('document_id, switch_key, proposed_value, quote, locator, as_of')
           .eq('company_id', companyId).eq('status', 'proposed').in('document_id', docIds)
           .order('document_id').order('switch_key').order('proposed_value')
-      : { data: [] },
+      : { data: [], error: null },
   ])
 
   const by = <T extends { document_id: string }>(rows: unknown) => {
@@ -221,12 +231,22 @@ export async function buildAuditInput(
     }
     return m
   }
-  const gapsBy = by<Record<string, never> & { document_id: string }>(gaps.data)
-  const condsBy = by<Record<string, never> & { document_id: string }>(conds.data)
-  const dlsBy = by<Record<string, never> & { document_id: string }>(dls.data)
-  const propsBy = by<Record<string, never> & { document_id: string }>(props.data)
+  // *** A4: ALL FIVE EVIDENCE READS, CHECKED *** (root R2, Job E4). None of them looked at
+  // `error`. A failed GAPS read printed "WHAT THE READING FOUND WRONG WITH IT: nothing" about a
+  // document whose findings were sitting in the table — which is the sentence this whole fix list
+  // started from (Calendar A3d) in a second place. The other four dropped silently: a permit's
+  // conditions, its dates, what the reading expected and did not see, and the facts waiting to be
+  // confirmed. Each absence reads, in the block, as a document that does not say those things.
+  const gapsBy = by<Record<string, never> & { document_id: string }>(
+    mustRows("your documents' findings", gaps))
+  const condsBy = by<Record<string, never> & { document_id: string }>(
+    mustRows("your documents' conditions", conds))
+  const dlsBy = by<Record<string, never> & { document_id: string }>(
+    mustRows("your documents' dates", dls))
+  const propsBy = by<Record<string, never> & { document_id: string }>(
+    mustRows('the facts waiting to be confirmed', props))
   const expectedBy = new Map<string, AuditExpected[]>()
-  for (const s of (scans.data ?? []) as Array<Record<string, unknown>>) {
+  for (const s of mustRows<Record<string, unknown>>('what the readings expected to see', scans)) {
     const raw = Array.isArray(s.expected_missing) ? (s.expected_missing as Array<Record<string, unknown>>) : []
     expectedBy.set(s.document_id as string, raw.map((e) => ({
       title: String(e.title ?? ''), why: (e.why as string) ?? null, basis: (e.basis as string) ?? null,

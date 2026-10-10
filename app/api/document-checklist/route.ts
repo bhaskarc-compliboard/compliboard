@@ -19,6 +19,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { mustRow, mustRows } from '@/lib/mustRead'
 import { askAIJson } from '@/lib/ai'
 import { CHECKLIST_FROM_GAPS } from '@/prompts/document-checklist'
 
@@ -43,17 +44,24 @@ export async function POST(request: NextRequest) {
 
   try {
     // RLS decides visibility; another company's document is a 404, not a 403.
-    const { data: doc } = await db.from('document_index_v')
+    // A15's shape (E4): "Document not found" from a failed read is a claim about their own file.
+    const doc = mustRow<Record<string, unknown>>('that document', await db.from('document_index_v')
       .select('document_id, title, kind, agencies, site_name')
-      .eq('document_id', documentId).maybeSingle()
+      .eq('document_id', documentId).maybeSingle())
     if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
 
     let q = db.from('document_gaps')
       .select('id, ordinal, title, description, fix, citation, citation_url, locator')
       .eq('document_id', documentId).eq('status', 'open').order('ordinal')
     if (gapId) q = q.eq('id', gapId)
-    const { data: gaps } = await q
-    if (!gaps?.length) {
+    // *** D12 (root R2, Job E4): "THERE ARE NO OPEN GAPS ON THIS DOCUMENT" WHILE THE DRAWER
+    // LISTED THEM. *** Unchecked, a failed read answered 409 with that sentence — a statement about
+    // the person's own document, made from a question nobody got an answer to, and contradicted by
+    // the screen they were looking at when they pressed the button.
+    const gaps = mustRows<{ id: string; ordinal: number; title: string; description: string | null
+                            fix: string | null; citation: string | null; citation_url: string | null
+                            locator: string | null }>("this document's open findings", await q)
+    if (!gaps.length) {
       // §5.1: say what is true and what can be done, never an empty success.
       return NextResponse.json({
         error: gapId

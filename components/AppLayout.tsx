@@ -53,11 +53,15 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   const [showReferral, setShowReferral] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState('')
   const [feedbackSent, setFeedbackSent] = useState(false)
+  /** M5: the send was refused. The words stay in the box so nobody retypes them. */
+  const [feedbackFailed, setFeedbackFailed] = useState(false)
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [companyName, setCompanyName] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const [toConfirm, setToConfirm] = useState<number | null>(null)
+  /** B4: the count could not be read. Different from zero, and said rather than hidden. */
+  const [countBroke, setCountBroke] = useState(false)
 
   // Read once per page load, AND ONCE MORE WHENEVER THE PAGE SAYS THE ANSWER CHANGED.
   //
@@ -74,7 +78,13 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
     try {
       const { authHeaders } = await import('@/lib/supabase')
       const res = await fetch('/api/to-confirm', { headers: await authHeaders() })
-      if (!res.ok) return
+      // *** B4 (fix list, root R2, Job E4): A COUNT WE COULD NOT GET IS NOT A COUNT OF ZERO. ***
+      // This returned silently, so the badge kept `null` and **disappeared** — and nobody looks for
+      // a queue they are not told about. It stays at `null` on a failure, which is still "not
+      // known"; what is new is that the nav SAYS so, with a quiet dot in the badge's place, so a
+      // person can tell "nothing waiting" from "we could not look".
+      if (!res.ok) { setCountBroke(true); return }
+      setCountBroke(false)
       const j = await res.json()
       // `question_lines`, not `count` and not `key_count`: the badge has to be the number of lines
       // the Company information page actually draws, or it promises a different amount of work. The
@@ -130,12 +140,19 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   async function sendFeedback() {
     if (!feedbackMessage.trim()) return
     setFeedbackLoading(true)
+    setFeedbackFailed(false)
     try {
-      await fetch('/api/feedback', {
+      // *** M5 (Job E4): "THANK YOU" ONLY IF IT WENT. ***
+      // The answer was not read at all, so the panel thanked the person whether or not the email
+      // had been sent — and Resend returns errors rather than throwing, so even a refusal arrived
+      // here as a resolved promise. The message is KEPT in the box on a failure, so nobody has to
+      // retype what they just wrote (§5.1: say what can be done next).
+      const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: feedbackMessage }),
       })
+      if (!res.ok) { setFeedbackFailed(true); return }
       setFeedbackSent(true)
       setFeedbackMessage('')
       setTimeout(() => {
@@ -144,6 +161,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
       }, 2000)
     } catch (error) {
       console.error(error)
+      setFeedbackFailed(true)
     } finally {
       setFeedbackLoading(false)
     }
@@ -196,7 +214,12 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
               {/* A COUNT, NOT A DOT. "3" says how much work; a dot says only that something
                   happened, which is the kind of badge people learn to ignore. Nothing is shown
                   at zero — an empty queue should not ask for attention. */}
-              {item.badge === 'toConfirm' && !!toConfirm && (
+              {item.badge === 'toConfirm' && countBroke && (
+                /* B4: not a number, because we do not have one. The title is the whole sentence. */
+                <span title="We could not check what is waiting for you. Open the page to try again."
+                      className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-400">—</span>
+              )}
+              {item.badge === 'toConfirm' && !countBroke && !!toConfirm && (
                 <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{toConfirm}</span>
               )}
               {item.soon && (
@@ -267,14 +290,22 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
 
       <div className="flex flex-1">
 
-        {/* Sidebar — desktop */}
-        <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 sticky top-[57px] h-[calc(100vh-57px)]">
+        {/* Sidebar — desktop.
+            *** `no-print` — fix list 35c, Job E4, and it was MISSING FROM EVERY SECTION. ***
+            The header at `:243` carries it and this did not, so every printed page — an audit, a
+            handbook check, a document report, a calendar month — had "Dashboard · Audits ·
+            Compliance Workspace · HR Workspace · …" down its left edge, on paper somebody hands an
+            inspector. Found during Calendar B7 by rendering the page as the PRINTER sees it
+            (`npm run measure -- /calendar --print`) rather than by reading the stylesheet, and
+            checked on `/hr` as well: the same, so it was never the Calendar's. */}
+        <aside className="no-print hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 sticky top-[57px] h-[calc(100vh-57px)]">
           <SidebarContent />
         </aside>
 
-        {/* Sidebar — mobile overlay */}
+        {/* Sidebar — mobile overlay. `no-print` for the same reason: it is `fixed`, so if it
+            happens to be open when somebody prints it lands over the document. */}
         {sidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div className="no-print lg:hidden fixed inset-0 z-50 flex">
             <div className="fixed inset-0 bg-black bg-opacity-30" onClick={() => setSidebarOpen(false)} />
             <div className="relative w-64 bg-white shadow-xl">
               <SidebarContent />
@@ -322,14 +353,22 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
               <span className="text-gray-500">CompliBoard reads your documents and current regulatory sources.</span>{' '}
               It can make mistakes; check before you act. This is not legal advice.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+            {/* *** THE LINKS DO NOT PRINT; THE DISCLAIMER ABOVE DOES *** (35c, Job E4).
+                "Privacy Policy · Terms of Service · Contact" at the foot of a printed audit is
+                website furniture on a compliance record. The disclaimer is deliberately NOT marked
+                — it is the one line that matters most on paper, and the comment above says so —
+                and the copyright stays with it, because a page a company files should say whose
+                product produced it. */}
+            <div className="no-print flex flex-col sm:flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-4 text-xs text-gray-400">
                 <a href="/privacy" className="hover:text-gray-600 transition-colors">Privacy Policy</a>
                 <a href="/terms" className="hover:text-gray-600 transition-colors">Terms of Service</a>
                 <a href="mailto:hello@compliboard.com" className="hover:text-gray-600 transition-colors">Contact</a>
               </div>
-              <p className="text-xs text-gray-400">© 2026 CompliBoard LLC</p>
             </div>
+            {/* On paper, under the disclaimer. On screen it sits on the links' own row, which is
+                why it is drawn twice rather than moved: the two layouts want it in two places. */}
+            <p className="print-only text-xs text-gray-400">© 2026 CompliBoard LLC</p>
             </div>
           </footer>
         </main>
@@ -363,6 +402,12 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
                 <p className="text-sm text-gray-500 mb-3">
                   Tell us what is working, what is not, or what you wish CompliBoard did.
                 </p>
+                {feedbackFailed && (
+                  <p className="mb-3 text-sm text-[var(--amber)]">
+                    We could not send that just now — that is our side, not yours. Your words are
+                    still here; please try again.
+                  </p>
+                )}
                 <textarea
                   className="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
                   rows={5}

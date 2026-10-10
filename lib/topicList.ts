@@ -6,6 +6,7 @@
  *
  * Browser-safe: it imports a type and `LIST_CAP` only. The client is the caller's own (RLS applies).
  */
+import { mustRows } from './mustRead.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { LIST_CAP } from './listWords.ts'
 
@@ -53,12 +54,16 @@ export type TopicSection = 'workspace' | 'hr'
  * `loadTopics` made, with the section it filtered on now a parameter.
  */
 export async function readTopicList(db: SupabaseClient, section: TopicSection): Promise<TopicRow[]> {
-  const { data } = await db
+  const { data, error } = await db
     .from('topic_list_v')
     .select(TOPIC_LIST_COLUMNS)
     .eq('section', section)
     .order('last_turn_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(LIST_CAP)
-  return ((data ?? []) as unknown as TopicListRow[]).map(toTopicRow)
+  // *** W7 (root R2, Job E4): "NO CONVERSATIONS YET" ABOUT A COMPANY WITH EIGHTY-SIX. ***
+  // Unchecked, a failed read returned an empty list and BOTH the Workspace and HR drew their empty
+  // state — which is a sentence, not a blank. Thrown, so each page's own catch says it could not
+  // load; one function, both sections, because they read this one.
+  return (mustRows('your conversations', { data, error }) as unknown as TopicListRow[]).map(toTopicRow)
 }

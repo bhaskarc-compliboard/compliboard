@@ -19,6 +19,7 @@ import { READ_REASONS } from '@/lib/handbooks'
 import { hrAnswerPrompt, hrAnswerMessage } from '@/prompts/hr-answer'
 import { HR_SELECT_PROMPT, hrSelectMessage } from '@/prompts/hr-select'
 import { finishedCleanly } from '@/lib/answerShape'
+import { mustRow, mustRows } from '@/lib/mustRead'
 
 export const maxDuration = 800
 
@@ -41,7 +42,9 @@ export async function POST(request: NextRequest) {
     // A conversation being continued must be this company's, an HR one, and open. 404 for anything else,
     // so ids cannot be probed (CLAUDE.md §3.6).
     if (topicIdIn) {
-      const { data: t } = await db.from('topics').select('id, status, section').eq('id', topicIdIn).eq('company_id', companyId).maybeSingle()
+      // A15's shape (E4): a failed read answering "that conversation was not found" is a claim.
+      const t = mustRow<{ id: string; status: string; section: string }>('that conversation',
+        await db.from('topics').select('id, status, section').eq('id', topicIdIn).eq('company_id', companyId).maybeSingle())
       if (!t || t.section !== 'hr') return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
       if (t.status !== 'open') return NextResponse.json({ error: 'This topic is closed. Ask your question again and we’ll open a new one.' }, { status: 409 })
     }
@@ -86,7 +89,18 @@ export async function POST(request: NextRequest) {
           }
         }
         history = pairs
-      } catch (e) { console.error('hr answer: could not load stored turns for history:', e) }
+      } catch (e) {
+        // O9 (Job E4), the same as the workspace's: an answer that had not read the conversation
+        // was saved as the next turn of it. Refused before the model call — nothing spent, nothing
+        // written, and the person told whose problem it is. `app/api/chat/route.ts` carries the
+        // reasoning in full.
+        console.error('hr answer: could not load stored turns for history:', e)
+        return NextResponse.json({
+          error: 'We could not read the earlier messages in this conversation, so we have not '
+            + 'answered — an answer that had not read them would be a worse one. That is our side, '
+            + 'not yours. Please ask again.',
+        }, { status: 503 })
+      }
     }
     const messages: OpenMessage[] = []
     for (const h of history) {
@@ -123,12 +137,21 @@ export async function POST(request: NextRequest) {
                 catch (e) { console.error('hr answer: could not start a reading (the wait carries on):', e) }
               }
               const ids = unread.map((u) => u.id)
-              const [{ data: rows }, { data: texts }] = await Promise.all([
+              // *** O8 (fix list §4, Job E4): A FAILED READ MEANT "reload" WITH NO SLEEP. ***
+              // Both of these were `{ data: … }`. With `rows` empty, `textWaitStep` sees nothing
+              // still being read and answers `reload`; `continue` then runs the whole wait loop
+              // again **immediately**, with no `setTimeout` on that path — a tight loop against the
+              // database for up to the 800-second limit, while the person watches a spinner. Thrown,
+              // so the stream's catch shows HR's own failure line and stops.
+              const [rowsRes, textsRes] = await Promise.all([
                 db.from('handbooks').select('id, name, status, status_reason').in('id', ids),
                 db.from('handbooks').select('id').in('id', ids).not('extracted_text', 'is', null),
               ])
-              const step = textWaitStep((rows ?? []) as Array<{ id: string; name: string; status: string; status_reason: string | null }>,
-                new Set(((texts ?? []) as Array<{ id: string }>).map((r) => r.id)), waitStart, Date.now(), READ_REASONS.ours)
+              const step = textWaitStep(
+                mustRows<{ id: string; name: string; status: string; status_reason: string | null }>(
+                  'your handbooks', rowsRes),
+                new Set(mustRows<{ id: string }>('what has been read so far', textsRes).map((r) => r.id)),
+                waitStart, Date.now(), READ_REASONS.ours)
               for (const f of step.failed) if (!notRead.some((x) => x.id === f.id)) notRead.push(f)
               if (step.next === 'reload') { loaded = await loadHandbooksForAnswer(db, companyId); continue }   // text saved: carry on
               send({ type: 'waiting', words: step.words })
@@ -136,11 +159,14 @@ export async function POST(request: NextRequest) {
               await new Promise((r) => setTimeout(r, 2000))
               continue
             }
-            const { data: rows } = await db.from('handbooks')
-              .select('id, status, status_reason, page_count, outline_parts_done, outline_parts_total')
-              .in('id', loaded.waiting.map((w) => w.id))
-            const list = (rows ?? []) as Array<{ id: string; status: string; status_reason: string | null; page_count: number | null
-              outline_parts_done: number | null; outline_parts_total: number | null }>
+            // O8's second half: with `list` empty, `!still` is true and this `continue`s to a
+            // fresh `loadHandbooksForAnswer` immediately — the same tight loop, one branch over.
+            const list = mustRows<{ id: string; status: string; status_reason: string | null
+                                    page_count: number | null; outline_parts_done: number | null
+                                    outline_parts_total: number | null }>('your handbooks',
+              await db.from('handbooks')
+                .select('id, status, status_reason, page_count, outline_parts_done, outline_parts_total')
+                .in('id', loaded.waiting.map((w) => w.id)))
             const failed = list.find((r) => r.status === 'could_not_read')
             if (failed) { notAnswered(waitFailedWords(failed.status_reason ?? READ_REASONS.ours)); return }
             const still = list.find((r) => r.status !== 'read')

@@ -9,6 +9,7 @@
  *
  * No model module here: the page imports it.
  */
+import { mustRows } from './mustRead.ts'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
 
@@ -71,8 +72,14 @@ export interface RowCheckState {
 export async function loadRowChecks(db: Db, handbookIds: string[]): Promise<Record<string, RowCheckState>> {
   const out: Record<string, RowCheckState> = {}
   if (!handbookIds.length) return out
-  const { data } = await db.from('handbook_checks').select(CHECK_COLUMNS).in('handbook_id', handbookIds).order('created_at', { ascending: false })
-  const checks = (data ?? []) as CheckIn[]
+  // *** H7 (root R2, Job E4): A FAILED READ SAID "NOT CHECKED YET" ABOUT A CHECKED HANDBOOK. ***
+  // Every one of these reads was `{ data: … }`, and each absence renders as a claim: the row's line
+  // reads "Not checked yet", the drawer says the same, and `app/hr/HrWorkspace.tsx` shows
+  // "No handbooks yet" from the list's own empty state. A person looking at a handbook we checked
+  // last week is told we have never looked at it. Thrown, so the page's own catch says it could not
+  // load — which is the whole of R3's rule in one place.
+  const checks = mustRows<CheckIn>('your handbook checks',
+    await db.from('handbook_checks').select(CHECK_COLUMNS).in('handbook_id', handbookIds).order('created_at', { ascending: false }))
   const lasts: CheckIn[] = []
   for (const id of handbookIds) {
     const { open, last } = pick(checks.filter((c) => c.handbook_id === id))
@@ -81,13 +88,15 @@ export async function loadRowChecks(db: Db, handbookIds: string[]): Promise<Reco
     if (last) lasts.push(last)
   }
   if (lasts.length) {
-    const [{ data: rows }, { data: secs }] = await Promise.all([
+    const [rowsRes, secsRes] = await Promise.all([
       db.from('handbook_check_sections').select(ROW_COLUMNS).in('check_id', lasts.map((c) => c.id)),
       db.from('handbook_sections').select('id, position').in('handbook_id', lasts.map((c) => c.handbook_id)),
     ])
-    const pos = new Map(((secs ?? []) as Array<{ id: string; position: number }>).map((s) => [s.id, s.position]))
+    const rows = mustRows<RowIn & { check_id: string }>('what those checks found', rowsRes)
+    const pos = new Map(mustRows<{ id: string; position: number }>('your handbooks\' parts', secsRes)
+      .map((s) => [s.id, s.position]))
     for (const c of lasts) {
-      const mine = ((rows ?? []) as Array<RowIn & { check_id: string }>).filter((r) => r.check_id === c.id)
+      const mine = rows.filter((r) => r.check_id === c.id)
       out[c.handbook_id].last!.notChecked = partsNotChecked(checkParts(mine, (id) => pos.get(id ?? '') ?? 1e9, () => '', () => []))
     }
   }
@@ -101,15 +110,19 @@ export interface CheckView {
 
 /** For the drawer: the open check's progress, and the last finished check as its parts. */
 export async function loadCheckView(db: Db, handbookId: string): Promise<CheckView> {
-  const { data } = await db.from('handbook_checks').select(CHECK_COLUMNS).eq('handbook_id', handbookId).order('created_at', { ascending: false })
-  const { open, last } = pick((data ?? []) as CheckIn[])
+  // H7, the drawer's half.
+  const { open, last } = pick(mustRows<CheckIn>('this handbook\'s checks',
+    await db.from('handbook_checks').select(CHECK_COLUMNS).eq('handbook_id', handbookId).order('created_at', { ascending: false })))
   const openOut = open ? { done: open.done_count, total: open.section_count } : null
   if (!last) return { open: openOut, last: null }
-  const [{ data: rows }, { data: secs }, { data: finds }] = await Promise.all([
+  const [rowsRes, secsRes, findsRes] = await Promise.all([
     db.from('handbook_check_sections').select(ROW_COLUMNS).eq('check_id', last.id),
     db.from('handbook_sections').select('id, position, title').eq('handbook_id', handbookId),
     db.from('handbook_findings').select('check_section_id, title, why, what_to_change, created_at').eq('check_id', last.id).order('created_at'),
   ])
+  const rows = mustRows<RowIn>('what the check found', rowsRes)
+  const secs = mustRows<{ id: string; position: number; title: string | null }>('this handbook\'s parts', secsRes)
+  const finds = mustRows<Record<string, unknown>>('the findings of that check', findsRes)
   const sec = new Map(((secs ?? []) as Array<{ id: string; position: number; title: string | null }>).map((s) => [s.id, s]))
   const parts = checkParts((rows ?? []) as RowIn[], (id) => sec.get(id ?? '')?.position ?? 1e9,
     (id) => sec.get(id ?? '')?.title ?? 'Untitled section',
