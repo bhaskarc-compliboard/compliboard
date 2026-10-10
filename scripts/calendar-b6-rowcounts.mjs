@@ -23,12 +23,20 @@ const caller = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
 
 const SECTIONS = {
   'Calendar':            ['calendar_events', 'document_deadlines'],
-  'Documents':           ['documents', 'document_scans', 'document_gaps', 'document_batches'],
-  'Audits':              ['audit_runs', 'audit_findings', 'audit_run_sections'],
+  // `company_folders` is the folders table (fix list D3's delete). `document_corrections` carries a
+  // person's renames, which D2's prune now reads through `document_index_v`.
+  'Documents':           ['documents', 'document_scans', 'document_gaps', 'document_batches',
+                           'company_folders', 'document_corrections', 'fact_proposals', 'company_labels'],
+  // `audit_sections`, not `audit_run_sections`. The second name was wrong from B6 and nothing said
+  // so, for the same reason `topic_messages` was: a table that is not there reads as a count of
+  // zero. It printed NO TABLE from Calendar C5 and was corrected in Job E1's gate.
+  'Audits':              ['audit_runs', 'audit_findings', 'audit_sections'],
   'HR':                  ['handbooks', 'handbook_sections', 'handbook_checks', 'handbook_check_sections'],
   // `turns` is the Workspace's messages table. The name `topic_messages` was wrong from B6 and
   // nothing said so, because a missing table counted as zero.
   'Workspace':           ['topics', 'turns', 'checklists', 'checklist_items'],
+  // The requirements side, which fix list W1 writes: `obligations` is what an empty set closed.
+  'Requirements':        ['obligations', 'company_switches', 'requirement_templates', 'switches'],
   'Company information': ['companies', 'entities', 'profiles'],
   'Jobs and cost':       ['job_runs', 'ai_calls'],
 }

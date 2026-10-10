@@ -622,3 +622,124 @@ unchanged — it already sent the field. **Golden sets that would move:** the Au
 `carried` and `closed` counts can now be non-zero for an agency re-run, where before they were
 always 0; nothing is re-run here (they are paid), and this is named below under "which golden sets
 would move". No migration.
+
+---
+
+## E1's close — the cross-section gate, all eight parts
+
+Run after the last severity-1 item. Part 1 had already run after each of the seven checkpoints.
+
+| # | section | what was checked | before | after | pass |
+|---|---|---|---|---|---|
+| 1 | all | `npm run check` after every checkpoint, floor only up | 1128 | **1216** | ✓ 1144→1155→1170→1180→1197→1216 |
+| 2 | Calendar | `calendar_events`, `document_deadlines` (caller / service) | 2/3, 40/40 | 2/3, 40/40 | ✓ unchanged |
+| 2 | Documents | `documents`, `document_scans`, `document_gaps`, `document_batches` | 12/12, 14/14, 25/25, 0/0 | identical | ✓ |
+| 2 | Documents | `company_folders`, `document_corrections`, `fact_proposals`, `company_labels` | — (new to the script) | 0/0, 0/0, 54/90, 11/11 | ✓ see note |
+| 2 | Audits | `audit_runs`, `audit_findings`, **`audit_sections`** | 0/0, 0/0, 0/0 | 0/0, 0/0, 0/0 | ✓ **and the table name was wrong** |
+| 2 | HR | `handbooks`, `handbook_sections`, `handbook_checks`, `handbook_check_sections` | 1/14, 0/83, 0/31, 0/226 | identical | ✓ |
+| 2 | Workspace | `topics`, `turns`, `checklists`, `checklist_items` | 0/86, 0/221, 0/7, 0/38 | identical | ✓ |
+| 2 | Requirements | `obligations`, `company_switches`, `requirement_templates`, `switches` | — (new to the script) | 0/0, 0/16, 205/205, 95/95 | ✓ see note |
+| 2 | Company info | `companies`, `entities`, `profiles` | 1/6, 1/7, 1/5 | identical | ✓ |
+| 2 | Jobs and cost | `job_runs`, `ai_calls` | **ERR**/42, 12/359 | **ERR**/43, 12/**359** | ✓ by design; ai_calls unmoved |
+| 3 | HR, Workspace, Documents, Audits, Requirements | shared files changed, each section's free checks re-run | — | `check`, `check:schema`, `audit:data`, `mutation` | ✓ below |
+| 4 | all 8 pages | load and show their rows, by measured title, `BLOCKED` printed | — | **8/8**, `BLOCKED (0)` each | ✓ `shots/jobE-gate-*.png` |
+| 5 | all 7 cron jobs | run by hand on the isolated server; `job_runs` row written | 7× 200 | **7× 200** | ✓ |
+| 5b | Workspace, HR | **W2 end to end** through the real `/api/jobs/delete` | old rule: cleared | **skip_not_covered** | ✓ below |
+| 6 | all | every email's sender, read from the code that sends it | `emailFrom()` | `emailFrom()` | ✓ unchanged |
+| 7 | all | `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run check:live` | ok | **ok**, 62 probes | ✓ |
+| 8 | all | which golden sets would move | — | **none** | ✓ below |
+
+### Part 2's two notes
+
+**The row counts the script was not taking.** Job E reads and writes seven tables the gate's script
+did not name: `company_folders` (D3's delete), `document_corrections` (D2's renames),
+`fact_proposals` (D1), `company_labels` (D2), and `obligations` / `company_switches` /
+`requirement_templates` (W1). They are in it now, under Documents and a new Requirements section, so
+there is no "before" for them — and inventing one would be the thing this report is not for. What
+can be said: every one of Job E's own writes to staging was in a throwaway company deleted on exit
+and on a crash, and the only schema write was migration 078's column.
+
+**And the gate's own script named a table that does not exist. Again.** It listed
+`audit_run_sections`; the table is **`audit_sections`**. Since Job C that prints `NO TABLE` rather
+than a confident `0`, which is how it was caught — before C5 it would have printed `0` and the
+Audits row of three zeros in Jobs B's gate table would have been two real zeros and one blind spot.
+`topic_messages` was the same mistake in the same script. Both are now right.
+
+### Part 3 — the shared files, and each section's free checks
+
+| file Job E changed | whose shared list it is on | that section's free checks |
+|---|---|---|
+| `lib/summaryReport.ts` | HR (`TEST-AT-FINISH-LINE.md` J), Calendar (step 7) | `npm run check` — HR's and the Workspace's units green |
+| `lib/topicClaim.ts` (the quiet rule) | HR (J) | same; `tests/unit/topicClaim.test.ts` 24 tests |
+| `lib/documentScan.ts` (`saveScan`) | HR (J), Calendar (J) | same; plus `scripts/fixlist-d1-proposals.mjs` on staging |
+| `lib/auditRun.ts`, `lib/auditSummary.ts` | Audits | `npm run audit:data` — 0 failed, **4 SKIPPED and said so** |
+| `lib/companyLabels.ts` | Documents → Audits | `scripts/fixlist-d2-rename.mjs` on staging |
+| `lib/obligationWriter.ts` | Requirements | `npm run mutation` — **all nine mutations caught**, two of them by the resolver's own tests |
+| `lib/handbookSave.ts`, `lib/handbookRead.ts`, `lib/handbooks.ts`, `app/hr/HrWorkspace.tsx` | HR's own | `npm run check`; HR's units green |
+| `app/api/jobs/delete/route.ts`, `app/api/jobs/summarise/route.ts` | nightly, every section | part 5 above |
+
+`npm run check:schema` is green and prints its documented blind spot — seven `.from(variable)` call
+sites it cannot attribute to a table, one of which is Job E's own proof script. `npm run mutation`
+restored every file and the suite came back 1216/1216.
+
+### Part 5b — W2, end to end, on staging
+
+Two conversations thirteen months old, both summarised, in a throwaway company. The script **checks
+first that no real staging conversation is due** — one is past the line and holds 0 turns, so the job
+has nothing of anybody's to take; if that ever changes the script stops rather than running a
+destructive job over real fixtures to make a point.
+
+```
+the deleter's decision, read off those rows, under both rules:
+   W2 covered   old: clear              now: clear
+   W2 raced     old: clear              now: skip_not_covered
+ ✓ the OLD rule cleared the raced conversation — its three turns, one of them never summarised
+
+POST http://localhost:3998/api/jobs/delete → 200
+{"topics_cleared":1,"turns_deleted":3,"by_topic":[{"topic":"5ce40538…","turns":3}],
+ "skipped_no_summary":[],"skipped_not_covered":["6dbff7cb…"]}
+
+turns left: covered=0  raced=3
+ ✓ the COVERED conversation was cleared, as it should be
+ ✓ the RACED conversation kept all 3 turns: the summary stops before the last one
+ ✓ and the job SAYS which conversation it left, under skipped_not_covered
+ ✓ the job wrote its job_runs row, with the same counts
+```
+
+The decision is a pure function, so both rules are computed from the **same real rows** without
+reverting the code — the method `scripts/calendar-a3b-failed-reread.mjs` used for the audit block.
+
+### Part 8 — the golden sets are not re-run, and NONE would move
+
+Checked rather than asserted: `git diff --name-only 0d1f62e HEAD -- prompts/ lib/ai.ts
+lib/pipelineConfig.ts` returns **nothing**. E1 changed no prompt, no model setting and no pipeline
+switch, so no stored model output can differ. `npm run golden`, `golden:facts`, `golden:docs` and
+`golden:audit` would all land where they are.
+
+**One thing they would not catch, and it is named rather than left:** the Audits golden set's
+`carried` and `closed` counts were always 0, because O1 meant the matcher never ran. They can now be
+non-zero for an **agency** re-run. That is not a prompt change and the stored answers do not move —
+but the first real re-audit after this ships is the first time those two numbers mean anything, and
+`docs/TEST-AT-FINISH-LINE.md`'s Audits part should carry a line for it.
+
+### What the gate caught in E1
+
+1. **Two stray duplicate files** — `lib/handbookRead 2.ts` and `lib/handbookSave 2.ts`, byte-identical
+   copies swept into the W2 commit. Nothing imported them; removed in `71963a9`. Found by listing
+   every file the job had touched for part 3, not by `npm run check`, which was green throughout.
+2. **The gate's own table name** (`audit_run_sections`), above.
+3. **Seven 404s in part 5's first run.** `requireCronSecret` is deliberately opaque, so a gate run
+   with no secret in its environment looks exactly like seven broken jobs. The script now reads
+   `CRON_SECRET` out of `.env.local` and refuses to run without it.
+4. **`dry_run` was not printed.** The first version showed `calendar-month`'s counts as `sent: 1`
+   with nothing to say whether anything had been sent — and Calendar B8's slip was a gate run that
+   sent a real email. On a dry run `counts.sent` means *would have been sent*
+   (`lib/calendarNotify.ts:344` returns before `emails.send`, read to be sure). The flag is printed
+   first now.
+5. **My own W2 script read the wrong level of the job's answer** and reported two failures that were
+   not the product's: the route spreads its counts at the top level, and the script looked under
+   `json.counts`. It printed the whole answer, which is how it was caught — §9a again, in my own
+   check.
+
+**E1's spend: $0.00.** The ledger reads 359 calls / $19.09, unmoved from the start of the job,
+including the gate's own run of all seven nightly jobs.
