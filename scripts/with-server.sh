@@ -17,8 +17,16 @@ APP="$SCRATCH/app3998"
 PORT="${PORT:-3998}"
 CMD="${1:?usage: with-server.sh '<command>'}"
 
-mkdir -p "$APP"
-rsync -a --exclude .next --exclude node_modules --exclude .git --exclude shots ./ "$APP/"
+mkdir -p "${APP:?}"
+# *** --delete, OR THE COPY KEEPS FILES THE REAL TREE NO LONGER HAS. ***
+# Without it `rsync` only adds and updates. Calendar B7 hit this: the job had deleted
+# `app/api/extract-dates/route.ts` and `prompts/extract-dates.ts` (decision 17), the copy still had
+# both, and every page came back "Internal Server Error" — a failure in a tree that does not exist.
+# The excludes are repeated in --filter so --delete never touches node_modules, .next or .git in the
+# copy; `${APP:?}` refuses to expand to an empty string, because this line deletes.
+rsync -a --delete \
+  --filter='protect .next' --filter='protect node_modules' --filter='protect .git' \
+  --exclude .next --exclude node_modules --exclude .git --exclude shots ./ "${APP:?}/"
 [ -d "$APP/node_modules" ] || cp -cR node_modules "$APP/"
 
 cd "$APP"

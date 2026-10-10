@@ -231,6 +231,22 @@ not a month.
     sections are done. the whole app idea changed since that landing page was made"*). The landing page is
     rewritten as its own project once every section is done; these two images go with it.
 
+35c. **P1 · sev 3 · OPEN, PRE-EXISTING, EVERY SECTION · the app shell (ours).**
+    **Every printed page carries the left navigation and the footer links.** `app/globals.css`'s
+    `@media print` block hides only `.no-print`, and `components/AppLayout.tsx`'s sidebar is not
+    marked with it — the header at `:220` is, the sidebar is not. So a printed audit, handbook,
+    document report or calendar month has "Dashboard · Audits · Compliance Workspace · HR
+    Workspace · …" down its left edge and "Privacy Policy · Terms of Service · Contact" at the
+    bottom, on paper a person hands to an inspector.
+    **Found during Calendar B7**, by rendering the page as the PRINTER sees it rather than by
+    reading the stylesheet — `npm run measure -- /calendar --print --full --shot …`, which is what
+    `--print` was added for. Checked on `/hr` as well: **the same**, so it is not the Calendar's.
+    Evidence: `shots/calendar-jobB-board13-print.png`.
+    **Not fixed here, deliberately.** One line of CSS changes what EVERY section prints, and a
+    Calendar job is the wrong place to change Audits' and HR's printed output without their impact
+    check (§3.12). The disclaimer line in the footer is marked print-visible **on purpose**
+    (`AppLayout.tsx:298`) and must survive any fix.
+
 36. **M4 · sev 2 · · · My Account and signup (ours).** `app/signup/page.tsx:81`, `app/account/page.tsx:40`: a failed
     industry list leaves only "Don't see your industry?", so a company signs up as `other` — which drives requirements
     and every prompt. It has failed once already (11 Sep). **Fix:** check `res.ok`, show an error with retry.

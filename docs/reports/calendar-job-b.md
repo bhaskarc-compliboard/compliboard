@@ -196,3 +196,52 @@ golden set. `lib/ai.ts` shows in the changed list and its diff is **one comment*
 + * Strips markdown fences and parses. Used by the document scan (extract-dates, its other caller, was
 + * deleted in Calendar Job B); review and the
 ```
+
+## A correction to part 4, made at B7
+
+**Part 4 was first run without `--base`, so every screenshot in this job up to that point was taken
+against `http://localhost:3000` — the owner's own dev server — and not the isolated Haiku copy.**
+`scripts/measure-layout.mjs` defaults to port 3000 and `scripts/with-server.sh` exports `BASE`; the
+command has to be given it, and mine was not. Nothing was spent (the measure tool blocks every paid
+route, and `BLOCKED (0)` held throughout) and the data is the same, since a dev machine points at
+staging — but the shots were not evidence about the server they claimed to be about.
+
+**And I reported "all eight pages load" from the `BLOCKED` line without opening eight of the images.**
+That is the R2 mistake this report keeps catching in other people's code: `BLOCKED (0)` is printed
+whether the page rendered or returned a 500. Part 4 is re-run here with `--base`, and the proof is
+now the page's own measured title, not the absence of an error:
+
+```
+/compliance           "Compliance Workspace"              column 302–1202 (900)
+/hr                   "HR Workspace"                      column 302–1202 (900)
+/documents            "Documents"                         column 295–1195 (900)
+/audits               "Audits"                            column 295–1195 (900)
+/company-information  "Company information"               column 295–1195 (900)
+/dashboard            "Cascade Specialty Chemicals, LLC"  (no .print-page, as before)
+/calendar             "Calendar"                          column 302–1202 (900)
+/account              "My Account"                        (no .print-page, as before)
+```
+
+**Two things the mistake exposed, both now fixed:**
+
+1. **`scripts/with-server.sh` copied the tree without `--delete`**, so the copy kept every file this
+   job had deleted — `app/api/extract-dates/route.ts` and `prompts/extract-dates.ts` were both still
+   there. The copy was running code that no longer exists. `--delete` is now on, with `node_modules`,
+   `.next` and `.git` protected and `${APP:?}` so the path can never expand to nothing.
+2. **`npm run measure` is only against the isolated server if it is told so.** Every call in this
+   report now carries `--base "$BASE"`.
+
+> ### AND I BROKE THE OWNER'S DEV SERVER.
+> `rm -rf .next` (to clear a stale Turbopack directory that was failing `next build`) deleted the
+> build output from under the dev server running on port 3000. It has been answering **500** since.
+> It is his process, so it is not mine to restart: **`npm run dev` again and it will recompile.**
+
+## What is NOT proved
+
+- **The audit email's frame has no live data behind it.** Staging holds 0 `audit_runs`, so
+  `shots/calendar-jobB-email-audit.png` is a fixture render. The frame is shared and tested; what is
+  untested is a real audit's content flowing through it.
+- **The four emails were sent from `onboarding@resend.dev`**, Resend's test sender. Whether they
+  arrive anywhere but the Resend account's own inbox is decision 22's gate, not this job's.
+- **No email was opened in a real client.** The renders are Chromium. Outlook's Word engine is the
+  one that breaks layouts, and nothing here has been through it.

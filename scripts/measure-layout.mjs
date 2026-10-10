@@ -63,7 +63,7 @@ import { createClient } from '@supabase/supabase-js'
 const argv = process.argv.slice(2)
 let fileChooser = false
 let path = '/compliance', email = 'testcascade@example.com', width = 1280, shot = null, waitMs = 2500
-let base = 'http://localhost:3000', allow = null, logFilter = null, breakers = [], full = false
+let base = 'http://localhost:3000', allow = null, logFilter = null, breakers = [], full = false, printMedia = false
 const clicks = [], scrolls = []
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i]
@@ -71,6 +71,10 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--width') width = Number(argv[++i])
   else if (a === '--shot') shot = argv[++i]
   else if (a === '--full') full = true
+  // `--print` renders the page as the PRINTER sees it, which is the only way to check a print
+  // stylesheet without a person pressing Print and looking at a preview. Calendar board 13: the
+  // printed month is deliberately the LIST, not the grid, and nothing else shows that.
+  else if (a === '--print') printMedia = true
   else if (a === '--click') clicks.push(argv[++i])
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
@@ -368,6 +372,7 @@ try {
   if (logFilter) { console.log(`  requests matching "${logFilter}": ${seen.length}`); for (const r of seen) console.log(`    ${r.slice(0, 220)}`) }
 
   if (shot) {
+    if (printMedia) await cdp(ws, 'Emulation.setEmulatedMedia', { media: 'print' })
     // `--full` shoots the whole scrolled page rather than the viewport. Added for Calendar B4: a
     // section far down a marketing page could not be reached by `--scroll`, because it is not
     // rendered until it scrolls into view — so the anchor the scroll looks for does not exist yet.
