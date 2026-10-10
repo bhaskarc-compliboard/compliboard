@@ -413,6 +413,12 @@ the summarise, from-topic and how-to routes, and the nightly summary job (§162)
 frame, the app shell and the job routes are shared: one change there is a change in Documents, Audits and the
 workspace at once, and a report that names only its own section hides that.
 
+**4. …and since 9 October 2026 that is a RULE, not a habit: `CLAUDE.md` §3.12.** The owner's words — *"every
+change must check if other sections are getting impacted. I burnt once before"* — and the eight-part gate it
+points at (`docs/CALENDAR-PLAN.md` §2.5). Part 1 after every checkpoint, all eight at the end of a job, and the
+impact check written before the code. It also carries the rule for new code: check the error on every read, and
+never show, email or act on a failed read as "nothing" (`docs/FIX-LIST-FAILURES.md` R2 and R3).
+
 ---
 
 ## 4. The two databases

@@ -12326,6 +12326,32 @@ one line each.** The plan carries the reasoning; this is the record of what was 
 1. **One calendar, a company asset.** HR decision 29's first half restated; already true (`app/api/calendar/route.ts:74–88`).
 2. **Every date says where it came from, with a link back.** A `source` column (`document`, `conversation`, `audit`, `hand`, `handbook`), the existing `document_id` and `handbook_id`, and new `topic_id` and audit-finding links, each a composite FK on `(company_id, <id>)` with `ON DELETE SET NULL (<column>)`. `category` stays for the old rows and is not written again (B9).
 3. **Document dates go on the calendar by themselves, marked not confirmed. THIS REVERSES A STANDING RULE — see below.**
+   > **⚡ CORRECTED 9 OCTOBER 2026, DURING JOB A (`§186` item 1).** This decision's second bullet said each link is
+   > a composite FK, and the owner then asked for a CHECK requiring *the source's own link to be set*. **That CHECK
+   > was written, applied, and refused by migration 073's own verify block**, which is the reason the block exists:
+   >
+   > ```
+   > ERROR: new row for relation "calendar_events" violates check constraint
+   >        "calendar_events_source_has_its_link" (SQLSTATE 23514)
+   > Failing row contains (…, From a conversation, …, conversation, confirmed, …, conversation:keep)
+   > ```
+   >
+   > The failing statement was not an insert — it was `delete from public.topics`. **A cascaded `ON DELETE SET NULL`
+   > is a row modification, so every CHECK on the row is re-evaluated**, and the constraint therefore made it
+   > impossible to delete a conversation, a document or a handbook that any date had come from. Two of this
+   > section's own decisions collided: a date outliving its source (SET NULL) and a date always carrying its link.
+   >
+   > **What stands instead**, and it keeps the guarantee: `check (date_key like source || ':%')`. `date_key` is
+   > `not null`, written once, never updated, and already begins with the source's name — so a row cannot claim
+   > `source = 'document'` while its key says `conversation:`, and the claim survives the deletion that nulls the
+   > link column. The write-time half — "a document date must be GIVEN a document" — moved to `addDate` in
+   > `lib/calendarDates.ts`, with a unit test per source, which is what `docs/HOW-WE-BUILD.md` §3 says to do with an
+   > invariant that cannot be a constraint. The owner accepted this on 9 October and called it better than the rule
+   > as written.
+   >
+   > **For Job B:** the drawer must say in plain words when a source has since been deleted — *"The conversation this
+   > came from was deleted."* — and never show a dead link.
+
 4. **Only the current reading of the current version counts.** One view, "the current dates": the current reading of a document that no *confirmed* newer version supersedes. An unconfirmed proposed version hides nothing. Documents' report and `document_index_v` move onto it, which fixes B3. A date that stops being current is `withdrawn`, never deleted; a confirmed date stays.
 5. **A document date's source line is checked against the document** with the same `verifyQuote` gaps and facts already get (B16), and the answer is stored on the deadline row. Not found, no line, or no day → the To confirm tab only, never the month or the email.
 6. **Five states** — `not_confirmed`, `confirmed`, `done`, `rejected`, `withdrawn` — and the words on screen: Not confirmed, Passed, Done. "Not right" keeps the date as `rejected` with one line of reason, so the next reading does not add it again. Delete is for hand-added dates only, through the delete sheet, never `confirm()`.

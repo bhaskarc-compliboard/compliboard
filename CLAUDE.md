@@ -557,6 +557,41 @@ A wrong comparison direction there is silent and dangerous.
   shared pieces (the drawer, the print frame, the app shell, `lib/summaryReport.ts`, the job routes) change
   several sections at once.
 
+### 3.12 ⚡ EVERY CHANGE CHECKS WHETHER OTHER SECTIONS ARE AFFECTED — 9 October 2026
+
+**The owner's standing rule, for every chat and every section, not only the Calendar:**
+
+> **"Every change must check if other sections are getting impacted. I burnt once before."**
+
+A section is not a folder. The pieces that look local are the ones that are not: a `lib/` module three
+sections import, a view the Documents page and the Audits page both read, a shared component, a cron
+file, an email sender. **A change that is correct in the section it was made in, and wrong two
+sections away, is the most expensive kind of change this project produces**, because nothing in that
+section's own tests goes red.
+
+**The gate is the eight parts in `docs/CALENDAR-PLAN.md` §2.5.** They are written out there and are
+not copied here; in short: `npm run check` after every checkpoint with the floor only going up · row
+counts per section, before and after, as the caller AND as the service role · the shared-file lists
+(`docs/TEST-AT-FINISH-LINE.md` J parts, `docs/HANDOFF-FROM-HR.md` §6), with each affected section's
+free checks re-run · every page still loading and showing its rows, with its BLOCKED list printed ·
+the nightly jobs by hand · the emails still sending from the address they used before · `check:live`
+on 3999 · and which golden sets would move, with the reason, since they are not re-run.
+
+**Part 1 runs after every checkpoint; all eight at the end of a job.** The report carries one table:
+section · what was checked · before · after · pass, or why not.
+
+**And the impact check is written BEFORE the code**, naming every file in another section the change
+would touch (`docs/HR-PLAN.md` §2.5, `DECISIONS.md` §168). A task whose effect on another section is
+not in its plan stops before writing code.
+
+**NEW CODE CHECKS THE ERROR ON EVERY READ, and a read that failed is never shown, emailed or acted on
+as "nothing."** `docs/FIX-LIST-FAILURES.md` roots **R2** (a failed read coming back as zero rows,
+because only `data` was destructured) and **R3** (an empty list printed as a statement — "nothing",
+"none", "nothing needs you" — when the truth is "not read"). The two compound: a read fails, returns
+nothing, and the nothing is printed to a customer as a fact about their own compliance. Say
+"couldn't load" on a screen; send no email at all rather than one saying nothing is due; and record
+the failure where somebody can find it.
+
 ## 4. The worker
 
 Long-running work runs in a separate always-on Node worker, not in serverless routes:

@@ -1,6 +1,9 @@
 # The Calendar section — the plan
 
-**Version:** 4 · **Updated:** 9 October 2026: **Job E, the fix list** (§2.4, `docs/FIX-LIST-FAILURES.md`) — the
+**Version:** 5 · **Updated:** 9 October 2026, evening: **Job A done** (`a6fbbeb`→`84cae8b`, `DECISIONS.md` §186, staging
+only) and what it added — §185a (a failed reading owns its status and nothing else), §185b (the monthly email's
+launch gate), §185c (**never "overdue" or "not done" about a date**); **one shared frame for every email** and the
+brand wordmark (boards 14, 15; decision 11); Job B's scope (§2.4). Version 4: 9 October 2026: **Job E, the fix list** (§2.4, `docs/FIX-LIST-FAILURES.md`) — the
 owner asked for a full read of the code for failures that look like facts, listed now and fixed at the end so the
 calendar work is not diverted. Version 3: 9 October 2026: the owner's answers to step 3a (decisions 2 and 7); the jobs (§2.4);
 **the cross-section gate as a standing rule** (§2.5). Version 2: 9 October 2026: the boards approved by the owner (§2.2); decision 11, one link per
@@ -42,7 +45,10 @@ type, colours and fictional company.
 1. Calendar, the month · 2. List · 3. To confirm · 4. No dates yet
 5. One date from a document, not confirmed · 6. One date, confirmed and repeating · 7. Add a date · 8. Not right
 9. The Documents report's dates · 10. A summary's dates (Workspace and HR) · 11. The Audits report's dates
-12. The monthly email · 13. A printed month
+12. The monthly email, its plain-text part · 13. A printed month
+14. The monthly email in the shared frame · 15. Documents' email in the same frame — **added 9 October, evening, at
+    the owner's request** ("this does not look like coming from a very professional company"); the wordmark is the
+    owner's: no square, **Compli** in the app's green `#2F7D52`, **Board** in `#F94300`
 
 Every screen is drawn there first. A change to a screen changes its board too, so the boards keep describing the
 product (`docs/HANDOFF-FROM-HR.md` §11).
@@ -110,8 +116,13 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
 
 6. **A date's states, and the words.**
    - `not_confirmed` · `confirmed` · `done` · `rejected` · `withdrawn`, as a column with a CHECK.
-   - On screen: **Not confirmed** (grey), **Passed** (amber, a past date not done), **Done**. Withdrawn dates are not
-     shown. Never "compliant", never green for routine (`DESIGN.md` §2).
+   - On screen: **Not confirmed** (grey), **Passed** (amber: the day has gone by and nobody ticked it), **Done** (a
+     person ticked it). Withdrawn dates are not shown. Never "compliant", never green for routine (`DESIGN.md` §2).
+   - **Never "overdue" or "not done" about a date** (the owner, 9 October, `DECISIONS.md` §185c): people often do the
+     work and record it in their own calendar, not ours, so all we know is that the day has gone by. The group is
+     **"Dates that have passed"**, and where a sentence is needed: *"A gentle reminder in case any of these still need
+     attention. If they're already taken care of, you can tick them off on your CompliBoard calendar and we won't list
+     them again."* A date not in the current year shows its year.
    - **Not right** asks for one line of reason. The date is kept as `rejected` with the reason, so the next reading
      of that document does not add it again. Documents' dismiss pattern (`VISION-DOCUMENTS.md`, "Not right").
    - **Delete** is for dates added by hand, through the delete sheet (`components/Sheet.tsx`), never the browser's
@@ -168,7 +179,15 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
     - **When:** the 1st of each month, by a new cron job. The hour is set in step 8, after the nightly jobs
       (10:00 and 10:30 UTC).
     - **To:** every login at the company (B11: there is no company contact and no roles). A person can turn it off
-      on My Account, as part of My Account's own work.
+      on My Account, as part of My Account's own work — **the next section after Calendar** (the owner). Until that
+      switch exists the email does not say it can be turned off, and it reaches no real customer (§185b, beside
+      decision 22).
+    - **How it looks: the shared frame** (boards 14, 15; the owner, 9 October, evening). Every email the product sends
+      — this one, Documents' batch email, the audit-finished email, the handbook-check email — uses one frame: the
+      wordmark and the company's name, a serif title, the email's own content as rows, **one green button**, and a grey
+      footer saying why you got it. HTML and plain text are sent together, **made from one content object so they
+      cannot disagree**. Each section's words stay its own; only the frame is new, plus a "why you got this" line where
+      an email has none. One sender address for all of them (decision 22).
     - **What it says, in order:** what is due this month; what has passed and is not done; then "Found in your
       documents, not yet confirmed: N", with one link to the To confirm tab. Not-confirmed dates due this month are
       listed and marked "not confirmed". Plain text, **one link per section** (the To confirm tab; the
@@ -216,10 +235,10 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
       line and a link back, and the actions in the button vocabulary (`components/buttonStyles.ts`): Confirm, Mark
       done, Not right, Change and Delete (hand-added only), Add to Google / Outlook. A repeating date shows the next
       day it will get, and the ones done before (board 6).
-    - The month: a solid dark dot for a date on the calendar, an open grey dot for not confirmed, amber for passed and
-      not done, struck through for done. Today is a dark circle, not green. Prev, next and Today; a site filter
+    - The month: a solid dark dot for a date on the calendar, an open grey dot for not confirmed, amber for a date that
+      has passed, struck through for done. Today is a dark circle, not green. Prev, next and Today; a site filter
       (board 1).
-    - The list: "Passed, not done" first, then by month, then Later. Done dates are hidden behind "Show done (n)"
+    - The list: "Dates that have passed" first, then by month, then Later. Done dates are hidden behind "Show done (n)"
       (board 2).
     - "Add a date" follows HR's "Add a handbook" placement. The empty state is `components/Empty.tsx`.
     - Print: the month's list through the shared print frame (`lib/printFrame.ts`).
@@ -280,6 +299,7 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
 7. **Dates in Workspace and HR summaries** (decision 13). **Quality change: the prompt paragraph is shown to the
    owner first.** Workspace and HR free checks re-run; their finish-line parts gain a line. STOP.
 8. **The monthly email** (decision 11). Proved with `NOTIFY_TEST_TO`. Reaching customers waits for decision 22. STOP.
+   **Steps 3, 4, 6 and 8: DONE 9 October in Job A** (`DECISIONS.md` §186).
 9. **The dashboard's calendar part and the promise words** (decisions 18, 21). STOP.
 10. **Release** (the `docs/RELEASE.md` routine), **the morning after** (the new job's `job_runs` row on the 1st), and
     the close-out: the Calendar part of `docs/TEST-AT-FINISH-LINE.md` (A to J, with its shared files),
@@ -293,7 +313,9 @@ The steps above are the order of work. Claude Code runs them as four long jobs, 
 running report file and the stop rules of `CLAUDE.md` §9a, and each ending with the cross-section gate (§2.5):
 
 - **Job A — everything underneath the page:** steps 3b, 4, 6 and 8. Stops at its end.
-- **Job B — the page:** step 5, with the dashboard's calendar part and the promise words (step 9). Ends with
+- **Job B — the page:** step 5, with the dashboard's calendar part and the promise words (step 9), **the shared email
+  frame for all four emails** (decision 11, boards 14–15; Audits', HR's and Documents' emails change look, not words),
+  the brand wordmark's two colours into `DESIGN.md`, and the fix list's dashboard items B1–B3. Ends with
   screenshots beside each board: **the owner looks.**
 - **Job C — dates in the Workspace and HR summaries:** step 7, after the owner says yes to the prompt paragraph.
 - **Job D — release and close-out:** step 10.
@@ -379,3 +401,5 @@ it; HR's summary prompt copies two of its paragraphs), `lib/documentScan.ts`, `d
 - Whether account export should include `document_deadlines` (`CALENDAR-MACHINERY.md` A9, HYPOTHESIS that leaving
   them out is deliberate). The owner's call.
 - What "Add a date" asks for besides a title and a day: site, how often, a note.
+- **The sender address** for every email (boards 14–15 show `updates@compliboard.com`), and whether the footer carries a
+  full business address. The owner's, with decision 22.
