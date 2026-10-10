@@ -1177,3 +1177,388 @@ the sweep's filter inside `document-scan/route.ts` made it report two columns `c
 have. A false report, and a fair one — the comment is reworded and says so.
 
 **Floor 1289 → 1335. No prompt changed. Spend: $0.00.**
+
+---
+
+## E6 — the two prompt wordings, DRAFTED AND NOT APPLIED
+
+**Nothing in this section is in the code.** `prompts/` is untouched by the whole job
+(`git diff --name-only 0d1f62e HEAD -- prompts/` is empty), which is also why no golden set would
+move. These wait for the owner's yes, per §5 answer 3 and `CLAUDE.md` §3.1.
+
+There are **three**, not two: the list names the A-prompt and D4, and E2's H4 fix created a third
+by making a case reachable that was previously a refusal. Each is given as the exact words now, the
+exact words proposed, and what else would have to change with them.
+
+---
+
+### Wording 1 · the A-prompt — a document with no readable reading says "nothing"
+
+**Where:** `lib/audit.ts`, `renderAuditInput`, the per-document block.
+**Why it is still open:** A3e fixed the main case — a document whose **re-read** failed now shows
+its earlier reading's findings. What is left is a document with **no readable reading at all**: a
+file uploaded, read once, and that once failed. It has no gaps because nobody ever got any.
+
+**The words now** (`lib/audit.ts:378–380`), for a document with no open gaps:
+
+```
+      WHAT THE READING FOUND WRONG WITH IT: nothing
+```
+
+**That sentence is not an absence in a prompt — it is a STATEMENT**, and for this document it is
+false. The model then reasons about a permit nobody has read as though a reading had looked and found
+it clean, which is the more convincing of the two wrong answers.
+
+**The words proposed.** Three cases where there is one today:
+
+```
+      WHAT THE READING FOUND WRONG WITH IT: nothing
+```
+— unchanged, and **only** when a reading succeeded and raised no gaps. That is a real opinion.
+
+```
+      WE HAVE NOT READ THIS DOCUMENT. Nothing below is known about its contents. Do not treat its
+      absence from your findings as evidence that it complies, and do not treat it as evidence that
+      it does not.
+```
+— when no reading of it has ever succeeded.
+
+```
+      WHAT THE LAST READING THAT COULD READ IT FOUND WRONG WITH IT: nothing (read <date>; the
+      latest attempt could not read it)
+```
+— when the current reading failed but an earlier one succeeded and raised no gaps. A3e already
+hands the earlier reading's findings through; this is the wording for the case where that reading
+found none, which today falls back to the first line and loses the "as of" entirely.
+
+**What else changes with it.** `BuiltAuditInput`'s per-document shape gains two fields the view
+already has — whether any reading ever succeeded (`readable_scan_id is not null`) and that
+reading's date — and `d.status`/`d.display_status` already carry `could_not_read`, so no new read.
+**`prompt_sha256` moves for every audit of a company holding an unread document**, which is the
+intended tripwire firing, not a regression.
+
+**Which golden sets would move:** the Audits golden set, and only for fixtures that include an
+unread document. Today's fixtures all read, so in practice: none, until one is added — and one
+should be.
+
+---
+
+### Wording 2 · D4 — "what this company already holds" is not what it holds
+
+**Where:** `prompts/document-scan.ts:74` and `lib/documentScan.ts`'s `existing` list.
+**Why it matters:** this list is what the model answers *"is this a newer version of one of
+these?"* against, and what `expected_missing` is written against.
+
+**The words now** (`prompts/document-scan.ts:144–145`):
+
+```
+WHAT THIS COMPANY ALREADY HOLDS
+${existing}
+```
+
+with `existing` built from read documents only, cut at **40 alphabetically** with no "and more", and
+`'  (nothing else on file yet)'` when the list is empty.
+
+**Three things are wrong and they compound.** In a folder upload, file 1 is read while 2–N are still
+queued — so the model is told the company does **not** hold documents it uploaded in the same
+gesture, and writes them into *"What we'd expect and don't see"*. That list is then **frozen at scan
+time** and never re-checked (`app/documents/page.tsx` reads `expected_missing` off the scan), so the
+page goes on suggesting a document the company filed five minutes later. The cut at 40 does the
+same thing silently to a company with more.
+
+**The words proposed:**
+
+```
+WHAT THIS COMPANY ALREADY HOLDS
+Every document on file, including ones not read yet. A document marked "not read yet" is held by
+this company — treat it as present. Do not suggest it as something they are missing.
+${existing}
+```
+
+with `existing` built as:
+
+```
+  - <title> (<kind>)                      ← a document that has been read
+  - <file name> — not read yet            ← uploaded, queued, or read and refused
+  ...and <N> more on file.                ← when the list was cut
+```
+
+and the empty case changed from `(nothing else on file yet)` to:
+
+```
+  (this is the first document on file)
+```
+
+— because *"nothing else on file **yet**"* reads as a prediction, and on the first upload of a
+folder of twelve it is false within the minute.
+
+**What else changes with it.**
+1. `lib/documentScan.ts`'s `existing` read takes every `documents` row, not only readable scans,
+   and carries `name` for the unread ones. One read instead of one, no new cost.
+2. The cut rises from 40 and gains the *"and N more"* line. **40 is not the right number and this
+   draft does not pick one** — it is a token-budget question and the owner should see a rendered
+   block at, say, 40, 80 and 200 before choosing. Noted as open.
+3. **The frozen expected list is a separate fix and does not need a prompt change at all**:
+   `app/documents/page.tsx`'s `expectedByDocument` filters each stored title against what the company
+   holds *now*. That one can ship on its own, and it is the half that stops a stale suggestion being
+   shown. **It is not in this commit either**, because it only makes sense beside the words above —
+   if it ships alone, the model goes on writing the entries and the page goes on hiding them, which
+   is a rule nobody can see firing.
+
+**Which golden sets would move:** `npm run golden:docs` — every stored document-scan answer, because
+the prompt gains two lines and the held-documents list changes shape. `npm run golden:facts` reads
+`prompts/checklist` and would not move.
+
+---
+
+### Wording 3 · H4's consequence — two versions, one name
+
+**Where:** `lib/hrAnswer.ts`'s `notUsed` line, which reaches the prompt at `:332`.
+**Why it is new:** before E1's H4 fix, a handbook whose new version could not be read produced a
+**refusal** — *"None of your handbooks could be read"* — and this line was never rendered. Now the
+previous version is used and the unreadable one is named as not used. That is the right behaviour,
+and the two versions **share a name**, so the line can read oddly.
+
+**The words now** (`lib/hrAnswer.ts:130–132`, then `:332`):
+
+```
+Not included, so not read for this answer: "Employee Handbook" (could not be read: <reason>).
+```
+
+— in an answer that also says it read *"Employee Handbook"*. Both sentences are true of different
+versions of one document, and nothing says so.
+
+**The words proposed** — one clause, only when the unreadable handbook has a `version_of`:
+
+```
+Not included, so not read for this answer: "Employee Handbook" (the newest version, added
+<date>, could not be read: <reason>; the version before it was used instead).
+```
+
+**What else changes with it.** `HandbookRowForAnswer` already carries `version_of` and `created_at`,
+so nothing new is read. The change is one branch in the string that builds `notUsed`.
+
+**Which golden sets would move:** none. HR has no golden set, and `prompts/hr-answer.ts` is not
+touched — the words are built in `lib/hrAnswer.ts`. The owner's finish-line test for HR is what
+judges it (`docs/TEST-AT-FINISH-LINE.md`).
+
+---
+
+## E0 — the per-section confirmation table, all 54 items
+
+**Every line number in the list had moved.** It was read from the `2026-10-09_0954` zip, which
+predates Calendar Job A, and Jobs A, B and C shifted the files since. So no item was confirmed by
+its line number: each was confirmed by **behaviour**, at the point in this job where it was reached,
+and `scripts/fixlist-confirm.mjs` parses all 54 and prints where each one's code sits now.
+
+**Every item on the list was still true** when it was reached, except the ones Jobs A–C had already
+closed. Not one turned out to be a mis-read.
+
+| § | item | sev | section | still true? | where |
+|---|---|---|---|---|---|
+| R1 | D1 | 1 | Documents | **yes** | E1 |
+| R1 | L1 | 1 | Documents → Audits | fixed in A3e, **superseded by D2** | E1 |
+| R1 | D6 | 2 | Documents | **yes**, and worse — see D6 | E4 |
+| R1 | D13 | 3 | Documents | **yes** | E4 |
+| R1 | WA1 | 3 | Workspace | fixed in A3e | — |
+| R1 | AR1 | 3 | Audits | fixed in A3e | — |
+| R1 | D-two | 2 | Documents | **yes** | E4 |
+| R1 | B3 | 3 | Dashboard | fixed in Calendar B3 | — |
+| R2 | D3 | 1 | Documents | **yes**, and worse — the folder was **deleted** | E1 |
+| R2 | W1 | 1 | Requirements | **yes** | E1 |
+| R2 | M2, M1, M3 | 1 | My Account | **yes** | **moved** — §4a |
+| R2 | A2 | 1 | Audits | **yes**, and not "small" | E1 |
+| R2 | C1 | 2 | **shared, every section** | **yes** — nine reads | E4 |
+| R2 | A3, A4, A6, A8, A11, A12, A13 | 2 | Audits | **yes**, all seven | E4 |
+| R2 | D7, D8, D9, D10, D11, D12, D15 | 2 | Documents | **yes**, all seven | E4 |
+| R2 | D14 | 3 | Documents → Audits | **yes** | E4 |
+| R2 | H2, H3, H5, H6 | 2 | HR | **yes**, all four | E4 |
+| R2 | W5 | 2 | Workspace | **yes**, both halves | E2 |
+| R2 | W6, W8 | 2–3 | Requirements, Workspace | **yes** | E4 |
+| R2 | B1, B2 | 2 | Dashboard | fixed in Calendar B3 | — |
+| R2 | B2b (35b) | 2 | Landing page | **PARKED by the owner** | — |
+| R2 | P1 (35c) | 3 | **the app shell, every section** | **yes** | E4 |
+| R2 | M4 | 2 | My Account, signup | **yes** | **moved** — §4a |
+| R2 | M5 | 2 | shared | **yes**, and two more faults with it | E4 |
+| R2 | A15, W7, W9, H7, H8, B4, S4 | 3 | five sections | **yes**, all seven | E4 |
+| R3 | A-prompt | 2 | Audits | **yes** | **E6 — drafted, NOT applied** |
+| R3 | D4 | 2 | Documents | **yes**, all three parts | **E6 — drafted, NOT applied** |
+| R3 | A9 | 2 | Audits | **yes**, both halves | E3 |
+| R3 | A10 | 2 | Audits | **yes**, and the amber line's cause found | E3 |
+| R3 | A14 | 3 | Audits | **yes** | E3 |
+| R3 | D5 | 2 | Documents | **yes** — **the owner decided it** | E3, migration 079 |
+| R4 | S1 | 2 | shared → Audits, Documents | **yes** | E2 |
+| R4 | A7 | 2 | Audits | **yes** | E2 |
+| R4 | S2 | 2 | shared → Workspace, HR | **yes**, and the screen did not show it | E2 |
+| R4 | H1 | 2 | HR | **yes** | E2 |
+| R4 | HR-read | 2 | HR | **HYPOTHESIS → traced, and real** | E2 |
+| R5 | H4 | 1–2 | HR | **yes**; HR's own decisions do not contradict the fix | E1 |
+| R5 | A1 | 1 | Audits | **yes**, all four faults | E1, with O1 |
+| R5 | W2 | 1 | Workspace and HR | **yes** | E1, migration 078 |
+| R5 | O3 | 2 | Audits | **yes**, and the retry left a second set | E4 |
+| R5 | HR-dup | 2 | HR | **yes** | E5 |
+| R6 | D2 | 1 | Documents → Audits | **yes** | E1, with L1 |
+| §4 | O1 | — | Audits | **yes** — and it is why A1 had never run | E1, with A1 |
+| §4 | O2 | — | Audits | **yes** | E5 |
+| §4 | O4 | — | My Account | **yes** — the owner has decided it | **moved** — §4a |
+| §4 | O5 | — | Signup | **yes** | E5 |
+| §4 | O6 | — | Documents | **HYPOTHESIS → PROVED on all three legs** | E5 |
+| §4 | O7, O8, O9 | — | Documents, HR, both workspaces | **yes**, all three | E5 |
+
+**54 items parsed; 54 accounted for.** 43 fixed in this job, 5 fixed by Jobs A–C, 5 moved to My
+Account's section (§4a), 2 drafted for the owner (E6), 1 parked by the owner (35b). L1 is counted
+with D2 and O1 with A1.
+
+### The impact check, per section
+
+Written before the code of each checkpoint, and the per-item effects are under each item above. The
+cross-section shape of the job is small, and that is the point of a helper:
+
+| section | files this job changed | what a person there sees |
+|---|---|---|
+| **shared** | `lib/mustRead.ts`, `lib/answerShape.ts`, `lib/auditSummary.ts`, `lib/storageMiss.ts`, `lib/folderDelete.ts` (all new), `lib/ai.ts`, `lib/companyContext.ts`, `lib/answerStream.ts`, `lib/calendarDate.ts`, `components/AppLayout.tsx` | nothing, until a read fails — then a sentence instead of a false one. And every printed page loses the navigation |
+| **Documents** | `lib/documentScan.ts`, `lib/documentBatch.ts`, `lib/companyLabels.ts`, `components/DocumentReport.tsx`, 6 routes, migration 079 | a document with an open gap says "Needs work"; a failed re-read no longer empties its questions; a renamed agency survives; "read on <date>" is the plant's day |
+| **Audits** | `lib/audit.ts`, `lib/auditRun.ts`, `lib/auditNotify.ts`, `components/AuditReport.tsx`, `app/audits/page.tsx`, 5 routes | "Audit again" links the runs and carries findings forward; a failed section no longer reads as "0 to look at"; the subject says what did not finish; "Readings as of" is the plant's day |
+| **HR** | `lib/handbookSave.ts`, `lib/handbookRead.ts`, `lib/handbookCheck.ts`, `lib/handbookCheckView.ts`, `lib/handbookCheckNotify.ts`, `lib/handbooks.ts`, `lib/hrAnswer.ts`, `app/hr/HrWorkspace.tsx`, 2 routes | a new version does not switch the old one off until it has been read, and the list says which answers a question |
+| **Workspace** | `lib/summaryReport.ts`, `lib/topicClaim.ts`, `lib/topicList.ts`, `lib/retention.ts`, `app/compliance/page.tsx`, 3 routes, migration 078 | a summary says how far it read; an answer that did not finish is not saved; turns are not deleted unless a summary covers them |
+| **Requirements** | `lib/obligationWriter.ts`, 2 routes | a database hiccup no longer closes every open obligation |
+| **Calendar** | — | **nothing.** Job E changed no calendar file |
+| **My Account** | — | **nothing**, deliberately — §4a |
+| **nightly jobs** | `app/api/jobs/{delete,summarise,scan-documents,audit-sections}/route.ts` | a broken sweep writes a row saying so instead of finishing green |
+
+---
+
+## THE CROSS-SECTION GATE — all eight parts, at the end of the job
+
+| # | section | what was checked | before | after | pass |
+|---|---|---|---|---|---|
+| 1 | all | `npm run check` after every checkpoint, floor only up | 1128 | **1336** | ✓ 1144→1155→1170→1180→1197→1216→1263→1289→1335→1336 |
+| 2 | Calendar | `calendar_events`, `document_deadlines` | 2/3, 40/40 | **identical** | ✓ |
+| 2 | Documents | 8 tables | 12/12, 14/14, 25/25, 0/0 + 4 new | **identical** | ✓ |
+| 2 | Audits | `audit_runs`, `audit_findings`, `audit_sections` | 0/0, 0/0, 0/0 | **identical** | ✓ |
+| 2 | HR | 4 tables | 1/14, 0/83, 0/31, 0/226 | **identical** | ✓ |
+| 2 | Workspace | 4 tables | 0/86, 0/221, 0/7, 0/38 | **identical** | ✓ |
+| 2 | Requirements | 4 tables | 0/0, 0/16, 205/205, 95/95 | **identical** | ✓ |
+| 2 | Company info | `companies`, `entities`, `profiles` | 1/6, 1/7, 1/5 | **identical** | ✓ |
+| 2 | Jobs and cost | `job_runs`, `ai_calls` | ERR/42, 12/359 | ERR/53, **12/359** | ✓ job_runs grew by the gate's own runs; **ai_calls unmoved** |
+| 3 | HR, Workspace, Documents, Audits, Requirements | shared files, each section's free checks | — | `check`, `check:schema`, `audit:data`, `mutation` | ✓ below |
+| 4 | all 8 pages | load and show their rows, `BLOCKED` printed | 8/8 | **8/8**, `BLOCKED (0)` each | ✓ `shots/jobE-gate-*.png` |
+| 4 | Calendar, HR, Audits | **as the PRINTER sees them** (35c) | sidebar + links present | **both gone, disclaimer kept** | ✓ `shots/jobE-print-*.png` |
+| 5 | all 7 cron jobs | run by hand on the isolated server | 7× 200 | **7× 200** | ✓ |
+| 5b | Workspace, HR | **W2 end to end** through the real `/api/jobs/delete` | old rule: cleared | **skip_not_covered**, 3 turns kept | ✓ |
+| 6 | all | every email's sender, from the code that sends it | `emailFrom()` | `emailFrom()` | ✓ unchanged |
+| 7 | all | `check:live` on 3999 | ok, 62 | **ok, 62** | ✓ |
+| 8 | all | which golden sets would move | — | **none** | ✓ below |
+
+### Part 3 — the free checks, re-run and named
+
+- **`npm run check`** — typecheck, `check:schema`, 1336 tests, build. Green.
+- **`npm run audit:data`** (Audits) — 0 failed, **4 SKIPPED and it says so**: `company_chemicals` and
+  `switch_determinations` hold no rows, so those checks are **untested, not passing**. Unchanged by
+  this job and reported as the script reports it.
+- **`npm run mutation`** (the resolution engine) — **all nine mutations caught**, every file
+  restored, the suite back to 1336.
+- **`npm run check:schema`** — green, and it printed its documented blind spot (seven
+  `.from(variable)` call sites it cannot attribute). **It also refused a draft of mine**, which is
+  in E4's section.
+
+### Part 8 — the golden sets are not re-run, and NONE would move
+
+Checked, not asserted: `git diff --name-only 0d1f62e HEAD -- prompts/ lib/pipelineConfig.ts`
+returns **nothing**. `lib/ai.ts` changed, but only `extractJsonText`, and only to **stop** it
+returning a citation marker in place of the answer — for a reply whose JSON it already found, the
+slice is byte-identical, which `tests/unit/answerShape.test.ts` asserts on five shapes including the
+stray-closer case the balanced scan was written for.
+
+So `npm run golden`, `golden:facts`, `golden:docs` and `golden:audit` would all land where they are.
+
+**Three things they would not catch, named rather than left:**
+
+1. **The Audits golden set's `carried` and `closed` were always 0**, because O1 meant the matcher
+   never ran. They can now be non-zero for an **agency** re-run. The stored answers do not move —
+   but the first real re-audit after this is the first time those two numbers mean anything.
+2. **No fixture holds an unread document**, so the A-prompt's case (E6, wording 1) cannot be seen in
+   any golden set at all. One should be added with that wording.
+3. **E6's wordings, if applied, WOULD move `golden:docs`** — every stored document-scan answer,
+   because the held-documents list changes shape. That is named in E6 beside each wording.
+
+### What the gate caught across the whole job
+
+1. **Two stray duplicate files** (`lib/handbookRead 2.ts`, `lib/handbookSave 2.ts`), byte-identical,
+   swept into the W2 commit. Found by listing every file the job had touched for part 3 — not by
+   `npm run check`, which was green throughout. Removed in `71963a9`.
+2. **The gate's own row-count script named a table that does not exist** — `audit_run_sections`; the
+   table is `audit_sections`. The same mistake as `topic_messages`, in the same file, and only
+   visible because Job C made a null count print `NO TABLE` instead of `0`.
+3. **Seven 404s in part 5's first run**: bash does not read `.env.local` and `requireCronSecret` is
+   deliberately opaque, so a gate run with no secret looks exactly like seven broken jobs.
+4. **`dry_run` was not printed**, so `calendar-month`'s `sent: 1` said nothing about whether
+   anything had been sent — and Calendar B8's slip was a gate run that sent a real email. On a dry
+   run `counts.sent` means *would have been sent* (`lib/calendarNotify.ts:344` returns before
+   `emails.send`; read to be sure). The flag goes first now.
+5. **My own W2 script read the wrong level of the job's answer** and reported two failures that were
+   not the product's. It printed the whole answer, which is how it was caught.
+6. **`npm run check:schema` refused a comment of mine**, reading query-shaped text in it as a real
+   query against the last table the file named.
+7. **The E4/E5 sweep test found ten groups of unchecked reads I had not located** — nine in
+   `lib/handbookCheck.ts` alone — after I had read every one of those files by hand.
+
+---
+
+## WHAT IS LEFT, AND WHY
+
+**Nothing on the list is left unexplained.** Five groups:
+
+### 1. The two prompt wordings — waiting for the owner's yes
+**A-prompt** and **D4**, plus a third (H4's consequence) that E2's fix created. All three are in
+E6 above, with the exact words now and the exact words proposed. `prompts/` is untouched by the
+whole job. **This is the only thing in Job E waiting on a decision.**
+
+### 2. My Account's five — moved, by the owner's own answer
+**M1, M2, M3, M4, O4.** `docs/FIX-LIST-FAILURES.md` §4a is new and says what Job E's work bears on
+each, so that chat starts from something rather than from the raw list. **O5 was fixed here** and
+not moved, because it is one route away from the page and leaving a person with a dead account was
+not worth carrying.
+
+### 3. 35b — parked by the owner
+Two marketing PNGs saying "overdue" in baked pixels. The owner's decision of 9 October: the landing
+page is its own project once every section is done.
+
+### 4. Three things this job found and did NOT do, each with its reason
+
+- **`summary_covers_through` is not on `topic_list_v`**, so the drawers print *"Summarised
+  5 January"* over a summary that may stop short of the newest message and say nothing about it.
+  Severity 3, and it is a screen; it needs a view migration and a line in both drawers. **For the
+  next job that touches those screens.**
+- **D4's cut at 40 is not raised to a number.** It is a token-budget question and the owner should
+  see a rendered block at 40, 80 and 200 before choosing. Named in E6.
+- **`audit_runs.summary` is still read-modify-write**, not `summary || patch` in SQL. The race it
+  would close is not live (sections run one after another, and `app/api/jobs/audit-sections` is
+  where that is enforced); `lib/auditSummary.ts` is where that fix goes if they ever run
+  concurrently, and it says so.
+
+### 5. What is NOT proved by any of this
+
+**Quality.** Every proof in this job is free and mechanical: a fake database, a replay, a file read.
+They prove the machinery does what it says. Not one of them says whether an audit's findings are any
+good, whether a summary reads well, or whether a handbook check is right — that is the owner's test
+on Opus, and `docs/TEST-AT-FINISH-LINE.md` is where it lives. **Job E spent $0.00 and called no
+model, which is exactly why.**
+
+---
+
+## THE SPEND
+
+**$0.00.** The ledger reads **359 calls / $19.09** — the same figure it read when Job E started, and
+after the gate's own by-hand run of all seven nightly jobs twice over.
+
+```
+  TOTAL             359      8620766       279550        240    3253s    $19.09
+```
+
+Every proof in this job is free: a fake database that returns an error, a stored real-model answer
+replayed through the code that ships, a migration's own verify block, a file read. The one job that
+can spend — `calendar-month` — was run with `?dry=1`, and `lib/calendarNotify.ts:344` was read to be
+sure that returns before `emails.send`.
+
+**$3 was the cap. Nothing was pushed.**

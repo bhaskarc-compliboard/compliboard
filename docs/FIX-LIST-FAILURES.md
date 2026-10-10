@@ -524,8 +524,15 @@ not a month.
     a later throw marks the section failed but its rows stay and show, and Retry inserts a second set. The final
     `done` update is unchecked too: a failure leaves the section "running", recovered after 15 minutes, re-run,
     duplicated. **Fix:** write findings and status together, or delete the section's rows on failure/retry.
-54. **HR-dup · sev 2 · · · HR.** `lib/handbookRead.ts:196`: the error on deleting the old sections is ignored before
+54. **HR-dup · sev 2 · ✓ FIXED (Job E5, "Job E: HR-dup, E6's wordings, and the job's close") · HR.** `lib/handbookRead.ts:196`: the error on deleting the old sections is ignored before
     the insert, so a handbook can end up with two sets of sections. **Fix:** check it.
+    **Closed:** the delete is checked and a refusal **fails the reading**, which leaves the handbook
+    exactly as it was with its earlier sections intact and "Read it again" on the page. Two sets of
+    sections is not a tidiness problem: `lib/hrAnswer.ts` builds a block per section, so the model
+    would be handed the whole handbook **twice** — the same clause under two handles, the budget
+    spent twice over, and the page saying a 14-part handbook has 28 parts. The undo on the other
+    path (a claim lost after the insert) now says so too, rather than leaving the same state by the
+    other door. **Proof:** `tests/unit/handbookRead.test.ts`, which fails on the shipped file.
 
 ### R6 — a renamed label the rest of the code cannot see
 

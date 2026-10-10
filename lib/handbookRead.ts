@@ -234,7 +234,17 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
 
     // The server key, for this table only, scoped to the session's company (CLAUDE.md §3.6): people may read
     // a handbook's sections and never write them (migration 066's grants). A previous reading's go first.
-    await admin.from('handbook_sections').delete().eq('handbook_id', id).eq('company_id', companyId)
+    //
+    // *** HR-dup (fix list item 54, root R5, Job E5): THIS DELETE IS CHECKED. ***
+    // It was not, so a refused delete was followed straight by the insert and the handbook ended up
+    // with **two sets of sections** — the old reading's and the new one's. `lib/hrAnswer.ts` then
+    // builds a block per section, so the model is handed the whole handbook twice: the same clause
+    // appearing under two handles, the budget spent twice over, and `sectionCount` on the page
+    // saying a 14-part handbook has 28 parts. The reading fails instead, which leaves the handbook
+    // exactly as it was with its earlier sections intact and "Read it again" on the page.
+    const { error: clearErr } = await admin.from('handbook_sections')
+      .delete().eq('handbook_id', id).eq('company_id', companyId)
+    if (clearErr) return giveUp(READ_REASONS.ours, `clearing the earlier sections: ${clearErr.message}`)
     const { data: written, error: insErr } = await admin.from('handbook_sections').insert(out.sections.map((s) => ({
       handbook_id: id, company_id: companyId, position: s.position, title: s.title,
       page_from: s.page_from, page_to: s.page_to, text: s.text, text_sha256: sha256(s.text),
@@ -247,7 +257,14 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
     }).eq('id', id).eq('status', 'reading').eq('updated_at', claimedAt).select('id')
     if (upErr || !saved?.length) {
       // Deleted, or another run took over: this run's sections are not the handbook's.
-      await admin.from('handbook_sections').delete().in('id', (written ?? []).map((w: { id: string }) => w.id)).eq('company_id', companyId)
+      // Said if it fails (E5): these rows belong to a reading that did not land, and leaving them
+      // is the same two-sets-of-sections state HR-dup is about, arriving by the other door.
+      const { error: undoErr } = await admin.from('handbook_sections')
+        .delete().in('id', (written ?? []).map((w: { id: string }) => w.id)).eq('company_id', companyId)
+      if (undoErr) {
+        console.error(`handbooks: ${id} has sections from a reading that did not land — clear them `
+          + `by hand: ${undoErr.message}`)
+      }
       return upErr ? giveUp(READ_REASONS.ours, `save: ${upErr.message}`) : 'claim lost'
     }
     // *** AND NOW — NOT AT UPLOAD — THE VERSION THIS ONE REPLACES IS RETIRED. ***

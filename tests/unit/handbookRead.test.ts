@@ -87,7 +87,7 @@ describe('THE HAIKU GUARD', () => {
 
 describe('the one write', () => {
   /** Stand-ins for the person's client and the server key, recording every write. */
-  function fakes(opts: { claimHeld: boolean; textClaimHeld?: boolean; versionOf?: string | null; retireFails?: boolean }) {
+  function fakes(opts: { claimHeld: boolean; textClaimHeld?: boolean; versionOf?: string | null; retireFails?: boolean; clearFails?: boolean }) {
     const log: string[] = []
     const chain = (result: unknown) => {
       const q: Record<string, unknown> = {}
@@ -123,7 +123,7 @@ describe('the one write', () => {
     }
     const admin = {
       from: () => ({
-        delete: () => { log.push('admin.delete sections'); return chain({ error: null }) },
+        delete: () => { log.push('admin.delete sections'); return chain({ error: opts.clearFails ? { message: 'permission denied' } : null }) },
         insert: (rows: unknown[]) => { log.push(`admin.insert ${rows.length} sections`); return chain({ data: [{ id: 's1' }, { id: 's2' }], error: null }) },
       }),
     }
@@ -204,6 +204,19 @@ describe('the one write', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
     assert.match(out, /^read: 2 pages/, 'the reading is the valuable thing and is not failed for this')
+  })
+
+  test('*** HR-dup: a refused delete of the earlier sections fails the reading ***', async () => {
+    // It was unchecked, so the insert ran anyway and the handbook ended up with TWO sets of
+    // sections — the model handed the whole handbook twice, the budget spent twice, and the page
+    // saying a 14-part handbook has 28 parts.
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: true, clearFails: true })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.match(out, /^could_not_read/)
+    assert.ok(!f.log.some((l) => l.startsWith('admin.insert')),
+      'and nothing is inserted on top of the set that could not be cleared')
   })
 
   test('TEXT FIRST: the text is saved before the outline call; a claim lost there stops before any model call', async () => {
