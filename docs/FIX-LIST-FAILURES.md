@@ -361,12 +361,33 @@ not a month.
 
 ### R5 — switched off before the replacement is ready
 
-50. **H4 · sev 1–2 · ✓ · HR.** `lib/handbookSave.ts:52–61`: a new handbook version is inserted current and the older
+50. **H4 · sev 1–2 · ✓ FIXED (Job E1, "Job E: H4 — a handbook switched off before its replacement could be read") · HR.** `lib/handbookSave.ts:52–61`: a new handbook version is inserted current and the older
     one set not-current **at upload**, before the new one is read. If the read fails (a scan, a .doc, a rate limit),
     answers use current versions only (`lib/hrAnswer.ts:119`), so a company with one handbook is told "None of your
     handbooks could be read" (`lib/hrAnswerWords.ts:8`); the older version's open check is cancelled as replaced
     (`lib/handbookCheck.ts:290`, `:332–335`); the nightly job checks neither. **Fix:** switch `is_current` only when
     the new version reaches `read`. *(HR's own decision may say otherwise — E0 checks `HR-PLAN.md` and DECISIONS.)*
+    **E0 checked HR's own decisions:** HR-PLAN decision 8 says *"only the newest is used for answers
+    and checks"* and decision 18 that versions live on HR's own rows. **Neither says WHEN
+    `is_current` flips**, so nothing in HR contradicts the fix.
+    **Closed, and not by changing what `is_current` means.** The newer row still arrives current, so
+    the page shows it and the reader claims it; what moved is the **switching off** — the older
+    version is retired in `lib/handbookRead.ts`, on the one write that sets `status: 'read'`. Until
+    then both are current, a state this product already supported and already rendered
+    (`olderVersions` skips a current row, so the two list cleanly and neither appears twice). With
+    both current: an unread new version makes the answer WAIT (§183, unchanged), and an unreadable
+    one leaves the previous version in use and named as not used — so the company is no longer told
+    *"None of your handbooks could be read"* about a handbook it holds and we can read. The older
+    version's open check is no longer cancelled as replaced (`lib/handbookCheck.ts:290` tests
+    `is_current`, which is now still true), and the nightly job keeps checking it (`:550`).
+    `setHandbookSite`'s "current version only" guard was retightened to **newest in the chain**,
+    because with two current versions `is_current` would have let a person set the site from the
+    older one — the split that guard exists to prevent. One new line of UI copy (`inUseNote`) says
+    which version answers a question while the other is read.
+    **Proof:** `tests/unit/handbookSave.test.ts` — no row may be marked not-current on the strength
+    of a file nobody has read — and five H4 tests in `tests/unit/handbookRead.test.ts`: retired after
+    the read and never before; nothing retired on a failed reading, a lost claim, or a first
+    handbook; and a refused retirement does not fail the reading. **Four fail on the shipped files.**
 51. **A1 · sev 1 · ✓ · Audits — dormant until O1 is fixed.** `lib/auditRun.ts:944–973` (`matchAgainstPrevious`):
     any earlier open finding no new row claims is **closed** ("not raised by the newer audit"). Four non-answers cause
     that: the read of the new rows is unchecked (`:944`); rows are matched by position while `shapeFindings` drops

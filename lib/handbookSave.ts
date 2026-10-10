@@ -7,9 +7,21 @@
  * A NEWER VERSION keeps the handbook's NAME and its scope and site, all read from the older row, never the
  * body (owner, 7 October 2026). Only its file — `file_name`, `file_path` — is new.
  *
- * TWO WRITES, IN THIS ORDER: the newer row is saved first, then the older one stops being current. If the
- * second fails, both stay current and both are shown, and the person is told (`OLDER_NOT_REPLACED`). Neither
- * is ever lost.
+ * *** THE OLDER VERSION IS NOT SWITCHED OFF HERE — fix list H4, root R5, Job E. ***
+ *
+ * It used to be: the newer row went in `is_current: true` and the older one was set `is_current: false` in
+ * the same request, **before the new file had been read.** If that read then failed — a scan, a .doc, a rate
+ * limit — a company with one handbook was told *"None of your handbooks could be read"*
+ * (`lib/hrAnswerWords.ts`), because answers use current versions only (`lib/hrAnswer.ts:119`); the older
+ * version's open check was cancelled as replaced (`lib/handbookCheck.ts:290`); and the nightly job checked
+ * neither, because it wants a version that is current AND read (`:550`). The company's handbook was still
+ * there and still readable. Nothing could reach it.
+ *
+ * So the switch happens where the new version succeeds: `lib/handbookRead.ts`, on the write that sets
+ * `status: 'read'`. Until then **both are current**, which is a state this product already supports and
+ * already renders — `olderVersions` skips a current row, so the list shows the two side by side — and the
+ * one in use is the one that can be read. R5's rule in one line: switch over once the new thing has
+ * succeeded, never before.
  */
 import { nameFromFile, isOwnHandbookPath } from './handbooks.ts'
 
@@ -56,11 +68,9 @@ export async function saveHandbookRow(db: Db, companyId: string, userId: string,
   }).select('id').single()
   if (error) throw error
 
-  if (olderId) {
-    const { error: oldErr } = await db.from('handbooks').update({ is_current: false }).eq('id', olderId)
-    if (oldErr) return { status: 200, json: { id: inserted.id, older_not_replaced: true } }
-  }
-  return { status: 200, json: { id: inserted.id } }
+  // No second write. `version_of` records which version this replaces; `lib/handbookRead.ts` is what
+  // retires it, once this file has been read.
+  return { status: 200, json: { id: inserted.id, replaces: olderId } }
 }
 
 /**
@@ -84,9 +94,16 @@ export async function setHandbookSite(db: Db, companyId: string, body: { id?: st
   }
   const { data: start } = await db.from('handbooks').select('id, version_of, is_current').eq('id', id).eq('company_id', companyId).maybeSingle()
   if (!start) return { status: 404, json: { error: 'That handbook was not found.' } }
-  // Only from the CURRENT version (owner, Step 11a): the walk goes DOWN the chain, so starting from an older version
-  // would leave the newer ones on no site and split the versions.
-  if (!start.is_current) return { status: 400, json: { error: ONLY_CURRENT_MOVES } }
+  // Only from the NEWEST version in the chain (owner, Step 11a): the walk goes DOWN the chain, so starting from
+  // an older version would leave the newer ones on no site and split the versions.
+  //
+  // *** THE TEST IS THE CHAIN, NOT `is_current` — H4, Job E. *** Between an upload and its reading both
+  // versions are current, and `is_current` would then let a person set the site from the older one, which is
+  // exactly the split this guard exists to prevent. "Newest" means nothing names it as the version it
+  // replaces.
+  const { data: newer } = await db.from('handbooks').select('id').eq('company_id', companyId)
+    .eq('version_of', start.id).limit(1).maybeSingle()
+  if (newer) return { status: 400, json: { error: ONLY_CURRENT_MOVES } }
   // The handbook, then each older version it names, down the chain (a guard against a loop in bad data).
   const ids: string[] = [start.id]
   let next: string | null = start.version_of

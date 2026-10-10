@@ -87,7 +87,7 @@ describe('THE HAIKU GUARD', () => {
 
 describe('the one write', () => {
   /** Stand-ins for the person's client and the server key, recording every write. */
-  function fakes(opts: { claimHeld: boolean; textClaimHeld?: boolean }) {
+  function fakes(opts: { claimHeld: boolean; textClaimHeld?: boolean; versionOf?: string | null; retireFails?: boolean }) {
     const log: string[] = []
     const chain = (result: unknown) => {
       const q: Record<string, unknown> = {}
@@ -98,7 +98,8 @@ describe('the one write', () => {
     }
     const db = {
       from: () => ({
-        select: () => chain({ data: { file_path: 'co/handbooks/h.pdf', file_name: 'h.pdf', mime_type: 'application/pdf' } }),
+        select: () => chain({ data: { file_path: 'co/handbooks/h.pdf', file_name: 'h.pdf',
+                                      mime_type: 'application/pdf', version_of: opts.versionOf ?? null } }),
         update: (patch: Record<string, unknown>) => {
           if ('extracted_text' in patch && !('status' in patch)) {
             log.push(`db.update text (${String(patch.extracted_text).length} chars, ${patch.page_count} pages)`)
@@ -107,6 +108,12 @@ describe('the one write', () => {
           if ('outline_parts_done' in patch && !('status' in patch)) {
             log.push(`db.update progress ${patch.outline_parts_done}/${patch.outline_parts_total}`)
             return chain({ data: [{ updated_at: 'T3' }], error: null })
+          }
+          // H4: retiring the version this one replaces — the one write that happens once the new file
+          // has actually been read, and used to happen at upload instead.
+          if ('is_current' in patch && !('status' in patch)) {
+            log.push(`db.update is_current=${patch.is_current}`)
+            return chain({ error: opts.retireFails ? { message: 'refused' } : null })
           }
           log.push(`db.update status=${patch.status}`)
           return chain({ data: opts.claimHeld ? [{ id: 'h1' }] : [], error: null })
@@ -142,6 +149,63 @@ describe('the one write', () => {
     assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)', 'db.update progress 0/1', 'db.update progress 1/1',
       'admin.delete sections', 'admin.insert 2 sections', 'db.update status=read', 'admin.delete sections'])
   })
+  // =========================================================================================
+  // H4 (fix list, root R5, Job E) — THE VERSION THIS ONE REPLACES IS RETIRED HERE, NOT AT UPLOAD.
+  //
+  // `lib/handbookSave.ts` used to set the older version `is_current: false` in the upload request,
+  // before the new file had been read. If that read failed, a company with one handbook was told
+  // "None of your handbooks could be read" (answers use current versions only,
+  // `lib/hrAnswer.ts:119`), the older version's open check was cancelled as replaced
+  // (`lib/handbookCheck.ts:290`), and the nightly job checked neither (`:550`, current AND read).
+  // =========================================================================================
+  test('*** H4: a NEW VERSION retires the older one only once it has been read ***', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: true, versionOf: 'old1' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.match(out, /^read: 2 pages/)
+    assert.equal(f.log.at(-1), 'db.update is_current=false', 'the older version is retired')
+    assert.ok(f.log.indexOf('db.update status=read') < f.log.indexOf('db.update is_current=false'),
+      'and AFTER the read landed, never before — that order is the whole of H4')
+  })
+
+  test('H4: a reading that FAILED retires nothing, so the older version stays in use', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: true, versionOf: 'old1' })
+    // A scan: `readContent` refuses it before any model call, which is the ordinary way this fails.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b',
+      outline, parsePdf: async () => ['', ''] }, 'co', 'h1', 'T')
+    assert.match(out, /^could_not_read/)
+    assert.ok(!f.log.some((l) => l === 'db.update is_current=false'),
+      'nothing may retire the readable version on the strength of a reading that read nothing')
+  })
+
+  test('H4: a run that lost its claim retires nothing either', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: false, versionOf: 'old1' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.equal(out, 'claim lost')
+    assert.ok(!f.log.some((l) => l === 'db.update is_current=false'))
+  })
+
+  test('H4: a first handbook (no version_of) retires nothing', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: true })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.ok(!f.log.some((l) => l.startsWith('db.update is_current')))
+  })
+
+  test('H4: if the retirement itself is refused, the READING still succeeded and both stay current', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: true, versionOf: 'old1', retireFails: true })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.match(out, /^read: 2 pages/, 'the reading is the valuable thing and is not failed for this')
+  })
+
   test('TEXT FIRST: the text is saved before the outline call; a claim lost there stops before any model call', async () => {
     const { readHandbook } = await import('../../lib/handbookRead.ts')
     const order: string[] = []

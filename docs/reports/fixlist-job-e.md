@@ -388,3 +388,81 @@ a key held in the wrong shape by an older version of the code, where `[...7]` wo
 run's summary is read by `components/AuditReport.tsx`, `app/audits/page.tsx`,
 `app/api/audits/index/route.ts` and `lib/auditNotify.ts` (the email's subject) — none changed, and
 all four now read a summary that cannot have been built on a failed read. No migration.
+
+### H4 · sev 1–2 · HR — a handbook switched off before its replacement could be read
+
+Now `lib/handbookSave.ts:57–61`. Confirmed: the newer row went in `is_current: true` and the older one
+was set `is_current: false` **in the same request**, before the new file had been read.
+
+**E0's check of HR's own decisions, which the list asked for.** HR-PLAN decision 8: *"only the newest
+is used for answers and checks, but on HR's own rows."* Decision 18: versions live on HR's own table.
+**Neither says when `is_current` flips**, so nothing in HR contradicts the fix.
+
+**What it cost.** If the read then failed — a scan, a .doc, a rate limit — the company's readable
+handbook was gone from every path that could reach it:
+
+| the path | what it did |
+|---|---|
+| `lib/hrAnswer.ts:119` | answers load current versions only → `withText` empty → `HR_REFUSALS.unreadable`: *"None of your handbooks could be read"*, about a handbook we held and could read |
+| `lib/handbookCheck.ts:290`, `:332` | the older version's **open check** cancelled as replaced |
+| `lib/handbookCheck.ts:550` | the nightly job wants current **and** read, so it checked neither |
+
+**The fix does not change what `is_current` means.** The newer row still arrives current, so the page
+shows it and the reader claims it. What moved is **the switching off**: the older version is retired
+in `lib/handbookRead.ts`, on the one write that sets `status: 'read'` — the write that proves the new
+version can be read. R5 in one line: switch over once the new thing has succeeded, never before.
+
+Until then **both are current**, and that is a state the product already supported and already
+rendered — `lib/handbookSave.ts`'s own header described it (*"both stay current and both are shown"*)
+and `olderVersions` skips a current row, so the two list cleanly and neither appears twice. With both
+current:
+
+- the new version unread → `unread` includes it → the answer **waits** for it (§183, unchanged);
+- the new version unreadable → the previous version has text and is used, and the new one is named as
+  not used with its reason. **No false refusal.**
+- the older version's open check is not cancelled, because `is_current` is still true;
+- the nightly job keeps checking it.
+
+**Two consequences I had to fix with it, both named.** `setHandbookSite`'s *"current version only"*
+guard tested `is_current`; with two current versions that would let a person set the site from the
+**older** one, and the walk goes down the chain, which is precisely the version-split the guard
+exists to prevent. It now tests **newest in the chain** — nothing names it as the version it
+replaces — which is what the guard always meant. And one line of UI copy (`inUseNote` in
+`lib/handbooks.ts`) says which version answers a question while the other is read: *"in use while the
+new version is read"*, or *"in use — the new version could not be read"*. Without it the two look
+like two handbooks of one name and nothing says which one answers. Labels are §3.1-safe.
+
+**One judgement call, stated plainly.** With the fix, a company whose new version could not be read
+now gets an answer from the previous version, and the prompt's "Not included, so not read for this
+answer" line names the unreadable one — so **the prompt's content changes** in that case, from a
+refusal to an answer plus that line. I took it because it is the owner's own §5 answer (1) — *readers
+take the latest readable reading* — applied to HR's own table, and because the behaviour it replaces
+is a false statement. It is not a prompt **edit**: no file in `prompts/` changed. The two versions
+share a name, so that line can read oddly (*"Employee Handbook" used, and "Employee Handbook" could
+not be read*); **a one-line sharpening of that wording is drafted in E6 for the owner's yes**, since
+the words themselves are a §3.1 change.
+
+**The proof.** `tests/unit/handbookSave.test.ts`: the upload must write exactly **one** row, and *no
+row may be marked not-current on the strength of a file nobody has read*. Five H4 tests in
+`tests/unit/handbookRead.test.ts`, driving the real `readHandbook` through its injected deps:
+
+```
+✔ *** H4: a NEW VERSION retires the older one only once it has been read ***
+    assert f.log.indexOf('db.update status=read') < f.log.indexOf('db.update is_current=false')
+✔ H4: a reading that FAILED retires nothing, so the older version stays in use
+✔ H4: a run that lost its claim retires nothing either
+✔ H4: a first handbook (no version_of) retires nothing
+✔ H4: if the retirement itself is refused, the READING still succeeded and both stay current
+```
+
+**Four of them fail on the shipped `lib/handbookSave.ts` and `lib/handbookRead.ts`** — checked by
+stashing both files. Plus six tests in `tests/unit/handbooks.test.ts` for `inUseNote` and for the two
+versions listing without a duplicate.
+
+**Effects on other sections, by file.** All HR: `lib/handbookSave.ts`, `lib/handbookRead.ts`,
+`lib/handbooks.ts`, `app/hr/HrWorkspace.tsx`, `app/api/handbooks/route.ts`. `lib/handbookCheck.ts`
+needed **no change** — its two `is_current` tests become correct on their own once the flag stops
+lying. `app/api/handbooks/route.ts` lost its `older_not_replaced` log and `HrWorkspace` the matching
+notice, since the save no longer has a second write to fail. **Nothing in Documents, Audits, the
+dashboard or the Calendar reads a handbook** (HR-PLAN decision 18), so nothing else is touched. No
+migration.

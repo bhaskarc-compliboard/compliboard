@@ -4,7 +4,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { nameFromFile, isOwnHandbookPath, statusWords, olderVersions, handbookList, type HandbookRow } from '../../lib/handbooks.ts'
+import { nameFromFile, isOwnHandbookPath, statusWords, olderVersions, handbookList, inUseNote, IN_USE_WHILE_READING, IN_USE_NEW_UNREADABLE, type HandbookRow } from '../../lib/handbooks.ts'
 
 const CO = '97fef4fd-081a-4a60-bb84-aea1c017af87'
 const row = (id: string, o: Partial<HandbookRow> = {}): HandbookRow => ({
@@ -83,5 +83,50 @@ describe('the route', () => {
   })
   test('it lives under /api/handbooks, not old HR\'s /api/hr', () => {
     assert.ok(!/\/api\/hr['/]/.test(src))
+  })
+})
+
+// ===============================================================================================
+// H4 (fix list, root R5, Job E) — TWO CURRENT VERSIONS, AND WHICH ONE ANSWERS A QUESTION.
+//
+// The older version is no longer switched off at upload (`lib/handbookSave.ts`): it is retired when
+// the new file has been read (`lib/handbookRead.ts`). So between those two moments both are current,
+// and the list has to say which is in use — otherwise they look like two handbooks of one name.
+// ===============================================================================================
+describe('H4 — a version still in use while its replacement is read', () => {
+  const row = (o: Partial<HandbookRow>): HandbookRow => ({
+    id: 'x', name: 'Employee Handbook', file_name: 'h.pdf', file_path: 'co/handbooks/h.pdf',
+    scope: 'company', entity_id: null, status: 'read', status_reason: null,
+    version_of: null, is_current: true, created_at: '2026-10-01T00:00:00Z', ...o,
+  })
+  const v1 = row({ id: 'v1', status: 'read', is_current: true })
+
+  test('while the new version is being read, the old one says it is the one in use', () => {
+    const v2 = row({ id: 'v2', version_of: 'v1', status: 'uploaded', is_current: true })
+    assert.equal(inUseNote(v1, [v1, v2]), IN_USE_WHILE_READING)
+    assert.equal(inUseNote(v2, [v1, v2]), null, 'the new one says its own status, not this')
+  })
+
+  test('*** when the new version could NOT be read, it says so — this is H4 in one line ***', () => {
+    const v2 = row({ id: 'v2', version_of: 'v1', status: 'could_not_read', is_current: true })
+    assert.equal(inUseNote(v1, [v1, v2]), IN_USE_NEW_UNREADABLE)
+  })
+
+  test('once the new version is read and the old one retired, neither says it', () => {
+    const was = row({ id: 'v1', status: 'read', is_current: false })
+    const v2 = row({ id: 'v2', version_of: 'v1', status: 'read', is_current: true })
+    assert.equal(inUseNote(was, [was, v2]), null)
+    assert.equal(inUseNote(v2, [was, v2]), null)
+  })
+
+  test('an ordinary single handbook says nothing', () => {
+    assert.equal(inUseNote(v1, [v1]), null)
+  })
+
+  test('and the two list cleanly: neither is shown twice, because olderVersions skips a current row', () => {
+    const v2 = row({ id: 'v2', version_of: 'v1', status: 'uploaded', is_current: true })
+    const rows = handbookList([v1, v2], []).flatMap((g) => g.rows).map((h) => h.id)
+    assert.deepEqual([...rows].sort(), ['v1', 'v2'])
+    assert.equal(rows.length, 2, 'v1 must not appear both as a current row and as v2\'s older version')
   })
 })

@@ -40,8 +40,14 @@ describe('"Choose where it applies" (Step 11a)', () => {
       q.select = () => q
       q.eq = (k: string, v: unknown) => { f[k] = v; return q }
       q.in = (_k: string, v: string[]) => { if (updated) updated.ids = v; return q }
+      q.limit = () => q
       q.update = (v: Record<string, unknown>) => { updated = { values: v, ids: [] }; return q }
-      q.maybeSingle = () => Promise.resolve({ data: t === 'entities' ? (f.id === 'site-1' ? { id: 'site-1' } : null) : rows[f.id as string] ?? null })
+      // H4: `setHandbookSite` asks whether anything NAMES this row as the version it replaces, because
+      // between an upload and its reading both versions are current and `is_current` would let a person
+      // set the site from the older one — the split this guard exists to prevent.
+      q.maybeSingle = () => Promise.resolve({ data: t === 'entities' ? (f.id === 'site-1' ? { id: 'site-1' } : null)
+        : f.version_of ? (Object.values(rows).find((r) => r.version_of === f.version_of) ?? null)
+        : rows[f.id as string] ?? null })
       q.then = (res: (v: unknown) => void) => res({ data: (updated?.ids ?? []).map((id) => ({ id })), error: null })
       return q
     }
@@ -60,8 +66,9 @@ describe('"Choose where it applies" (Step 11a)', () => {
     assert.equal((await setHandbookSite(fake().db, 'co', { id: 'h3', scope: 'site' })).status, 400)
     assert.equal((await setHandbookSite(fake().db, 'co', { id: 'nope', scope: 'company' })).status, 404)
   })
-  test('only the CURRENT version: an older one is refused (400, plain words) and nothing is written', async () => {
+  test('only the NEWEST version in the chain: an older one is refused (400, plain words) and nothing is written', async () => {
     const f = fake()
+    // h3 names h2 as the version it replaces, so h2 is not the newest — whether or not it is current.
     const r = await setHandbookSite(f.db, 'co', { id: 'h2', scope: 'company' })
     assert.equal(r.status, 400)
     assert.equal(r.json.error, ONLY_CURRENT_MOVES)

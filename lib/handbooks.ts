@@ -78,6 +78,39 @@ export function olderVersions(current: HandbookRow, all: HandbookRow[]): Handboo
   return out
 }
 
+/**
+ * The newer version that replaces this one, when there is one — fix list **H4**, Job E.
+ *
+ * Between an upload and the moment its reading lands, **both versions are current**: the new one cannot be
+ * used until it has been read, and switching the old one off before then is what H4 was. So a row may be
+ * current and already have a successor, and the page has to be able to say which it is looking at.
+ * `olderVersions` answers the other direction and skips current rows, which is why two current versions of
+ * one handbook list cleanly and neither is shown twice.
+ */
+export function supersededBy(h: HandbookRow, all: HandbookRow[]): HandbookRow | null {
+  return all.find((x) => x.version_of === h.id) ?? null
+}
+
+/** The words on a version that is still in use because its replacement has not been read (H4). */
+export const IN_USE_WHILE_READING = 'in use while the new version is read'
+export const IN_USE_NEW_UNREADABLE = 'in use — the new version could not be read'
+
+/**
+ * The extra phrase on a CURRENT row that a newer version is waiting behind, or null for an ordinary row.
+ *
+ * Without it the two look like two handbooks of the same name, and nothing says which one answers a
+ * question. The sentence matters most in the second case: the new file could not be read, so the one in use
+ * is the previous version, and before H4 that version was switched off and the company was told it had no
+ * readable handbook at all.
+ */
+export function inUseNote(h: HandbookRow, all: HandbookRow[]): string | null {
+  if (!h.is_current) return null
+  const next = supersededBy(h, all)
+  if (!next || !next.is_current) return null
+  if (next.status === 'read') return null
+  return next.status === 'could_not_read' ? IN_USE_NEW_UNREADABLE : IN_USE_WHILE_READING
+}
+
 /** Which group a row belongs in: "every", a site id, or "removed" (scope 'site' whose site is gone). */
 function groupKey(h: HandbookRow, sites: Array<{ id: string }>): string {
   if (h.scope === 'company') return 'every'

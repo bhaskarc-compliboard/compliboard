@@ -36,7 +36,7 @@ import { readTopicList, type TopicRow } from '@/lib/topicList'
 import {
   statusWords, handbookList, sectionCount, type HandbookRow, checkLine, HANDBOOKS_TAB_LINE, uploadLede, NOT_CHECKED_YET,
   checkingSections, readAgainNote, PART_NOT_CHECKED, CHECK_FAILED, earlierCheckHeading, LEGACY_WORD, OLDER_VERSION_NOTE,
-  siteRemovedLede, CHOOSE_WHERE,
+  siteRemovedLede, CHOOSE_WHERE, inUseNote,
 } from '@/lib/handbooks'
 import { loadRowChecks, loadCheckView, type RowCheckState, type CheckView } from '@/lib/handbookCheckView'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
@@ -95,7 +95,7 @@ const HANDBOOK_COLUMNS = 'id, name, file_name, file_path, scope, entity_id, stat
 /** The owner's words (HR Step 5a). */
 const SAVE_FAILED = 'We could not save this file. Nothing was added. Please try again.'
 /** The owner's words (7 October 2026). No "try again": trying again would add a third version. */
-const OLDER_NOT_REPLACED = 'The newer version was saved, but we could not mark the older one as replaced. Both are shown for now.'
+
 /** The workspace's own sentence for a failed delete (`app/compliance/page.tsx`, the delete sheet). */
 const DELETE_FAILED = 'That could not be deleted. Nothing was changed. Please try again.'
 /** For a "Read it again" the server never started — Claude Code's sentence, accepted by the owner as written (7 October). */
@@ -517,7 +517,6 @@ export default function HrWorkspace() {
         return
       }
       const json = await res.json().catch(() => ({}))
-      if (json?.older_not_replaced) setNotice(OLDER_NOT_REPLACED)
       if (!olderId && addFrom.current === 'ask' && typeof json?.id === 'string') setAskAdded(json.id)
       await loadHandbooks()
       if (olderId) setDrawer(null)
@@ -883,6 +882,12 @@ export default function HrWorkspace() {
                                   <span className="truncate">{h.file_name}</span>
                                   <span aria-hidden="true">·</span>
                                   {stateWords(h)}
+                                  {/* H4: a current version with a newer one waiting behind it is the one ANSWERS USE,
+                                      and says so — otherwise the two look like two handbooks of the same name and
+                                      nothing says which answers a question. */}
+                                  {inUseNote(h, allHandbooks) && (
+                                    <><span aria-hidden="true">·</span><span>{inUseNote(h, allHandbooks)}</span></>
+                                  )}
                                   {/* A site that was deleted: the handbook keeps scope 'site' and says so (choosing arrives in polish, step 11). */}
                                   {g.removed && <><span aria-hidden="true">·</span><span>choose where it applies</span></>}
                                 </p>

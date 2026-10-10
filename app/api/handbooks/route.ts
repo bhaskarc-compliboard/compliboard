@@ -33,9 +33,9 @@ export async function POST(request: NextRequest) {
     if (!authed.ok) return authed.response
     const { companyId, userId, db } = authed.auth
 
-    // The two writes, and why their order matters, are in `lib/handbookSave.ts`.
+    // ONE write now: the older version is retired by `lib/handbookRead.ts` when this file has been read,
+    // not here. `lib/handbookSave.ts` says what the old order cost (fix list H4).
     const result = await saveHandbookRow(db, companyId, userId, await request.json())
-    if (result.json.older_not_replaced) console.error('handbooks: newer version saved, older still current:', result.json.id)
     if (result.status === 200 && typeof result.json.id === 'string') {
       // Claimed BEFORE the reply, so the row already says "Reading…" when the page reloads its list.
       await startReading(db, companyId, result.json.id)

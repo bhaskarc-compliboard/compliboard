@@ -163,7 +163,7 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
     return `could_not_read: ${log}`
   }
   try {
-    const { data: row } = await db.from('handbooks').select('file_path, file_name, mime_type')
+    const { data: row } = await db.from('handbooks').select('file_path, file_name, mime_type, version_of')
       .eq('id', id).eq('company_id', companyId).maybeSingle()
     if (!row) return 'gone'
     const { data: blob, error: dlErr } = await db.storage.from(deps.bucket).download(row.file_path)
@@ -208,6 +208,23 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
       // Deleted, or another run took over: this run's sections are not the handbook's.
       await admin.from('handbook_sections').delete().in('id', (written ?? []).map((w: { id: string }) => w.id)).eq('company_id', companyId)
       return upErr ? giveUp(READ_REASONS.ours, `save: ${upErr.message}`) : 'claim lost'
+    }
+    // *** AND NOW — NOT AT UPLOAD — THE VERSION THIS ONE REPLACES IS RETIRED. ***
+    // Fix list H4, root R5, Job E. `lib/handbookSave.ts` says what switching it off at upload cost: a
+    // company with one handbook was told "None of your handbooks could be read" while a perfectly readable
+    // version of it sat in the table, its open check cancelled as replaced and the nightly job checking
+    // neither. The switch belongs here, on the one write that proves the new version can be read.
+    //
+    // If THIS write fails, both versions stay current — the safe direction, and the state the list already
+    // renders — and it is logged rather than returned, because the reading itself succeeded and the caller's
+    // own words are about the reading.
+    if (row.version_of) {
+      const { error: retireErr } = await db.from('handbooks')
+        .update({ is_current: false }).eq('id', row.version_of).eq('company_id', companyId)
+      if (retireErr) {
+        console.error(`handbooks: ${id} was read but the version it replaces (${row.version_of}) is still `
+          + `current: ${retireErr.message}`)
+      }
     }
     return `read: ${out.pageCount ?? '—'} pages, ${out.sections.length} sections, ${out.dropped} anchor(s) dropped, ${out.parts} part(s)`
   } catch (e) {
