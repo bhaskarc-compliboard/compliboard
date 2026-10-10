@@ -119,7 +119,15 @@ describe('all four emails use the frame', () => {
       const src = readFileSync(f, 'utf8')
       assert.match(src, /renderEmail\(/, `${f} does not render through the frame`)
       assert.match(src, /EmailContent/, `${f} builds no content object`)
-      assert.match(src, /\bhtml\b/, `${f} does not send an HTML part`)
+      // *** ASSERT THE SEND CARRIES IT, NOT THAT THE WORD APPEARS SOMEWHERE. ***
+      // This line used to be `/\bhtml\b/` against the whole file, and it passed on
+      // lib/calendarNotify.ts for days while `emails.send(...)` there listed only
+      // `{ from, to, subject, text }` — the word was in the return type. The one email the frame
+      // was built for was going out as plain text and the test said it was fine. A check has to
+      // look at the thing it is making a claim about (B9).
+      const send = src.slice(src.indexOf('emails.send('))
+      const call = send.slice(0, send.indexOf('})') + 2)
+      assert.match(call, /\bhtml\b/, `${f}: emails.send() does not pass an html part:\n${call}`)
     }
   })
 

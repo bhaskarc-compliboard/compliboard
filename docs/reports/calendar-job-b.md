@@ -313,3 +313,82 @@ believed.
   that breaks email layouts; everything here is Chromium.
 - The audit render's staging banner reads "would have gone to (nobody)" because the probe run has no
   `created_by`. That is truthful, not a defect.
+
+---
+
+# B9 — the monthly render, and what the real path found
+
+**The owner was right, and the cause is worse than a stale fixture.** The render used
+`renderMonthlyEmail` with dates typed into the script — and **one of them I edited by hand, earlier
+in this job, to "look realistic"**: `due_date: '2026-11-30'` → `'2026-10-28'`. So the email showed
+28 October for a date the page, the list and the printed month all put on 30 November.
+
+It now goes through **`notifyMonth` on a dry run, against the staging rows** — the same function the
+cron calls, which reads the company, reads the dates, decides whether to send at all, and renders.
+
+## The same rows, three ways, as of 2026-10-09
+
+```
+THE DATABASE (Cascade, 5 rows)
+  2025-09-30  Fire extinguisher service                            confirmed
+  2026-08-20  Next annual maintenance for all 14 units             not_confirmed
+  2026-10-14  Scrubber inspection                                  done
+  2026-10-20  Air permit annual fee                                confirmed
+  2026-11-30  Six-year internal maintenance for units W-3 and L-1  not_confirmed
+
+THE EMAIL (notifyMonth)            THE PAGE / LIST                  THE PRINTED OCTOBER
+Due this month (1):                AHEAD                            OCTOBER 2026
+  20 October · Air permit            20 October · Air permit          14 October · Scrubber · done
+                                     30 November · Six-year           20 October · Air permit
+Dates that have passed (2):        DATES THAT HAVE PASSED           DATES THAT HAVE PASSED
+  30 September 2025 · Fire ext.      30 September 2025 · Fire ext.    30 September 2025 · Fire ext.
+  20 August · Next annual maint.     20 August · Next annual maint.   20 August · Next annual maint.
+Found … not yet confirmed: 2.      To confirm (2)                   "4 dates, 1 not confirmed"
+```
+
+**No 28 October anywhere.** The three differ in exactly three places, and each is a rule:
+
+| difference | why |
+|---|---|
+| the email omits 14 October (Scrubber, done) | decision 11: it lists what is **due**, not what is finished |
+| the email omits 30 November | it is next month |
+| the printed October keeps 14 October, marked done | a printed sheet is the month's **record** |
+| the page's Ahead holds both 20 Oct and 30 Nov | Ahead is not one month |
+
+## And rendering it properly found a real defect in one line
+
+```
+lib/calendarNotify.ts:335   emails.send({ from: emailFrom(), to, subject, text })
+```
+
+**No `html`.** The frame was built in B5 for this email above all; `renderMonthlyEmail` has returned
+`html` ever since; and the send never destructured it. The other three carried it. So **the monthly
+email has been going out as plain text**, and would have on the 1st.
+
+**The test that was meant to catch this passed for days.** It asserted `/\bhtml\b/` against the whole
+file — and the word is in `NotifyResult`. It now slices out the `emails.send(` call and asserts
+against that, and **was proved to fail on the bug before being trusted**:
+
+```
+with the html argument removed :  pass 15  fail 1
+   "lib/calendarNotify.ts: emails.send() does not pass an html part"
+```
+
+## Job B is closed
+
+- **Seeded rows removed**: `hand:jobB-%` — 3 deleted (Air permit annual fee, Fire extinguisher
+  service, Scrubber inspection). `calendar_events` is back to **3**, none seeded. The Supabase CLI
+  refused the DELETE (`25006: cannot execute DELETE in a read-only transaction`), which is the guard
+  working; it went through the service role instead.
+- **1101 tests**, floor 1101. `check:live` ok on 3999. **Job B spend $0.00 of $3** — no model call in
+  the whole job.
+- `DECISIONS.md` §187 (a–f), `STATUS.md`'s Calendar row, `docs/HANDOFF-CODE.md` §7 (four new rows).
+
+## Still open, and not the Calendar's
+
+| | |
+|---|---|
+| **35b** | `Hero2.png` and `Audit_report_4.png` say "overdue" in baked pixels — needs artwork, Job D |
+| **35c** | every printed page carries the left nav — one line of CSS, but it changes every section's print, so Job E |
+| decision 22 | all four emails still send from `onboarding@resend.dev` |
+| — | **no email has been opened in a real client.** Outlook renders with Word's engine; everything here is Chromium |

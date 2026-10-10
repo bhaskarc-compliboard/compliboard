@@ -12602,3 +12602,84 @@ $0.40** of a $3 budget — one live document reading ($0.0406) and one avoidable
 The page itself (Job B): the three tabs, the drawer, To confirm with Confirm all, "Add a date",
 print. Dates in Workspace and HR summaries (step 7, a quality change). Everything in decision 20.
 **Nothing is on production**, and the monthly email reaches no customer until §185b's two gates open.
+
+## 187. CALENDAR JOB B: THE PAGE, THE DASHBOARD, THE PROMISE WORDS AND ONE EMAIL FRAME — 9 October 2026
+
+Job B built the calendar page itself (boards 1–8 and 13), the dashboard's calendar part with three
+fix-list items, decision 21's true words, and **one email frame for all four customer emails**
+(boards 14–15, decision 11). `docs/reports/calendar-job-b.md` is the run's own record; this section
+is what should outlive it.
+
+### 187a. The page has no writer of its own
+
+Every change goes through `lib/calendarDates.ts` by way of `/api/calendar/dates`, and every day is
+read by `lib/calendarDate.ts`. There is no second idea of what a day is, which is how the old page
+could call a date "Overdue" in one panel and "Due today" in the row beneath it
+(`docs/CALENDAR-MACHINERY.md` B2). **Reversed if** a second surface ever needs a write the route
+cannot express — and then the route grows, not the page.
+
+`/api/extract-dates` and `prompts/extract-dates.ts` are **deleted** (decision 17): Documents is the
+one door for files, and it reads dates with the line they came from. The importer enumerated from a
+document with no anchor, the mode `CLAUDE.md` §3.3 names as the unreliable one.
+
+### 187b. A date a person typed is confirmed by the typing — migration 077
+
+`source = 'hand'` may never be `not_confirmed`. There is nobody else to confirm it against and no
+document line to check it by, so "confirm your own typing" cannot appear in the To confirm tab. The
+row that prompted this was written **straight to the table by a proof script**, which is how a
+combination no route can make reached a screenshot. **A test fixture is not a reason to leave a hole
+open:** the same shape reaches a customer the first time any code writes a state beside a source
+without thinking.
+
+### 187c. ⚡ A RENDER THAT IS HAND-WRITTEN IS NOT EVIDENCE ABOUT ANYTHING
+
+**The rule this job earned, three times over.** Every one of the four email renders in B5 was a
+fixture typed into a script, and all three of the ones the owner checked were wrong:
+
+- **Documents'**: the fixture invented "We read 6 documents. 2 need attention, 4 are on file and need
+  nothing." The product says "We've read your 6 documents: 2 need work, 1 is expiring." The CODE was
+  never rewritten — `summaryLine` was untouched the whole time. **It was the picture of the code that
+  broke decision 11, which is the more dangerous way round, because a wrong render is believed.**
+- **Audits'**: the fixture's shape was *impossible* (the old code could only print "…and N more" past
+  25 rows), so it showed a disagreement the product did not have **and hid the one it did**.
+- **The monthly email's**: a date in the fixture was **edited by hand to look realistic**, so the
+  render showed 28 October for a date the page, the list and the printed month all put on 30
+  November.
+
+**So every email render now comes out of the code that sends it.** `notifyRun`, `notifyCheck` and
+`notifyMonth` return `html` on a **dry run**, so an email can be looked at without being sent, and
+the render script calls them. **Reversed if** a render ever needs a shape the product cannot produce
+— and then the question is why that shape is being drawn at all.
+
+**And rendering the monthly email through its real path immediately found that `notifyMonth` sent no
+HTML at all** — `emails.send({ from, to, subject, text })`, for the one email the frame was built
+for, while the other three carried it. The test meant to catch this asserted that the word `html`
+appeared *somewhere in the file*; it appeared in the return type. **A check has to look at the thing
+it is making a claim about.** It now reads the `emails.send(` call itself, and was proved to fail on
+the bug before being trusted.
+
+### 187d. The two counts in an email must add up
+
+The audit email's subject counts `needs_person` — `nothing_on_file + stale + contradictions +
+not_a_document_question` (`lib/auditRun.ts:1220`) — while its list and overflow line accounted for
+the first two only. A run with a contradiction said **5 things that need you**, listed **3**, and
+printed no "…and 2 more". The overflow now subtracts from `needs_person`. **The general rule:** a
+number in a subject line and the list beneath it are one claim, and nothing in the code made them
+one. Where a count and a list can disagree, something has to make them agree.
+
+### 187e. The promise gate is computed on the server
+
+Sentences that promise the monthly email are written in and rendered only when
+`monthlyEmailPromised()` is true — the owner's instruction was *"Do not hold them by hand"*. The
+first version called it from `'use client'` pages, where `EMAIL_FROM` is not in the bundle, so
+**the gate could never have opened**: the words would have stayed hidden after the domain was
+verified, silently, for ever. `/api/promise` computes it on the server; `lib/usePromise.ts` asks,
+starting at `false`, so a failed read never promises. **A gate only ever exercised in its "no" state
+is a gate nobody has shown can say yes** — both states are rendered against a real server, the open
+one by flipping the constant in a *copy* of the tree.
+
+### 187f. What the cross-section gate caught that nothing else could
+
+Migration 077's CHECK broke two probes in `scripts/check-live.js` — another section's file. **`npm
+run check` was green throughout**, because the constraint is in the database and the probes are in a
+script. That is the argument for §3.12 in one example.

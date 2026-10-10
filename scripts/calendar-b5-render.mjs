@@ -2,7 +2,12 @@
 // HTML to the scratchpad for a browser to shoot, and prints the plain-text part so the words can be
 // read beside the old ones. No send, no model, no database.
 import { writeFileSync, mkdirSync } from 'node:fs'
-import { renderMonthlyEmail } from '../lib/calendarNotify.ts'
+import { createClient } from '@supabase/supabase-js'
+import { today } from '../lib/calendarDate.ts'
+
+const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } })
+const TODAY = process.env.RENDER_AS_OF ?? today()
 import { renderEmail } from '../lib/emailFrame.ts'
 // *** THE WORDS COME FROM THE PRODUCT, NOT FROM THIS FILE. ***
 // B5's first version hand-wrote "We read 6 documents. 2 need attention, 4 are on file and need
@@ -18,26 +23,30 @@ const SEND = process.argv.includes('--send')
 
 mkdirSync('shots/emails', { recursive: true })
 
-const monthly = renderMonthlyEmail({
-  companyName: 'Cascade Specialty Chemicals, LLC',
-  asOf: '2026-10-09',
-  appUrl: 'https://compliboard.vercel.app',
-  dates: {
-    due: [
-      { id: '1', title: 'Air permit annual fee', due_date: '2026-10-20', site: 'Portland plant', state: 'confirmed' },
-      { id: '2', title: 'Six-year internal maintenance for units W-3 and L-1', due_date: '2026-10-28', site: 'Portland plant', state: 'not_confirmed' },
-    ],
-    passed: [
-      { id: '3', title: 'Fire extinguisher service', due_date: '2025-09-30', site: 'Portland plant', state: 'confirmed' },
-      { id: '4', title: 'Next annual maintenance for all 14 units', due_date: '2026-08-20', site: 'Portland plant', state: 'not_confirmed' },
-    ],
-    waiting: 2,
-  },
-})
+// *** THE MONTHLY EMAIL COMES OUT OF THE REAL PATH, AGAINST THE REAL ROWS *** (B9).
+// It used to be `renderMonthlyEmail` with dates typed into this file — and one of them was EDITED
+// BY HAND to "look realistic", which is how the render came to show 28 October for a date the page,
+// the list and the printed month all put on 30 November. A render that does not read the database
+// is a drawing of the product, and it was believed. `notifyMonth` is what the cron calls: it reads
+// the company, reads the dates, decides whether to send at all, and renders. The dry run returns
+// the HTML without sending.
+import { notifyMonth } from '../lib/calendarNotify.ts'
+
+const CASCADE = (await db.from('companies').select('id')
+  .eq('name', 'Cascade Specialty Chemicals, LLC').maybeSingle()).data
+if (!CASCADE) { console.error('the fixture company is not on staging'); process.exit(1) }
+
+const monthRes = await notifyMonth(db, CASCADE.id, { asOf: TODAY, dryRun: true })
+if (!monthRes.html) {
+  console.error(`the monthly dry run returned no html: ${monthRes.error ?? monthRes.reason}`)
+  process.exit(1)
+}
+const monthly = { html: monthRes.html, text: monthRes.text, subject: monthRes.subject }
+console.log(`\n=== MONTHLY — from notifyMonth, against staging (subject: ${monthRes.subject})\n`)
+console.log(monthRes.text)
+
 writeFileSync('shots/emails/monthly.html', monthly.html)
-console.log('=== MONTHLY — plain text part\n')
-console.log(monthly.text)
-console.log(`\n(subject: ${monthly.subject})`)
+
 
 // ── THE OTHER THREE, from fixture content in each one's own shape ─────────────────────────────
 // These build the SAME content objects their modules build, so the renders are faithful. They are
@@ -77,12 +86,9 @@ const documents = renderEmail({
 // not produce — so the render showed a disagreement the product did not have and hid the one it
 // did. This builds real `audit_findings` rows, lets `summariseRun` count them and `notifyRun`
 // write the email, and takes the HTML off the dry run. Throwaway company, deleted at the end.
-import { createClient } from '@supabase/supabase-js'
 import { notifyRun } from '../lib/auditNotify.ts'
 import { summariseRun } from '../lib/auditRun.ts'
 
-const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { persistSession: false } })
 let probeCo = null
 const cleanProbe = async () => { if (probeCo) { await db.from('companies').delete().eq('id', probeCo); probeCo = null } }
 for (const sig of ['uncaughtException', 'unhandledRejection'])

@@ -62,6 +62,8 @@ export interface NotifyResult {
   id?: string | null
   subject?: string
   text?: string
+  /** The HTML part, on a DRY RUN only — so the email can be looked at without being sent (B8). */
+  html?: string
 }
 
 /**
@@ -316,7 +318,12 @@ export async function notifyMonth(
   if (!to.length) return { notified: false, reason: 'no logins' }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
-  const { subject, text } = renderMonthlyEmail({
+  // *** `html` WAS NOT DESTRUCTURED HERE, AND SO WAS NEVER SENT *** (B9). The frame was built in
+  // B5 for this email above all, `renderMonthlyEmail` has returned `html` since, and the send below
+  // passed only `subject` and `text` — so the one email the frame was designed for went out as
+  // plain text while the other three carried it. Found by rendering through this function instead
+  // of around it, which is the whole of B9's instruction.
+  const { subject, text, html } = renderMonthlyEmail({
     companyName: company.name as string, asOf, dates, appUrl, realTo, override,
   })
 
@@ -328,11 +335,13 @@ export async function notifyMonth(
       + 'would have been wrong.')
     return { notified: false, reason: 'no app url', to: to.join(', '), subject, text }
   }
-  if (opts.dryRun) return { notified: false, to: to.join(', '), subject, text }
+  // A dry run hands back the HTML too, so the email can be LOOKED at without being sent — the rule
+  // B8 put on `notifyRun` and `notifyCheck`, for the reason this very function just demonstrated.
+  if (opts.dryRun) return { notified: false, to: to.join(', '), subject, text, html }
 
   const key = process.env.RESEND_API_KEY
   if (!key) return { notified: false, error: 'RESEND_API_KEY is not set', to: to.join(', '), subject, text }
-  const res = await new Resend(key).emails.send({ from: emailFrom(), to, subject, text })
+  const res = await new Resend(key).emails.send({ from: emailFrom(), to, subject, text, html })
   if (res.error) return { notified: false, error: res.error.message, to: to.join(', '), subject, text }
   return { notified: true, id: res.data?.id ?? null, to: to.join(', '), subject, text }
 }
