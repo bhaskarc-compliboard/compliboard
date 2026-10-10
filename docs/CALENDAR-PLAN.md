@@ -1,6 +1,7 @@
 # The Calendar section — the plan
 
-**Version:** 6 · **Updated:** 9 October 2026, night: **Job B done** (`DECISIONS.md` §187 a–f, staging only, $0 spent):
+**Version:** 7 · **Updated:** 9 October 2026, night: **decision 15 — "today" is the company's time zone** (B10).
+Version 6: 9 October 2026, night: **Job B done** (`DECISIONS.md` §187 a–f, staging only, $0 spent):
 the page on HR's shell, the dashboard's calendar part, the promise words (switched on by the server only when the
 email can reach a customer), one email frame for all four customer emails, migration 077 (a typed date is confirmed),
 and the breadcrumb gone from Calendar and the Dashboard. **§187c: a hand-written render is not evidence** — every
@@ -229,9 +230,14 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
     one site, as Documents does.
 
 15. **Dates are days, not times.** All date arithmetic goes through one helper in `lib/` that reads `YYYY-MM-DD` as
-    a calendar day, never as UTC midnight (B2). The calendar, the dashboard and the email use it. "Today" is taken in
-    Pacific time in rev 1, because every customer is in Oregon or Washington; a company's own time zone is a later
-    item.
+    a calendar day, never as UTC midnight (B2). The calendar, the dashboard and the email use it. **"Today" is the
+    company's** (the owner, 9 October 2026, night; Job B's B10): a due date has no time zone, but which day is today
+    does — it decides what has passed, "due in N days", this month, "Printed <date>" and which month the email is
+    about. The zone comes from the company's state through one map in `lib/calendarDate.ts` (each state's main
+    zone, Pacific when unknown), always from the server, never the viewer's browser: a team on one calendar sees one
+    today. Eleven states are split across two zones; **My Account adds a time zone setting** on the company profile,
+    defaulting to the state's (`HANDOFF-CODE.md` §7). Documents' and Audits' "read on <date>" lines still use the
+    server's day — Job E. The monthly email's send time (15:00 UTC on the 1st) is already the 1st in every US zone.
 
 16. **The layout copies HR and the Workspace exactly.**
     - `AppLayout`, the 900 column (`max-w-[900px] px-4 pb-16 sm:px-6`), the 28px serif title and one grey line,
