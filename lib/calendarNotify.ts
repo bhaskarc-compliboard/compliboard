@@ -33,7 +33,7 @@
  */
 import { Resend } from 'resend'
 import { emailFrom } from './emailSender.ts'
-import { formatDayShort, formatMonth, monthRange, today } from './calendarDate.ts'
+import { formatDayShort, formatMonth, monthRange, today, zoneForState } from './calendarDate.ts'
 import { renderEmail, type EmailContent, type EmailBlock, type EmailRow } from './emailFrame.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -298,12 +298,16 @@ export async function notifyMonth(
   db: Db, companyId: string,
   opts: { asOf?: string; dryRun?: boolean } = {},
 ): Promise<NotifyResult> {
-  const asOf = opts.asOf ?? today()
-
+  // *** THE MONTH IS THE COMPANY'S MONTH, NOT THE SERVER'S *** (B10). The cron fires at one instant
+  // for everybody; a company in Hawaii is still on the last day of the previous month when it does.
+  // So the zone is read per company, inside the loop, and `asOf` follows it. An explicit `asOf`
+  // (`?as_of=`) still wins, because that is a person asking for a particular day on purpose.
   const { data: company, error: cErr } = await db.from('companies')
-    .select('name').eq('id', companyId).maybeSingle()
+    .select('name, state').eq('id', companyId).maybeSingle()
   if (cErr) throw new Error(`the company could not be read: ${cErr.message}`)
   if (!company) return { notified: false, error: `no company ${companyId}` }
+
+  const asOf = opts.asOf ?? today(zoneForState(company.state as string | null))
 
   const dates = await monthlyDates(db, companyId, asOf)
 

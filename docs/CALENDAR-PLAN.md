@@ -1,6 +1,11 @@
 # The Calendar section — the plan
 
-**Version:** 5 · **Updated:** 9 October 2026, evening: **Job A done** (`a6fbbeb`→`84cae8b`, `DECISIONS.md` §186, staging
+**Version:** 6 · **Updated:** 9 October 2026, night: **Job B done** (`DECISIONS.md` §187 a–f, staging only, $0 spent):
+the page on HR's shell, the dashboard's calendar part, the promise words (switched on by the server only when the
+email can reach a customer), one email frame for all four customer emails, migration 077 (a typed date is confirmed),
+and the breadcrumb gone from Calendar and the Dashboard. **§187c: a hand-written render is not evidence** — every
+email can now be rendered through its real sender without being sent. The landing page is parked as its own project
+after all sections (the owner). Version 5: 9 October 2026, evening: **Job A done** (`a6fbbeb`→`84cae8b`, `DECISIONS.md` §186, staging
 only) and what it added — §185a (a failed reading owns its status and nothing else), §185b (the monthly email's
 launch gate), §185c (**never "overdue" or "not done" about a date**); **one shared frame for every email** and the
 brand wordmark (boards 14, 15; decision 11); Job B's scope (§2.4). Version 4: 9 October 2026: **Job E, the fix list** (§2.4, `docs/FIX-LIST-FAILURES.md`) — the
@@ -292,7 +297,7 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
    withdrawing a stale reading's or version's not-confirmed dates; the report and `document_index_v` onto the
    current dates (decision 4); the report's date row reads "On your calendar · not confirmed · Confirm";
    `deadline_to_calendar` onto the shared function. Documents' free checks re-run. STOP.
-5. **The page.** The reflow (decision 16), the three tabs, the drawer, To confirm with Confirm all, "Add a date",
+5. **The page.** **DONE 9 October in Job B** (§187). The reflow (decision 16), the three tabs, the drawer, To confirm with Confirm all, "Add a date",
    repeats, print. The import retired (decision 17). STOP: the owner looks.
 6. **Audits' "Add to calendar"** onto the shared function, with its document and finding, and "On your calendar".
    Audits' free checks re-run. STOP.
@@ -300,7 +305,7 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
    owner first.** Workspace and HR free checks re-run; their finish-line parts gain a line. STOP.
 8. **The monthly email** (decision 11). Proved with `NOTIFY_TEST_TO`. Reaching customers waits for decision 22. STOP.
    **Steps 3, 4, 6 and 8: DONE 9 October in Job A** (`DECISIONS.md` §186).
-9. **The dashboard's calendar part and the promise words** (decisions 18, 21). STOP.
+9. **The dashboard's calendar part and the promise words** (decisions 18, 21). STOP. **DONE 9 October in Job B** (§187).
 10. **Release** (the `docs/RELEASE.md` routine), **the morning after** (the new job's `job_runs` row on the 1st), and
     the close-out: the Calendar part of `docs/TEST-AT-FINISH-LINE.md` (A to J, with its shared files),
     `docs/HANDOFF-FROM-CALENDAR.md`, `STATUS.md`'s Calendar row, and the Project docs synced.

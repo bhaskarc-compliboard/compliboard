@@ -21,7 +21,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
 import { supabaseAdmin } from '@/lib/auth'
 import { notifyMonth } from '@/lib/calendarNotify'
-import { today } from '@/lib/calendarDate'
 
 export const maxDuration = 300
 
@@ -34,7 +33,16 @@ interface Counts {
   [k: string]: unknown
 }
 
-async function run(asOf: string, dryRun: boolean) {
+/**
+ * `asOf` is `undefined` on the nightly run and a day only when a person asked for one.
+ *
+ * *** THAT DISTINCTION IS B10's WHOLE POINT. *** The cron fires at one instant for everybody, and
+ * `notifyMonth` works out each company's own day from its own zone. Passing a single `asOf` down
+ * would hand every company the SERVER's day and quietly undo that — a company in Hawaii would get
+ * "your November dates" while it is still October there. So the sweep passes nothing and lets each
+ * company answer for itself; `?as_of=` still overrides, because that is somebody asking on purpose.
+ */
+async function run(asOf: string | undefined, dryRun: boolean) {
   const job = await startJobRun(supabaseAdmin, 'calendar_month')
   const counts: Counts = { companies: 0, sent: 0, nothing_to_say: 0, no_logins: 0, failed: 0 }
   const errors: unknown[] = []
@@ -53,7 +61,7 @@ async function run(asOf: string, dryRun: boolean) {
     counts.companies = companies.length
     for (const c of companies as Array<{ id: string; name: string }>) {
       try {
-        const r = await notifyMonth(supabaseAdmin, c.id, { asOf, dryRun })
+        const r = await notifyMonth(supabaseAdmin, c.id, { ...(asOf ? { asOf } : {}), dryRun })
         if (r.notified || (dryRun && r.subject)) {
           counts.sent++
           sent.push({ company: c.name, to: r.to ?? '', subject: r.subject ?? '',
@@ -79,13 +87,16 @@ async function run(asOf: string, dryRun: boolean) {
   }
 
   await job.finish(counts, errors)
-  return { job_run_id: job.id, as_of: asOf, dry_run: dryRun, counts, errors, sent }
+  // `as_of` says "per company" rather than a day when nobody asked for one — printing the server's
+  // day there would describe a run that did not happen (B10).
+  return { job_run_id: job.id, as_of: asOf ?? 'per company (its own zone)',
+           dry_run: dryRun, counts, errors, sent }
 }
 
 export async function GET(request: NextRequest) {
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
-  return NextResponse.json(await run(today(), false))
+  return NextResponse.json(await run(undefined, false))
 }
 
 /**
@@ -98,6 +109,6 @@ export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
   const p = request.nextUrl.searchParams
-  const asOf = /^\d{4}-\d{2}-\d{2}$/.test(p.get('as_of') ?? '') ? p.get('as_of') as string : today()
+  const asOf = /^\d{4}-\d{2}-\d{2}$/.test(p.get('as_of') ?? '') ? p.get('as_of') as string : undefined
   return NextResponse.json(await run(asOf, p.get('dry') === '1'))
 }

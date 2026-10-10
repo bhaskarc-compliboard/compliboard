@@ -35,7 +35,7 @@ import { PRIMARY, OUTLINE, TEXT_ACTION } from '@/components/buttonStyles'
 import { printWithFrame } from '@/lib/printFrame'
 import { useMonthlyEmailPromised } from '@/lib/usePromise'
 import {
-  today, formatDay, formatDayShort, formatMonth, monthRange, inMonth, isPast, dueWords,
+  today, CALENDAR_TZ, formatDay, formatDayShort, formatMonth, monthRange, inMonth, isPast, dueWords,
   compareDays, nextOccurrence, isDayString, type HowOften,
 } from '@/lib/calendarDate'
 
@@ -94,6 +94,12 @@ function Calendar() {
   const [sites, setSites] = useState<Array<{ id: string; name: string }>>([])
   const [docs, setDocs] = useState<Record<string, string>>({})
   const [companyName, setCompanyName] = useState('')
+  /**
+   * *** "TODAY" IS THE COMPANY'S, AND IT COMES FROM THE SERVER *** (B10).
+   * It starts as Pacific so the first paint is never wrong for rev 1's customers, and
+   * `/api/calendar/dates` replaces it with the zone of the company's own state.
+   */
+  const [tz, setTz] = useState(CALENDAR_TZ)
   const [loading, setLoading] = useState(true)
   /** *** "COULDN'T LOAD" IS NOT AN EMPTY CALENDAR *** (R2/R3, `CLAUDE.md` §3.12). */
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -102,9 +108,11 @@ function Calendar() {
 
   const [tab, setTab] = useState<Tab>('month')
   const [cursor, setCursor] = useState(() => {
-    const t = today()
+    const t = today()                               // Pacific for the first paint; corrected below
     return { y: Number(t.slice(0, 4)), m: Number(t.slice(5, 7)) }
   })
+  /** Whether the person has moved the month themselves. If they have, the zone must not move it. */
+  const [movedMonth, setMovedMonth] = useState(false)
   const [site, setSite] = useState<string>('all')
   const [showDone, setShowDone] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -114,7 +122,14 @@ function Calendar() {
   const [reason, setReason] = useState('')
   const [changing, setChanging] = useState(false)
 
-  const now = today()
+  const now = today(tz)
+  // The month the page opens on follows the company's zone too — a calendar opened at 11pm on the
+  // 31st in Hawaii must not open on next month. Only until the person moves it themselves.
+  useEffect(() => {
+    if (movedMonth) return
+    const y = Number(now.slice(0, 4)), m = Number(now.slice(5, 7))
+    setCursor((c) => (c.y === y && c.m === m ? c : { y, m }))
+  }, [now, movedMonth])
   /** *** THE ANSWER COMES FROM THE SERVER *** (`/api/promise`): `EMAIL_FROM` is invisible to the
    *  browser, so a client-side gate could never open. It starts false, which is the safe way round. */
   const emailPromised = useMonthlyEmailPromised()
@@ -143,6 +158,7 @@ function Calendar() {
       const json = await res.json()
       if (!json?.dates) throw new Error('the calendar came back in a shape we could not use')
       setDates(json.dates as CalendarDate[])
+      if (typeof json.timezone === 'string') setTz(json.timezone)
 
       const companyId = prof.data?.company_id
       if (companyId) {
@@ -236,10 +252,10 @@ function Calendar() {
     return cells
   }, [cursor, onBoard])
 
-  const step = (by: number) => setCursor((c) => {
+  const step = (by: number) => { setMovedMonth(true); setCursor((c) => {
     const m = c.m + by
     return m < 1 ? { y: c.y - 1, m: 12 } : m > 12 ? { y: c.y + 1, m: 1 } : { y: c.y, m }
-  })
+  }) }
 
   /** A date on the month: solid for confirmed, open for not confirmed, amber once its day has gone. */
   const dotClass = (d: CalendarDate) =>
@@ -412,7 +428,7 @@ function Calendar() {
               <h2 className="text-[15px] font-medium text-gray-900">{formatMonth(cursor.y, cursor.m)}</h2>
               <div className="flex items-center gap-3">
                 <button onClick={() => step(-1)} className={TEXT_ACTION} aria-label="Previous month">←</button>
-                <button onClick={() => setCursor({ y: Number(now.slice(0, 4)), m: Number(now.slice(5, 7)) })}
+                <button onClick={() => { setMovedMonth(false); setCursor({ y: Number(now.slice(0, 4)), m: Number(now.slice(5, 7)) }) }}
                   className={TEXT_ACTION}>Today</button>
                 <button onClick={() => step(1)} className={TEXT_ACTION} aria-label="Next month">→</button>
                 <button onClick={printMonth} className={TEXT_ACTION}>Print</button>

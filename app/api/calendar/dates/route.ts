@@ -20,7 +20,7 @@ import {
   addDate, confirmDate, rejectDate, markDone, listDates, siblingsOnDay, setHowOften,
   DATE_SOURCES, type DateSource, type HowOften,
 } from '@/lib/calendarDates'
-import { isDayString } from '@/lib/calendarDate'
+import { isDayString, zoneForState } from '@/lib/calendarDate'
 
 const HOW_OFTEN: HowOften[] = ['monthly', 'quarterly', 'yearly']
 
@@ -207,12 +207,22 @@ export async function GET(request: NextRequest) {
     const asked = request.nextUrl.searchParams.get('view') ?? 'board'
     const view = (['board', 'to_confirm', 'all'] as const).includes(asked as 'board')
       ? (asked as 'board' | 'to_confirm' | 'all') : 'board'
+    // *** THE COMPANY'S ZONE COMES FROM THE SERVER *** (B10). The browser's own zone is the
+    // traveller's, not the company's: somebody opening the calendar from a hotel in Berlin must see
+    // the same "today" as the plant in Portland, because the dates are the plant's. Sent with the
+    // dates rather than from a route of its own, so a screen cannot draw a day before it knows
+    // which day it is. A read that fails falls back to Pacific inside `zoneForState`.
+    const { data: co, error: coErr } = await db.from('companies')
+      .select('state').eq('id', companyId).maybeSingle()
+    if (coErr) console.error(`calendar dates: could not read the company's state: ${coErr.message}`)
+    const timezone = zoneForState(co?.state)
+
     const dates = await listDates(db, { companyId, view })
     // The count the tab's own name carries ("To confirm (4)"), so the page does not have to fetch
     // twice to draw its own tab bar.
     const toConfirm = view === 'to_confirm' ? dates.length
       : (await listDates(db, { companyId, view: 'to_confirm' })).length
-    return NextResponse.json({ dates, view, to_confirm_count: toConfirm })
+    return NextResponse.json({ dates, view, to_confirm_count: toConfirm, timezone })
   } catch (error) {
     console.error('calendar dates GET:', error)
     return NextResponse.json({ error: BROKE }, { status: 500 })

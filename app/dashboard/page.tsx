@@ -5,7 +5,7 @@ import { createClient, authHeaders } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import { isAmber, statusWord } from '@/lib/documentStatus'
-import { today, formatDayShort, dueWords, compareDays, isPast } from '@/lib/calendarDate'
+import { today, CALENDAR_TZ, formatDayShort, dueWords, compareDays, isPast } from '@/lib/calendarDate'
 
 interface CompanyProfile {
   name: string
@@ -65,6 +65,8 @@ export default function Dashboard() {
    * belongs to, so a broken read can never read as good news.
    */
   const [broke, setBroke] = useState({ profile: false, dates: false, documents: false })
+  /** The company's own zone, from the calendar's route (B10). Pacific until it arrives. */
+  const [tz, setTz] = useState(CALENDAR_TZ)
 
   useEffect(() => {
     async function load() {
@@ -90,6 +92,7 @@ export default function Dashboard() {
           const cJson = await cRes.json()
           if (!Array.isArray(cJson?.dates)) throw new Error('the calendar came back in a shape we could not use')
           setEvents(cJson.dates as CalEvent[])
+          if (typeof cJson.timezone === 'string') setTz(cJson.timezone)
         } catch { setBroke(b => ({ ...b, dates: true })) }
 
         // *** THE READINGS AND THE COUNTS BOTH COME FROM `document_index_v` — 28 September 2026. ***
@@ -150,7 +153,7 @@ export default function Dashboard() {
    * page now goes through the one helper, which reads a day at LOCAL NOON and asks what "today" is
    * in Pacific time.
    */
-  const now = today()
+  const now = today(tz)
   const in30 = (() => { const d = new Date(`${now}T12:00:00`); d.setDate(d.getDate() + 30); return d.toISOString().slice(0, 10) })()
   const onBoard = events.filter(e => e.counts_as_due && e.due_date && e.state !== 'done')
   const upcoming = onBoard

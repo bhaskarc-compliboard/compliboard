@@ -12683,3 +12683,39 @@ one by flipping the constant in a *copy* of the tree.
 Migration 077's CHECK broke two probes in `scripts/check-live.js` — another section's file. **`npm
 run check` was green throughout**, because the constraint is in the database and the probes are in a
 script. That is the argument for §3.12 in one example.
+
+### 187g. "TODAY" FOLLOWS THE COMPANY, NOT THE SERVER AND NOT A FIXED PACIFIC — 9 October 2026
+
+*The owner, Calendar B10.* Decision 15 made "today" Pacific, on the grounds that every rev 1
+customer is in Oregon or Washington. **A due date stays a plain day and that part of decision 15 is
+unchanged** — "the permit expires on 30 November" is true in every zone, and storing an instant for
+it would be wrong. What the zone decides is **which day is today**, and so: what has passed, what
+"due in 11 days" means, which dates are this month, what a printed sheet says it was printed on, and
+which month the email is about.
+
+Near midnight those answers differ. At 04:30 UTC on 21 October 2026 a New York company is on the
+21st while Oregon is on the 20th; at 07:30 UTC on 1 November, Hawaii is still in **October**, which
+is the monthly email's entire subject line. Telling a customer a date has passed on a day it has not
+is the kind of small wrongness that costs trust out of proportion to its size — and §185c has
+already decided this product is careful about passed dates.
+
+**Until My Account carries a setting, the zone comes from `companies.state`** through one map in
+`lib/calendarDate.ts` (`zoneForState`), Pacific when the state is unknown. **No migration:**
+`companies.state` exists and is filled at signup. Eleven states are split across two zones; the map
+names each with its main zone rather than omitting it, and `docs/HANDOFF-CODE.md` §7 carries the
+item for My Account.
+
+**Every surface takes it from the SERVER**, never from the browser: somebody opening the calendar
+from a hotel in Berlin must see the same "today" as the plant in Portland, because the dates are the
+plant's. `/api/calendar/dates` sends `timezone` beside the dates — one door, which both the page and
+the dashboard already use — and the monthly job reads each company's zone **inside its loop**.
+
+> ### AND THE TRAP THAT CAME WITH IT: ONE `asOf` FOR THE WHOLE SWEEP UNDOES ALL OF IT.
+> `run()` computed `today()` once and handed it to every company, which would have given them all
+> the SERVER's day and quietly reverted the change for the one caller that matters most. The sweep
+> now passes **nothing** and lets each company answer for itself; `?as_of=` still overrides, because
+> that is a person asking for a particular day on purpose. Its result says `as_of: "per company (its
+> own zone)"` rather than printing a day the run did not use.
+
+**Reversed if** the product ever needs one company's calendar shown in another's zone — it does not,
+and the opposite (a traveller's browser deciding) is the bug this avoids.

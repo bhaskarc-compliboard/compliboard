@@ -18,14 +18,78 @@
  * and (b) build a local noon `Date` when something must be formatted or shifted. Noon, not midnight,
  * because noon is the only hour no daylight-saving shift can move across a date boundary.
  *
- * *** "TODAY" IS PACIFIC IN REV 1 *** (decision 15), because every customer is in Oregon or
- * Washington. A company's own time zone is a later item, and `today()` is the one place that would
- * change. It is read from the system through `Intl`, never computed from an offset, so the switch
- * between PST and PDT is the platform's problem and not ours.
+ * *** "TODAY" IS THE COMPANY'S *** (the owner, B10) — `zoneForState` below. It was a fixed Pacific
+ * (decision 15), on the grounds that every rev 1 customer is in Oregon or Washington; `today()` was
+ * written to take a zone from the start, so the change is who supplies it rather than how it works.
+ * It is read through `Intl`, never computed from an offset, so daylight saving is the platform's
+ * problem and not ours.
  */
 
-/** The zone "today" is taken in. Decision 15: rev 1 is Oregon and Washington. */
+/**
+ * The zone "today" is taken in when nothing better is known. Pacific, because rev 1 is Oregon and
+ * Washington — but **a company's own zone now overrides it** (B10 below).
+ */
 export const CALENDAR_TZ = 'America/Los_Angeles'
+
+/**
+ * *** "TODAY" FOLLOWS THE COMPANY, NOT THE SERVER AND NOT A FIXED PACIFIC *** — the owner, B10.
+ *
+ * A DUE DATE IS STILL A PLAIN DAY (decision 15): "the permit expires on 30 November" is true in
+ * every zone, and storing an instant for it would be wrong. What the zone decides is **which day is
+ * today**, and therefore what has passed, what "due in 11 days" means, which dates are "this month",
+ * what a printed sheet says it was printed on, and which month the email is about.
+ *
+ * Near midnight those answers differ. A company in New York at 9pm on the 20th is on the 21st in UTC
+ * and still on the 20th in Pacific; one in Hawaii is on the 19th while Oregon is on the 20th. Telling
+ * a customer a date "has passed" on a day it has not is the kind of small wrongness that costs trust
+ * out of all proportion — and §185c has already decided the product is careful about passed dates.
+ *
+ * **Until My Account carries a setting, the zone comes from `companies.state`** through the map
+ * below. That is enough to be right for every state that sits in one zone, and `docs/HANDOFF-CODE.md`
+ * §7 carries the item for the ones that do not (Florida, Texas, Idaho and the rest are split, and
+ * the company's own answer is the only way to settle those).
+ *
+ * **No migration.** `companies.state` already exists and is already filled at signup.
+ */
+const STATE_TZ: Record<string, string> = {
+  // Eastern
+  CT: 'America/New_York', DE: 'America/New_York', DC: 'America/New_York', GA: 'America/New_York',
+  ME: 'America/New_York', MD: 'America/New_York', MA: 'America/New_York', NH: 'America/New_York',
+  NJ: 'America/New_York', NY: 'America/New_York', NC: 'America/New_York', OH: 'America/New_York',
+  PA: 'America/New_York', RI: 'America/New_York', SC: 'America/New_York', VT: 'America/New_York',
+  VA: 'America/New_York', WV: 'America/New_York',
+  // Central
+  AL: 'America/Chicago', AR: 'America/Chicago', IL: 'America/Chicago', IA: 'America/Chicago',
+  LA: 'America/Chicago', MN: 'America/Chicago', MS: 'America/Chicago', MO: 'America/Chicago',
+  OK: 'America/Chicago', WI: 'America/Chicago',
+  // Mountain
+  AZ: 'America/Phoenix',          // no daylight saving, which is why it is its own zone and not Denver
+  CO: 'America/Denver', MT: 'America/Denver', NM: 'America/Denver', UT: 'America/Denver',
+  WY: 'America/Denver',
+  // Pacific
+  CA: 'America/Los_Angeles', NV: 'America/Los_Angeles', OR: 'America/Los_Angeles',
+  WA: 'America/Los_Angeles',
+  // Outside the lower 48
+  AK: 'America/Anchorage', HI: 'Pacific/Honolulu',
+  // *** SPLIT ACROSS TWO ZONES — the MAIN one, and a company may disagree. ***
+  // Named here rather than left out, because falling back to Pacific for Texas would be worse than
+  // being an hour out. My Account's setting (HANDOFF-CODE §7) is what makes these right.
+  FL: 'America/New_York', IN: 'America/New_York', KY: 'America/New_York', MI: 'America/New_York',
+  TN: 'America/Chicago', KS: 'America/Chicago', NE: 'America/Chicago', ND: 'America/Chicago',
+  SD: 'America/Chicago', TX: 'America/Chicago', ID: 'America/Denver',
+}
+
+/**
+ * The zone to read "today" in for a company, from its state.
+ *
+ * **An unknown or empty state gives Pacific** — rev 1's customers are in Oregon and Washington, so
+ * that is the likeliest right answer and never a surprising one. It is a FALLBACK, not a claim: the
+ * product never tells a customer which zone it assumed, because it would be guessing.
+ */
+export function zoneForState(state: string | null | undefined): string {
+  const key = String(state ?? '').trim().toUpperCase()
+  return STATE_TZ[key] ?? CALENDAR_TZ
+}
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 const MS_PER_DAY = 86_400_000
