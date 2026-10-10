@@ -25,7 +25,7 @@ import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
 import { auditAgencyPrompt, auditTemplatePrompt, type PreviousFinding } from '../prompts/audit-agency.ts'
 import { countLines, type TemplateSection, type ExtractedTemplate } from './auditTemplate.ts'
 import { patchRunSummary } from './auditSummary.ts'
-import { mustRow } from './mustRead.ts'
+import { mustRow, mustRows } from './mustRead.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -533,7 +533,14 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
         + `and no claim to recur, ${droppedWordless.length} item(s) that would have landed with no word`)
     }
 
-    if (previous.length) await matchAgainstPrevious(db, sec, previous, obj)
+    // *** THE MATCHER CARRIES FORWARD NOW AND CLOSES LAST *** (A1 faults 3 and 4). A TEMPLATE run
+    // is skipped entirely: a checklist answer has none of the matcher's four arrays, so every
+    // previous finding would be unmatched by construction and a checklist re-run closed the lot.
+    let unmatchedPrevious: string[] = []
+    if (previous.length && !isTemplate) {
+      const m = await matchAgainstPrevious(db, sec, previous, obj)
+      unmatchedPrevious = m.unmatched
+    }
     // Per section, as its findings land: the handles only mean anything to the call shown them.
     const collapsedHere = raisedInRun.length
       ? await collapseAgainstEarlier(db, sec, raisedInRun, obj)
@@ -554,6 +561,19 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       handles: built.input.handles,
       documents_read: readIds, documents_held_unread: unreadIds,
     }).eq('id', sectionId)
+
+    // *** AND ONLY NOW ARE THE PREVIOUS RUN'S UNCLAIMED FINDINGS CLOSED *** (A1 fault 4). Every
+    // step that could throw has succeeded and the section is done, so nothing is closed by a
+    // section that then failed. A failure here is reported and does not fail the section: the
+    // findings stay open, which shows a person work that may already be done rather than closing
+    // work that may not be, and the next run closes them.
+    if (unmatchedPrevious.length) {
+      const closed = await closeUnmatchedPrevious(db, sec, unmatchedPrevious)
+      if (closed.error) {
+        console.warn(`audit section ${sectionId}: ${unmatchedPrevious.length} finding(s) of the `
+          + `previous run are still open — ${closed.error}`)
+      }
+    }
 
     if (handleErrors.length) {
       console.warn(`audit section ${sectionId}: ${handleErrors.length} handle(s) the block did not `
@@ -923,60 +943,112 @@ async function previousOpenFindings(db: Db, companyId: string, previousRunId: st
 }
 
 /**
- * CARRIED FORWARD, OR CLOSED.
+ * CARRIED FORWARD — and NOTHING IS CLOSED HERE. `closeUnmatchedPrevious` does that, afterwards.
  *
  * *** MATCHED BY HANDLE, NEVER BY STRING EQUALITY. *** Two runs of the same model write the same
  * finding in different words — that is the whole reason Run 1c's keys had to stop naming one
  * model's phrasing. So the model is shown the previous findings as F1, F2 and asked which of its
  * own findings is the same one; code does the rest.
  *
- * A previous finding no new finding claimed is CLOSED with the run that closed it and a reason in
- * words. It is not deleted: "we were subject to this from March to January" is the history the
- * product exists to keep (§3.2, obligations are marked, never deleted), and the same applies to a
- * finding that was fixed.
+ * *** REWRITTEN IN JOB E — fix list A1, severity 1, root R5. ***
+ *
+ * A previous finding nothing claimed is closed, and closing is a write a person cannot undo. Four
+ * non-answers used to cause it, and the list found all four:
+ *
+ *   1. THE READ OF THE NEW ROWS WAS UNCHECKED. `const { data: fresh } = …` — a failed read gave an
+ *      empty list, nothing could be matched, and **every open finding of the previous run was
+ *      closed** as "not raised by the newer audit". Now `mustRows`, which throws, and the section
+ *      fails instead.
+ *   2. ROWS WERE MATCHED BY POSITION. `freshRows[i++]` walked the model's four lists against the
+ *      rows in ordinal order — but `shapeFindings` DROPS items (an undated non-recurring date,
+ *      anything that would land with no word), so one dropped item shifted every later answer onto
+ *      the wrong row. `same_as` then said finding 7 was the same as a previous finding that
+ *      belonged to finding 8, and the real one was closed. Matched by (kind, title) now, exactly as
+ *      `collapseAgainstEarlier` already did it and for the same reason, which is written out there.
+ *   3. A CHECKLIST RE-RUN CLOSED EVERYTHING. A template answer has none of these four arrays, so
+ *      every previous finding was unmatched by construction. The caller now skips a template run,
+ *      and this function closes nothing when the answer carried no list at all.
+ *   4. CLOSING HAPPENED BEFORE THE REST OF THE SECTION. `collapseAgainstEarlier` and the section's
+ *      own `done` write come after; a throw in either left findings closed by a section that then
+ *      failed. The closing is now the last thing the section does.
+ *
+ * Closed findings are not deleted: "we were subject to this from March to January" is the history
+ * the product exists to keep (§3.2, obligations are marked, never deleted), and the same applies to
+ * a finding that was fixed.
  */
 export async function matchAgainstPrevious(
   db: Db,
   sec: { id: string; run_id: string; company_id: string },
   previous: Array<{ id: string; shown: PreviousFinding }>,
   obj: Record<string, unknown>,
-): Promise<{ carried: number; closed: number }> {
+): Promise<{ carried: number; unmatched: string[] }> {
   const byHandle = new Map(previous.map((p) => [p.shown.handle.toUpperCase(), p.id]))
 
-  // The new rows, in the order they were written, so the model's nth finding is this section's nth.
-  const { data: fresh } = await db.from('audit_findings')
-    .select('id, ordinal').eq('section_id', sec.id).order('ordinal')
-  const freshRows: Array<{ id: string; ordinal: number }> = fresh ?? []
+  // The new rows. `mustRows`, not `data ?? []` (A1 fault 1): an empty list here means "no finding
+  // claimed any of them", which closes the lot.
+  const freshRows = mustRows<{ id: string; ordinal: number; kind: string; title: string }>(
+    "this audit's own findings",
+    await db.from('audit_findings').select('id, ordinal, kind, title')
+      .eq('section_id', sec.id).order('ordinal'))
+
+  /**
+   * BY (KIND, TITLE), NOT BY POSITION (A1 fault 2). `shapeFindings` copies the title through
+   * unchanged apart from a 2000-character cap, and the kind keeps a date and a finding of the same
+   * wording apart. First row wins when two rows share both, which is the same row either way.
+   */
+  const rowByKindTitle = new Map<string, string>()
+  for (const r of freshRows) {
+    const key = `${r.kind}\u0000${String(r.title).slice(0, 2000)}`
+    if (!rowByKindTitle.has(key)) rowByKindTitle.set(key, r.id)
+  }
 
   const claimed = new Set<string>()
   let carried = 0
-  let i = 0
-  for (const { field } of KINDS) {
-    const list = Array.isArray(obj[field]) ? (obj[field] as unknown[]) : []
-    for (const raw of list) {
+  /** Did the answer carry ANY of the four lists? (A1 fault 3.) */
+  let sawAList = false
+  for (const { field, kind } of KINDS) {
+    if (!Array.isArray(obj[field])) continue
+    sawAList = true
+    for (const raw of obj[field] as unknown[]) {
       const item = (typeof raw === 'string' ? { title: raw } : raw) as Record<string, unknown>
       const title = typeof item?.title === 'string' ? item.title : (item?.what as string)
       if (!title) continue
-      const row = freshRows[i++]
       const h = typeof item?.same_as === 'string' ? item.same_as.trim().toUpperCase() : ''
       const prevId = h ? byHandle.get(h) : undefined
-      if (row && prevId) {
-        await db.from('audit_findings').update({ same_as: prevId }).eq('id', row.id)
-        claimed.add(prevId)
-        carried++
-      }
+      if (!prevId) continue
+      const rowId = rowByKindTitle.get(`${kind}\u0000${String(title).trim().slice(0, 2000)}`)
+      if (!rowId) continue
+      await db.from('audit_findings').update({ same_as: prevId }).eq('id', rowId)
+      claimed.add(prevId)
+      carried++
     }
   }
 
-  const unmatched = previous.filter((p) => !claimed.has(p.id)).map((p) => p.id)
-  if (unmatched.length) {
-    const { error } = await db.from('audit_findings').update({
-      status: 'closed', closed_by_run_id: sec.run_id,
-      closed_reason: 'not raised by the newer audit',
-    }).in('id', unmatched).eq('status', 'open')
-    if (error) throw new Error(`matchAgainstPrevious: closing: ${error.message}`)
-  }
-  return { carried, closed: unmatched.length }
+  // *** AN ANSWER THAT CARRIED NO LIST AT ALL CLOSES NOTHING. *** (A1 fault 3.) "The model said
+  // nothing about any of these" is not "none of these is still true" — it is an answer we did not
+  // get, and `CLAUDE.md` §3.2's first rule applies: absence of evidence is not evidence of absence.
+  const unmatched = sawAList ? previous.filter((p) => !claimed.has(p.id)).map((p) => p.id) : []
+  return { carried, unmatched }
+}
+
+/**
+ * THE CLOSING, ON ITS OWN, SO IT CAN BE LAST (A1 fault 4).
+ *
+ * Every fallible step of the section has succeeded by the time this runs. A failure here is
+ * reported and does NOT fail the section: the previous findings simply stay open, which shows a
+ * person work that may already be done rather than closing work that may not be, and the next run
+ * closes them.
+ */
+export async function closeUnmatchedPrevious(
+  db: Db, sec: { run_id: string }, unmatched: string[],
+): Promise<{ closed: number; error: string | null }> {
+  if (!unmatched.length) return { closed: 0, error: null }
+  const { data, error } = await db.from('audit_findings').update({
+    status: 'closed', closed_by_run_id: sec.run_id,
+    closed_reason: 'not raised by the newer audit',
+  }).in('id', unmatched).eq('status', 'open').select('id')
+  if (error) return { closed: 0, error: error.message }
+  return { closed: (data ?? []).length, error: null }
 }
 
 // ---------------------------------------------------------------------------

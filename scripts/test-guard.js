@@ -89,7 +89,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 // gone by, because people record what they did in their own calendar and not in ours, §185c)
 // -> 1072 at A6 (a day outside the current year shows its year: a passed date can sit unticked for
 // a year, and a bare "20 August" then points at the wrong one).
-const FLOOR = 1197
+const FLOOR = 1216
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

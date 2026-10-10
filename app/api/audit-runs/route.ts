@@ -31,6 +31,19 @@ export async function POST(request: NextRequest) {
     const scope = body?.scope == null ? null : String(body.scope).trim().slice(0, 300)
     const entityId = body?.entity_id == null ? null : String(body.entity_id)
 
+    // *** THE RUN THIS ONE FOLLOWS — one validated value for BOTH branches (fix list O1). ***
+    // It is a client value (§3.6), so it is read through `db`, the caller's own client under RLS:
+    // another company's run is simply not there, and the answer is 404 rather than 403 so ids
+    // cannot be probed by watching which error comes back. The template branch used to pass it
+    // straight through unchecked, and the agency branch dropped it entirely.
+    let previousRunId: string | null = null
+    if (body?.previous_run_id != null) {
+      const asked = String(body.previous_run_id)
+      const { data: prev } = await db.from('audit_runs').select('id').eq('id', asked).maybeSingle()
+      if (!prev) return NextResponse.json({ error: 'That earlier audit was not found.' }, { status: 404 })
+      previousRunId = asked
+    }
+
     // ---------------------------------------------------------------------------
     // A TEMPLATE AUDIT — Audits Run 4b, item 8.
     //
@@ -81,7 +94,7 @@ export async function POST(request: NextRequest) {
           companyId, db: supabaseAdmin,
         }),
         companyName: company?.name ?? null,
-        previousRunId: body?.previous_run_id ? String(body.previous_run_id) : null,
+        previousRunId,
       })
       const estimate = await estimateRun(supabaseAdmin, companyId, run.sectionIds.length)
 
@@ -128,8 +141,24 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // *** "AUDIT AGAIN" LINKS THE TWO RUNS — fix list O1, Job E, fixed WITH A1 and never before. ***
+    //
+    // `components/AuditReport.tsx:568` has always sent `previous_run_id`, the template branch above
+    // has always kept it, and this branch dropped it on the floor. So **the agency re-audit a
+    // customer actually presses never linked to the run before it**: `runSection` reads
+    // `runRow.previous_run_id` to decide whether to show the model the previous findings
+    // (`:395`), and with it null the matcher never ran. "Carried" and "closed" could not happen in
+    // the app — they existed, were tested, and nothing reached them.
+    //
+    // *** AND THAT IS WHY IT IS FIXED WITH A1 AND NOT BEFORE IT. *** A1 is the matcher, and it had
+    // four ways of closing a previous finding nobody said anything about. Fixing this line alone
+    // would have switched all four on, for every re-audit, the moment it shipped — closing a
+    // customer's open findings on the strength of a read that failed, a row matched by the wrong
+    // position, or a section that then broke. The list says so in its own words: "Fix with A1,
+    // never before it."
     const run = await createRun(supabaseAdmin, {
       companyId, kind: 'agency', agency, scope, entityId, createdBy: userId,
+      previousRunId,
     })
     const estimate = await estimateRun(supabaseAdmin, companyId, run.sectionIds.length)
 

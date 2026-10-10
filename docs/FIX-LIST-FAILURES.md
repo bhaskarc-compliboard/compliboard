@@ -388,7 +388,7 @@ not a month.
     of a file nobody has read — and five H4 tests in `tests/unit/handbookRead.test.ts`: retired after
     the read and never before; nothing retired on a failed reading, a lost claim, or a first
     handbook; and a refused retirement does not fail the reading. **Four fail on the shipped files.**
-51. **A1 · sev 1 · ✓ · Audits — dormant until O1 is fixed.** `lib/auditRun.ts:944–973` (`matchAgainstPrevious`):
+51. **A1 · sev 1 · ✓ FIXED with O1 (Job E1, "Job E: A1 and O1 — Audit again, and the four ways it closed a finding nobody spoke about") · Audits.** `lib/auditRun.ts:944–973` (`matchAgainstPrevious`):
     any earlier open finding no new row claims is **closed** ("not raised by the newer audit"). Four non-answers cause
     that: the read of the new rows is unchecked (`:944`); rows are matched by position while `shapeFindings` drops
     some items, so later `same_as` answers land on the wrong row; a checklist run has none of the matcher's arrays, so
@@ -396,6 +396,18 @@ not a month.
     fails has already closed findings. **Fix:** check the error; match by title as `collapseAgainstEarlier` does; skip
     for checklist runs and answers with no `findings` array; close only when the section has otherwise finished.
     **Fix together with O1** — fixing O1 alone switches A1 on.
+    **Closed, all four faults, with O1 in the same commit.** (1) the fresh read goes through
+    `mustRows`, so a failed read throws instead of closing everything; (2) rows are matched by
+    **(kind, title)**, as `collapseAgainstEarlier` already did, so one dropped item no longer shifts
+    every later `same_as` onto the wrong row; (3) the caller skips a **template** run, and the
+    matcher closes nothing when the answer carried none of the four lists — while `findings: []`
+    still counts as an answer and still closes; (4) the closing moved into
+    `closeUnmatchedPrevious`, called **after** the collapse and after the section is marked done, and
+    its own failure is reported rather than failing a section that finished.
+    **Proof:** `tests/unit/auditMatcher.test.ts`, 19 tests. `oldMatcher` is the shipped function
+    copied line for line, and each fault's group shows it closing a customer's open findings —
+    all three of them on a failed read, p2 on a mis-positioned match, all three on a checklist
+    re-run. **14 of the 19 fail on the shipped files.**
 52. **W2 · sev 1 · ✓ FIXED (Job E1, "Job E: W2 — a summary now says how far it read") · Workspace and HR.** `lib/summaryReport.ts:461` stamps `summarised_at` = the time of writing,
     but the turns were read minutes earlier (`app/api/topics/[id]/summarise/route.ts:76`) and the chat route does not
     look at the running summary. A message sent while "Summarise" runs counts as covered: the nightly job never
@@ -451,9 +463,14 @@ not a month.
 
 ## 4. Found on the way — not this class, but serious
 
-- **O1 · ✓ · Audits.** "Audit again" never links runs: the agency branch of `app/api/audit-runs/route.ts:131–133`
+- **O1 · ✓ FIXED with A1 (Job E1, same commit) · Audits.** "Audit again" never links runs: the agency branch of `app/api/audit-runs/route.ts:131–133`
   drops `previous_run_id` (the template branch at `:84` keeps it; `components/AuditReport.tsx:550` sends it). So
   "carried" and "closed" never happen in the app. **Fix with A1, never before it.**
+  **Closed:** both branches now take one validated `previousRunId`, read through the caller's own
+  client so another company's run is simply not there (404, not 403 — §3.6). The template branch
+  used to pass the client's id straight through unchecked; that is closed too. **Fixed in the same
+  commit as A1 and not a minute before**, because this one field is what kept A1's four faults from
+  ever running in the app.
 - **O2 · ✓ · Audits.** "Audit again" on a checklist report posts `kind: 'agency'` (`components/AuditReport.tsx:549`):
   a multi-section checklist re-runs as an all-agencies audit; a one-section one gets a 400.
 - **O4 · ✓ · My Account (ours).** The export leaves out whole tables while the page says "Download everything we hold
