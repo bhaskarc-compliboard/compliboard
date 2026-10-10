@@ -89,7 +89,14 @@ import { readdirSync, readFileSync } from 'node:fs'
 // gone by, because people record what they did in their own calendar and not in ours, §185c)
 // -> 1072 at A6 (a day outside the current year shows its year: a passed date can sit unticked for
 // a year, and a bare "20 August" then points at the wrong one).
-const FLOOR = 1336
+// 1336 -> 1339 after Job E, for the forty files the job itself committed by accident:
+// `lib/auditRun 5.ts` beside `lib/auditRun.ts`, and thirty-nine more, made by the stash-and-restore
+// cycles that proved each failure on the old code. Nothing imported them, Next did not route them,
+// and nothing went red — but seven were STALE copies of pre-fix code, and the three tests that walk
+// `app/`, `components/` and `lib/` with readdirSync were sweeping them as if they shipped. Caught by
+// hand once mid-job (71963a9, two files) and missed in the three commits after it, which is why it
+// is now a check: tests/unit/noStrayCopies.test.ts, proved against a planted copy.
+const FLOOR = 1339
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -1562,3 +1562,63 @@ can spend — `calendar-month` — was run with `?dry=1`, and `lib/calendarNotif
 sure that returns before `emails.send`.
 
 **$3 was the cap. Nothing was pushed.**
+
+---
+
+## E7 — AFTER THE FACT: THE FORTY FILES THIS JOB ITSELF COMMITTED BY ACCIDENT
+
+**This is a correction to the record above.** The gate's part 3 found **two** stray duplicate files
+and `71963a9` removed them. It did not cover the three commits that came *after* it, and those
+added **thirty-nine more**. Twelve more sat untracked in the working tree at the end.
+
+| | |
+|---|---|
+| **What they are** | `lib/auditRun 5.ts` beside `lib/auditRun.ts`, `app/audits/page 3.tsx` beside `page.tsx`, `app/api/signup/route 2.ts`, `components/AppLayout 2.tsx` — 39 tracked, 12 untracked, 51 in all. |
+| **Where they came from** | This job's own proof method. Every fix had to be made to fail on the old code first, so each one stashed or checked out the old file and restored it afterwards; the editor resolved the conflict by keeping both copies and numbering the loser. `git add` took them. |
+| **Why nothing went red** | Nothing imports them (`grep` for a ` N` import specifier returns nothing), and Next routes only an exact `route.ts` / `page.tsx`, so they are not routes or pages. `npm run check` was green over all of them, through the whole job. |
+
+**Why it still mattered, in three ways:**
+
+1. **Seven were STALE.** `lib/auditRun 2.ts` was 1398 lines against the live 1546 — a snapshot of the
+   code from *before* A1, A2, A6, A8 and O3 were fixed. `lib/ai 2.ts` was pre-S1. A grep for a
+   pattern this job removed would have found it, in a file that ships nothing. §189c's own rule: a
+   reading not taken from the shipping code is not evidence.
+2. **Three tests were sweeping them.** `tests/unit/appShell.test.ts`, `clientImports.test.ts` and
+   `fonts.test.ts` walk `app/`, `components/` and `lib/` with `readdirSync`. A stale copy that passes
+   a check the live file would fail is a green run that proves nothing — and `clientImports.test.ts`
+   is the one keeping `SUPABASE_SERVICE_ROLE_KEY` out of browser code. *(Checked: all three iterate
+   inside a single `test()`, so the file set never moved the count — removing files could not lower
+   the floor.)*
+3. **`tsc` compiled all of it** — 20,150 lines of dead code on every run.
+
+**One more went with them:** `scripts/.tmp-r7-cdp 2.mjs`, a dot-prefixed Chrome-devtools harness
+committed by accident on 26 September (`e17858d`), no original, nothing references it, superseded by
+`scripts/measure-layout.mjs`.
+
+### The fix is a check, not vigilance
+
+Caught by hand once and missed twice more in the same job, by me, while I knew about it. So:
+**`tests/unit/noStrayCopies.test.ts`**, three tests, floor **1336 → 1339**.
+
+- It walks `app`, `components`, `lib`, `tests`, `scripts`, `prompts`, `config`, `supabase`, `hooks`
+  and fails on any name matching `/ \d+\.[A-Za-z0-9]+$/` — tracked **or untracked**, since twelve of
+  the fifty-one were never committed and were still being compiled and swept.
+- It is **proved against a present copy first** (§9a): one test plants a real file named the real
+  way in a real scanned directory and fails if the walk goes past it. A second test holds the
+  pattern against seven names it must flag and seven it must not (`source-serif-4/OFL.txt`,
+  `079_a_gap.sql`, `measure-layout.mjs`).
+- Made to fail on the old tree, as every fix in this job was: restoring `lib/auditRun 2.ts` from
+  `HEAD` turns it red, naming that file, and the tree without it is green 3/3.
+- The planted-copy test asserts `includes`, not an exact list, on purpose — with a real stray also
+  present an exact match would have failed saying *"the walk is blind"*, which is the wrong cause.
+  That is the same defect this whole job is about, in my own test.
+
+### The gate, for this checkpoint
+
+**Part 1 only, and that is the whole of what applies.** No behaviour changed: 1339/1339 pass, 0
+skipped, 0 todo, typecheck and `check:schema` clean, build compiled. The other seven parts have
+nothing to check — the database was not touched (no row counts to compare), no page, component,
+cron, email or prompt changed, and `prompts/` is untouched so **no golden set would move**. Deleting
+a file nothing imports and adding one test file is the entire diff.
+
+**Still $0.00, and still nothing pushed.**

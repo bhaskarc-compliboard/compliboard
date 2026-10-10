@@ -220,7 +220,7 @@ which is the exact failure this file exists to prevent.
 >
 > `docs/FIX-LIST-FAILURES.md` is the list of **failures that look like facts**: something fails, the absence is
 > treated as a real "nothing", and the nothing is shown to a person, told to the model, emailed, or acted on —
-> closed, withdrawn, **deleted**. Job E worked it. `DECISIONS.md` §189 carries the ten rules it produced;
+> closed, withdrawn, **deleted**. Job E worked it. `DECISIONS.md` §189 carries the eleven rules it produced;
 > `docs/reports/fixlist-job-e.md` carries the work.
 >
 > **Every item on the list was still true when it was reached.** Not one was a mis-read, and every line number
@@ -235,7 +235,7 @@ which is the exact failure this file exists to prevent.
 >
 > **$0.00.** Every proof in the job is free: a fake database that errors, a stored real-model answer replayed
 > through the code that ships, a migration's own verify block. The ledger read 359 calls / $19.09 before and
-> after. **The test floor went 1128 → 1336.**
+> after. **The test floor went 1128 → 1339** (1336 at the job's close, then 1339 for the check that refuses a second numbered copy of a file — the job itself had committed forty of them, seven holding pre-fix code; `docs/reports/fixlist-job-e.md` **E7**).
 >
 > **What is left, and it is five things:** two prompt wordings drafted for the owner's yes (E6); My Account's
 > five, moved by the owner's own answer to that page's own chat (`FIX-LIST-FAILURES.md` **§4a**); 35b, parked;

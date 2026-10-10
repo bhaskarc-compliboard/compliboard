@@ -12786,7 +12786,7 @@ today puts a deadline a year out. It is §187g's zone, read once inside `summari
 
 ---
 
-## 189. JOB E: THE FIX LIST — WHAT "A FAILURE THAT LOOKS LIKE A FACT" COST, AND THE TEN RULES THAT CAME OUT OF FIXING IT — 10 October 2026
+## 189. JOB E: THE FIX LIST — WHAT "A FAILURE THAT LOOKS LIKE A FACT" COST, AND THE ELEVEN RULES THAT CAME OUT OF FIXING IT — 10 October 2026
 
 `docs/FIX-LIST-FAILURES.md` is the list; `docs/reports/fixlist-job-e.md` is the work. This section is
 only what a later chat must not have to re-derive.
@@ -12823,7 +12823,7 @@ change can only add the label.
 **It would be reversed if** a person's "I have dealt with this" ever stops being the only thing that
 closes a gap — if a later reading is allowed to close one, this rule becomes double-counting.
 
-### 189c. TEN RULES THE JOB PRODUCED, each from a failure in this codebase
+### 189c. ELEVEN RULES THE JOB PRODUCED, each from a failure in this codebase
 
 1. **A failed database read must never come back as zero rows.** `lib/mustRead.ts` makes the correct
    thing shorter than the wrong one, because the rule alone had been in `CLAUDE.md` §3.12 for weeks
@@ -12843,6 +12843,16 @@ closes a gap — if a later reading is allowed to close one, this rule becomes d
 9. **Close, withdraw and delete go LAST**, after everything that can still fail (A1, D1).
 10. **A check that reports an absence must be shown seeing a presence first**, and the proof must be
     made to fail on the old code before it is trusted. Every item in this job ships with one.
+
+11. **A second copy of a file is not harmless dead code — it is evidence that lies.** Added after
+    the job closed, because the job itself committed **forty** of them (`lib/auditRun 5.ts` beside
+    `lib/auditRun.ts`), made by the stash-and-restore cycles rule 10 requires. Nothing imported
+    them, Next routed none of them, and `npm run check` was green over all forty — but **seven were
+    stale copies of the pre-fix code**, so a grep for a pattern this job removed would have found
+    it in a file that ships nothing, and the three tests that walk `app/`, `components/` and `lib/`
+    with `readdirSync` were sweeping them as if they shipped. Caught by hand once (`71963a9`, two
+    files) and missed in the three commits after it, so it is now
+    `tests/unit/noStrayCopies.test.ts` rather than something to remember.
 
 ### 189d. AND TWO FOUND BY FIXING, NOT BY LOOKING
 
