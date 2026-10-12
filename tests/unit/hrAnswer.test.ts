@@ -273,7 +273,10 @@ describe('the route and the shared changes', () => {
   test('behind the preview switch, before the session; topics saved as HR; tier and ledger "hr"', () => {
     assert.ok(route.indexOf('hrPreviewOn()') < route.indexOf('requireCompany(request)'))
     assert.match(route, /insert\(\{ company_id: companyId, title: titleFromQuestion\(question\), section: 'hr' \}\)/)
-    assert.match(route, /task: 'hr', maxTokens: 16000, signal: request\.signal, ledger: \{ companyId, task: 'hr' \}/)
+    // 16,000 -> ANSWER_MAX_TOKENS (32,000), the owner's decision D3.2: one constant for the
+    // Workspace chat answer and the HR answer, so the two cannot drift
+    // (`tests/unit/longAnswers.test.ts`).
+    assert.match(route, /task: 'hr', maxTokens: ANSWER_MAX_TOKENS, signal: request\.signal, ledger: \{ companyId, task: 'hr' \}/)
     assert.match(route, /if \(!first\.ok\) return NextResponse\.json\(\{ outcome: 'refused', message: first\.refusal \}\)/)
     assert.ok(route.indexOf("outcome: 'refused'") < route.indexOf('askAIOpenStream('), 'a refusal returns before any model call')
   })

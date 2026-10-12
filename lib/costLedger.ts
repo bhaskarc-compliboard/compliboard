@@ -88,6 +88,16 @@ export interface LedgerRow extends CallUsage {
   task: LedgerTask
   effort: string | null
   wallMs: number
+  /**
+   * *** WHY THE MODEL STOPPED, VERBATIM — the owner's decision D3.4, migration 080. ***
+   *
+   * `end_turn`, `max_tokens`, `stop_sequence`, `tool_use`, `pause_turn`, `refusal`, or whatever
+   * else the API sends: unmapped, because a value we have not seen before must arrive as itself.
+   * Undefined or null means NOT RECORDED, which is never the same as "finished cleanly": Job E's
+   * S2 made `max_tokens` and `pause_turn` mean "unfinished", and until this column the product
+   * could not answer how often that happened or on which task (E9 item 2).
+   */
+  stopReason?: string | null
 }
 
 /**
@@ -134,6 +144,7 @@ export async function recordAICall(row: LedgerRow): Promise<void> {
       price_output_per_m: cost.priceOutputPerM,
       price_per_search: cost.pricePerSearch,
       cost_usd: cost.costUsd,
+      stop_reason: row.stopReason ?? null,
     })
     if (error) console.error(`cost ledger: could not record ${row.task} on ${row.model}: ${error.message}`)
   } catch (e) {
@@ -147,5 +158,5 @@ export function describeCost(row: LedgerRow): string {
   const usd = c.costUsd === null ? 'UNPRICED' : `$${c.costUsd.toFixed(4)}`
   return `cost: ${row.task} ${row.model}${row.effort ? `/${row.effort}` : ''} ` +
     `in=${row.inputTokens} out=${row.outputTokens} searches=${row.searches} ` +
-    `${(row.wallMs / 1000).toFixed(1)}s ${usd}`
+    `${row.stopReason ? `stop=${row.stopReason} ` : ''}${(row.wallMs / 1000).toFixed(1)}s ${usd}`
 }

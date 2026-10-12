@@ -127,7 +127,16 @@ import { readdirSync, readFileSync } from 'node:fs'
 // as the only close an audit makes, the group a person closes and can REOPEN, and the three counts
 // that are never added together. `auditMatcher.test.ts` keeps every one of A1's four faults and has
 // four assertions rewritten where D1 supersedes them, each with the reason in place.
-const FLOOR = 1422
+//
+// 1422 -> 1444 at E10's fifth checkpoint, the owner's decision D3 and S12: long answers.
+// `longAnswers.test.ts` (22) holds `pause_turn` continuing up to three times as ONE answer with one
+// ledger row, the 32,000 ceiling for the two answers that get it and nothing else moving, the
+// conversation an incomplete first answer keeps, the handbook check splitting a piece instead of
+// repeating it and then WAITING rather than re-queuing nightly, `stop_reason` on every row with no
+// default, S12's put-back matching a row the claim never reached — and, read from 80 stored golden
+// calls with no paid run, that nothing comes near 32,000 while the AUDIT task reaches its own
+// 16,000 on Opus in five of nine runs, which is reported to the owner rather than changed.
+const FLOOR = 1444
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

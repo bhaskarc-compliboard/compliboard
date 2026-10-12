@@ -18,7 +18,7 @@ import { startReadingNow } from '@/lib/handbookStart'
 import { READ_REASONS } from '@/lib/handbooks'
 import { hrAnswerPrompt, hrAnswerMessage } from '@/prompts/hr-answer'
 import { HR_SELECT_PROMPT, hrSelectMessage } from '@/prompts/hr-select'
-import { finishedCleanly } from '@/lib/answerShape'
+import { finishedCleanly, ANSWER_MAX_TOKENS } from '@/lib/answerShape'
 import { mustRow, mustRows } from '@/lib/mustRead'
 
 export const maxDuration = 800
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
           // AI_SEARCH_MAX_HR (Step 6b): unset means no limit, as before; set, it is the search's max_uses.
           const maxSearches = searchLimit('AI_SEARCH_MAX_HR', null) ?? undefined
           for await (const ev of askAIOpenStream(hrAnswerPrompt(), messages,
-                       { task: 'hr', maxTokens: 16000, signal: request.signal, ledger: { companyId, task: 'hr' }, maxSearches })) {
+                       { task: 'hr', maxTokens: ANSWER_MAX_TOKENS, signal: request.signal, ledger: { companyId, task: 'hr' }, maxSearches })) {
             if (ev.type === 'done') {
               // *** S2 (fix list, root R4, Job E): an answer that did not finish is not an answer. ***
               // The stream ends on `max_tokens`, `refusal` and `pause_turn` as surely as on

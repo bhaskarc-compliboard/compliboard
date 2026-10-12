@@ -201,7 +201,9 @@ describe('HR: H2, H3, H5, H6, H7, H8', () => {
 
   test('H3 — the night queue cannot check every handbook of every company again', () => {
     const src = code('lib/handbookCheck.ts')
-    assert.match(src, /mustRows<\{ handbook_id: string \}>\('which handbooks have been checked'/)
+    // The row type gained `status` with D3.3: a check that FAILED must be known about, so it is
+    // not re-queued every night for ever. The read is still checked, which is what H3 is about.
+    assert.match(src, /mustRows<\{ handbook_id: string; status: string \}>\('which handbooks have been checked'/)
   })
 
   test('H5 — "a site that was removed" is never said from a failed read', () => {

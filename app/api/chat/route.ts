@@ -45,7 +45,7 @@ import { splitForAnswer, scenarioBlock, jurisdictionLine,
 import { buildCompanyContext } from '@/lib/companyContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
-import { finishedCleanly } from '@/lib/answerShape';
+import { finishedCleanly, ANSWER_MAX_TOKENS } from '@/lib/answerShape';
 import { mustRows } from '@/lib/mustRead';
 
 /**
@@ -512,7 +512,7 @@ export async function POST(request: NextRequest) {
           let completed = false;
           try {
             for await (const ev of askAIOpenStream(system, messages,
-                         { task: 'prose', maxTokens: 16000, signal: request.signal,
+                         { task: 'prose', maxTokens: ANSWER_MAX_TOKENS, signal: request.signal,
                            ledger: { companyId, task: 'research' } })) {
               if (ev.type === 'done') {
                 // *** AN ANSWER THAT DID NOT FINISH IS NOT AN ANSWER *** — fix list S2, root R4,

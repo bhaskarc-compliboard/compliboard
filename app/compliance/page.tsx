@@ -579,9 +579,14 @@ export default function CompliancePage() {
           ...(list.length && p.text ? { steps: { list, at: 'write' as Step } } : {}) }),
         () => controller.signal.aborted,
       )
+      // *** THE CONVERSATION IS KEPT WHATEVER THE ANSWER DID — the owner's decision D3.2. ***
+      // The route creates the conversation and saves the question before the model is called, so an
+      // incomplete FIRST answer used to leave this page with no topic id: an orphan conversation
+      // holding the question, which the person could not get back to, and "Try again" started
+      // another one. `lib/answerStream.ts` now carries the id on every outcome.
+      if (outcome.topicId) setTopicId(outcome.topicId)
       if (outcome.kind === 'done') {
         patch(id, { text: outcome.text, sources: outcome.sources, phase: 'done', steps: undefined })
-        if (outcome.topicId) setTopicId(outcome.topicId)
       } else if (outcome.kind === 'stopped_by_user') {
         patch(id, { text: outcome.text, phase: 'stopped', steps: undefined })
       } else if (outcome.kind === 'stopped_early') {

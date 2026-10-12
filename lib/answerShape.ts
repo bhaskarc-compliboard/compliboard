@@ -82,6 +82,23 @@ export function answerWith(parsed: unknown, fields: readonly string[]): AnswerSh
  * `CLAUDE.md` §3.2's first rule applies to an answer exactly as it applies to a document.
  * =========================================================================== */
 
+/**
+ * *** THE ROOM AN ANSWER GETS — the owner's decision D3.2, 12 October 2026. ***
+ *
+ * 16,000 → 32,000, for the Workspace chat answer and the HR answer, and for nothing else. The two
+ * places that read it are `app/api/chat/route.ts` and `app/api/hr/answer/route.ts`; it is one
+ * constant so they cannot drift, and so the number is in a file with the tests that pin it.
+ *
+ * **Why it had to go up.** Job E's S2 made `max_tokens` mean "unfinished" — right, because a
+ * half-answer was being saved, summarised and counted as a whole one — but nothing gave the answer
+ * more room, so "Try again" stopped at the same ceiling and failed the same way. The production
+ * ledger, read on 12 October 2026, shows one `summarise` call at 25,706 output tokens against its
+ * own 12,000 cap (the retry's cumulative total), so answers DO reach past 16,000 in real use.
+ *
+ * The honest "incomplete, nothing saved" message stays for the rare answer that still hits it.
+ */
+export const ANSWER_MAX_TOKENS = 32000
+
 export type Finish = { complete: true } | { complete: false; why: string }
 
 /** The reasons the Messages API gives, in words a person can read. */

@@ -33,7 +33,7 @@ import { buildCompanyContext } from './companyContext.ts'
 import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
 import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
 import { lazyJobRun } from './jobRun.ts'
-import { newestPerChain } from './handbooks.ts'
+import { newestPerChain, PART_NOT_CHECKED } from './handbooks.ts'
 import { notifyCheck } from './handbookCheckNotify.ts'
 import { hrAnswerPrompt, hrAnswerMessage } from '../prompts/hr-answer.ts'
 
@@ -155,18 +155,42 @@ export async function createCheck(admin: Db, args: {
 // FAIL, RECOVER, CANCEL, FINISH
 // ---------------------------------------------------------------------------------------------------------
 
-/** A failed piece: each row back in the queue if it has been started fewer than MAX_ATTEMPTS times, else failed. */
-export async function failRows(admin: Db, rows: Array<{ id: string; attempts: number }>, reason: string): Promise<{ retried: number; failed: number }> {
+/**
+ * A failed piece: each row back in the queue if it has been started fewer than MAX_ATTEMPTS times,
+ * else failed.
+ *
+ * *** THE GUARD USED TO BE `.eq('status', 'checking')` ALONE, AND TWO FAILURES HAPPEN BEFORE A ROW
+ * IS EVER 'checking' — E10, S12 (`docs/reports/jobE-independent-review.md` §2). ***
+ *
+ * `runPiece` refuses a piece whose sections cannot be read, and the H1 guard refuses one whose
+ * sections are not this handbook's — both before the claim at the bottom of that function sets the
+ * rows to 'checking'. So `failRows` matched nothing, the rows stayed 'queued', and the next sweep
+ * tried the same piece again. A persistent failure of either kind retried for ever and the check
+ * never finished.
+ *
+ * Both states are now matched, and **a row the claim never reached has its attempt counted here** —
+ * otherwise the put-back is free and the loop is only slower, not stopped. A row that WAS claimed
+ * already had its attempt counted by the claim, so `started` says which.
+ */
+export async function failRows(
+  admin: Db, rows: Array<{ id: string; attempts: number }>, reason: string,
+  opts: { started?: boolean } = {},
+): Promise<{ retried: number; failed: number }> {
+  const started = opts.started !== false
   let retried = 0, failed = 0
   for (const r of rows) {
-    if (r.attempts < MAX_ATTEMPTS) {
-      await admin.from('handbook_check_sections').update({ status: 'queued', claimed_at: null, started_at: null, failed_reason: null })
-        .eq('id', r.id).eq('status', 'checking')
+    // The attempt this failure represents. Counted by the claim when the piece got that far.
+    const attempts = r.attempts + (started ? 0 : 1)
+    if (attempts < MAX_ATTEMPTS) {
+      await admin.from('handbook_check_sections')
+        .update({ status: 'queued', claimed_at: null, started_at: null, failed_reason: null, attempts })
+        .eq('id', r.id).in('status', ['queued', 'checking'])
       retried++
     } else {
       await admin.from('handbook_check_sections').update({
-        status: 'failed', failed_reason: reason.slice(0, 2000), claimed_at: null, finished_at: new Date().toISOString(),
-      }).eq('id', r.id).eq('status', 'checking')
+        status: 'failed', failed_reason: reason.slice(0, 2000), claimed_at: null,
+        finished_at: new Date().toISOString(), attempts,
+      }).eq('id', r.id).in('status', ['queued', 'checking'])
       failed++
     }
   }
@@ -308,9 +332,15 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
   }
   // Defined before the input is built, not after: H1's guards below need it, and a failure while
   // assembling the prompt is the same kind of failure as one during the call.
+  /**
+   * `claimed` is false until the claim at the bottom of this function has run. Two of the failures
+   * below happen before it, and `failRows` has to count the attempt itself or the piece retries for
+   * ever (E10, S12).
+   */
+  let claimed = false
   const fail = async (why: string) => {
     console.error(`handbook check ${checkId}: ${why}`)
-    const f = await failRows(admin, rows, why)
+    const f = await failRows(admin, rows, why, { started: claimed })
     return { status: f.failed ? 'failed' as const : 'retry' as const, rows: rows.length, reason: why }
   }
 
@@ -377,6 +407,7 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
       .eq('id', r.id).eq('status', 'queued')
     r.attempts += 1
   }
+  claimed = true
   await admin.from('handbook_checks').update({ status: 'checking' }).eq('id', checkId).eq('status', 'queued')
   await admin.from('handbook_checks').update({ started_at: startedAt }).eq('id', checkId).is('started_at', null)
 
@@ -413,6 +444,54 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
   // the last one), which is the behaviour the piece already has for a call that threw.
   const finish = finishedCleanly(ev.stopReason)
   if (!finish.complete) {
+    /**
+     * *** A PIECE THAT RAN OUT OF ROOM IS SPLIT, NOT REPEATED — the owner's decision D3.3,
+     * 12 October 2026. ***
+     *
+     * `fail` puts the piece back and the next sweep sends **the same sections again, at the same
+     * ceiling**, so it hits it again: two paid calls and no result, and `queueDueChecks` then
+     * re-queued the whole check every night for ever (the independent read's §3).
+     *
+     * So when the answer ran out of room and the piece holds more than one section, the piece is
+     * divided in two at a section break and each half is checked — now, not next night. The halves
+     * are strictly smaller, so this ends: at worst it reaches one section per piece, and that is
+     * the case below.
+     */
+    if (ev.stopReason === 'max_tokens' && rows.length > 1) {
+      const half = Math.floor(rows.length / 2)
+      const halves = [rows.slice(0, half), rows.slice(half)]
+      console.warn(`handbook check ${checkId}: the answer ran out of room, so this piece of `
+        + `${rows.length} sections is split into ${halves.map((h) => h.length).join(' + ')}`)
+      // Back to 'queued' with NO attempt counted: dividing the work is not a second try at it.
+      await admin.from('handbook_check_sections')
+        .update({ status: 'queued', claimed_at: null, started_at: null, failed_reason: null })
+        .in('id', rows.map((r) => r.id)).eq('status', 'checking')
+      let done = 0
+      let failedAny = false
+      for (const h of halves) {
+        const r = await runPiece(admin, h.map((x) => x.id), opts)
+        done += r.rows
+        if (r.status === 'failed') failedAny = true
+      }
+      return { status: failedAny ? 'failed' : 'done', rows: done }
+    }
+    /**
+     * ONE SECTION THAT STILL WILL NOT FIT. There is nothing left to divide, so it is failed with the
+     * owner's words and **not re-queued nightly** (`dueReason`): it waits for a new version of the
+     * handbook or a person pressing Check now.
+     */
+    if (ev.stopReason === 'max_tokens') {
+      // FAILED OUTRIGHT, not through `failRows`: a second attempt at the same single section with
+      // the same ceiling is a second bill for the same answer. The words are the owner's
+      // (`lib/handbooks.ts` PART_NOT_CHECKED) and name the button as the drawer draws it.
+      const { error } = await admin.from('handbook_check_sections').update({
+        status: 'failed', failed_reason: PART_NOT_CHECKED, claimed_at: null,
+        finished_at: new Date().toISOString(),
+      }).in('id', rows.map((r) => r.id)).eq('status', 'checking')
+      if (error) console.error(`handbook check ${checkId}: a part that cannot be checked would not save: ${error.message}`)
+      console.error(`handbook check ${checkId}: one section is too long to check in one answer`)
+      return { status: 'failed', rows: rows.length, reason: PART_NOT_CHECKED }
+    }
     return fail(`The check did not finish: ${finish.why} (stop_reason=${ev.stopReason ?? 'none'})`)
   }
 
@@ -599,8 +678,23 @@ export type QueueReason = 'new_handbook' | 'new_version' | 'scheduled'
  *   checked, and next_check_at has passed   → 'scheduled'
  * "Checked" means a check that finished DONE; one that failed has not checked it, so it is tried again.
  */
-export function dueReason(h: { version_of: string | null; next_check_at: string | null }, everDone: boolean, now: number): QueueReason | null {
-  if (!everDone) return h.version_of ? 'new_version' : 'new_handbook'
+export function dueReason(
+  h: { version_of: string | null; next_check_at: string | null }, everDone: boolean, now: number,
+  /**
+   * *** A CHECK THAT COULD NOT BE DONE IS NOT RE-QUEUED EVERY NIGHT — the owner's decision D3.3,
+   * 12 October 2026. ***
+   *
+   * "Checked" meant a check that finished DONE, so a check that FAILED left `everDone` false and
+   * this returned 'new_handbook' or 'new_version' — every night, for ever, paying for the same
+   * answer that could not be given (the independent read's §3). A part that cannot be checked now
+   * says so on the page and **waits**: for a new version of the handbook, or for a person to press
+   * Check now. Both of those arrive by another door — a new version is a new row with no checks at
+   * all, and a person's press makes its own check — so neither is lost by this.
+   */
+  everFailed = false,
+): QueueReason | null {
+  if (!everDone && !everFailed) return h.version_of ? 'new_version' : 'new_handbook'
+  if (!everDone) return null
   return h.next_check_at && Date.parse(h.next_check_at) <= now ? 'scheduled' : null
 }
 
@@ -639,14 +733,16 @@ export async function queueDueChecks(admin: Db, now = Date.now()): Promise<{
   // once per handbook, in one night. The first read of this function already throws; this one
   // is the half that was free to be wrong.
   const checkedRows = list.length
-    ? mustRows<{ handbook_id: string }>('which handbooks have been checked',
-        await admin.from('handbook_checks').select('handbook_id')
-          .in('handbook_id', list.map((b) => b.id)).eq('status', 'done'))
+    ? mustRows<{ handbook_id: string; status: string }>('which handbooks have been checked',
+        await admin.from('handbook_checks').select('handbook_id, status')
+          .in('handbook_id', list.map((b) => b.id)).in('status', ['done', 'failed']))
     : []
-  const checked = new Set(checkedRows.map((d) => d.handbook_id))
+  const checked = new Set(checkedRows.filter((d) => d.status === 'done').map((d) => d.handbook_id))
+  // D3.3: a check that could not be done is not tried again tonight, or every night after.
+  const failed = new Set(checkedRows.filter((d) => d.status === 'failed').map((d) => d.handbook_id))
   const out = { queued: [] as Array<{ handbook: string; reason: QueueReason; check: string }>, skippedOpen: [] as string[], notDue: 0 }
   for (const b of list) {
-    const reason = dueReason(b, checked.has(b.id), now)
+    const reason = dueReason(b, checked.has(b.id), now, failed.has(b.id))
     if (!reason) { out.notDue++; continue }
     const made = await createCheck(admin, { companyId: b.company_id, handbookId: b.id, reason, requestedBy: null })
     if (made.ok) out.queued.push({ handbook: b.id, reason, check: made.checkId })

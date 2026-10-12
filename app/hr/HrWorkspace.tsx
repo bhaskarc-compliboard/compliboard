@@ -352,12 +352,16 @@ export default function HrWorkspace() {
         (p) => patch(id, { text: hideHandbookMarkers(p.text), searches: p.searches, phase: p.phase,
           steps: steps(p.phase === 'searching' ? 'hr_check' : p.text ? 'write' : 'hr_read', searched) }),
         () => controller.signal.aborted)
+      // *** THE CONVERSATION IS KEPT WHATEVER THE ANSWER DID — the owner's decision D3.2. ***
+      // The route saves the question into the conversation before the model is called, so an
+      // incomplete FIRST answer used to leave this page with no topic id: an orphan conversation
+      // holding the question, which the person could not get back to.
+      if (outcome.topicId) setTopicId(outcome.topicId)
       if (waitEnded !== null) {
         // The server ended without an answer and said why: the words, and the turn is "Not answered".
         patch(id, { phase: 'not_answered', steps: undefined, notAnsweredWords: waitEnded })
       } else if (outcome.kind === 'done') {
         patch(id, { text: outcome.text, sources: outcome.sources as AnswerSource[], phase: 'done', steps: undefined })
-        if (outcome.topicId) setTopicId(outcome.topicId)
       } else if (outcome.kind === 'stopped_by_user') patch(id, { text: hideHandbookMarkers(outcome.text), phase: 'stopped', steps: undefined })
       else if (outcome.kind === 'stopped_early') patch(id, { text: hideHandbookMarkers(outcome.text), phase: 'stopped_early', steps: undefined })
       else patch(id, { text: hideHandbookMarkers(outcome.text), phase: 'failed', steps: undefined, error: outcome.message })

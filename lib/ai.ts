@@ -511,6 +511,11 @@ async function callWithCitations(
           companyId: options.ledger.companyId, task: options.ledger.task,
           model, effort: null, inputTokens: ledgerIn, outputTokens: ledgerOut,
           searches: ledgerSearches, wallMs: Date.now() - ledgerStarted,
+          // *** WHY IT STOPPED — D3.4, migration 080. *** The LAST attempt's reason, which is the
+          // one that produced the answer returned: a retried `max_tokens` is a call that ended
+          // `end_turn`, and recording the first attempt's reason would say the answer was cut off
+          // when it was not. The retry itself is already in the log line above.
+          stopReason: (message as any).stop_reason ?? null,
         }
         console.log(describeCost(row))
         void recordAICall(row)      // not awaited: bookkeeping never delays the answer
@@ -950,111 +955,162 @@ export async function* askAIOpenStream(
   console.log(`AI: open call model=${model} ` +
               `output_config=${effort ? JSON.stringify({ effort }) : '(omitted)'}` +
               `${searchCap ? ` web_search.max_uses=${searchCap}` : ''}`)
-  const stream = anthropic.messages.stream(
-    {
-      model,
-      max_tokens: options.maxTokens ?? 8000,
-      system,
-      messages: messages.map((m) => ({ role: m.role, content: m.content as any })),
-      ...(effort ? { output_config: { effort } } : {}),
-      ...(options.enableWebSearch === false
-        ? {}
-        : { tools: [{ type: 'web_search_20250305', name: 'web_search',
-                      ...(searchCap ? { max_uses: searchCap } : {}) }] }),
-    },
-    // The AbortSignal goes to the REQUEST, not just to our reading of it. Without this an
-    // abort stops the rendering and leaves the upstream call running and billing.
-    options.signal ? { signal: options.signal } : undefined,
-  )
 
-  // Events are pushed by the SDK's callbacks and pulled by this generator's consumer. The queue
-  // is what bridges the two; without it a slow consumer would drop events.
-  const queue: OpenStreamEvent[] = []
-  let done = false
-  let failed: Error | null = null
-  let wake: (() => void) | null = null
-  const push = (e: OpenStreamEvent) => { queue.push(e); wake?.(); wake = null }
-
+  /**
+   * *** `pause_turn` IS NOT A FAILURE — the owner's decision D3.1, 12 October 2026. ***
+   *
+   * Anthropic pauses a long turn and expects the assistant's content back as the next turn's input;
+   * the answer then carries on where it stopped. Job E's S2 correctly stopped treating a paused
+   * answer as a finished one — before S2 a half-answer was saved, summarised and counted — but
+   * nothing then CONTINUED it, so a long answer simply failed and "Try again" failed the same way.
+   *
+   * So the stream is a loop. On `pause_turn` the assistant's own content goes back on the
+   * conversation and another stream runs, up to three times. Everything the consumer sees is one
+   * answer: the text keeps arriving, the narration rule's state carries across the continuations
+   * (so a search part-way through a continuation still withdraws what was shown), and `done` is
+   * yielded once, at the end.
+   *
+   * Three, not unbounded: a loop with no limit is a bill with no limit. The tokens of every
+   * continuation are added onto ONE ledger row, the way `askAI` already adds a retry's.
+   */
+  const PAUSE_CONTINUATIONS = 3
+  const convo: OpenMessage[] = [...messages]
+  let pauses = 0
+  /** Every segment's content blocks, so a continued answer is one answer to its caller. */
+  const content: Array<Record<string, unknown>> = []
+  // Carried across continuations: the ledger's totals, and the narration rule's own state.
+  let ledgerIn = 0
+  let ledgerOut = 0
+  let ledgerSearches = 0
   let sawToolUse = false
   let emittedText = false
-  let searches = 0   // for the ledger: what the model actually ran, not what was offered
-
-  stream.on('streamEvent', (event: any) => {
-    if (event.type === 'content_block_start') {
-      const b = event.content_block
-      if (b?.type === 'server_tool_use') {
-        // THE NARRATION RULE, applied live. Anything already shown was narration: withdraw it.
-        if (!sawToolUse && emittedText) push({ type: 'reset' })
-        sawToolUse = true
-        searches++
-        push({ type: 'searching', query: typeof b.input?.query === 'string' ? b.input.query : null })
-      }
-    } else if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-      const text = String(event.delta.text ?? '')
-      if (text) { emittedText = true; push({ type: 'text', text }) }
-    }
-  })
   const startedAt = Date.now()
-  stream.on('error', (err: any) => { failed = err instanceof Error ? err : new Error(String(err)); done = true; wake?.(); wake = null })
-  stream.on('abort', (err: any) => {
-    // *** THE UPSTREAM REQUEST ENDED, AND THIS LINE IS THE EVIDENCE. ***
-    // An abort that only stops the rendering leaves the model generating and the account
-    // billing. This fires from the SDK's own abort event, so its presence in the log means the
-    // HTTP request to Anthropic was cancelled — not that we stopped reading it.
-    console.warn(`AI: upstream aborted after ${Date.now() - startedAt}ms ` +
-                 `(sdk.aborted=${(stream as { aborted?: boolean }).aborted}, err=${(err as { name?: string })?.name ?? 'none'})`)
-    failed = err instanceof Error ? err : new Error('aborted'); done = true; wake?.(); wake = null
-  })
 
-  const finalPromise = stream.finalMessage()
-    .then((m) => m)
-    .catch((e) => { failed = e instanceof Error ? e : new Error(String(e)); return null })
-    .finally(() => { done = true; wake?.(); wake = null })
+  for (;;) {
+    const stream = anthropic.messages.stream(
+      {
+        model,
+        max_tokens: options.maxTokens ?? 8000,
+        system,
+        messages: convo.map((m) => ({ role: m.role, content: m.content as any })),
+        ...(effort ? { output_config: { effort } } : {}),
+        ...(options.enableWebSearch === false
+          ? {}
+          : { tools: [{ type: 'web_search_20250305', name: 'web_search',
+                        ...(searchCap ? { max_uses: searchCap } : {}) }] }),
+      },
+      // The AbortSignal goes to the REQUEST, not just to our reading of it. Without this an
+      // abort stops the rendering and leaves the upstream call running and billing.
+      options.signal ? { signal: options.signal } : undefined,
+    )
 
-  while (true) {
-    while (queue.length) yield queue.shift()!
-    if (done) break
-    await new Promise<void>((resolve) => { wake = resolve })
-  }
-  while (queue.length) yield queue.shift()!
+    // Events are pushed by the SDK's callbacks and pulled by this generator's consumer. The queue
+    // is what bridges the two; without it a slow consumer would drop events.
+    const queue: OpenStreamEvent[] = []
+    let done = false
+    let failed: Error | null = null
+    let wake: (() => void) | null = null
+    const push = (e: OpenStreamEvent) => { queue.push(e); wake?.(); wake = null }
 
-  const final = await finalPromise
-  if (failed) { yield { type: 'error', message: (failed as Error).message }; return }
-  if (!final) { yield { type: 'error', message: 'The model returned no message.' }; return }
+    let searches = 0   // for the ledger: what the model actually ran, not what was offered
 
-  // *** THE LEDGER ROW IS WRITTEN HERE, ON THE COMPLETED STREAM, AND NOWHERE ELSE. ***
-  // A stream that failed or was aborted still cost something upstream, but `finalMessage()`
-  // gives no usage for it — there is no honest number to write, so no row is written and the
-  // reconciliation in §128 J.2 is explicit that aborted answers are missing from the ledger.
-  // Inventing a cost for a call whose token counts nobody has would be the exact failure this
-  // table exists to end.
-  if (options.ledger) {
-    const row = {
-      companyId: options.ledger.companyId, task: options.ledger.task, model,
-      effort: effort ?? null,
-      inputTokens: (final as any).usage?.input_tokens ?? 0,
-      outputTokens: (final as any).usage?.output_tokens ?? 0,
-      // *** BILLED SEARCHES, WHICH IS NOT THE SAME AS SEARCHES THE USER WATCHED GO OUT. ***
-      // `searches` above counts `server_tool_use` blocks, because that is what drives the
-      // "Searching: …" line on screen and the user genuinely saw those queries issued. But a
-      // query the `max_uses` cap refuses is issued and never runs, and Anthropic does not
-      // charge for it: `usage.server_tool_use.web_search_requests` is the billed number.
-      // The screen keeps the attempted count; the ledger takes the billed one.
-      searches: (final as any).usage?.server_tool_use?.web_search_requests ?? searches,
-      wallMs: Date.now() - startedAt,
+    stream.on('streamEvent', (event: any) => {
+      if (event.type === 'content_block_start') {
+        const b = event.content_block
+        if (b?.type === 'server_tool_use') {
+          // THE NARRATION RULE, applied live. Anything already shown was narration: withdraw it.
+          if (!sawToolUse && emittedText) push({ type: 'reset' })
+          sawToolUse = true
+          searches++
+          push({ type: 'searching', query: typeof b.input?.query === 'string' ? b.input.query : null })
+        }
+      } else if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+        const text = String(event.delta.text ?? '')
+        if (text) { emittedText = true; push({ type: 'text', text }) }
+      }
+    })
+    stream.on('error', (err: any) => { failed = err instanceof Error ? err : new Error(String(err)); done = true; wake?.(); wake = null })
+    stream.on('abort', (err: any) => {
+      // *** THE UPSTREAM REQUEST ENDED, AND THIS LINE IS THE EVIDENCE. ***
+      // An abort that only stops the rendering leaves the model generating and the account
+      // billing. This fires from the SDK's own abort event, so its presence in the log means the
+      // HTTP request to Anthropic was cancelled — not that we stopped reading it.
+      console.warn(`AI: upstream aborted after ${Date.now() - startedAt}ms ` +
+                   `(sdk.aborted=${(stream as { aborted?: boolean }).aborted}, err=${(err as { name?: string })?.name ?? 'none'})`)
+      failed = err instanceof Error ? err : new Error('aborted'); done = true; wake?.(); wake = null
+    })
+
+    const finalPromise = stream.finalMessage()
+      .then((m) => m)
+      .catch((e) => { failed = e instanceof Error ? e : new Error(String(e)); return null })
+      .finally(() => { done = true; wake?.(); wake = null })
+
+    while (true) {
+      while (queue.length) yield queue.shift()!
+      if (done) break
+      await new Promise<void>((resolve) => { wake = resolve })
     }
-    console.log(describeCost(row))
-    void recordAICall(row)
-  }
+    while (queue.length) yield queue.shift()!
 
-  yield {
-    type: 'done',
-    answer: openAnswer(final.content as unknown as Array<Record<string, unknown>>),
-    stopReason: (final as any).stop_reason ?? null,
-    outputTokens: (final as any).usage?.output_tokens ?? null,
-    inputTokens: (final as any).usage?.input_tokens ?? null,
-    searches,
-    searched: searchResults(final.content as unknown as Array<Record<string, unknown>>),
-    cited: citedPassages(stripNarration(final.content as unknown as Array<Record<string, unknown>>)),
+    const final = await finalPromise
+    if (failed) { yield { type: 'error', message: (failed as Error).message }; return }
+    if (!final) { yield { type: 'error', message: 'The model returned no message.' }; return }
+
+    // Every segment's tokens are added up, the way `askAI` adds a retry's: one answer, one row.
+    ledgerIn += (final as any).usage?.input_tokens ?? 0
+    ledgerOut += (final as any).usage?.output_tokens ?? 0
+    // *** BILLED SEARCHES, WHICH IS NOT THE SAME AS SEARCHES THE USER WATCHED GO OUT. ***
+    // `searches` counts `server_tool_use` blocks, because that is what drives the "Searching: …"
+    // line on screen and the user genuinely saw those queries issued. But a query the `max_uses`
+    // cap refuses is issued and never runs, and Anthropic does not charge for it:
+    // `usage.server_tool_use.web_search_requests` is the billed number. The screen keeps the
+    // attempted count; the ledger takes the billed one.
+    ledgerSearches += (final as any).usage?.server_tool_use?.web_search_requests ?? searches
+    // The whole answer, not the last segment of it: a continued answer's earlier text is what the
+    // person has already read, and the caller saves it.
+    content.push(...(final.content as unknown as Array<Record<string, unknown>>))
+    const stopReason = (final as any).stop_reason ?? null
+
+    /** D3.1 — PAUSED, SO CARRY ON: the assistant's own content goes back as the next turn's input. */
+    if (stopReason === 'pause_turn' && pauses < PAUSE_CONTINUATIONS) {
+      pauses++
+      console.warn(`AI: stop_reason=pause_turn — continuing (${pauses} of ${PAUSE_CONTINUATIONS})`)
+      convo.push({ role: 'assistant', content: final.content as never })
+      continue
+    }
+
+    // *** THE LEDGER ROW IS WRITTEN HERE, ON THE COMPLETED STREAM, AND NOWHERE ELSE. ***
+    // A stream that failed or was aborted still cost something upstream, but `finalMessage()`
+    // gives no usage for it — there is no honest number to write, so no row is written and the
+    // reconciliation in §128 J.2 is explicit that aborted answers are missing from the ledger.
+    // Inventing a cost for a call whose token counts nobody has would be the exact failure this
+    // table exists to end.
+    if (options.ledger) {
+      const row = {
+        companyId: options.ledger.companyId, task: options.ledger.task, model,
+        effort: effort ?? null,
+        inputTokens: ledgerIn,
+        outputTokens: ledgerOut,
+        searches: ledgerSearches,
+        wallMs: Date.now() - startedAt,
+        // D3.4, migration 080: verbatim, and on every row. After a continuation this is the reason
+        // the LAST segment stopped — the one that produced the answer the caller is given.
+        stopReason,
+      }
+      console.log(describeCost(row))
+      void recordAICall(row)
+    }
+
+    yield {
+      type: 'done',
+      answer: openAnswer(content),
+      stopReason,
+      outputTokens: ledgerOut,
+      inputTokens: ledgerIn,
+      searches,
+      searched: searchResults(content),
+      cited: citedPassages(stripNarration(content)),
+    }
+    return
   }
 }

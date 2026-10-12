@@ -32,9 +32,18 @@ export interface StreamSource { n: number; title: string; url: string }
 /** What the caller should show. `stopped_early` is the case the old code could not see. */
 export type StreamOutcome =
   | { kind: 'done'; text: string; sources: StreamSource[]; topicId: string | null }
-  | { kind: 'stopped_early'; text: string }
-  | { kind: 'stopped_by_user'; text: string }
-  | { kind: 'failed'; text: string; message: string }
+  /**
+   * *** AND IT CARRIES THE CONVERSATION — the owner's decision D3.2, 12 October 2026. ***
+   *
+   * `topicId` was dropped on every outcome but `done`. The route creates the conversation and
+   * saves the question BEFORE the model is called, so an incomplete FIRST answer left the page
+   * holding no topic id at all: an orphan conversation, with the question in it, that the person
+   * could not get back to — and "Try again" started another one. The question is marked stopped
+   * either way, which is what the transcript says happened.
+   */
+  | { kind: 'stopped_early'; text: string; topicId?: string | null }
+  | { kind: 'stopped_by_user'; text: string; topicId?: string | null }
+  | { kind: 'failed'; text: string; message: string; topicId?: string | null }
 
 export interface StreamProgress {
   text: string
@@ -108,7 +117,7 @@ export async function readAnswerStream(
     }
   } catch (err) {
     if (wasAbortedByUser() || (err as { name?: string })?.name === 'AbortError') {
-      return { kind: 'stopped_by_user', text }
+      return { kind: 'stopped_by_user', text, topicId }
     }
     // *** A DEAD SOCKET IS `stopped_early`, NOT `failed`, AND THIS WAS MEASURED. ***
     //
@@ -121,16 +130,16 @@ export async function readAnswerStream(
     //
     // `failed` is kept for the one thing it means: the SERVER said it failed and gave a reason
     // worth showing. That arrives as an `error` event and is handled below.
-    if (failure) return { kind: 'failed', text, message: failure }
-    return { kind: 'stopped_early', text }
+    if (failure) return { kind: 'failed', text, message: failure, topicId }
+    return { kind: 'stopped_early', text, topicId }
   }
 
-  if (failure) return { kind: 'failed', text, message: failure }
-  if (incomplete) return { kind: 'stopped_early', text }
+  if (failure) return { kind: 'failed', text, message: failure, topicId }
+  if (incomplete) return { kind: 'stopped_early', text, topicId }
   if (sawDone) return { kind: 'done', text, sources, topicId }
   // THE READER ENDED AND NOTHING SAID THE ANSWER WAS FINISHED.
-  if (wasAbortedByUser()) return { kind: 'stopped_by_user', text }
-  return { kind: 'stopped_early', text }
+  if (wasAbortedByUser()) return { kind: 'stopped_by_user', text, topicId }
+  return { kind: 'stopped_early', text, topicId }
 }
 
 /** Turns a byte reader into the line iterable above, buffering partial lines. */
