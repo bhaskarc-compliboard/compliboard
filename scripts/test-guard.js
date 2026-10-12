@@ -120,7 +120,14 @@ import { readdirSync, readFileSync } from 'node:fs'
 // has been changed" is gone. `obligationWriterReads.test.ts` keeps all of W1's guarantees and turns
 // the throw into a hold: nothing reconciled, nothing stamped, and a person's confirmation recording
 // who asked.
-const FLOOR = 1401
+//
+// 1401 -> 1422 at E10's fourth checkpoint, N2, N3 and the owner's decision D1: the system never
+// closes a finding because the newer audit went quiet. `auditAgain.test.ts` (21) holds all four
+// parts — plain facts first on the SAVED kind, a wrong-kind link ignored and counted, "Now on file"
+// as the only close an audit makes, the group a person closes and can REOPEN, and the three counts
+// that are never added together. `auditMatcher.test.ts` keeps every one of A1's four faults and has
+// four assertions rewritten where D1 supersedes them, each with the reason in place.
+const FLOOR = 1422
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

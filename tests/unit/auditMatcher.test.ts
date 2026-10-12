@@ -52,7 +52,10 @@ function fakeDb(opts: { rows?: Array<Record<string, unknown>>; readFails?: boole
         const done = b.pending
         b.pending = null
         updates.push(done)
-        return Promise.resolve(opts.closeFails && done.patch.status === 'closed'
+        // E10, D1.3: the close became a MARK (`not_raised_by_run_id`), so that is the write a
+        // refusal has to be able to land on.
+        return Promise.resolve(opts.closeFails
+          && (done.patch.status === 'closed' || 'not_raised_by_run_id' in done.patch)
           ? { data: null, error: { message: 'permission denied for table audit_findings' } }
           : { data: done.ids.map((id) => ({ id })), error: null }).then(ok)
       }
@@ -145,14 +148,26 @@ describe('the ordinary re-audit, which must still carry and still close', () => 
     assert.deepEqual(closedIds(updates), [], 'closing is the last thing the section does (fault 4)')
   })
 
-  test('and closing it is a step of its own, with the reason in words', async () => {
+  /**
+   * *** AND SINCE E10 IT CLOSES NOTHING — the owner's decision D1.3, 12 October 2026. ***
+   *
+   * This asserted the write that went to customers: `status: 'closed'` with the reason
+   * "not raised by the newer audit". E9 item 3 measured three such closes on two real runs of one
+   * agency — none of them because the title was worded differently, and one of them in a run that
+   * had raised that exact title. A close is a claim a person cannot undo, so silence no longer
+   * makes one. The finding stays OPEN and is pointed at the run that went quiet about it, which
+   * gathers it under "Not raised in this audit" with a Close it button.
+   *
+   * **A1 fault 4 is untouched and still asserted below: it is the LAST thing the section does.**
+   */
+  test('and marking it is a step of its own, with no close in it', async () => {
     const { db, updates } = fakeDb({ rows: ROWS })
     const c = await closeUnmatchedPrevious(db, SEC, ['p3'])
-    assert.deepEqual(c, { closed: 1, error: null })
-    const close = updates.find((u) => u.patch.status === 'closed')!
-    assert.deepEqual(close.ids, ['p3'])
-    assert.equal(close.patch.closed_reason, 'not raised by the newer audit')
-    assert.equal(close.patch.closed_by_run_id, 'run-2')
+    assert.deepEqual(c, { closed: 1, error: null }, 'the count is how many were marked')
+    const mark = updates.find((u) => 'not_raised_by_run_id' in u.patch)!
+    assert.deepEqual(mark.ids, ['p3'])
+    assert.deepEqual(mark.patch, { not_raised_by_run_id: 'run-2' })
+    assert.ok(!updates.some((u) => u.patch.status === 'closed'), 'nothing was closed')
   })
 })
 
@@ -215,15 +230,35 @@ describe('*** A1 fault 2: one dropped item moved every later answer onto the wro
     assert.deepEqual(r.unmatched, ['p3'], 'only the one the model really did not raise')
   })
 
+  /**
+   * *** AND E10 MADE THE KINDS AGREE BOTH WAYS (D1.1). *** This claimed F3 — a previous **finding**
+   * — from the `dates` list, and asserted the DATE row was linked to it. Under the owner's decision
+   * that is a wrong-kind link: it is ignored and counted, because it is exactly the link that
+   * closed a real finding in E9 item 3a. With a previous DATE to claim, the date row carries.
+   */
   test('and a date and a finding of the same wording stay apart', async () => {
     const rows = [
       { id: 'f1', ordinal: 1, kind: 'finding', title: 'Permit expires' },
       { id: 'd1', ordinal: 2, kind: 'date', title: 'Permit expires' },
     ]
+    const prevDate = [{ id: 'pd', shown: { handle: 'F9', title: 'Permit expires', word: null, kind: 'date' } }]
     const { db, updates } = fakeDb({ rows })
-    await matchAgainstPrevious(db, SEC, PREVIOUS,
+    const m = await matchAgainstPrevious(db, SEC, prevDate,
+      { dates: [{ title: 'Permit expires', same_as: 'F9' }] })
+    assert.deepEqual(carriedPairs(updates), [['d1', 'pd']], 'the DATE row, not the finding row')
+    assert.equal(m.wrongKindLinks, 0)
+
+    // And the other way, on a row saved ONLY as a date: pointing it at a previous FINDING is
+    // refused and counted. (With both kinds present under one title, as above, the same-kind row is
+    // the match — the saved kind decides, never the list the item came from.)
+    const dateOnly = [{ id: 'd1', ordinal: 1, kind: 'date', title: 'Permit expires' }]
+    const { db: db2, updates: u2 } = fakeDb({ rows: dateOnly })
+    const m2 = await matchAgainstPrevious(db2, SEC, PREVIOUS,
       { dates: [{ title: 'Permit expires', same_as: 'F3' }] })
-    assert.deepEqual(carriedPairs(updates), [['d1', 'p3']], 'the DATE row, not the finding row')
+    assert.deepEqual(carriedPairs(u2), [], 'a date row may not claim a previous finding')
+    assert.equal(m2.wrongKindLinks, 1)
+    // F3 is therefore unmatched — and under D1.3 that marks it, and does not close it.
+    assert.deepEqual(m2.unmatched, ['p1', 'p2', 'p3'])
   })
 })
 
@@ -249,12 +284,18 @@ describe('*** A1 fault 3: an answer that carried no list at all ***', () => {
     assert.deepEqual(closedIds(updates), [])
   })
 
-  test('an empty `findings` array IS an answer, and still closes', async () => {
+  test('an empty `findings` array IS an answer — and the plain facts still carry what matches', async () => {
     // The difference that matters: `findings: []` is the model saying it found none, which is a
     // real answer about this agency. A missing key is an answer we did not get.
+    //
+    // *** AND SINCE E10 (D1.1) THE MODEL'S SILENCE DOES NOT UNDO A PLAIN FACT. *** `ROWS`' first
+    // row has the SAME saved kind and the same title as the previous finding `p1`, so it is the
+    // same item whatever the model said about it, and it carries. The other two are unmatched —
+    // which, under D1.3, marks them rather than closing them.
     const { db } = fakeDb({ rows: ROWS })
     const r = await matchAgainstPrevious(db, SEC, PREVIOUS, { findings: [] })
-    assert.deepEqual(r.unmatched, ['p1', 'p2', 'p3'])
+    assert.deepEqual(r.unmatched, ['p2', 'p3'])
+    assert.equal(r.carried, 1)
   })
 
   test('and the caller skips a template run outright', () => {
@@ -287,7 +328,7 @@ describe('*** A1 fault 4: closing came before the work that could still fail ***
     assert.ok(!/status: 'closed'/.test(fn), 'the only closing write is in closeUnmatchedPrevious')
   })
 
-  test('a failed close is reported and does NOT fail a section that finished', async () => {
+  test('a failed mark is reported and does NOT fail a section that finished', async () => {
     const { db } = fakeDb({ rows: ROWS, closeFails: true })
     const c = await closeUnmatchedPrevious(db, SEC, ['p3'])
     assert.equal(c.closed, 0)

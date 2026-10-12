@@ -18,6 +18,7 @@ import { renderEmail, type EmailContent, type EmailBlock } from './emailFrame.ts
 import { emailFrom } from './emailSender.ts'
 
 import { runSummaryLine, type RunSummary } from './auditRun.ts'
+import { carryLine } from './auditSummary.ts'
 
 /**
  * *** THIS FILE MUST NOT IMPORT `lib/auth.ts`, AND THAT IS NOT A STYLE POINT. ***
@@ -172,6 +173,13 @@ export async function notifyRun(
   // are unchanged — they are Audits' own. What is new is that they are described once, as data, and
   // rendered as HTML and plain text from that one description, so the two cannot drift apart.
   const blocks: EmailBlock[] = [{ kind: 'para', text: runSummaryLine(summary) }]
+
+  // *** WHAT HAPPENED TO THE LAST AUDIT'S FINDINGS — D1.4. *** One line, from one place, so the
+  // email, the drawer and Past audits cannot disagree. "2 not raised this time — please check" is
+  // the only one of the three that asks anything of them, and it replaces a close that used to
+  // happen on its own (D1.3).
+  const carry = carryLine(summary)
+  if (carry) blocks.push({ kind: 'para', text: carry })
 
   if (run.readings_as_of) {
     blocks.push({ kind: 'note',

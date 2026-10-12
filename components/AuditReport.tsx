@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Drawer, printDrawer } from '@/components/Drawer'
 import { formatMoment } from '@/lib/calendarDate'
 import { authHeaders } from '@/lib/supabase'
+import { carryLine } from '@/lib/auditSummary'
 
 interface DocRef { title: string; file_name: string; kind?: string | null; display_status?: string | null }
 
@@ -79,6 +80,21 @@ interface RunSummary {
   not_a_document_question: number; contradictions: number; expected: number
   sections: number; sections_done: number; could_not_complete: number
   carried: number; closed: number; agencies: string[]; note: string | null
+  /** D1.3 (migration 082): earlier findings this audit did not raise. Still OPEN. */
+  not_raised?: number
+}
+/**
+ * *** AN EARLIER FINDING THIS AUDIT DID NOT RAISE — the owner's decision D1.3. ***
+ * It belongs to the EARLIER run, so it is never in `findings`; the pointer this run wrote is what
+ * gathers it. A person closes it, and Reopen undoes that.
+ */
+interface NotRaised {
+  id: string; kind: string; title: string; word: string | null; basis: string | null
+  document_id: string | null; document: DocRef | null
+  locator: string | null; quote: string | null; what_to_do: string | null
+  due_on: string | null; recurs: boolean | null
+  status: string; closed_reason: string | null; closed_at: string | null
+  closed_by: string | null; closed_by_name: string | null
 }
 interface TemplateSection { title: string; lines: Array<{ ref: string; text: string }> }
 interface Run {
@@ -89,6 +105,8 @@ interface Run {
   previous_run_id: string | null; estimate: string | null
 }
 interface Report { run: Run; sections: Section[]; findings: Finding[]
+  /** D1.3: earlier findings this audit went quiet about — still open, waiting for a person. */
+  not_raised?: NotRaised[]
   /** id -> title, for every document the run read or held. */
   documents?: Record<string, DocRef>
   /** B10's follow-on (Job E4): the COMPANY's zone, for every timestamp this drawer prints. */
@@ -551,6 +569,25 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       })
       if (!res.ok) { const j = await res.json().catch(() => null); setNotice(j?.error ?? 'We could not save that.'); return }
       setReasonFor(null); await load(); onChanged()
+    } finally { setBusy(false) }
+  }
+
+  /**
+   * *** "CLOSE IT" AND "REOPEN", ON AN EARLIER FINDING THIS AUDIT DID NOT RAISE — D1.3. ***
+   *
+   * The audit no longer closes these. A person does, and Reopen undoes it — which is the whole of
+   * what E9 item 3 was about: the close was a claim to a customer that could not be taken back.
+   */
+  async function closeNotRaised(id: string, action: 'close' | 'reopen') {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/audit-findings', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({ id, action }),
+      })
+      if (!res.ok) { const j = await res.json().catch(() => null); setNotice(j?.error ?? 'We could not save that.'); return }
+      setNotice(null); await load(); onChanged()
     } finally { setBusy(false) }
   }
 
@@ -1248,6 +1285,46 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
         </Section_>
       )}
 
+      {/* ── NOT RAISED IN THIS AUDIT ─────────────────────────────────────────
+           *** THE OWNER'S DECISION D1.3, 12 October 2026. ***
+
+           Before E10 these rows were CLOSED, by the audit, with the reason "not raised by the newer
+           audit" — a claim to a customer that they could not undo, in the email and in Past audits.
+           E9 item 3 measured three such closes on two real runs of one agency, not one of them
+           because the title was worded differently, and one of them in a run that had raised that
+           exact title.
+
+           Silence never closes. They stay open, they are gathered here, and the person decides. The
+           heading, the line and both buttons are the owner's words.                               */}
+      {(rep.not_raised ?? []).length > 0 && (
+        <Section_ title="Not raised in this audit" count={(rep.not_raised ?? []).length}
+          open={open.notRaised !== false}
+          onToggle={() => setOpen((o) => ({ ...o, notRaised: o.notRaised === false }))}>
+          <p className="mb-2 text-[13px] text-gray-600">If it&apos;s taken care of, close it.</p>
+          {(rep.not_raised ?? []).map((f) => (
+            <div key={f.id} className="border-b border-gray-100 py-2 last:border-b-0">
+              <p className="text-[14px] text-gray-900">{f.title}</p>
+              {f.what_to_do && <p className="mt-0.5 text-[13px] text-gray-600">{f.what_to_do}</p>}
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                {f.status === 'closed' ? (
+                  <>
+                    <span className="text-[12px] text-gray-500">
+                      Closed{f.closed_by_name ? ` by ${f.closed_by_name}` : ''}
+                      {f.closed_at ? ` on ${fmt(f.closed_at)}` : ''}
+                    </span>
+                    <button onClick={() => closeNotRaised(f.id, 'reopen')} disabled={busy}
+                      className="no-print text-[13px] text-[var(--green)] underline disabled:opacity-50">Reopen</button>
+                  </>
+                ) : (
+                  <button onClick={() => closeNotRaised(f.id, 'close')} disabled={busy}
+                    className="no-print text-[13px] text-[var(--green)] underline disabled:opacity-50">Close it</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </Section_>
+      )}
+
       {/* ── EARLIER AUDITS ───────────────────────────────────────────────── */}
       {earlier.length > 0 && (
         <Section_ title="Earlier audits" count={earlier.length} open={!!open.earlier}
@@ -1258,12 +1335,12 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
                 {fmt(r.finished_at ?? r.created_at)}
                 <span className="text-gray-500"> · {needsOf(r.summary)} needed you</span>
               </p>
-              {/* Computed from closed_by_run_id, so it is a count of rows and not a claim. */}
-              {r.id === run.previous_run_id && run.summary && (
-                <p className="shrink-0 text-[12px] text-gray-500">
-                  {run.summary.closed} of {run.summary.closed + run.summary.carried} findings
-                  from {fmt(r.finished_at ?? r.created_at)} are closed
-                </p>
+              {/* *** THE THREE FACTS, NEVER ADDED TOGETHER — D1.4. ***
+                  This read "{closed} of {closed + carried} findings … are closed", and `closed`
+                  counted this run's own duplicate merges too (N3). `carryLine` is the one place the
+                  wording lives, so the drawer, the email and Past audits cannot disagree. */}
+              {r.id === run.previous_run_id && run.summary && carryLine(run.summary) && (
+                <p className="shrink-0 text-[12px] text-gray-500">{carryLine(run.summary)}</p>
               )}
               <a href={`/audits?run=${r.id}`} className="shrink-0 text-[13px] text-[var(--green)] underline">Open</a>
             </div>

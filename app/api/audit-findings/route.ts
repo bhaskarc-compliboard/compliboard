@@ -15,22 +15,60 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { requireCompany } from '@/lib/auth'
 import { mustRow } from '@/lib/mustRead'
 
+/** The words on a finding a person closed by hand (the owner's decision D1.3, migration 082). */
+export const CLOSED_BY_A_PERSON = 'closed by a person'
+
 export async function PATCH(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { db } = authed.auth
+    const { db, userId } = authed.auth
 
     const body = await request.json().catch(() => null)
     const id = String(body?.id ?? '').trim()
     const action = String(body?.action ?? '')
     const reason = String(body?.reason ?? '').trim()
-    if (!id || action !== 'dismiss') {
-      return NextResponse.json({ error: 'Expected an id and action "dismiss".' }, { status: 400 })
+    if (!id || (action !== 'dismiss' && action !== 'close' && action !== 'reopen')) {
+      return NextResponse.json({ error: 'Expected an id and action "dismiss", "close" or "reopen".' },
+        { status: 400 })
     }
-    if (!reason) {
+    if (action === 'dismiss' && !reason) {
       return NextResponse.json({ error: 'Tell us what is wrong with it, so we can do better next time.' },
         { status: 400 })
+    }
+
+    /**
+     * *** "CLOSE IT" AND "REOPEN" — the owner's decision D1.3, 12 October 2026. ***
+     *
+     * The audit no longer closes a finding because the newer audit went quiet about it: the item
+     * moves to "Not raised in this audit" and **the person closes it**. So these two actions are
+     * the only way a finding is closed by hand, and the one that matters is that **Reopen undoes
+     * it** — the whole complaint in E9 item 3 was a close a person could not undo.
+     *
+     * Through the caller's own client: closing is their act and migration 058 grants them the one
+     * UPDATE. The ownership read below is what makes another company's finding a 404.
+     */
+    if (action === 'close' || action === 'reopen') {
+      const mine = mustRow<{ id: string; status: string }>('that finding',
+        await db.from('audit_findings').select('id, status').eq('id', id).maybeSingle())
+      if (!mine) return NextResponse.json({ error: 'That finding was not found.' }, { status: 404 })
+
+      const patch = action === 'close'
+        ? { status: 'closed', closed_by: userId, closed_at: new Date().toISOString(),
+            closed_reason: CLOSED_BY_A_PERSON }
+        // Reopen leaves NO trace of the close, so the row reads exactly as it did before it.
+        : { status: 'open', closed_by: null, closed_at: null, closed_reason: null }
+      const { data: back, error } = await db.from('audit_findings').update(patch)
+        .eq('id', id).eq('status', action === 'close' ? 'open' : 'closed').select('id')
+      if (error) throw error
+      if (!back?.length) {
+        return NextResponse.json({
+          error: action === 'close'
+            ? 'That one is no longer open. Reload the audit to see where it stands.'
+            : 'That one is already open. Reload the audit to see where it stands.',
+        }, { status: 409 })
+      }
+      return NextResponse.json({ ok: true })
     }
 
     // Ownership on the caller's client: another company's finding is not there, and not-there is

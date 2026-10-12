@@ -15,6 +15,7 @@ import { readableScanIds } from '@/lib/readableScan'
 
 import { requireCompany } from '@/lib/auth'
 import { estimateRun } from '@/lib/auditEstimate'
+import { mustRows } from '@/lib/mustRead'
 
 /** A deadline is worth showing on the page when it has passed or lands within this window. */
 const SOON_DAYS = 90
@@ -167,14 +168,41 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    // ---- how many of a previous run's findings this run closed ----
+    /**
+     * ---- how many of a PREVIOUS run's findings this run closed, and how many it did not raise ----
+     *
+     * *** TWO FIXES HERE — E10, N3 and §4. ***
+     *
+     * 1. `run_id` is read beside `closed_by_run_id` and a row closed by **its own run** is left
+     *    out. `collapseAgainstEarlier` stamps an in-run duplicate merge with this same column — two
+     *    sections of one audit raised the same thing and one was merged — and those were being
+     *    counted to a customer as earlier findings this audit had closed. O1 links every agency
+     *    re-audit, so the number prints in the email, the drawer and Past audits.
+     * 2. The read was `const { data }`, so a failure read as zero and every run said it had closed
+     *    nothing. `mustRows` throws and the route's catch says it is our side (root R2).
+     *
+     * `notRaisedByRun` is the group the owner's decision D1.3 created: still OPEN, waiting for a
+     * person, and therefore counted apart from the closes and never added to them.
+     */
     const closedByRun = new Map<string, number>()
+    const notRaisedByRun = new Map<string, number>()
     if (runIds.length) {
-      const { data } = await db.from('audit_findings')
-        .select('closed_by_run_id').in('closed_by_run_id', runIds)
-      for (const f of data ?? []) {
+      const closedRows = mustRows<{ closed_by_run_id: string | null; run_id: string }>(
+        'how many of your earlier findings each audit closed',
+        await db.from('audit_findings').select('closed_by_run_id, run_id').in('closed_by_run_id', runIds))
+      for (const f of closedRows) {
         const k = f.closed_by_run_id as string
+        if (!k || k === f.run_id) continue
         closedByRun.set(k, (closedByRun.get(k) ?? 0) + 1)
+      }
+      const notRaisedRows = mustRows<{ not_raised_by_run_id: string | null }>(
+        'how many of your earlier findings each audit did not raise',
+        await db.from('audit_findings').select('not_raised_by_run_id')
+          .in('not_raised_by_run_id', runIds).eq('status', 'open'))
+      for (const f of notRaisedRows) {
+        const k = f.not_raised_by_run_id as string
+        if (!k) continue
+        notRaisedByRun.set(k, (notRaisedByRun.get(k) ?? 0) + 1)
       }
     }
 
@@ -207,6 +235,8 @@ export async function GET(request: NextRequest) {
       runs: runs.map((r) => ({
         ...r,
         closed_count: closedByRun.get(r.id as string) ?? 0,
+        /** D1.3: still open, waiting for a person — never added to `closed_count`. */
+        not_raised_count: notRaisedByRun.get(r.id as string) ?? 0,
         estimate: r.status === 'done' ? null : estimate.line,
       })),
       banners: banners.map((r) => r.id),

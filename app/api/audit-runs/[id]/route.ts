@@ -124,8 +124,41 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     if (coRead.error) console.error(`audit run: could not read the company's state: ${coRead.error.message}`)
     const timezone = zoneForState(coRead.data?.state as string | null)
 
+    /**
+     * *** "NOT RAISED IN THIS AUDIT" — the owner's decision D1.3, migration 082. ***
+     *
+     * An earlier finding this run went quiet about. It is still OPEN and belongs to the EARLIER
+     * run, so it is not in `findings` above and never will be: it is gathered by the pointer this
+     * run wrote. The person closes it, or leaves it.
+     *
+     * Checked (root R2): read as empty, the report would show no group at all and a person would
+     * think the newer audit had accounted for everything.
+     */
+    const notRaisedRes = await db.from('audit_findings')
+      .select('id, run_id, section_id, ordinal, kind, title, word, basis, document_id, locator, quote, what_to_do, due_on, recurs, status, closed_reason, closed_at, closed_by')
+      .eq('not_raised_by_run_id', id).order('ordinal')
+    // Asserted once, as `rows` and `secs` above are and for the same reason: the generated types
+    // cannot narrow a multi-column select made through a policy. The columns are the ones named here.
+    const notRaised = mustRows("your earlier findings this audit did not raise", notRaisedRes) as unknown as Array<Record<string, unknown>>
+    // The name on "Closed by <name> on <date>" (D1.3). One read, only when something was closed.
+    const closerIds = [...new Set(notRaised.map((f) => f.closed_by).filter(Boolean))] as string[]
+    const closerName = new Map<string, string>()
+    if (closerIds.length) {
+      // Not checked into a throw: a missing name costs the date's companion words, not the group.
+      const { data: people, error: pErr } = await db.from('profiles')
+        .select('id, full_name').in('id', closerIds)
+      if (pErr) console.error(`audit run: could not read who closed a finding: ${pErr.message}`)
+      for (const p of people ?? []) closerName.set(p.id as string, String(p.full_name ?? '').trim())
+    }
+
     return NextResponse.json({
       timezone,
+      /** D1.3: still open, waiting for a person. Never merged into `findings`. */
+      not_raised: notRaised.map((f) => ({
+        ...f,
+        document: f.document_id ? doc.get(f.document_id as string) ?? null : null,
+        closed_by_name: f.closed_by ? (closerName.get(f.closed_by as string) || null) : null,
+      })),
       // No `cost_usd`: §147 takes it off every customer screen.
       run: { ...runRow, estimate },
       // The title of every document the run touched, keyed by id, so the drawer never has to

@@ -25,6 +25,7 @@ import AppLayout from '@/components/AppLayout'
 import AuditReport from '@/components/AuditReport'
 import DocumentReport from '@/components/DocumentReport'
 import { authHeaders, createClient } from '@/lib/supabase'
+import { carryLine } from '@/lib/auditSummary'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
 /* ── the shapes the one read returns ──────────────────────────────────────── */
@@ -59,6 +60,8 @@ interface Run {
   notified_at: string | null; dismissed_at: string | null; previous_run_id: string | null
   template_document_id: string | null
   closed_count: number; estimate: string | null
+  /** D1.3 (migration 082): earlier findings this run did not raise. Still OPEN, waiting for a person. */
+  not_raised_count?: number
 }
 interface Index {
   today: string
@@ -763,7 +766,6 @@ function Audits() {
                     const docsRead = new Set(secs.flatMap(() => [] as string[])).size
                     const failed = secs.filter((s) => s.status === 'could_not_complete')
                     const prev = r.previous_run_id ? idx.runs.find((x) => x.id === r.previous_run_id) : null
-                    const prevOpen = needsOf(prev?.summary) + (r.closed_count ?? 0)
                     return (
                       <div key={r.id} className="flex items-start gap-3 border-b border-gray-100 py-3">
                         <div className="min-w-0 flex-1">
@@ -791,8 +793,12 @@ function Audits() {
                               : <>
                                   {needsOf(r.summary)} to look at
                                   {` · ${r.summary?.sections_done ?? 0} of ${r.section_count} section${r.section_count === 1 ? '' : 's'}`}
-                                  {prev && r.closed_count > 0
-                                    ? ` · ${r.closed_count} of ${prevOpen} from ${fmt(prev.finished_at ?? prev.created_at)} closed`
+                                  {/* *** THE THREE FACTS, FROM ONE PLACE — D1.4. *** This said
+                                      "N of M from <date> closed", and N counted this run's own
+                                      duplicate merges too (N3). `carryLine` is the wording, shared
+                                      with the email and the drawer. */}
+                                  {prev && carryLine({ carried: r.summary?.carried ?? 0, closed: r.closed_count ?? 0, not_raised: r.not_raised_count ?? 0 })
+                                    ? ` · ${carryLine({ carried: r.summary?.carried ?? 0, closed: r.closed_count ?? 0, not_raised: r.not_raised_count ?? 0 })} (from ${fmt(prev.finished_at ?? prev.created_at)})`
                                     : ''}
                                 </>}
                           </p>

@@ -25,7 +25,7 @@ import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
 import { auditAgencyPrompt, auditTemplatePrompt, type PreviousFinding } from '../prompts/audit-agency.ts'
 import { countLines, type TemplateSection, type ExtractedTemplate } from './auditTemplate.ts'
 import { patchRunSummary } from './auditSummary.ts'
-import { mustRow, mustRows } from './mustRead.ts'
+import { mustRow, mustRows, mustCount } from './mustRead.ts'
 import { answerWith } from './answerShape.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +64,20 @@ export interface RunSummary {
   could_not_complete: number
   /** Carried and closed, when this run had a previous one to match against. */
   carried: number
+  /**
+   * How many of a PREVIOUS run's findings this run closed. E10, N3: it used to include this run's
+   * own duplicate merges, which `collapseAgainstEarlier` also stamps with `closed_by_run_id`.
+   * Since the owner's decision D1, the only close an audit makes on its own is "Now on file".
+   */
   closed: number
+  /**
+   * Previous findings this run did not raise — the owner's decision D1.3, migration 082. They are
+   * still OPEN and a person closes them, so this is counted apart from `closed` and the two are
+   * never added together.
+   */
+  not_raised?: number
+  /** Links the model made to a previous item of another kind, ignored and counted (D1.1). */
+  wrong_kind_links?: number
   /** Findings the code turned into dates because they were not due yet (Run 4a, item 2). */
   reshaped_to_dates?: Array<{ title: string; due_on: string }>
   /** Dropped by the shaper, counted so a silent rule is visible. Audits Run 6a, item 1. */
@@ -576,9 +589,22 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     // is skipped entirely: a checklist answer has none of the matcher's four arrays, so every
     // previous finding would be unmatched by construction and a checklist re-run closed the lot.
     let unmatchedPrevious: string[] = []
+    let onFilePrevious: Array<{ id: string; document: string | null }> = []
     if (previous.length && !isTemplate) {
       const m = await matchAgainstPrevious(db, sec, previous, obj)
       unmatchedPrevious = m.unmatched
+      onFilePrevious = m.onFile
+      // *** A WRONG-KIND LINK IS COUNTED IN THE RUN'S RECORD — D1.1. *** It is the model pointing
+      // at a previous item of another kind, which is now ignored; before E10 it closed the real
+      // match. Counted so the next Audits round can see whether the prompt change in D1.5 is
+      // needed, rather than guessing.
+      if (m.wrongKindLinks) {
+        const r = await patchRunSummary(db, sec.run_id, { add: { wrong_kind_links: m.wrongKindLinks } })
+        if (!r.ok) {
+          console.warn(`audit section ${sectionId}: ${m.wrongKindLinks} wrong-kind link(s) were not `
+            + `counted on the run — ${r.error.message}`)
+        }
+      }
     }
     // Per section, as its findings land: the handles only mean anything to the call shown them.
     const collapsedHere = raisedInRun.length
@@ -616,11 +642,24 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     // section that then failed. A failure here is reported and does not fail the section: the
     // findings stay open, which shows a person work that may already be done rather than closing
     // work that may not be, and the next run closes them.
+    // D1.2 — the one close an audit may make: the newer audit raised it, said it is on file, and
+    // cited the document. Named from the titles the input already carried, so no extra read.
+    if (onFilePrevious.length) {
+      const titleOf = (id: string) =>
+        built.input.documents.find((d) => d.document_id === id)?.title ?? null
+      const done = await closeOnEvidence(db, sec, onFilePrevious, titleOf)
+      if (done.error) {
+        console.warn(`audit section ${sectionId}: ${onFilePrevious.length} finding(s) now on file `
+          + `are still open — ${done.error}`)
+      }
+    }
+    // D1.3 — and the rest are MARKED, not closed. The finding stays open and the newer run's report
+    // gathers it under "Not raised in this audit" with a Close it button.
     if (unmatchedPrevious.length) {
       const closed = await closeUnmatchedPrevious(db, sec, unmatchedPrevious)
       if (closed.error) {
         console.warn(`audit section ${sectionId}: ${unmatchedPrevious.length} finding(s) of the `
-          + `previous run are still open — ${closed.error}`)
+          + `previous run are not marked as unraised — ${closed.error}`)
       }
     }
 
@@ -1033,32 +1072,75 @@ export async function matchAgainstPrevious(
   sec: { id: string; run_id: string; company_id: string },
   previous: Array<{ id: string; shown: PreviousFinding }>,
   obj: Record<string, unknown>,
-): Promise<{ carried: number; unmatched: string[] }> {
-  const byHandle = new Map(previous.map((p) => [p.shown.handle.toUpperCase(), p.id]))
-
+): Promise<{ carried: number; unmatched: string[]; wrongKindLinks: number
+             onFile: Array<{ id: string; document: string | null }> }> {
   // The new rows. `mustRows`, not `data ?? []` (A1 fault 1): an empty list here means "no finding
-  // claimed any of them", which closes the lot.
-  const freshRows = mustRows<{ id: string; ordinal: number; kind: string; title: string }>(
+  // claimed any of them", which used to close the lot.
+  const freshRows = mustRows<{ id: string; ordinal: number; kind: string; title: string
+                               word: string | null; document_id: string | null }>(
     "this audit's own findings",
-    await db.from('audit_findings').select('id, ordinal, kind, title')
+    await db.from('audit_findings').select('id, ordinal, kind, title, word, document_id')
       .eq('section_id', sec.id).order('ordinal'))
 
   /**
-   * BY (KIND, TITLE), NOT BY POSITION (A1 fault 2). `shapeFindings` copies the title through
-   * unchanged apart from a 2000-character cap, and the kind keeps a date and a finding of the same
-   * wording apart. First row wins when two rows share both, which is the same row either way.
+   * *** THE KEY IS THE SAVED KIND AND THE PLAIN TITLE — D1.1 (E10). ***
+   *
+   * It was `${kind}\u0000${title}` where `kind` came from THE LIST THE ITEM WAS IN, and the title
+   * was matched character for character. Both were wrong, and E9 item 3 measured what they cost:
+   *
+   *   · `shapeFindings` SAVES a row under a kind the list does not always predict — a
+   *     `nothing_on_file` finding with a future due date is saved as a **date**, and a
+   *     contradiction missing its second document is saved as a **finding**. So the lookup by the
+   *     list's kind missed the row it had just written, the previous finding went unclaimed, and it
+   *     was closed in a run that had raised it.
+   *   · nothing checked that a `same_as` handle pointed at a row of the SAME kind, so a new
+   *     `finding` could claim a previous `date` or `expected` — and then the real match for that
+   *     previous finding was closed.
+   *
+   * Now: `normalise` ignores case, punctuation and spacing, because "Monthly visual inspections"
+   * and "Monthly visual inspections." are the same item; and every lookup is by the kind the row
+   * was SAVED as.
    */
-  const rowByKindTitle = new Map<string, string>()
+  const byKindTitle = new Map<string, string>()
+  const kindOfRow = new Map<string, string>()
   for (const r of freshRows) {
-    const key = `${r.kind}\u0000${String(r.title).slice(0, 2000)}`
-    if (!rowByKindTitle.has(key)) rowByKindTitle.set(key, r.id)
+    kindOfRow.set(r.id, r.kind)
+    const k = matchKey(r.kind, r.title)
+    if (!byKindTitle.has(k)) byKindTitle.set(k, r.id)
   }
+  const rowById = new Map(freshRows.map((r) => [r.id, r]))
 
   const claimed = new Set<string>()
+  const linkedBy = new Map<string, string>()   // previous id -> the new row that claimed it
   let carried = 0
+  let wrongKindLinks = 0
   /** Did the answer carry ANY of the four lists? (A1 fault 3.) */
   let sawAList = false
-  for (const { field, kind } of KINDS) {
+
+  const link = async (prevId: string, rowId: string) => {
+    if (claimed.has(prevId) || linkedBy.has(prevId)) return
+    await db.from('audit_findings').update({ same_as: prevId }).eq('id', rowId)
+    claimed.add(prevId)
+    linkedBy.set(prevId, rowId)
+    carried++
+  }
+
+  /**
+   * *** 1. THE PLAIN FACTS FIRST, WITHOUT ASKING THE MODEL — D1.1. ***
+   *
+   * The same saved kind and the same title is the same item, whatever the model said about it. This
+   * is what makes a `[date]` and an `[expected]` carry at all: only the `findings` list has a
+   * `same_as` field (`prompts/audit-agency.ts`), so before this every re-audit closed those two
+   * kinds and raised them again — four open rows for two obligations, measured in E9 item 3b.
+   */
+  for (const p of previous) {
+    const rowId = byKindTitle.get(matchKey(p.shown.kind, p.shown.title))
+    if (rowId) await link(p.id, rowId)
+  }
+
+  /** 2. THEN THE MODEL'S OWN LINKS, HONOURED ONLY WHERE THE SAVED KINDS AGREE — D1.1. */
+  const byHandle = new Map(previous.map((p) => [p.shown.handle.toUpperCase(), p]))
+  for (const { field } of KINDS) {
     if (!Array.isArray(obj[field])) continue
     sawAList = true
     for (const raw of obj[field] as unknown[]) {
@@ -1066,21 +1148,68 @@ export async function matchAgainstPrevious(
       const title = typeof item?.title === 'string' ? item.title : (item?.what as string)
       if (!title) continue
       const h = typeof item?.same_as === 'string' ? item.same_as.trim().toUpperCase() : ''
-      const prevId = h ? byHandle.get(h) : undefined
-      if (!prevId) continue
-      const rowId = rowByKindTitle.get(`${kind}\u0000${String(title).trim().slice(0, 2000)}`)
+      const prev = h ? byHandle.get(h) : undefined
+      if (!prev) continue
+      // Already carried on the plain facts: the model's link agrees with it and there is nothing
+      // to count. Checked first, so a redundant link is never reported as a wrong-kind one.
+      if (claimed.has(prev.id)) continue
+      /**
+       * The row this item became, found by its title among the rows that were actually SAVED —
+       * whatever kind they were saved as, because `shapeFindings` may have moved it.
+       *
+       * When two rows share a title (a `[finding]` and a `[date]` can both be "Permit expires"),
+       * the one of the PREVIOUS row's kind is the match. Taking the first row by title instead
+       * reported a perfectly good link as a wrong-kind one — found by `auditMatcher.test.ts`'s
+       * existing case, which is why that test is kept.
+       */
+      const byTitle = freshRows.filter((r) => normalise(r.title) === normalise(title))
+      const rowId = (byTitle.find((r) => r.kind === prev.shown.kind) ?? byTitle[0])?.id
       if (!rowId) continue
-      await db.from('audit_findings').update({ same_as: prevId }).eq('id', rowId)
-      claimed.add(prevId)
-      carried++
+      const savedKind = kindOfRow.get(rowId)
+      if (savedKind !== prev.shown.kind) {
+        // *** A WRONG-KIND LINK IS IGNORED, AND COUNTED (D1.1). *** This is the one that closed a
+        // finding the newer audit raised: run 2's `[finding]` claimed run 1's `[expected]` of a
+        // similar name, and run 1's real `[finding]` was closed as "not raised".
+        wrongKindLinks++
+        continue
+      }
+      await link(prev.id, rowId)
     }
   }
 
-  // *** AN ANSWER THAT CARRIED NO LIST AT ALL CLOSES NOTHING. *** (A1 fault 3.) "The model said
-  // nothing about any of these" is not "none of these is still true" — it is an answer we did not
-  // get, and `CLAUDE.md` §3.2's first rule applies: absence of evidence is not evidence of absence.
+  /**
+   * *** 3. ONLY EVIDENCE CLOSES — D1.2. ***
+   *
+   * A carried item whose new row says it IS on file, citing a document, is the one case where the
+   * newer audit has actually established something about the old finding. That closes it, with the
+   * document named: "Now on file: <title>". Everything else stays open.
+   */
+  const onFile: Array<{ id: string; document: string | null }> = []
+  for (const [prevId, rowId] of linkedBy) {
+    const r = rowById.get(rowId)
+    if (r?.word === 'on_file' && r.document_id) onFile.push({ id: prevId, document: r.document_id })
+  }
+
+  // *** AN ANSWER THAT CARRIED NO LIST AT ALL SAYS NOTHING ABOUT ANY OF THEM. *** (A1 fault 3.)
+  // "The model said nothing about these" is not "none of these is still true" — it is an answer we
+  // did not get, and §3.2's first rule applies: absence of evidence is not evidence of absence.
+  // A plain-fact match above can carry an item even then, which is why `claimed` is subtracted.
   const unmatched = sawAList ? previous.filter((p) => !claimed.has(p.id)).map((p) => p.id) : []
-  return { carried, unmatched }
+  return { carried, unmatched, wrongKindLinks, onFile }
+}
+
+/**
+ * Case, punctuation and spacing ignored — D1.1. "Monthly visual inspections." and
+ * "Monthly  Visual Inspections" are the same item, and a re-audit that re-words its own punctuation
+ * must not raise a second row for it.
+ */
+export function normalise(title: string): string {
+  return String(title ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 2000)
+}
+
+/** The match key: the kind a row was SAVED as, and its plain title. Never the list it came from. */
+export function matchKey(kind: string, title: string): string {
+  return `${kind}\u0000${normalise(title)}`
 }
 
 /**
@@ -1095,12 +1224,54 @@ export async function closeUnmatchedPrevious(
   db: Db, sec: { run_id: string }, unmatched: string[],
 ): Promise<{ closed: number; error: string | null }> {
   if (!unmatched.length) return { closed: 0, error: null }
+  /**
+   * *** THIS NO LONGER CLOSES ANYTHING — the owner's decision D1.3, 12 October 2026. ***
+   *
+   * It used to write `status: 'closed', closed_reason: 'not raised by the newer audit'`. E9 item 3
+   * measured what that cost on two real runs of one agency: 3 previous findings closed, **none of
+   * them because the title was worded differently**, and one of them closed in a run that had
+   * raised that exact title. A close is a claim to a customer — "we checked, and this is no longer
+   * raised" — it goes in the email, and a person cannot undo it.
+   *
+   * **Silence never closes.** The finding STAYS OPEN and is pointed at the run that went quiet
+   * about it (migration 082), which is what gathers it under "Not raised in this audit" on that
+   * run's report with a "Close it" button. The name is kept so every caller and every test reads
+   * as before; what it does is marked, not closed.
+   */
   const { data, error } = await db.from('audit_findings').update({
-    status: 'closed', closed_by_run_id: sec.run_id,
-    closed_reason: 'not raised by the newer audit',
+    not_raised_by_run_id: sec.run_id,
   }).in('id', unmatched).eq('status', 'open').select('id')
   if (error) return { closed: 0, error: error.message }
   return { closed: (data ?? []).length, error: null }
+}
+
+/** The one close an audit may still make, and the words on it (D1.2). */
+export const nowOnFile = (title: string | null) => `Now on file: ${title ?? 'a document you have given us'}`
+
+/**
+ * *** ONLY EVIDENCE CLOSES — the owner's decision D1.2. ***
+ *
+ * The newer audit raised the same item, said it is on file, and cited the document. That is the one
+ * thing an audit can establish about an old finding on its own, so that is the one close it makes,
+ * with the document named. Like the marking above, a failure here is reported and does not fail the
+ * section: the finding stays open, which shows a person work that may already be done rather than
+ * closing work that may not be.
+ */
+export async function closeOnEvidence(
+  db: Db, sec: { run_id: string }, onFile: Array<{ id: string; document: string | null }>,
+  titleOf: (documentId: string) => string | null,
+): Promise<{ closed: number; error: string | null }> {
+  if (!onFile.length) return { closed: 0, error: null }
+  let closed = 0
+  for (const item of onFile) {
+    const { data, error } = await db.from('audit_findings').update({
+      status: 'closed', closed_by_run_id: sec.run_id, closed_at: new Date().toISOString(),
+      closed_reason: nowOnFile(item.document ? titleOf(item.document) : null),
+    }).eq('id', item.id).eq('status', 'open').select('id')
+    if (error) return { closed, error: error.message }
+    closed += (data ?? []).length
+  }
+  return { closed, error: null }
 }
 
 // ---------------------------------------------------------------------------
@@ -1141,6 +1312,10 @@ export async function finishRunIfDone(db: Db, runId: string):
   const runNow = mustRow<{ summary: Record<string, unknown> | null }>("the audit run's summary",
     await db.from('audit_runs').select('summary').eq('id', runId).maybeSingle())
   const collapsed = Number((runNow?.summary ?? {}).collapsed_duplicates) || 0
+  // Carried forward for the same reason, and added by the same `patchRunSummary` call: a link the
+  // model made to a previous item of ANOTHER KIND, ignored and counted (D1.1). Nothing recomputes
+  // it, so a key this write leaves out is a key that disappears when the run finishes.
+  const wrongKind = Number((runNow?.summary ?? {}).wrong_kind_links) || 0
 
   // How fresh the evidence was: the newest reading any section was shown. Read from the scans of
   // the documents the sections recorded, not from the run's own clock — the run's date says when we
@@ -1170,12 +1345,12 @@ export async function finishRunIfDone(db: Db, runId: string):
     status: 'done', finished_at: new Date().toISOString(),
     done_count: done.length, readings_as_of: readingsAsOf,
     // The collapse count travels on the summary, beside the other things a rule did quietly.
-    summary: { ...summary, collapsed_duplicates: collapsed },
+    summary: { ...summary, collapsed_duplicates: collapsed, wrong_kind_links: wrongKind },
   }).eq('id', runId).neq('status', 'done').select('id')
   if (cErr) throw new Error(`finishRunIfDone: claiming done: ${cErr.message}`)
   if (!claimed?.length) return { finished: false, summary: null }
 
-  return { finished: true, summary: { ...summary, collapsed_duplicates: collapsed } }
+  return { finished: true, summary: { ...summary, collapsed_duplicates: collapsed, wrong_kind_links: wrongKind } }
 }
 
 /** Every document any section of this run recorded as read, deduplicated. */
@@ -1366,11 +1541,31 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
   }
 
   const count = (p: (r: Record<string, unknown>) => boolean) => f.filter(p).length
+  /**
+   * *** "CLOSED" IS A PREVIOUS RUN'S FINDINGS, NEVER THIS RUN'S OWN DUPLICATES — E10, N3. ***
+   *
+   * `.neq('run_id', runId)` is the whole fix. `collapseAgainstEarlier` marks an in-run duplicate
+   * with `closed_by_run_id = this run` — two sections of one audit raised the same thing and one was
+   * merged into the other — and that row was being counted as a previous finding this run had
+   * closed. O1 now links every agency re-audit, so this number prints in the email, the drawer and
+   * Past audits: "1 of 7 from 9 October closed" could be one of this run's own merges.
+   *
+   * And the count is CHECKED (`mustCount`, which also refuses a null count with no error): it is a
+   * number shown to a customer about work they may think is finished.
+   *
+   * `not_raised` is the group D1.3 created: previous findings this run went quiet about. They are
+   * still OPEN and a person closes them — so they are counted apart from `closed`, and the two are
+   * never added together.
+   */
   let closed = 0
+  let notRaised = 0
   if (run?.previous_run_id) {
-    const { count: n } = await db.from('audit_findings')
-      .select('id', { count: 'exact', head: true }).eq('closed_by_run_id', runId)
-    closed = n ?? 0
+    closed = mustCount('how many of your earlier findings this audit closed', await db
+      .from('audit_findings').select('id', { count: 'exact', head: true })
+      .eq('closed_by_run_id', runId).neq('run_id', runId))
+    notRaised = mustCount('how many of your earlier findings this audit did not raise', await db
+      .from('audit_findings').select('id', { count: 'exact', head: true })
+      .eq('not_raised_by_run_id', runId).eq('status', 'open'))
   }
 
   const nothingOnFile = count((r) => r.word === 'nothing_on_file' && r.kind !== 'expected')
@@ -1398,6 +1593,7 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     // It counts the previous findings still being raised.
     carried: new Set(f.map((r: Record<string, unknown>) => r.same_as).filter(Boolean)).size,
     closed,
+    not_raised: notRaised,
     // What an inspector would ask about first: nothing on file, and stale. Not the expected items,
     // which are a suggestion and say so.
     attention: f.filter((r: Record<string, unknown>) =>

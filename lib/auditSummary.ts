@@ -101,3 +101,26 @@ export async function patchRunSummary(db: Db, runId: string, patch: SummaryPatch
   if (wErr) return { ok: false, error: new Error(`the audit run's summary could not be saved: ${wErr.message}`) }
   return { ok: true, summary, changed: true }
 }
+
+/**
+ * *** WHAT HAPPENED TO THE LAST AUDIT'S FINDINGS — the owner's decision D1.4, 12 October 2026. ***
+ *
+ * One line, in one place, for the email, the drawer and Past audits — because three copies of a
+ * count are three chances for them to disagree, which is what N3 was. Three facts, and they are
+ * never added together:
+ *
+ *   · **still open from last time** — carried: the newer audit raised it again.
+ *   · **now on file** — the one close an audit makes on its own, citing the document (D1.2).
+ *   · **not raised this time** — still open, waiting for a person (D1.3). "please check" is there
+ *     because it is the only one of the three that asks anything of them.
+ *
+ * Null when there is nothing to say, so a first audit carries no line at all.
+ */
+export function carryLine(s: { carried: number; closed: number; not_raised?: number }): string | null {
+  const bits: string[] = []
+  if (s.carried) bits.push(`${s.carried} still open from last time`)
+  if (s.closed) bits.push(`${s.closed} now on file`)
+  const nr = s.not_raised ?? 0
+  if (nr) bits.push(`${nr} not raised this time — please check`)
+  return bits.length ? bits.join(' · ') : null
+}

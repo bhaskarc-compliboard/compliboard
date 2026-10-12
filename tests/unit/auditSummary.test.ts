@@ -140,10 +140,14 @@ describe('and lib/auditRun.ts goes through it', () => {
     assert.ok(!/\(Number\(prev\.collapsed_duplicates\) \|\| 0\)/.test(code))
   })
 
-  test('both call sites use patchRunSummary and warn when it fails', () => {
+  // THREE since E10: the reshaped/dropped lists, the collapse count, and `wrong_kind_links` — a
+  // link the model made to a previous item of ANOTHER KIND, ignored and counted (the owner's
+  // decision D1.1). Each is a key nothing recomputes, which is why they go through this one
+  // read-modify-write and why each says so when it could not.
+  test('every call site uses patchRunSummary and warns when it fails', () => {
     const calls = code.match(/patchRunSummary\(db, sec\.run_id/g) ?? []
-    assert.equal(calls.length, 2, 'the reshaped/dropped lists and the collapse count')
-    assert.equal((code.match(/if \(!r\.ok\)/g) ?? []).length, 2, 'each one says so when it could not')
+    assert.equal(calls.length, 3, 'the reshaped/dropped lists, the collapse count and the wrong-kind links')
+    assert.equal((code.match(/if \(!r\.ok\)/g) ?? []).length, 3, 'each one says so when it could not')
   })
 
   test("summariseRun's own read of the run is checked — it is what carries the note forward", () => {
