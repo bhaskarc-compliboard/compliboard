@@ -2,7 +2,9 @@
 
 # CompliBoard — Project Rules for Claude Code
 
-**Updated:** 7 October 2026 — §3.4a: the guard, `npm run haiku -- <command>` (§168); the owner's `.env.local` is still on Haiku.
+**Updated:** 12 October 2026 — §3.12: **R7**, a loud failure with no way back, in the words of the
+independent read of Job E (`DECISIONS.md` §190e).
+7 October 2026 — §3.4a: the guard, `npm run haiku -- <command>` (§168); the owner's `.env.local` is still on Haiku.
 7 October 2026 — §3.4a: the laptop runs Opus, Claude Code runs Haiku by command environment (§166).
 7 October 2026 — §3.6: the default privileges now grant `anon` and `authenticated` nothing (migration 068); revoke-then-grant stands; read grants with `has_table_privilege`.
 4 October 2026 — §3.7's reset rule (the owner's say-so only) and §3.11's four standing rules.
@@ -591,6 +593,26 @@ because only `data` was destructured) and **R3** (an empty list printed as a sta
 nothing, and the nothing is printed to a customer as a fact about their own compliance. Say
 "couldn't load" on a screen; send no email at all rather than one saying nothing is due; and record
 the failure where somebody can find it.
+
+### ⚡ R7: A LOUD FAILURE WITH NO WAY BACK — 12 October 2026
+
+**Added by the independent read of Job E** (`docs/reports/jobE-independent-review.md` §2;
+`DECISIONS.md` §190e). Job E turned silent failures into thrown errors, which is right. In about
+fifteen places the throw landed somewhere that never recovers: a claim nobody releases, a run left
+saying "running", a page left empty, a sweep that stops for every company. **Before Job E a database
+hiccup in those places told a small lie. After it, it left something stuck for good.** So fixing R2
+is only half the job, and this is the other half — in the reviewers' own words:
+
+> Every claim is released, or recoverable by the sweep's own recovery rule. Every sweep catches per
+> company and per item, so one failure never stops the others. A throw that reaches a page shows the
+> page's failure line, never its empty state. Every state a throw can leave behind has a rule that
+> moves it on. A test per sweep injects a failure and shows the next run recovering.
+
+**The last sentence is the one that matters.** What made this class invisible is that nobody had ever
+made one of those reads fail: the recovery paths were written, reviewed and never run. A recovery
+rule nobody has watched work is a comment — the same thing §3.7 says about a CHECK constraint nobody
+has tried to break. And a retry with no attempt limit is not recovery either: it is the same failure,
+for ever, at five-minute intervals (E10's S1).
 
 ## 4. The worker
 

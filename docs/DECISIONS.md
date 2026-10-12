@@ -12862,3 +12862,135 @@ closes a gap — if a later reading is allowed to close one, this rule becomes d
 - **The gate's own row-count script named a table that does not exist** — `audit_run_sections`; the
   table is `audit_sections`. The same mistake as `topic_messages`, in the same file, and only
   visible because Job C made a null count print `NO TABLE` instead of `0`.
+
+---
+
+## 190. E10: THE INDEPENDENT READ OF JOB E, AND THE OWNER'S THREE DECISIONS — 12 October 2026
+
+`docs/reports/jobE-independent-review.md` (v2, md5 `ca2371c2b4da6b3a472319f5e655c8bd`) is the list:
+a second read of Job E by readers who did not write the code and were not shown E9's conclusions.
+`docs/reports/fixlist-job-e10.md` is the work. This section is what a later chat must not have to
+re-derive.
+
+**The one-paragraph verdict, which is the reviewers' and not mine.** Job E did what it set out to
+do. In about fifteen places the throw it introduced lands somewhere that never recovers, and that
+class is now **R7** in `CLAUDE.md` §3.12. Separately there was one fault on the normal path that
+would have cost money every night from the first day after release — N1 below — and E9 did not find
+it because nobody asked it to look there.
+
+### 190a. N1: ONE CLOCK FOR "HOW FAR THE SUMMARY READ" AND "WHEN THE LAST TURN WAS"
+
+Two readers found it separately, in the diff. `summary_covers_through` (migration 078) is the newest
+turn's `created_at`, stamped by Postgres inside the INSERT. `last_turn_at` was written afterwards by
+`touchTopic` from `new Date()` on the app server — a clock reading taken once the insert had already
+returned.
+
+**Measured on staging, 12 October 2026: the app's reading was 5 to 65 ms LATER than the turn it
+stood for, in 40 rows out of 40.** So `last_turn_at > summary_covers_through` was always true, and
+both readers of that comparison acted on it every night, for ever: `nightlyCandidates` made every
+summarised conversation a candidate again (a paid call, a person's own summary overwritten, the
+title rewritten, facts proposed again), and `clearingDecision` answered `skip_not_covered`, so no
+transcript was ever cleared.
+
+**Nothing caught it because the rows that exist are all fine.** Migration 078's backfill set the two
+columns EQUAL, and the tests used hand-written timestamps that were equal too. On staging,
+`summary_covers_through <> last_turn_at` matched **0 of 86** summarised topics, so there were no
+rows to repair either — the defect had not yet had a chance to happen.
+
+**The fix is one clock:** `touchTopic` takes the inserted row's own `created_at`, and has no default,
+for the same reason `newestTurnAt` throws rather than falling back to "now" — a caller that cannot
+say which turn it is recording must not be able to guess.
+
+### 190b. D1, "AUDIT AGAIN": THE SYSTEM NEVER CLOSES A FINDING BECAUSE THE NEWER AUDIT WENT QUIET
+
+The owner's decision, 12 October 2026 ("lets do it"), out of E9 item 3's measurement on two real runs
+of one agency: **3 previous findings closed as "not raised by the newer audit", and not one of them
+closed because the title was worded differently.**
+
+1. **Match on plain facts first.** The same *saved* kind and the same title — ignoring case,
+   punctuation and spacing — is the same item, without asking the model. The model's `same_as` counts
+   only when it points at a row of the same saved kind; a wrong-kind link is ignored and **counted in
+   the run's record** (`wrong_kind_links`). Matching uses the kind the row was **saved** as, never the
+   list it came from: `shapeFindings` moves them, which is how the lookup missed a row it had just
+   written.
+2. **Only evidence closes.** The newer audit raised the same item, says it is on file, and cites a
+   document: closed with **"Now on file: <document title>"**.
+3. **Silence never closes.** The item stays OPEN, is gathered under **"Not raised in this audit"** on
+   the newer run's report with **"If it's taken care of, close it."** and a **Close it** button, and
+   afterwards reads **"Closed by <name> on <date>"** with **Reopen**. Reopen is the point: the
+   complaint was a claim to a customer that could not be taken back.
+4. **The counts.** Duplicates merged inside one run never count as closed (N3 — they carry the same
+   `closed_by_run_id`), and the three facts are one shared line for the email, the drawer and Past
+   audits: *"4 still open from last time · 1 now on file · 2 not raised this time — please check"*.
+5. **The prompt is unchanged**, deliberately. Showing each old item's kind, and giving dates,
+   expected documents and contradictions their own `same_as`, waits for Audits' next round and a paid
+   golden run.
+6. **Production, read 12 October 2026: 70 findings, one run, none closed.** So nothing has ever been
+   closed that way on production and Job D needs no data plan for it.
+
+Migration **082** carries it: `not_raised_by_run_id`, `closed_by`, `closed_at`. **Not a new
+`status`** — `status` is read in ten places and a not-raised finding IS open, which is the whole
+decision, so every existing reader keeps being right.
+
+### 190c. D2, REQUIREMENTS: NEVER A DEAD END, AND A BIG DROP NEEDS THE PERSON'S YES
+
+Job E's W1 stopped a failed read from closing a company's requirements — the fix this product most
+needed. E9 item 5 measured what it left: a company that legitimately stops being a chemical
+manufacturer (`industry: 'other'`, a real choice) gets **500 from `/api/obligations`, every time, for
+ever**, with 200 obligations open and no button anywhere that can move them on.
+
+1. **The page always loads.** A recompute that would close **all of the open list, or more than half
+   of it**, closes nothing. The list stays and a note sits on top. The threshold is **internal** and
+   no percentage is ever shown; it lives in `lib/obligationHold.ts` with the tests that pin its
+   edges, because a rule in a column default is a rule nobody can test. `> half`, not `>= half`: one
+   of two is an ordinary answer.
+2. **Two openings**, because an industry we have no library for is a gap on our side and anything
+   else is their own answers adding up — plus the sentence that says it may not be their doing at
+   all, said **only** when nothing of theirs is newer than the last recompute.
+3. **"Yes, they no longer apply"** closes them and records who asked, on that date (migration 081).
+   **"No, change my industry back"** links to Company information rather than being a second way to
+   write that field. **"Keep them"** dismisses the note.
+4. **The question page said "Nothing has been changed"** after `/api/switches/answer` had already
+   saved the answer. That was false, and a person told it answers the question again.
+5. **An industry the library does not cover** gets its own empty state: zero is the library's
+   silence, not a finding about them.
+
+Migration **083** holds the hold (`companies.obligations_hold`, jsonb) **because the note has to
+still be there on the next page load**: the Requirements page's source only resolves when
+`obligations_computed_at` is NULL, and resolving on every load would cost ~250 ms on a page that does
+not need it. One jsonb and not six columns, because it is one fact written and cleared as a whole,
+and six columns would make "half a hold" expressible.
+
+### 190d. D3, LONG ANSWERS: THE TWO STOPS, AND WHY EVERY CALL NOW SAYS WHY IT STOPPED
+
+1. **`pause_turn` is not a failure.** The assistant's content goes back as the next turn's input and
+   the answer carries on, up to **3** times. It is one answer to its caller: all the text, one `done`
+   event, one ledger row with every continuation's tokens added up. Three and not unbounded, because
+   a loop with no limit is a bill with no limit.
+2. **The ceiling is 32,000** for the Workspace chat answer and the HR answer, from one constant
+   (`ANSWER_MAX_TOKENS`). Nothing else moved. An incomplete **first** answer keeps its conversation.
+3. **The handbook check splits** a piece in two at a section break rather than sending the same
+   sections at the same ceiling again; one section that still will not fit is failed in the owner's
+   words and **not re-queued nightly** — it waits for a new version or a person's press.
+4. **`stop_reason` on every `ai_calls` row** (migration 080), verbatim and with **no default**: a
+   value we have not seen before must arrive as itself, which is how `pause_turn` came to be treated
+   as a failure in the first place. NULL means *not recorded*, never *finished cleanly*.
+5. **The numbers, from 80 stored golden calls with no paid run.** Nothing comes near 32,000: the
+   largest stored answer of any kind is 20,254 tokens, and on Haiku nothing passes 7,651.
+
+> ### AND THE NUMBER THE OWNER STILL HAS TO RULE ON.
+> **The AUDIT task's own 16,000 ceiling is reached on Opus 5.5 in five of nine stored whole-mode
+> golden runs**, up to 20,254 output tokens — which is only possible because `askAI` hit `max_tokens`,
+> doubled the budget and paid for the answer twice. D3.2 says other tasks are unchanged, so it is
+> **reported and not changed**: what the audit model is given room to say is a quality decision
+> (`CLAUDE.md` §3.1) and it is his.
+
+### 190e. R7, AND WHY IT IS A RULE RATHER THAN FIFTEEN FIXES
+
+Job E turned silent failures into thrown errors, which is right. The reviewers found about fifteen
+places where the throw lands somewhere nothing recovers: a claim nobody releases, a run left saying
+"running", a page left empty, a sweep that stops for every company. **Before Job E a database hiccup
+in those places told a small lie; after it, it left something stuck for good.** The rule is in
+`CLAUDE.md` §3.12 in the reviewers' own words, and every sweep now has a test that injects a failure
+and shows the next run recovering — because the thing that made this class invisible is that nobody
+had ever made one of those reads fail.
