@@ -365,6 +365,12 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
                 <a href="/terms" className="hover:text-gray-600 transition-colors">Terms of Service</a>
                 <a href="mailto:hello@compliboard.com" className="hover:text-gray-600 transition-colors">Contact</a>
               </div>
+              {/* *** THE SCREEN'S COPY, PUT BACK — E10, N8. *** 35c marked the links `no-print` and
+                  added the `print-only` line below, and its comment says the copyright is "drawn
+                  twice rather than moved". Only the printed copy was written: the on-screen line was
+                  deleted from every signed-in page, because this shell is what they all render
+                  inside. Held by `tests/unit/footerCopyright.test.ts`, which counts both copies. */}
+              <p className="no-print text-xs text-gray-400">© 2026 CompliBoard LLC</p>
             </div>
             {/* On paper, under the disclaimer. On screen it sits on the links' own row, which is
                 why it is drawn twice rather than moved: the two layouts want it in two places. */}

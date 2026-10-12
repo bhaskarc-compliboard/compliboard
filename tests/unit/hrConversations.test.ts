@@ -33,7 +33,15 @@ describe('AI_SEARCH_MAX_HR', () => {
 describe('the check record (migration 069)', () => {
   test('the WORKSPACE\'s insert is unchanged: no check_record key unless one is given', async () => {
     const rows: Array<Record<string, unknown>> = []
-    const db = { from: () => ({ insert: (r: Record<string, unknown>) => { rows.push(r); return Promise.resolve({ error: null }) }, update: () => ({ eq: () => Promise.resolve({ error: null }) }) }) }
+    // The insert reads its own `created_at` back, because that row IS the conversation's clock
+    // (E10 N1, `tests/unit/oneClock.test.ts`). The stand-in answers the way Postgres does.
+    const db = { from: () => ({
+      insert: (r: Record<string, unknown>) => {
+        rows.push(r)
+        return { select: () => ({ single: () => Promise.resolve({ data: { created_at: '2026-10-09T19:02:20.913025Z' }, error: null }) }) }
+      },
+      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+    }) }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await saveAssistantTurn(db as any, { topicId: 't', companyId: 'c', text: 'x', sources: [], position: 2 })
     assert.deepEqual(Object.keys(rows[0]), ['topic_id', 'company_id', 'position', 'role', 'text', 'sources'])

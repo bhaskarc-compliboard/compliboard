@@ -1433,7 +1433,11 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
 
 /** One sentence, for the banner and the email subject. The same rule as `summaryLine`. */
 export function runSummaryLine(s: RunSummary): string {
-  if (s.note) return s.note
+  // *** A NOTE IS THE WHOLE ANSWER ONLY WHEN THERE WAS NOTHING TO AUDIT — E10, N4. *** It used to
+  // return the note for any run carrying one, which swallowed the counts of every checklist audit
+  // that named somebody else and finished normally. When there were sections, the note is extra
+  // context and is said AFTER the result (below), not instead of it.
+  if (s.note && s.sections === 0) return s.note
   const who = s.agencies.length === 1 ? `${s.agencies[0]} audit`
     : `compliance audit across ${s.agencies.length} agencies`
   /**
@@ -1464,7 +1468,10 @@ export function runSummaryLine(s: RunSummary): string {
   const failed = s.could_not_complete
     ? ` ${s.could_not_complete} of ${s.sections} section${s.sections === 1 ? '' : 's'} could not be finished.`
     : ''
-  return head + tail + failed
+  // The note last, as its own sentence: "This checklist names <X>; treated as a template for you."
+  // is worth saying and is not a result (E10, N4).
+  const note = s.note ? ` ${s.note}` : ''
+  return head + tail + failed + note
 }
 
 /**

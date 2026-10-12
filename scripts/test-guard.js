@@ -96,7 +96,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 // `app/`, `components/` and `lib/` with readdirSync were sweeping them as if they shipped. Caught by
 // hand once mid-job (71963a9, two files) and missed in the three commits after it, which is why it
 // is now a check: tests/unit/noStrayCopies.test.ts, proved against a planted copy.
-const FLOOR = 1339
+//
+// 1339 -> 1357 at E10's first checkpoint, for the three items of the independent read that break the
+// NORMAL path and were proved failing first: N1, one clock for "how far the summary read" and "when
+// the last turn was" (`oneClock.test.ts`, six cases built from real staging timestamps — three of
+// them failed on the shipped code); N4, a note on an audit run is not "the audit could not be done"
+// (`noteIsNotAnEmptyState.test.ts`, which also corrects two assertions in `auditWords.test.ts` that
+// pinned the defect); and N8, the copyright line that was deleted from every page on screen
+// (`footerCopyright.test.ts`).
+const FLOOR = 1357
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

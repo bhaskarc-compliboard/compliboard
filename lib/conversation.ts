@@ -49,11 +49,33 @@ export interface TurnRow {
  * clock: turns are kept 12 months after it (`lib/retention.ts`), so a conversation someone returns
  * to is never cleared on the old date. `delete_after` is also nulled; no job reads or writes it
  * since Workspace Task 2, and nulling it keeps a stale value from an older build from lingering.
+ *
+ * *** `turnCreatedAt` IS REQUIRED, AND IT IS THE INSERTED ROW'S OWN `created_at`. *** E10, N1 —
+ * the one fault in Job E that breaks the normal path (`tests/unit/oneClock.test.ts`).
+ *
+ * This line used to read `last_turn_at: new Date().toISOString()`: the app server's clock, taken
+ * once the insert had already returned. Migration 078 then gave summaries a second clock —
+ * `summary_covers_through`, the newest turn's `created_at`, stamped by Postgres inside the insert.
+ * Measured on staging, the app reading was 5 to 65 ms LATER than the turn it stood for, in 40 rows
+ * out of 40. So `last_turn_at > summary_covers_through` was always true, and both readers of that
+ * comparison acted on it every night, for ever: `lib/topicClaim.ts` (`nightlyCandidates`) made every
+ * summarised conversation a candidate again — a paid call, a person's own summary overwritten, the
+ * title rewritten, facts proposed again — and `lib/retention.ts` (`clearingDecision`) answered
+ * `skip_not_covered`, so no transcript was ever cleared.
+ *
+ * ONE CLOCK: the stamp is the row the database just wrote. The parameter has no default on purpose —
+ * a caller that cannot say which turn it is recording must not be able to guess (the same reason
+ * `newestTurnAt` throws rather than falling back to "now").
  */
-export async function touchTopic(db: Db, topicId: string): Promise<void> {
+export async function touchTopic(db: Db, topicId: string, turnCreatedAt: string): Promise<void> {
+  if (!turnCreatedAt || Number.isNaN(Date.parse(turnCreatedAt))) {
+    throw new Error(`touchTopic(${topicId}): the turn's own created_at is required, so that `
+      + '`last_turn_at` and `summary_covers_through` are one clock (E10 N1). Got: '
+      + `${JSON.stringify(turnCreatedAt)}`)
+  }
   const { error } = await db
     .from('topics')
-    .update({ idle_at: null, delete_after: null, last_turn_at: new Date().toISOString() })
+    .update({ idle_at: null, delete_after: null, last_turn_at: turnCreatedAt })
     .eq('id', topicId)
   if (error) throw new Error(`touchTopic(${topicId}): ${error.message}`)
 }
@@ -87,9 +109,11 @@ export async function saveUserTurn(
     // to keep saying what was attached.
     document_id: args.documentId ?? null,
     document_name: args.documentName ?? null,
-  }).select('id').single()
+    // `created_at` comes back with the id because it IS the conversation's clock (E10 N1): the
+    // row's own stamp is what `touchTopic` writes to `last_turn_at`.
+  }).select('id, created_at').single()
   if (error) throw new Error(`saveUserTurn: ${error.message}`)
-  await touchTopic(db, args.topicId)
+  await touchTopic(db, args.topicId, data.created_at as string)
   return data.id as string
 }
 
@@ -102,14 +126,15 @@ export async function saveAssistantTurn(
           /** HR Step 6b (migration 069): an HR answer's check record. Absent for the workspace, whose insert is unchanged. */
           checkRecord?: Record<string, unknown> },
 ): Promise<void> {
-  const { error } = await db.from('turns').insert({
+  const { data, error } = await db.from('turns').insert({
     topic_id: args.topicId, company_id: args.companyId,
     position: args.position, role: 'assistant', text: args.text,
     sources: args.sources.length ? args.sources : null,
     ...(args.checkRecord ? { check_record: args.checkRecord } : {}),
-  })
+    // Reads back its own `created_at` for the same reason as `saveUserTurn` (E10 N1).
+  }).select('created_at').single()
   if (error) throw new Error(`saveAssistantTurn: ${error.message}`)
-  await touchTopic(db, args.topicId)
+  await touchTopic(db, args.topicId, data.created_at as string)
 }
 
 /**

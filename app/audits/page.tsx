@@ -584,10 +584,16 @@ function Audits() {
                  "is done · 0 to look at", which is a statement about an audit that never happened,
                  and the note was shown nowhere. */
               <p className="no-print mb-4 text-[13px] text-gray-600">
-                {landedTemplate.summary?.note
-                  ? <>Your audit against {checklistTitle(landedTemplate, idx)}: {landedTemplate.summary.note}{' · '}</>
+                {/* *** "COULD NOT BE DONE" IS NO SECTIONS, NOT A NOTE — E10, N4. *** The test was
+                    `summary?.note`, and `createRun` also notes runs that FINISH ("This checklist
+                    names <X>; treated as a template for you."), which is the normal case of auditing
+                    yourself against an auditor's form. Those runs showed the note and no count at
+                    all. A note beside a real result is said as well as the counts, never instead. */}
+                {landedTemplate.section_count === 0
+                  ? <>Your audit against {checklistTitle(landedTemplate, idx)}: {landedTemplate.summary?.note}{' · '}</>
                   : <>Your audit against {checklistTitle(landedTemplate, idx)} is done
-                     {' · '}{needsOf(landedTemplate.summary)} to look at{' · '}</>}
+                     {' · '}{needsOf(landedTemplate.summary)} to look at{' · '}
+                     {landedTemplate.summary?.note ? <>{landedTemplate.summary.note}{' · '}</> : null}</>}
                 <button onClick={() => {
                   setSeenTemplate((x) => [...x, landedTemplate.id]); setParam('run', landedTemplate.id)
                 }} className={ACTION_GREEN}>Open</button>
@@ -775,10 +781,13 @@ function Audits() {
                           <p className="mt-0.5 text-[12px] text-gray-500">
                             {r.status !== 'done'
                               ? `Running · ${r.estimate ?? idx.estimate}`
-                              /* A14: a run with a note is a run that could not be done. The note is
-                                 the whole answer; a count beside it would be a count of nothing. */
-                              : r.summary?.note
-                              ? r.summary.note
+                              /* A14 as corrected by E10, N4: a run that could not be done is a run
+                                 with NO SECTIONS. Then the note is the whole answer and a count
+                                 beside it would be a count of nothing. A run that has sections and
+                                 carries a note finished — the note is context, shown on its own line
+                                 below, beside the "did not finish" line. */
+                              : r.section_count === 0
+                              ? r.summary?.note
                               : <>
                                   {needsOf(r.summary)} to look at
                                   {` · ${r.summary?.sections_done ?? 0} of ${r.section_count} section${r.section_count === 1 ? '' : 's'}`}
@@ -787,6 +796,9 @@ function Audits() {
                                     : ''}
                                 </>}
                           </p>
+                          {r.section_count > 0 && r.summary?.note && (
+                            <p className="mt-0.5 text-[12px] text-gray-500">{r.summary.note}</p>
+                          )}
                           {failed.length > 0 && (
                             <p className="mt-0.5 text-[12px] text-[var(--amber)]">
                               {failed.map((f) => f.title).join(', ')} did not finish.

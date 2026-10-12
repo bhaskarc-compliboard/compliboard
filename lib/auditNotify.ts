@@ -73,9 +73,19 @@ export interface NotifyResult {
  * Pure and exported so the wording is testable without a database or a send.
  */
 export function auditSubject(summary: RunSummary): string {
-  // A note on the run is a sentence about the audit itself — "this checklist names somebody else" —
-  // and it outranks any count, exactly as `runSummaryLine` treats it.
-  if (summary.note) return 'Your audit is done'
+  /**
+   * *** "COULD NOT BE DONE" IS NO SECTIONS, NOT A NOTE — E10, N4. ***
+   *
+   * This read `if (summary.note)` and stopped there. But `createRun` also notes runs that FINISH:
+   * "This checklist names <X>; treated as a template for you." is written on a checklist run with
+   * every one of its sections queued, because auditing yourself against an auditor's own form is the
+   * normal case. So a finished checklist audit — and a checklist audit whose every part failed —
+   * both came out as "Your audit is done", which is the A9 defect this very function exists to fix,
+   * surviving in the branch above it.
+   *
+   * A note is the whole answer only when there was nothing to audit: zero sections.
+   */
+  if (summary.note && summary.sections === 0) return 'Your audit is done'
 
   const who = summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'
   const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)

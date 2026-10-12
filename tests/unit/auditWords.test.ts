@@ -71,10 +71,28 @@ describe('*** A9: the subject line of an audit that did not happen ***', () => {
 
   test('and a clean run is word for word what it was — this must not change', () => {
     for (const s of [summary(), summary({ needs_person: 1 }), summary({ needs_person: 5 }),
-                     summary({ note: 'This checklist names Cascade Analytical, not you.' }),
                      summary({ needs_person: 3, agencies: ['A', 'B'] })]) {
       assert.equal(auditSubject(s), oldSubject(s), JSON.stringify(s.agencies) + s.needs_person)
     }
+  })
+
+  /**
+   * *** THE NOTE CASE LEFT THIS LIST — E10, N4. ***
+   *
+   * It used to be the fourth row above: `summary({ note: 'This checklist names Cascade Analytical,
+   * not you.' })`, asserted equal to `oldSubject`, which answers "Your audit is done". That row has
+   * `sections: 1, sections_done: 1` — a checklist audit that RAN. So the assertion pinned A9's own
+   * defect one branch higher up: a finished checklist audit, and a checklist audit whose every part
+   * failed, both reported "Your audit is done". The rule is now "no sections", and the cases are in
+   * `tests/unit/noteIsNotAnEmptyState.test.ts`.
+   */
+  test('a note on a run that RAN no longer outranks the count (N4)', () => {
+    const ran = summary({ note: 'This checklist names Cascade Analytical, not you.', needs_person: 2 })
+    assert.equal(oldSubject(ran), 'Your audit is done', 'this is what shipped')
+    assert.equal(auditSubject(ran), 'Your Oregon DEQ audit: 2 things that need you')
+    // And with no sections at all, the note is still the whole answer.
+    assert.equal(auditSubject(summary({ note: 'nothing to audit against', sections: 0, sections_done: 0 })),
+      'Your audit is done')
   })
 
   test('plurals at one, on both halves', () => {
@@ -157,13 +175,20 @@ describe('*** A10: "done" is per agency, not per run ***', () => {
 describe('*** A14: a checklist that could not be read, shown as "done · 0 to look at" ***', () => {
   const page = strip('app/audits/page.tsx')
 
-  test('the note replaces the count on the landed-checklist line', () => {
-    assert.match(page, /\{landedTemplate\.summary\?\.note/)
-    assert.match(page, /Your audit against \{checklistTitle\(landedTemplate, idx\)\}: \{landedTemplate\.summary\.note\}/)
+  /**
+   * *** CORRECTED BY E10, N4: THE TEST IS NO SECTIONS, NOT A NOTE. *** These two asserted the note
+   * was the CONDITION, and `createRun` notes runs that finish as well ("This checklist names <X>;
+   * treated as a template for you."), so every such audit lost its counts. A14's case — a checklist
+   * the reading could not read — is a run with `section_count === 0`, and that is what both lines
+   * now branch on. The behaviour is pinned in `tests/unit/noteIsNotAnEmptyState.test.ts`.
+   */
+  test('the note replaces the count on the landed-checklist line when there was nothing to audit', () => {
+    assert.match(page, /\{landedTemplate\.section_count === 0/)
+    assert.match(page, /Your audit against \{checklistTitle\(landedTemplate, idx\)\}: \{landedTemplate\.summary\?\.note\}/)
   })
 
   test('and on the run row in the list', () => {
-    assert.match(page, /: r\.summary\?\.note\s*\n?\s*\? r\.summary\.note/)
+    assert.match(page, /: r\.section_count === 0\s*\n?\s*\? r\.summary\?\.note/)
   })
 
   test('a run WITHOUT a note still shows its counts — the note is not a new empty state', () => {
