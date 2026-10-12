@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -88,6 +88,7 @@ export type Database = {
           price_output_per_m: number | null
           price_per_search: number | null
           searches: number
+          stop_reason: string | null
           task: string
           wall_ms: number
         }
@@ -104,6 +105,7 @@ export type Database = {
           price_output_per_m?: number | null
           price_per_search?: number | null
           searches?: number
+          stop_reason?: string | null
           task: string
           wall_ms?: number
         }
@@ -120,6 +122,7 @@ export type Database = {
           price_output_per_m?: number | null
           price_per_search?: number | null
           searches?: number
+          stop_reason?: string | null
           task?: string
           wall_ms?: number
         }
@@ -137,6 +140,8 @@ export type Database = {
         Row: {
           also_in_sections: string[]
           basis: string | null
+          closed_at: string | null
+          closed_by: string | null
           closed_by_run_id: string | null
           closed_reason: string | null
           company_id: string
@@ -148,6 +153,7 @@ export type Database = {
           id: string
           kind: string
           locator: string | null
+          not_raised_by_run_id: string | null
           ordinal: number
           passed: boolean | null
           quote: string | null
@@ -170,6 +176,8 @@ export type Database = {
         Insert: {
           also_in_sections?: string[]
           basis?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
           closed_by_run_id?: string | null
           closed_reason?: string | null
           company_id: string
@@ -181,6 +189,7 @@ export type Database = {
           id?: string
           kind: string
           locator?: string | null
+          not_raised_by_run_id?: string | null
           ordinal: number
           passed?: boolean | null
           quote?: string | null
@@ -203,6 +212,8 @@ export type Database = {
         Update: {
           also_in_sections?: string[]
           basis?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
           closed_by_run_id?: string | null
           closed_reason?: string | null
           company_id?: string
@@ -214,6 +225,7 @@ export type Database = {
           id?: string
           kind?: string
           locator?: string | null
+          not_raised_by_run_id?: string | null
           ordinal?: number
           passed?: boolean | null
           quote?: string | null
@@ -275,6 +287,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "audit_findings_not_raised_by_run_id_fkey"
+            columns: ["not_raised_by_run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_runs"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "audit_findings_run_in_same_company"
@@ -976,6 +995,7 @@ export type Database = {
           industry: string | null
           name: string
           obligations_computed_at: string | null
+          obligations_hold: Json | null
           pre_completed_items: Json | null
           scan_result: Json | null
           state: string | null
@@ -992,6 +1012,7 @@ export type Database = {
           industry?: string | null
           name: string
           obligations_computed_at?: string | null
+          obligations_hold?: Json | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
@@ -1008,6 +1029,7 @@ export type Database = {
           industry?: string | null
           name?: string
           obligations_computed_at?: string | null
+          obligations_hold?: Json | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
@@ -3374,6 +3396,8 @@ export type Database = {
         Row: {
           applicable_from: string
           applicable_to: string | null
+          closed_by: string | null
+          closed_reason: string | null
           company_id: string
           created_at: string
           determined_by: Json
@@ -3391,6 +3415,8 @@ export type Database = {
         Insert: {
           applicable_from?: string
           applicable_to?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
           company_id: string
           created_at?: string
           determined_by?: Json
@@ -3408,6 +3434,8 @@ export type Database = {
         Update: {
           applicable_from?: string
           applicable_to?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
           company_id?: string
           created_at?: string
           determined_by?: Json

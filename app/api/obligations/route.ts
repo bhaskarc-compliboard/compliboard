@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
-import { writeObligations } from '@/lib/obligationWriter'
+import { writeObligations, previousIndustryOf } from '@/lib/obligationWriter'
+import { holdNote, industryWords, type Hold, type HoldNote } from '@/lib/obligationHold'
 import { mustRow, mustRows, mustCount } from '@/lib/mustRead'
 
 /**
@@ -35,9 +36,10 @@ export async function GET(request: NextRequest) {
     // company, and `.single()` reports a missing row and a broken query the same way — so
     // `maybeSingle` tells them apart, as `lib/obligationWriter.ts` does for the same reason (W1).
     const company = mustRow<{ id: string; industry: string | null; state: string | null
-                              obligations_computed_at: string | null }>('your company', await db
+                              obligations_computed_at: string | null
+                              obligations_hold: Hold | null }>('your company', await db
       .from('companies')
-      .select('id, industry, state, obligations_computed_at')
+      .select('id, industry, state, obligations_computed_at, obligations_hold')
       .eq('id', companyId)
       .maybeSingle())
 
@@ -46,9 +48,14 @@ export async function GET(request: NextRequest) {
     // NULL means NEVER COMPUTED, which is a different state from "computed and nothing
     // applies" — and a row count cannot tell them apart (migration 022).
     let computedAt = company.obligations_computed_at
+    // *** D2: A HELD RECOMPUTE IS NOT A COMPUTATION, AND THE PAGE STILL LOADS. *** `held` comes
+    // back when the recompute would have closed all of the open list or more than half of it: the
+    // rows are untouched, the hold is recorded (migration 083), and the note below asks the person.
+    let hold: Hold | null = company.obligations_hold ?? null
     if (!computedAt) {
       const written = await writeObligations(db, companyId)
       computedAt = written.computedAt
+      hold = written.held ?? hold
     }
 
     // TWO QUERIES, JOINED IN CODE — not one embed.
@@ -60,7 +67,7 @@ export async function GET(request: NextRequest) {
     // (CLAUDE.md §3.6).
     const { data: rows, error } = await db
       .from('obligations')
-      .select('id, entity_id, status, resolution_rationale, determined_by, requirement_templates(requirement_name, citation, category, agency_id), entities(name)')
+      .select('id, entity_id, requirement_template_id, status, resolution_rationale, determined_by, requirement_templates(requirement_name, citation, category, agency_id), entities(name)')
       .eq('company_id', companyId)
       .is('applicable_to', null)
     if (error) throw new Error(error.message)
@@ -121,8 +128,39 @@ export async function GET(request: NextRequest) {
       db.from('switches').select('*', { count: 'exact', head: true }).eq('determination_source', 'documents'),
     ])
 
+    /**
+     * *** THE NOTE ON TOP, WHEN A RECOMPUTE IS HELD — D2.1. ***
+     *
+     * Composed here rather than on the page for the same reason every other sentence on this screen
+     * is (`lib/requirementsView.ts`'s header): a rule about wording is testable only where the
+     * wording is produced. The two extra reads happen ONLY when something is held, which is rare
+     * and never on the ordinary path.
+     *
+     * `industry_has_library` is also what the empty state needs (D2.4), and it is on the hold — so
+     * when nothing is held the library is asked once, by industry, and the answer is a count.
+     */
+    let note: HoldNote | null = null
+    let industryHasLibrary = true
+    if (hold) {
+      const library = mustRows<{ id: string; industries: string[] | null }>('the requirement library',
+        await db.from('requirement_templates').select('id, industries').is('effective_to', null))
+      const was = previousIndustryOf(
+        (rows ?? []).map((o) => o.requirement_template_id as string), library, company.industry)
+      note = holdNote(hold, industryWords, was)
+      industryHasLibrary = hold.industry_has_library
+    } else if (!shaped.length) {
+      // Nothing open and nothing held: the empty state has to say whether zero is a finding about
+      // this company or the library's silence about their industry (D2.4). Counted, not fetched.
+      industryHasLibrary = mustCount('requirements for your industry', await db
+        .from('requirement_templates').select('*', { count: 'exact', head: true })
+        .is('effective_to', null).contains('industries', [company.industry ?? ''])) > 0
+    }
+
     return NextResponse.json({
       rows: shaped,
+      /** D2: the note, its buttons, and what the empty state may claim. Null when nothing is held. */
+      hold: note ? { ...note, heldAt: hold?.held_at ?? null } : null,
+      industryHasLibrary,
       coverage: {
         requirements: mustCount('the requirement library', reqCount),
         agencies: mustCount('the regulators', agencyCount),
@@ -144,5 +182,66 @@ export async function GET(request: NextRequest) {
       { error: error instanceof Error ? error.message : 'We could not work out your requirements.' },
       { status: 500 },
     )
+  }
+}
+
+/**
+ * POST /api/obligations — THE PERSON'S ANSWER TO A HELD RECOMPUTE (the owner's decision **D2.3**).
+ *
+ *   { action: 'confirm' }  "Yes, they no longer apply"  — the recompute runs, and every row it
+ *                          closes records that this login asked for it, on today's date
+ *                          (migration 081).
+ *   { action: 'keep' }     "Keep them"                  — the note goes, the list stays open, and
+ *                          nothing is closed. The next recompute will ask again, because nothing
+ *                          about their answers has changed — which is the honest outcome, not a
+ *                          loop: it asks only when a recompute happens.
+ *
+ * "No, change my industry back" is not here. It is a link to Company information, where the
+ * industry is changed the way it is changed everywhere else; a second path for one field would be
+ * two places for the same write.
+ *
+ * *** IT REFUSES WHEN NOTHING IS HELD. *** A confirm with no hold would reconcile the list without
+ * anybody having been asked — the dead end's mirror image, and a close a person did not ask for.
+ */
+export async function POST(request: NextRequest) {
+  const authed = await requireCompany(request)
+  if (!authed.ok) return authed.response
+  const { companyId, userId, db } = authed.auth
+
+  try {
+    const body = await request.json().catch(() => null)
+    const action = String(body?.action ?? '')
+    if (action !== 'confirm' && action !== 'keep') {
+      return NextResponse.json({ error: 'Expected action "confirm" or "keep".' }, { status: 400 })
+    }
+
+    const company = mustRow<{ obligations_hold: Hold | null }>('your company', await db
+      .from('companies').select('obligations_hold').eq('id', companyId).maybeSingle())
+    if (!company) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+    if (!company.obligations_hold) {
+      return NextResponse.json(
+        { error: 'There is nothing waiting for you to confirm. Reload the page to see your current requirements.' },
+        { status: 409 })
+    }
+
+    if (action === 'keep') {
+      const { error } = await db.from('companies').update({ obligations_hold: null }).eq('id', companyId)
+      if (error) throw new Error(error.message)
+      return NextResponse.json({ ok: true, closed: 0, kept: company.obligations_hold.would_close })
+    }
+
+    // CONFIRM. The recompute is run again rather than the held numbers being acted on: the stored
+    // hold is a record of one moment, and what closes must be what is true now.
+    const written = await writeObligations(db, companyId, { confirmedBy: userId })
+    return NextResponse.json({
+      ok: true,
+      closed: Number(written.persisted.closed ?? 0),
+      computedAt: written.computedAt,
+    })
+  } catch (error) {
+    console.error('[/api/obligations POST] failed:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'We could not record that just now.' },
+      { status: 500 })
   }
 }

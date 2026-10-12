@@ -53,25 +53,59 @@ export default function RequirementsPage() {
   const [open, setOpen] = useState<SectionKey>('applies')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  /**
+   * *** D2: A RECOMPUTE THAT WOULD REMOVE MOST OF THE LIST WAITS HERE. *** Nothing was closed; the
+   * note and its buttons come from the route, which composes them (`lib/obligationHold.ts`), so the
+   * words are tested where they are produced like every other sentence on this screen.
+   */
+  const [hold, setHold] = useState<{ lines: string[]; buttons: Array<{ label: string; action: string }> } | null>(null)
+  /** D2.4: whether zero is a finding about this company, or the library's silence about their industry. */
+  const [industryHasLibrary, setIndustryHasLibrary] = useState(true)
+  const [answering, setAnswering] = useState(false)
 
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const res = await fetch('/api/obligations', { headers: await authHeaders() })
-        if (!res.ok) throw new Error(`Could not load your requirements (${res.status}).`)
-        const data = await res.json()
-        setRows(data.rows ?? [])
-        setCoverage(data.coverage ?? null)
-        setComputedAt(data.computedAt ?? null)
-      } catch (e) {
-        // CLAUDE.md §5.1 — say whose problem it is, and never assert anything about data we
-        // did not successfully read.
-        setError(e instanceof Error ? e.message : 'We could not load your requirements.')
-      } finally {
-        setLoading(false)
-      }
-    })()
-  }, [])
+  const load = async () => {
+    try {
+      const res = await fetch('/api/obligations', { headers: await authHeaders() })
+      if (!res.ok) throw new Error(`Could not load your requirements (${res.status}).`)
+      const data = await res.json()
+      setRows(data.rows ?? [])
+      setCoverage(data.coverage ?? null)
+      setComputedAt(data.computedAt ?? null)
+      setHold(data.hold ?? null)
+      setIndustryHasLibrary(data.industryHasLibrary !== false)
+    } catch (e) {
+      // CLAUDE.md §5.1 — say whose problem it is, and never assert anything about data we
+      // did not successfully read.
+      setError(e instanceof Error ? e.message : 'We could not load your requirements.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // The async IIFE is the shape the rest of the product uses: the state lands in a promise
+  // continuation rather than in the effect's own body.
+  useEffect(() => { ;(async () => { await load() })() }, [])
+
+  /** "Yes, they no longer apply" or "Keep them". The list is re-read either way. */
+  const answerHold = async (action: 'confirm' | 'keep') => {
+    setAnswering(true)
+    setError('')
+    try {
+      const res = await fetch('/api/obligations', {
+        method: 'POST',
+        headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error ?? 'We could not record that just now.')
+      setLoading(true)
+      await load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'We could not record that just now.')
+    } finally {
+      setAnswering(false)
+    }
+  }
 
   const inSection = (k: SectionKey) =>
     rows.filter((r) =>
@@ -100,6 +134,29 @@ export default function RequirementsPage() {
           </section>
         )}
 
+        {/* *** D2: THE NOTE SITS ON TOP, AND THE LIST BELOW IT IS UNTOUCHED. *** No percentage is
+            ever shown (D2.2) — the threshold is internal and lives in `lib/obligationHold.ts`. */}
+        {hold && (
+          <section aria-label="Something needs your confirmation"
+                   className="mt-4 rounded border border-[var(--amber)] bg-[var(--amber-wash)] p-4">
+            {hold.lines.map((line) => (
+              <p key={line} className="text-sm text-gray-800">{line}</p>
+            ))}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {hold.buttons.map((b) => (
+                b.action === 'industry'
+                  ? <a key={b.action} href="/company-information"
+                       className="text-sm font-medium text-[var(--green)] underline hover:opacity-80">{b.label}</a>
+                  : <button key={b.action} onClick={() => answerHold(b.action as 'confirm' | 'keep')}
+                            disabled={answering}
+                            className="text-sm font-medium text-[var(--green)] underline hover:opacity-80 disabled:opacity-50">
+                      {b.label}
+                    </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         {loading && <p className="mt-8 text-sm text-gray-500">Working out your requirements…</p>}
 
         {error && (
@@ -112,7 +169,7 @@ export default function RequirementsPage() {
              `computedAt` separates them; a row count cannot (migration 022). The route has
              always returned it — this page was throwing it away and asserting the first. */
           <p className="mt-8 rounded border border-gray-200 p-4 text-sm text-gray-600">
-            {renderEmptyState(computedAt)}
+            {renderEmptyState(computedAt, industryHasLibrary)}
           </p>
         )}
 

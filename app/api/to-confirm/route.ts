@@ -349,7 +349,12 @@ export async function POST(request: NextRequest) {
           { error: err?.error ?? 'We could not record that answer.' }, { status: res.status })
       }
       await supabaseAdmin.from('fact_proposals').update({ status: 'accepted' }).in('id', ids)
-      return NextResponse.json({ ok: true, wrote: 'company_switches', switch_id: settledKey, settled: ids.length })
+      // `held` travels with it (D2.3): the answer is saved, and the recompute it would have caused
+      // is waiting on the Requirements page. Swallowing it here would leave the person with no
+      // sign that anything is outstanding.
+      const ok = await res.json().catch(() => ({})) as { held?: string }
+      return NextResponse.json({ ok: true, wrote: 'company_switches', switch_id: settledKey, settled: ids.length,
+                                 ...(ok?.held ? { held: ok.held } : {}) })
     }
 
     // Not a switch: `company_facts` — one row per company, key and SITE (migration 055), the newest

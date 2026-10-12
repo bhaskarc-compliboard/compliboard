@@ -112,7 +112,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 // through the window where a version is half-extracted. `handbookRead.test.ts` gains three (the
 // retire step walking the chain, a failed chain read leaving the reading intact, and the plain
 // two-version case unchanged).
-const FLOOR = 1378
+//
+// 1378 -> 1401 at E10's third checkpoint, N7 and the owner's decision D2: a big drop in the
+// requirements waits for a person. `obligationHold.test.ts` (21) holds the internal threshold at its
+// edges — all of the open list, or MORE than half, so one of two never asks — and every customer
+// sentence the owner wrote, including that none of them leaks the rule and that the false "Nothing
+// has been changed" is gone. `obligationWriterReads.test.ts` keeps all of W1's guarantees and turns
+// the throw into a hold: nothing reconciled, nothing stamped, and a person's confirmation recording
+// who asked.
+const FLOOR = 1401
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

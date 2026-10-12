@@ -328,7 +328,13 @@ function YourCompanyContent() {
       })
       const j = await res.json().catch(() => null)
       if (!res.ok) { setNotice(j?.error ?? 'We could not save that just now.'); return }
-      setEditingLine(null); setNotice(null); await load()
+      setEditingLine(null)
+      // *** D2.3: THE ANSWER IS SAVED, AND A BIG CHANGE TO THE REQUIREMENTS WAITS. *** `held` comes
+      // from `/api/switches/answer` through this route. It said "Nothing has been changed", which
+      // was false — the answer above is written before the requirements are recomputed — and a
+      // person told their answer did not save answers the question again.
+      setNotice(typeof j?.held === 'string' ? j.held : null)
+      await load()
     } finally { setBusy(false) }
   }
 

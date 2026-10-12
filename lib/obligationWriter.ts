@@ -25,7 +25,11 @@ import { resolve, coerceFact, isEstablished, type ResolvedObligation,
          type Site, type Company, type Requirement, type SwitchValueType } from './resolve.ts'
 import type { Facts, InventoryClause, Truth } from './appliesExpression.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { mustRow, mustRows, mustCount } from './mustRead.ts'
+import { mustRow, mustRows } from './mustRead.ts'
+import { HOLD_RULE, type Hold } from './obligationHold.ts'
+
+/** The only `closed_reason` this release writes (migration 081). Plain, and shown on the page. */
+export const CLOSED_BY_A_PERSON = 'a person said these no longer apply'
 
 /**
  * *** WHEN SYNCHRONOUS STOPS BEING THE RIGHT ANSWER. ***
@@ -53,7 +57,18 @@ export interface WriteResult {
   obligations: ResolvedObligation[]
   /** From close_and_replace_obligations: { closed, unchanged, opened, open_total, received } */
   persisted: Record<string, number>
-  computedAt: string
+  /**
+   * When the stored list was last worked out. NULL only alongside `held`, and only for a company
+   * that has never computed: a held recompute does not move the stamp (D2).
+   */
+  computedAt: string | null
+  /**
+   * *** SET WHEN NOTHING WAS WRITTEN BECAUSE THE DROP WAS TOO BIG — D2. *** The recompute is held,
+   * the open rows are untouched, and the hold is recorded on the company so the Requirements page
+   * can ask the question (migration 083). `computedAt` is then the PREVIOUS stamp, or null if the
+   * company has never computed: a held recompute is not a computation.
+   */
+  held?: Hold
 }
 
 /**
@@ -93,10 +108,20 @@ export function splitFacts(
  * payload cannot distinguish *this no longer applies* from *this was not in what you sent*, and
  * the difference is an obligation silently staying open forever.
  */
-export async function writeObligations(db: SupabaseClient, companyId: string): Promise<WriteResult> {
+export async function writeObligations(
+  db: SupabaseClient, companyId: string,
+  /**
+   * *** D2: `confirmedBy` IS A PERSON SAYING "YES, THEY NO LONGER APPLY". *** Without it, a
+   * recompute that would close all of the open list or more than half of it is HELD and nothing is
+   * written. With it, the reconcile proceeds and every row it closes is stamped with that login and
+   * the plain reason (migration 081), because a close a person asked for is a different fact from a
+   * close the resolver made on the evidence.
+   */
+  opts: { confirmedBy?: string } = {},
+): Promise<WriteResult> {
   const [companyRes, sitesRes, reqRes, switchesRes, csRes] =
     await Promise.all([
-      db.from('companies').select('id,name,state,county,city,industry').eq('id', companyId).maybeSingle(),
+      db.from('companies').select('id,name,state,county,city,industry,obligations_computed_at').eq('id', companyId).maybeSingle(),
       db.from('entities').select('id,name,state,county,city,fire_authority,is_primary')
         .eq('company_id', companyId).eq('entity_type', 'site'),
       // One line, not a concatenation: Supabase infers the row type FROM THE STRING LITERAL,
@@ -142,8 +167,12 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
   // come back empty: a filter that stops matching, a seed that did not run, a view replaced.
   if (reqRows.length === 0) {
     throw new Error(
+      // *** NOT "Nothing has been changed" — D2.3. *** `/api/switches/answer` saves the answer
+      // BEFORE it calls this, so that sentence told a person their answer was lost when it was
+      // recorded, and a person told that answers the question again. What is true is narrower and
+      // is what this now says: the LIST was not changed.
       'We could not work out your requirements: the requirement library came back empty, ' +
-      'which is never a real answer. Nothing has been changed.',
+      'which is never a real answer. Your requirements have not been changed.',
     )
   }
 
@@ -183,26 +212,65 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
     inventory: (siteId, list) => invCache.get(`${siteId}|${list}`) ?? 'unknown',
   })
 
-  // *** THE LAST GUARD: AN EMPTY SET NEVER CLOSES OPEN ROWS. ***
-  // The checks above catch a read that reported its failure. This one catches a read that did
-  // not — a changed filter, a column that now holds something else, a resolve that returns
-  // nothing for a reason nobody has thought of yet. `close_and_replace_obligations` is told
-  // "this is the complete set", so handing it nothing closes everything, and the damage is
-  // identical however the emptiness arose. A company with open requirements is therefore never
-  // reconciled against nothing: we stop, keep the rows, and say so.
-  //
-  // It is not "refuse every empty set": a company whose obligations have genuinely never
-  // computed to anything has no open rows to lose, so the write proceeds and the timestamp is
-  // stamped. That is the state migration 022 exists to record.
-  if (result.obligations.length === 0) {
-    const open = mustCount('your current requirements', await db
-      .from('obligations').select('*', { count: 'exact', head: true })
+  /**
+   * *** THE LAST GUARD: A BIG DROP NEVER CLOSES OPEN ROWS ON ITS OWN. ***
+   *
+   * The checks above catch a read that reported its failure. This one catches a read that did
+   * not — a changed filter, a column that now holds something else, a resolve that returns
+   * nothing for a reason nobody has thought of yet. `close_and_replace_obligations` is told
+   * "this is the complete set", so handing it a short set closes the difference, and the damage is
+   * identical however the shortfall arose.
+   *
+   * *** WIDENED AND UNSTUCK BY D2 (E10, N7). *** Job E's version threw whenever the result was
+   * EMPTY and rows were open. That stopped the lie and created a dead end: a company that
+   * legitimately stops being a chemical manufacturer got 500 from the Requirements page for ever,
+   * with 200 obligations open and no button anywhere that could move them on (measured, E9 item 5).
+   *
+   * Now the test is **all of the open list, or more than half of it** (`lib/obligationHold.ts`,
+   * where the threshold lives with the tests that pin its edges — D2.2, and it is never shown), and
+   * the answer is not a throw. Nothing is written, the hold is recorded on the company, and the
+   * page asks the person. `confirmedBy` is them answering.
+   *
+   * It is not "refuse every short set": a company whose obligations have genuinely never computed
+   * to anything has no open rows to lose, so the write proceeds and the timestamp is stamped. That
+   * is the state migration 022 exists to record.
+   */
+  const openRows = mustRows<{ id: string; requirement_template_id: string; entity_id: string | null }>(
+    'your current requirements',
+    await db.from('obligations').select('id, requirement_template_id, entity_id')
       .eq('company_id', companyId).is('applicable_to', null))
-    if (open > 0) {
-      throw new Error(
-        `We could not work out your requirements: the result came back with none at all, while ${open} ` +
-        'of yours are open. Closing them on that would be wrong, so nothing has been changed.',
-      )
+  const key = (t: string, e: string | null) => `${t}\u0000${e ?? ''}`
+  const inNewSet = new Set(result.obligations.map((o) => key(o.requirementTemplateId, o.entityId)))
+  // Only the rows that LEAVE the set. A row whose status changed is closed and re-opened by the
+  // same statement (§47's second case) and is not a requirement the company loses.
+  const leaving = openRows.filter((r) => !inNewSet.has(key(r.requirement_template_id, r.entity_id)))
+
+  if (!opts.confirmedBy && HOLD_RULE.holds(openRows.length, leaving.length)) {
+    const hold: Hold = {
+      held_at: new Date().toISOString(),
+      open_total: openRows.length,
+      would_close: leaving.length,
+      industry: (company as { industry: string | null }).industry ?? null,
+      // Does the library carry ANY live requirement for that industry? Read from the rows already
+      // in hand, so this costs nothing and cannot disagree with what the resolve just used.
+      industry_has_library: reqRows.some((r) =>
+        ((r.industries ?? []) as string[]).includes(String((company as { industry: string | null }).industry ?? ''))),
+      // Did anything of THEIRS change since the last recompute? If not, the note says so — the
+      // sentence that tells a person this may not be their doing at all (D2.1).
+      answer_changed: newestAnswerIsNewer(cs as Array<{ updated_at?: string | null }>,
+        (company as { obligations_computed_at: string | null }).obligations_computed_at),
+    }
+    const { error: holdErr } = await db.from('companies')
+      .update({ obligations_hold: hold }).eq('id', companyId)
+    // Said, not swallowed: without the record the page cannot ask the question, and the person
+    // would be sent to a page that shows the old list and explains nothing.
+    if (holdErr) throw new Error(`Could not record that your requirements need your confirmation: ${holdErr.message}`)
+    return {
+      obligations: result.obligations,
+      persisted: {},
+      // A held recompute is not a computation, so the stamp does not move.
+      computedAt: (company as { obligations_computed_at: string | null }).obligations_computed_at,
+      held: hold,
     }
   }
 
@@ -219,15 +287,83 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
   })
   if (error) throw new Error(`Could not store your requirements: ${error.message}`)
 
+  /**
+   * *** A CLOSE A PERSON ASKED FOR SAYS SO — D2.3, migration 081. ***
+   *
+   * `close_and_replace_obligations` returns counts, not ids, so the rows are named from the diff
+   * computed above — taken BEFORE the reconcile, which is the only moment they are still open. The
+   * stamp is a second statement on purpose: the reconcile's contract is untouched (it is the one
+   * function that may close an obligation), and a stamp that fails leaves the rows correctly closed
+   * with the reason missing, which is said rather than swallowed.
+   */
+  if (opts.confirmedBy && leaving.length) {
+    const { error: stampedErr } = await db.from('obligations')
+      .update({ closed_by: opts.confirmedBy, closed_reason: CLOSED_BY_A_PERSON })
+      .in('id', leaving.map((r) => r.id)).eq('company_id', companyId)
+    if (stampedErr) {
+      console.error(`writeObligations: ${leaving.length} requirement(s) were closed on `
+        + `${opts.confirmedBy}'s confirmation but the record of who asked did not save: ${stampedErr.message}`)
+    }
+  }
+
   const computedAt = new Date().toISOString()
   // *** THE TIMESTAMP IS THE POINT OF LAZY. *** Without it, "never computed" and "computed and
   // nothing applies" are the same zero, and M6 cannot tell a customer which is true (§5.1).
   // The error is checked (W1): the rows are already reconciled at this point, so a stamp that
   // silently failed leaves the company looking "never computed" and every later request
   // recomputing it — the lazy path's one job, undone without a word.
+  // *** AND THE HOLD IS CLEARED BY THE RECOMPUTE THAT PROCEEDED *** (D2, migration 083). One
+  // statement with the stamp: a company must never be left looking computed with a question still
+  // on its page, or answered with the old numbers still on the note.
   const { error: stampErr } = await db.from('companies')
-    .update({ obligations_computed_at: computedAt }).eq('id', companyId)
+    .update({ obligations_computed_at: computedAt, obligations_hold: null }).eq('id', companyId)
   if (stampErr) throw new Error(`Could not record when your requirements were worked out: ${stampErr.message}`)
 
   return { obligations: result.obligations, persisted: persisted ?? {}, computedAt }
+}
+
+/**
+ * Is any answer of theirs newer than the last successful recompute? — D2.1's last sentence.
+ *
+ * Never computed (NULL) counts as "yes, something changed": the first computation of a company that
+ * already holds answers is not a moment to tell them nothing of theirs changed.
+ */
+export function newestAnswerIsNewer(
+  answers: Array<{ updated_at?: string | null }>, computedAt: string | null,
+): boolean {
+  if (!computedAt) return true
+  const at = Date.parse(computedAt)
+  if (Number.isNaN(at)) return true
+  return answers.some((a) => {
+    const t = a.updated_at ? Date.parse(a.updated_at) : NaN
+    return !Number.isNaN(t) && t > at
+  })
+}
+
+/**
+ * The industry the open requirements were WRITTEN FOR, read from the library rows behind them.
+ *
+ * A company may have been through more than one industry, so this is the commonest industry among
+ * those rows that is not the one they are in now — and null when there is no clear answer, so the
+ * note names no old industry rather than naming the wrong one (`lib/obligationHold.ts`).
+ */
+export function previousIndustryOf(
+  openTemplateIds: string[],
+  library: Array<{ id: string; industries: string[] | null }>,
+  currentIndustry: string | null,
+): string | null {
+  const open = new Set(openTemplateIds)
+  const tally = new Map<string, number>()
+  for (const r of library) {
+    if (!open.has(r.id)) continue
+    for (const ind of r.industries ?? []) {
+      if (!ind || ind === currentIndustry) continue
+      tally.set(ind, (tally.get(ind) ?? 0) + 1)
+    }
+  }
+  if (!tally.size) return null
+  const ranked = [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  // A tie between two industries is not an answer; naming one of them would be a guess.
+  if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) return null
+  return ranked[0][0]
 }

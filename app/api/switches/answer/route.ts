@@ -28,6 +28,7 @@ import { fromUserAnswer } from '@/lib/switchDetermination'
 import { newlyUnblocked, establishedFrom, type SwitchRow, type Established } from '@/lib/switchAsk'
 import { switchesIn, type Expression } from '@/lib/appliesExpression'
 import { writeObligations } from '@/lib/obligationWriter'
+import { ANSWER_HELD } from '@/lib/obligationHold'
 import { mustRow, mustRows } from '@/lib/mustRead'
 import type { SwitchValueType } from '@/lib/resolve'
 
@@ -140,6 +141,30 @@ export async function POST(request: NextRequest) {
 
     const written = await writeObligations(db, companyId)
     const statusAfter = countBy(written.obligations.map((o) => ({ status: o.status })))
+
+    /**
+     * *** D2.3: THE ANSWER WAS SAVED, AND THE PAGE NOW SAYS SO. ***
+     *
+     * The answer is written above, BEFORE `writeObligations` can hold or throw. When Job E's W1
+     * guard fired, this route's catch answered with the writer's sentence — which ended
+     * "Nothing has been changed" — and that was false: their answer was recorded. A person told
+     * their answer did not save will answer it again.
+     *
+     * A held recompute is not an error. The answer is saved, the list is untouched, and the
+     * confirmation waits on the Requirements page where the list it would change is.
+     */
+    if (written.held) {
+      return NextResponse.json({
+        written: true,
+        switch_id: switchId,
+        entity_id: entityId,
+        evidence_class: determination.evidence_class,
+        state: 'known',
+        unblocked: [],
+        held: ANSWER_HELD,
+        obligations: { before: statusBefore, after: statusBefore, persisted: {} },
+      })
+    }
 
     // --- what this answer unlocked. ONE LEVEL, never a cascade (§54) ---
     const reqs = mustRows<{ id: string; applies_expression: unknown }>('the requirement library',

@@ -12,6 +12,8 @@
  *
  * So the page composes these; it does not phrase anything itself.
  */
+import { NO_LIBRARY_FOR_INDUSTRY } from './obligationHold.ts'
+
 
 export type ObligationStatus = 'applies' | 'does_not_apply' | 'undetermined' | 'unknown'
 
@@ -257,7 +259,7 @@ export function renderCoverageStrip(x: {
  * "You're all set" is the omniscient status tracker in its purest form: a compliance position
  * asserted by a screen that has computed nothing.
  */
-export function renderEmptyState(computedAt: string | null): string {
+export function renderEmptyState(computedAt: string | null, industryHasLibrary = true): string {
   /**
    * *** TWO EMPTY STATES, AND SAYING THE WRONG ONE IS A LIE. ***
    *
@@ -278,6 +280,18 @@ export function renderEmptyState(computedAt: string | null): string {
     return 'We have not worked out your requirements yet. This is not a result — nothing has ' +
            'been computed for your business so far.'
   }
+  /**
+   * *** AND A THIRD, FOR AN INDUSTRY THE LIBRARY DOES NOT COVER — the owner's decision D2.4,
+   * 12 October 2026. ***
+   *
+   * The sentence below is a strong claim: we worked it out and nothing applies. It is TRUE for a
+   * company whose industry we carry a library for — 188 live rows for chemical manufacturing in
+   * Oregon — and whose answers resolve to nothing. It is NOT true for a company whose industry we
+   * have no library for at all, which is every industry but the first vertical: there, zero is the
+   * library's silence and not a finding about them. `CLAUDE.md` §6 and §7's coverage table in one
+   * sentence, and §5.1's rule that an empty state is a claim.
+   */
+  if (!industryHasLibrary) return NO_LIBRARY_FOR_INDUSTRY
   return 'We worked out your requirements and found none that apply to you. That is a result, ' +
          'not a gap — but it is unusual, so please tell us if it looks wrong.'
 }
