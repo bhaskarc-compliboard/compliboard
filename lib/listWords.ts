@@ -13,6 +13,22 @@
  * exactly this many: a full read means there may be more, and a bare "60" would be a count we do
  * not have.
  */
+/**
+ * *** THE LINE A PAGE SHOWS WHEN ITS OWN READ FAILED — **R7** (`CLAUDE.md` §3.12). ***
+ *
+ * "A throw that reaches a page shows that page's failure line, never its empty state." Job E made
+ * these reads throw, which is right; the pages did not catch them, so the state never landed and
+ * the page rendered its empty state instead — "No conversations yet" and "No handbooks yet" about a
+ * company whose data could not be read, with uploads refused because the company id was never set.
+ *
+ * §5.1 in one sentence: whose problem it is, that nothing of theirs is wrong, and what they can do.
+ * It never says anything about what they have, because that is the thing we failed to read.
+ */
+export const PAGE_COULD_NOT_LOAD = "We couldn't load this just now."
+/** The rest of it, for a box that has a heading and a line under it. */
+export const PAGE_COULD_NOT_LOAD_NOTE =
+  "That's on our side, not yours. Please reload in a moment."
+
 export const LIST_CAP = 60
 /** "47", or "60+" for a read that came back full. The one rule, for the counts line and the tab. */
 export const countOf = (n: number) => (n >= LIST_CAP ? `${LIST_CAP}+` : String(n))

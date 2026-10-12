@@ -132,15 +132,47 @@ describe('*** D6: "upload it again" was told for every storage failure ***', () 
     assert.match(STORAGE_UNREACHABLE.reason, /could not reach the place your files are stored/)
   })
 
-  test('both call sites write NO reading when storage was unreachable', () => {
+  test('both call sites write NO reading when storage was unreachable AND a retry is still coming', () => {
     for (const p of ['app/api/document-scan/route.ts', 'app/api/jobs/scan-documents/route.ts']) {
       const src = code(p)
       assert.match(src, /if \(!fileIsMissing\(dlError\)\) \{/, p)
       const branch = src.slice(src.indexOf('if (!fileIsMissing(dlError)) {'))
-      const end = branch.indexOf('}')
-      assert.ok(!/saveScan/.test(branch.slice(0, end)), `${p}: no reading is written`)
-      assert.match(branch.slice(0, 400), /status: 'uploaded'/, `${p}: the row goes back in the queue`)
+      // The put-back is the FIRST thing in the branch on the live route, and on the sweep it is the
+      // first thing after the attempt limit is checked. Either way, no reading is written on a
+      // failure we are going to retry — which is D6: "upload it again" is right when the object is
+      // gone and wrong when storage was merely unreachable, and it wrote a failed reading over a
+      // good one either way.
+      const toPutBack = branch.slice(0, branch.indexOf("status: 'uploaded'"))
+      assert.ok(!/saveScan/.test(toPutBack.replace(/attempts >= READ_ATTEMPT_LIMIT[\s\S]*?continue\s*\}/, '')),
+        `${p}: no reading is written on a failure that will be retried`)
+      assert.match(branch.slice(0, 1600), /status: 'uploaded'/, `${p}: the row goes back in the queue`)
     }
+  })
+
+  /**
+   * *** AND AFTER THE LIMIT IT DOES WRITE ONE — R7, item S1 (E10, migration 084). ***
+   *
+   * D6's rule is about a failure we are going to retry. The sweep used to retry for ever: RULE 1
+   * picks the globally oldest queued document, which is the one that just failed, so the run spun
+   * on it for its whole budget every five minutes and no other company's documents were read.
+   *
+   * At `READ_ATTEMPT_LIMIT` it stops, and then the row has to SAY something — "Queued" for ever is
+   * the state this whole list exists to end. The reading it writes does not lose the document's
+   * content either: every reader of a document's CONTENT takes the latest READABLE reading
+   * (`lib/readableScan.ts`, §185a), so the earlier good reading is still what answers questions.
+   */
+  test('after the attempt limit the sweep writes one, in the owner\'s words, and the batch can finish', () => {
+    const src = code('app/api/jobs/scan-documents/route.ts')
+    assert.match(src, /if \(attempts >= READ_ATTEMPT_LIMIT\) \{/)
+    assert.match(src, /failedScan\(STORAGE_UNREACHABLE_FINAL\.reason, STORAGE_UNREACHABLE_FINAL\.wayForward\)/)
+    // The attempt is counted at the claim, not at the failure: a run the platform kills mid-read
+    // never reaches a failure handler.
+    assert.match(src, /const attempts = \(doc\.read_attempts \?\? 0\) \+ 1/)
+    assert.match(src, /\.update\(\{ status: 'reading', read_attempts: attempts \}\)/)
+    // And the two wordings are told apart: one promises a pass, the other asks for the press.
+    const words = readFileSync('lib/storageMiss.ts', 'utf8')
+    assert.match(words, /We will try it again on our next pass/)
+    assert.match(words, /Press Read it again in a little while\./)
   })
 })
 

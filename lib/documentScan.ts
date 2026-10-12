@@ -852,7 +852,21 @@ export async function saveScan(
     // "not recorded" and not "none".
     searches: billedSearches,
     prompt_sha256: scan.prompt_sha256,
-    ai_call_id: aiCallId, is_current: true,
+    /**
+     * *** NOT CURRENT YET — R7, item S7 (`docs/reports/jobE-independent-review.md` §2). ***
+     *
+     * This was `is_current: true`, and the gaps are written AFTER it. Everything in between can
+     * throw — the checklist read, the earlier-findings read (both `mustRows` since Job E's D11),
+     * and the gaps insert itself — and the reading was then current **with no findings on it**: a
+     * document that shows as read and clean when its gaps were never written. Nothing recovered,
+     * because nothing looked wrong.
+     *
+     * So the reading becomes current once its gaps are on it (below). A throw before that leaves
+     * the PREVIOUS reading current, which is the state every reader already handles and the one
+     * that cannot mislead: the document still says Reading, the sweep's recovery puts it back, and
+     * the next pass writes the reading again.
+     */
+    ai_call_id: aiCallId, is_current: false,
   }).select('id').single()
   if (error) throw new Error(`document_scans: ${error.message}`)
   const scanId = row.id as string
@@ -968,6 +982,22 @@ export async function saveScan(
       }
     }
   }
+
+  /**
+   * *** AND NOW IT IS THE CURRENT READING — R7, item S7. ***
+   *
+   * Its gaps are written and its earlier ones are reconciled, so there is no longer a state in
+   * which this reading can be read as "nothing wrong with this document". Checked, because a
+   * reading nothing can see is a reading that did not happen: every reader of a document's
+   * CONTENT goes through `is_current` or `document_index_v`, which is built on it.
+   */
+  const { error: currentErr } = await db.from('document_scans')
+    .update({ is_current: true }).eq('id', scanId)
+  if (currentErr) {
+    throw new Error(`this reading was saved but could not be made the current one, so nothing `
+      + `would have shown it: ${currentErr.message}`)
+  }
+
   if (scan.conditions.length) {
     const { error: e } = await db.from('document_conditions').insert(scan.conditions.map((c, i) => ({
       scan_id: scanId, document_id: documentId, company_id: companyId, ordinal: i + 1,

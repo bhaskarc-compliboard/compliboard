@@ -65,7 +65,15 @@ export async function summariseBatch(db: Db, batchId: string): Promise<BatchSumm
   // all-zero summary below; `app/api/jobs/scan-documents/route.ts` then stored it, **marked the
   // batch done for good** — nothing re-opens a done batch — and emailed *"We've read your 0
   // documents. Nothing needs attention."* A failed SECOND read gave the same counts over a real
-  // list. Both throw now: the batch stays open and the next pass summarises it properly.
+  // list. Both throw now, so the batch stays open rather than being finished on nothing.
+  //
+  // *** AND "the next pass summarises it properly" WAS FALSE — R7, item S4 (E10). *** This comment
+  // said that, and nothing made it true: `finishBatchIfDone` is called only for the batches of the
+  // queue the sweep just processed, and by the time this throws every document of this batch has
+  // settled, so no later sweep's queue contains them. The batch stayed open for ever and the person
+  // waited for an email that would never come. The sweep now ends by looking for exactly that
+  // state (`app/api/jobs/scan-documents/route.ts`, "the batches that did not finish"), which is
+  // what makes the sentence true.
   const docs = mustRows<{ id: string }>('the documents in this batch',
     await db.from('documents').select('id').eq('batch_id', batchId))
   const ids = docs.map((d) => d.id)

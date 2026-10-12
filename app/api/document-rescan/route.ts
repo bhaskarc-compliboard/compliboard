@@ -91,7 +91,10 @@ export async function POST(request: NextRequest) {
     // still be the thing that says so.
     const { error: upError } = await db
       .from('documents')
-      .update({ status: 'uploaded', reading_since: null, batch_id: batch.id })
+      // `read_attempts: 0` — R7 item S1, migration 084: a person asking for it again is a new
+      // story, and they are entitled to the same number of tries as anybody. Without this, a
+      // document that had used up the sweep's attempts could never be read again.
+      .update({ status: 'uploaded', reading_since: null, batch_id: batch.id, read_attempts: 0 })
       .eq('id', documentId)
     if (upError) throw upError
 

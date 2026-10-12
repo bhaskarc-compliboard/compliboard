@@ -52,7 +52,7 @@ import { Sheet } from '@/components/Sheet'
 import { Empty } from '@/components/Empty'
 import { Tabs } from '@/components/Tabs'
 // THE CONVERSATIONS LIST'S WORDS, READING AND ROW — shared with HR since Step 4a (decision 1).
-import { LIST_CAP, countOf, countWord, displayTitle, fmtDate, groupByDay } from '@/lib/listWords'
+import { LIST_CAP, countOf, countWord, displayTitle, fmtDate, groupByDay, PAGE_COULD_NOT_LOAD, PAGE_COULD_NOT_LOAD_NOTE } from '@/lib/listWords'
 import { TOPIC_LIST_COLUMNS, toTopicRow, readTopicList, type TopicRow, type TopicListRow } from '@/lib/topicList'
 import { ConversationList } from '@/components/ConversationList'
 import { ReportView, WEB_SOURCE } from '@/components/ReportView'
@@ -448,7 +448,19 @@ export default function CompliancePage() {
         body: JSON.stringify({ document_id: documentId }),
       })
       const scan = await res.json().catch(() => null)
-      if (res.ok && scan?.status !== 'could_not_read') return { ok: true }
+      /**
+       * *** ONLY 'read' MEANS READ — R7, item S5. ***
+       *
+       * This was `scan?.status !== 'could_not_read'`, and the route answers **200 with
+       * `status: 'uploaded'`** when storage was unreachable — a document that has NOT been read and
+       * is waiting for the sweep. So the page took it as read and asked the question as though the
+       * file were in hand, while the row said Queued. The route's own `could_not_read` payload came
+       * with it and was thrown away by this line.
+       *
+       * `scan.status` is `documents.status` (`lib/documentScan.ts`), so 'read' is the only value
+       * that means the reading landed.
+       */
+      if (res.ok && scan?.status === 'read') return { ok: true }
       const said = scan?.could_not_read
       return {
         ok: false,
@@ -818,7 +830,21 @@ export default function CompliancePage() {
     } catch { return false }
     if (topicId === t.id) { setExchanges([]); setTopicId('') }
     setSummaryDrawer(null)
-    await loadTopics()
+    /**
+     * *** THE LIST REFRESH IS NOT PART OF THE DELETE — R7, item S15. ***
+     *
+     * `loadTopics` reads through `readTopicList`, which throws since Job E. The throw came out of
+     * this function, past `confirmDelete`'s `await`, so `setDeleteBusy(false)` never ran and the
+     * dialog sat busy for ever — over a conversation that HAD been deleted. The delete is the
+     * thing the person asked for and it has happened; a list we could not re-read is a different
+     * and smaller problem, and it says so.
+     */
+    try {
+      await loadTopics()
+    } catch (e) {
+      console.error('workspace: the conversation was deleted but the list could not be re-read:', e)
+      setNotice(PAGE_COULD_NOT_LOAD + ' ' + PAGE_COULD_NOT_LOAD_NOTE)
+    }
     return true
   }
 
@@ -966,10 +992,18 @@ export default function CompliancePage() {
     if (!deleting || deleteBusy) return
     setDeleteBusy(true)
     setDeleteFailed(false)
-    const ok = deleting.kind === 'conversation'
-      ? await deleteConversation(deleting.topic)
-      : await deleteChecklist(deleting.id)
-    setDeleteBusy(false)
+    // R7, item S15: `setDeleteBusy(false)` in a `finally`, so nothing a read throws can leave this
+    // dialog spinning on work that has already happened.
+    let ok = false
+    try {
+      ok = deleting.kind === 'conversation'
+        ? await deleteConversation(deleting.topic)
+        : await deleteChecklist(deleting.id)
+    } catch (e) {
+      console.error('workspace: the delete could not be completed:', e)
+    } finally {
+      setDeleteBusy(false)
+    }
     if (ok) setDeleting(null)
     else setDeleteFailed(true)
   }

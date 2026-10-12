@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-12 19:46 UTC
-**Migrations applied:** 84 — `000` to `083`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-12 20:22 UTC
+**Migrations applied:** 85 — `000` to `084`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -75,7 +75,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 **Tenancy and accounts**
 
 - `companies` — 9 rows · touched by route account/export, route account, route audit-runs/[id], route audit-runs, route calendar/dates, +28 more
-- `profiles` — 8 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +10 more
+- `profiles` — 8 rows · touched by route account/export, route account, route audit-runs/[id], route signup, screen audits, +11 more
 - `entities` — 8 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +19 more
 
 **Calendar**
@@ -1607,6 +1607,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 | `latest_confirmed_at` | timestamp with time zone | yes | — |
 | `batch_id` | uuid | yes | — |
 | `reading_since` | timestamp with time zone | yes | — |
+| `read_attempts` | integer | no | `0` |
 
 **Points at:**
 
@@ -2532,7 +2533,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 
 **Rows:** 8 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `lib calendarNotify`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
+**Read or written by:** `route account/export`, `route account`, `route audit-runs/[id]`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `lib calendarNotify`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -3256,4 +3257,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 081
 082
 083
+084
 ```

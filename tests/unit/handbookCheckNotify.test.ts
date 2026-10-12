@@ -77,10 +77,27 @@ describe('who, when, and once', () => {
     assert.equal(r.error, 'NEXT_PUBLIC_APP_URL is not set'); assert.equal(r.notified, false)
     assert.ok(!f.updates.includes('handbook_checks'), 'notified_at is stamped only after a successful send')
   }))
-  test('called from ONE place: the sweep, right after finishCheckIfDone reports the check finished', () => {
+  /**
+   * *** THE SWEEP, AND ONLY THE SWEEP — and since E10 it sends from TWO points in it, both right
+   * after a check finished. *** R7 item S11 added the second: `finishCheckIfDone` can throw, and
+   * when it does every row of that check is already settled, so no later sweep's queue contains
+   * them — the check said "Checking…" for ever and the email never went. Each sweep therefore
+   * begins by finishing the checks that have nothing left to do, and that finish emails like the
+   * other one. The rule this test protects is unchanged: nothing outside the sweep emails, and
+   * nothing emails except straight after a finish.
+   */
+  test('sent only by the sweep, and only right after a check is reported finished', () => {
     const engine = readFileSync('lib/handbookCheck.ts', 'utf8')
-    assert.equal(engine.match(/notifyCheck\(/g)?.length, 1)
-    assert.ok(engine.indexOf('if (fin.finished) {') < engine.indexOf('notifyCheck('))
+    const calls = engine.match(/notifyCheck\(/g)?.length ?? 0
+    assert.equal(calls, 2, 'the per-piece finish, and the recovery that finishes what a throw left')
+    // Every send sits just after a `finished` branch — read as the distance back to it, because
+    // that is what "right after" means and a regex over JSX-free TypeScript cannot say it better.
+    for (const at of [...engine.matchAll(/notifyCheck\(/g)].map((m) => m.index ?? 0)) {
+      const before = engine.slice(0, at)
+      const finishedAt = Math.max(before.lastIndexOf('fin.finished'), before.lastIndexOf('fin = await'))
+      assert.ok(finishedAt > 0 && at - finishedAt < 600,
+        `a send ${at - finishedAt} characters after the nearest finish is not "right after" one`)
+    }
     assert.ok(!readFileSync('app/api/hr/handbooks/[id]/check/route.ts', 'utf8').includes('notifyCheck'))
   })
 })

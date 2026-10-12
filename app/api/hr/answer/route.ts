@@ -55,6 +55,44 @@ export async function POST(request: NextRequest) {
 
     const companyBlock = (await buildCompanyContext(db, companyId, { parts: ['company', 'declared', 'confirmed'] })).block
 
+    /**
+     * ---- HISTORY, BEFORE THE QUESTION IS SAVED — R7, item S13. ----
+     *
+     * O9's refusal used to come AFTER the topic and the question were written, so a failed history
+     * read left an unanswered question in the transcript — and asking again put it in twice. The
+     * workspace route has always done it in this order (`app/api/chat/route.ts`: the stored turns
+     * at :333, the question saved at :490); this is the same order, for the same reason.
+     *
+     * `answerPosition` is not known yet, and it was only used to skip the turn this request is
+     * about to write — which cannot be in the transcript yet, because nothing has been written.
+     */
+    if (!history.length && topicIdIn) {
+      try {
+        const stored = await loadTurns(db, topicIdIn)
+        const pairs: typeof history = []
+        for (let i = 0; i < stored.length; i++) {
+          const t = stored[i]
+          if (t.role !== 'user' || t.stopped) continue
+          const next = stored[i + 1]
+          if (next && next.role === 'assistant') {
+            pairs.push({ question: t.text, answer: next.text, sources: next.sources ?? [] })
+          }
+        }
+        history = pairs
+      } catch (e) {
+        // O9 (Job E4), the same as the workspace's: an answer that had not read the conversation
+        // was saved as the next turn of it. Refused before the model call — nothing spent, nothing
+        // written, and the person told whose problem it is. `app/api/chat/route.ts` carries the
+        // reasoning in full.
+        console.error('hr answer: could not load stored turns for history:', e)
+        return NextResponse.json({
+          error: 'We could not read the earlier messages in this conversation, so we have not '
+            + 'answered — an answer that had not read them would be a worse one. That is our side, '
+            + 'not yours. Please ask again.',
+        }, { status: 503 })
+      }
+    }
+
     // ---- THE TOPIC (section 'hr') AND THE QUESTION, saved before the answer is known ----
     let topicId: string | null = topicIdIn || null
     let userTurnId: string | null = null
@@ -75,33 +113,6 @@ export async function POST(request: NextRequest) {
       topicId = null
     }
 
-    // ---- HISTORY: the client's, or the stored turns; every earlier answer carries its sources ----
-    if (!history.length && topicIdIn) {
-      try {
-        const stored = await loadTurns(db, topicIdIn)
-        const pairs: typeof history = []
-        for (let i = 0; i < stored.length; i++) {
-          const t = stored[i]
-          if (t.role !== 'user' || t.stopped) continue
-          const next = stored[i + 1]
-          if (next && next.role === 'assistant' && next.position !== answerPosition) {
-            pairs.push({ question: t.text, answer: next.text, sources: next.sources ?? [] })
-          }
-        }
-        history = pairs
-      } catch (e) {
-        // O9 (Job E4), the same as the workspace's: an answer that had not read the conversation
-        // was saved as the next turn of it. Refused before the model call — nothing spent, nothing
-        // written, and the person told whose problem it is. `app/api/chat/route.ts` carries the
-        // reasoning in full.
-        console.error('hr answer: could not load stored turns for history:', e)
-        return NextResponse.json({
-          error: 'We could not read the earlier messages in this conversation, so we have not '
-            + 'answered — an answer that had not read them would be a worse one. That is our side, '
-            + 'not yours. Please ask again.',
-        }, { status: 503 })
-      }
-    }
     const messages: OpenMessage[] = []
     for (const h of history) {
       const q = String(h?.question ?? '').trim()

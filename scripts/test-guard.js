@@ -136,7 +136,16 @@ import { readdirSync, readFileSync } from 'node:fs'
 // default, S12's put-back matching a row the claim never reached — and, read from 80 stored golden
 // calls with no paid run, that nothing comes near 32,000 while the AUDIT task reaches its own
 // 16,000 on Opus in five of nine runs, which is reported to the owner rather than changed.
-const FLOOR = 1444
+//
+// 1444 -> 1468 at E10's sixth checkpoint: **R7**, a loud failure with no way back, across all three
+// sweeps and both pages (items S1-S15 of the independent read). `sweepRecovery.test.ts` (23) is the
+// test the rule itself demands — "a test per sweep injects a failure and shows the next run
+// recovering" — because what made this class invisible is that nobody had ever made one of those
+// reads fail. It drives the handbook sweep through a real statement timeout and asserts the run
+// survives it; and it pins, per item, every claim being freed, every sweep catching per company,
+// every state a throw leaves behind having a rule that moves it on, and both pages showing their
+// failure line instead of an empty state.
+const FLOOR = 1468
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

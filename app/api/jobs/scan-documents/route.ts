@@ -63,7 +63,7 @@ import { requireCronSecret } from '@/lib/jobAuth'
 import { lazyJobRun } from '@/lib/jobRun'
 import { supabaseAdmin } from '@/lib/auth'
 import { runDocumentScan, saveScan, buildScanContext, failedScan } from '@/lib/documentScan'
-import { fileIsMissing, FILE_GONE } from '@/lib/storageMiss'
+import { fileIsMissing, FILE_GONE, STORAGE_UNREACHABLE_FINAL } from '@/lib/storageMiss'
 import { mustRow, mustRows } from '@/lib/mustRead'
 import { summariseBatch, notifyBatch } from '@/lib/documentBatch'
 
@@ -94,6 +94,25 @@ const BUDGET_MS = 640_000
 const RESERVE_MS = 130_000
 
 /**
+ * *** HOW MANY TIMES THE SWEEP TRIES ONE DOCUMENT — R7, item S1 (migration 084). ***
+ *
+ * A storage error that is not a 404 put the row back to `uploaded` and moved on, and RULE 1 then
+ * picked the globally OLDEST queued document to decide which company is next — which is this one,
+ * immediately. The run spun on it until the 510-second budget ended, every five minutes, and no
+ * other company's documents were read while it lasted. Nothing recovered, because nothing was
+ * broken: every part was doing what it was told.
+ *
+ * Three, because the first failure is usually weather and the third is usually not. At the limit the
+ * document stops being retried and says so on the row, and — the half that matters most — **its
+ * batch finishes, so the email goes**.
+ */
+export const READ_ATTEMPT_LIMIT = 3
+
+// The words after the limit are `STORAGE_UNREACHABLE_FINAL` in `lib/storageMiss.ts`, beside the
+// ones for a failure we are still going to retry — one file holds both, so the difference between
+// "we will try again" and "press the button" cannot drift.
+
+/**
  * A document claimed longer ago than this and still unread is presumed abandoned. Comfortably
  * longer than the whole function can live (800s), so a running sweep is never robbed of a
  * document it is in the middle of.
@@ -106,6 +125,8 @@ interface QueuedDoc {
   id: string; company_id: string; name: string; file_url: string
   file_type: string | null; entity_id: string | null; batch_id: string | null
   uploaded_at: string
+  /** How many times this sweep has started it and not finished (R7, item S1, migration 084). */
+  read_attempts: number
 }
 
 /**
@@ -164,15 +185,34 @@ export async function sweep() {
     const all = [...stuck, ...noClaim.filter((n) => !stuck.some((x) => x.id === n.id))]
     if (all.length) await run.open()
     for (const d of all) {
-      // Guarded on the claim still being old, so a run that picked the row up between the
-      // SELECT and the UPDATE is not robbed of it (`CLAUDE.md` §4). The null-claim rows have no
-      // claim to guard on, so they are guarded on still saying `reading` — which is the same
-      // compare-and-set: a run that has since finished one has moved it off `reading`.
+      /**
+       * Guarded on the claim still being old, so a run that picked the row up between the
+       * SELECT and the UPDATE is not robbed of it (`CLAUDE.md` §4). The null-claim rows have no
+       * claim to guard on, so they are guarded on still saying `reading` — which is the same
+       * compare-and-set: a run that has since finished one has moved it off `reading`.
+       *
+       * *** AND A ROW CLAIMED BUT NEVER STARTED IS FREED TOO — R7, item S2. ***
+       *
+       * The SELECT above deliberately finds `uploaded` AND `reading` rows with an old claim,
+       * because RULE 2 claims a company's whole queue at once and leaves every row at `uploaded`
+       * until its turn. But this UPDATE required `.eq('status', 'reading')`, so those rows were
+       * found and **never freed**: any run killed mid-company left them saying "Queued" for ever,
+       * with a claim no run would ever take. The old code's single guard
+       * (`lt('reading_since', stuckBefore)`) did free them, and Job E's O6 fix narrowed it.
+       *
+       * Two statements, because the two states want different writes: a `reading` row goes back to
+       * `uploaded`, and an `uploaded` row only needs its stale claim cleared.
+       */
       const put = await supabaseAdmin.from('documents')
         .update({ status: 'uploaded', reading_since: null })
         .eq('id', d.id).eq('status', 'reading').select('id')
       if (put.error) throw new Error(`recovering ${d.id}: ${put.error.message}`)
-      if (put.data?.length) recovered++
+      if (put.data?.length) { recovered++; continue }
+      const freed = await supabaseAdmin.from('documents')
+        .update({ reading_since: null })
+        .eq('id', d.id).eq('status', 'uploaded').lt('reading_since', stuckBefore).select('id')
+      if (freed.error) throw new Error(`freeing the stale claim on ${d.id}: ${freed.error.message}`)
+      if (freed.data?.length) recovered++
     }
 
     // ---- the queue, oldest first ----
@@ -216,7 +256,7 @@ export async function sweep() {
         await supabaseAdmin.from('documents')
           .update({ reading_since: new Date().toISOString() })
           .eq('company_id', companyId).eq('status', 'uploaded').is('reading_since', null)
-          .select('id, company_id, name, file_url, file_type, entity_id, batch_id, uploaded_at')))
+          .select('id, company_id, name, file_url, file_type, entity_id, batch_id, uploaded_at, read_attempts')))
         .sort((a, b) => a.uploaded_at.localeCompare(b.uploaded_at))
       // An EMPTY claim is a real answer — another run took them — and `continue` is right for it:
       // RULE 1 will then find a different company, or nothing, and break.
@@ -224,109 +264,209 @@ export async function sweep() {
       await run.open()   // work found: the row exists before any document is read
       companies++
 
-      // Checked (E4): with no company row the loop below throws
-      // "the company row could not be read" per document, which is right — but a FAILED read and a
-      // deleted company said the same thing, and only one of them is the customer's own doing.
-      const company = mustRow<{ id: string; name: string; industry: string | null
-                                city: string | null; state: string | null }>('the company',
-        await supabaseAdmin.from('companies')
-          .select('id, name, industry, city, state').eq('id', companyId).maybeSingle())
+      /**
+       * *** ONE COMPANY'S FAILURE MUST NOT END THE RUN — R7, item S3. ***
+       *
+       * Everything from here to the end of this company's batches is inside a try. The company
+       * read below throws since Job E (rightly: a failed read and a deleted company said the same
+       * thing, and only one of them is the customer's own doing) — and that throw reached the
+       * SWEEP's catch, so the run ended for every company after this one, with this company's
+       * whole queue still claimed.
+       *
+       * The claim is deliberately NOT released here. RULE 1 picks the globally oldest QUEUED
+       * document, so releasing it would hand the same company straight back and the loop would
+       * spin on it; left claimed, rule 3 frees it in fifteen minutes and the next sweep starts
+       * clean. That is the recovery rule R7 asks for, and `tests/unit/sweepRecovery.test.ts`
+       * shows it working.
+       */
+      try {
+        // Checked (E4): with no company row the loop below throws
+        // "the company row could not be read" per document, which is right — but a FAILED read and a
+        // deleted company said the same thing, and only one of them is the customer's own doing.
+        const company = mustRow<{ id: string; name: string; industry: string | null
+                                  city: string | null; state: string | null }>('the company',
+          await supabaseAdmin.from('companies')
+            .select('id, name, industry, city, state').eq('id', companyId).maybeSingle())
 
-      for (const doc of queue) {
-        // The budget is checked per document, not per company: a company with forty files must
-        // not be able to carry the run past its ceiling.
-        if (Date.now() - startedAt > BUDGET_MS - RESERVE_MS) {
-          stoppedForTime = true
-          // Hand the claim back so the next run picks it up rather than rule 3 waiting out
-          // fifteen minutes for it. The status never moved, so the row has been saying Queued
-          // all along and goes on saying it — which is what it is.
-          await supabaseAdmin.from('documents').update({ reading_since: null }).eq('id', doc.id)
-          continue
-        }
-        // NOW it is being read, and now the row says so. One row at a time says Reading…,
-        // because one document at a time is being read.
-        await supabaseAdmin.from('documents').update({ status: 'reading' }).eq('id', doc.id)
-        try {
-          if (!company) throw new Error('the company row could not be read')
-          const { data: blob, error: dlError } = await supabaseAdmin.storage.from(BUCKET).download(doc.file_url)
-          if (dlError || !blob) {
-            // *** D6 (Job E4): STORAGE UNREACHABLE IS NOT A FILE THAT IS GONE. ***
-            // `lib/storageMiss.ts` says why. On the sweep's path the right answer is to put the row
-            // back to `uploaded` and leave it for the next pass, writing **no reading** — so
-            // nothing replaces the last good one and nobody is told to upload a second copy of a
-            // file that is still there.
-            if (!fileIsMissing(dlError)) {
-              console.error(`scan-documents: storage unreachable for ${doc.id}: ${dlError?.message ?? 'no file'}`)
+        for (const doc of queue) {
+          // The budget is checked per document, not per company: a company with forty files must
+          // not be able to carry the run past its ceiling.
+          if (Date.now() - startedAt > BUDGET_MS - RESERVE_MS) {
+            stoppedForTime = true
+            // Hand the claim back so the next run picks it up rather than rule 3 waiting out
+            // fifteen minutes for it. The status never moved, so the row has been saying Queued
+            // all along and goes on saying it — which is what it is.
+            await supabaseAdmin.from('documents').update({ reading_since: null }).eq('id', doc.id)
+            continue
+          }
+          // NOW it is being read, and now the row says so. One row at a time says Reading…,
+          // because one document at a time is being read.
+          //
+          // *** AND THE ATTEMPT IS COUNTED HERE — R7, item S1 (migration 084). *** At the claim, not
+          // at the failure: a run the platform kills mid-read never reaches a failure handler, and an
+          // attempt nobody counted is an attempt that can be repeated for ever.
+          const attempts = (doc.read_attempts ?? 0) + 1
+          await supabaseAdmin.from('documents')
+            .update({ status: 'reading', read_attempts: attempts }).eq('id', doc.id)
+          try {
+            if (!company) throw new Error('the company row could not be read')
+            const { data: blob, error: dlError } = await supabaseAdmin.storage.from(BUCKET).download(doc.file_url)
+            if (dlError || !blob) {
+              // *** D6 (Job E4): STORAGE UNREACHABLE IS NOT A FILE THAT IS GONE. ***
+              // `lib/storageMiss.ts` says why. On the sweep's path the right answer is to put the row
+              // back to `uploaded` and leave it for the next pass, writing **no reading** — so
+              // nothing replaces the last good one and nobody is told to upload a second copy of a
+              // file that is still there.
+              if (!fileIsMissing(dlError)) {
+                console.error(`scan-documents: storage unreachable for ${doc.id} `
+                  + `(attempt ${attempts} of ${READ_ATTEMPT_LIMIT}): ${dlError?.message ?? 'no file'}`)
+                /**
+                 * *** AND AFTER THE LIMIT IT STOPS — R7, item S1. ***
+                 *
+                 * Putting the row back and moving on is right for a storage blip and wrong for ever:
+                 * RULE 1 picks the globally oldest queued document, which is this one, so the run
+                 * spun on it for its whole budget and no other company's documents were read. At the
+                 * limit the row gets a READING saying what happened — our side, not theirs, and what
+                 * they can do — which also settles the row, so `finishBatchIfDone` below can finish
+                 * the batch and **the email goes**.
+                 */
+                if (attempts >= READ_ATTEMPT_LIMIT) {
+                  await saveScan(supabaseAdmin,
+                    failedScan(STORAGE_UNREACHABLE_FINAL.reason, STORAGE_UNREACHABLE_FINAL.wayForward),
+                    { documentId: doc.id, companyId, entityId: doc.entity_id })
+                  couldNotRead++
+                  continue
+                }
+                await supabaseAdmin.from('documents').update({ status: 'uploaded' }).eq('id', doc.id)
+                continue
+              }
+              // The file is not where its row says it is. That is a product failure and it is
+              // said out loud ON THE ROW, as a reading, rather than thrown away as a log line.
+              await saveScan(supabaseAdmin, failedScan(FILE_GONE.reason, FILE_GONE.wayForward),
+                { documentId: doc.id, companyId, entityId: doc.entity_id })
+              couldNotRead++
+              continue
+            }
+
+            // *** THE CONTEXT IS REBUILT FOR EVERY DOCUMENT, NEVER HOISTED. *** That is the whole
+            // point of reading one company's files in order: document three is scanned knowing the
+            // labels and fact keys documents one and two produced. Building it once before the
+            // loop would make the ordering pointless — and is exactly the bug Run 2b found in
+            // `scripts/scan-document.js`.
+            const context = await buildScanContext(supabaseAdmin, company, doc.id)
+            const scan = await runDocumentScan({
+              buffer: await blob.arrayBuffer(),
+              fileName: doc.name,
+              fileType: doc.file_type || 'application/pdf',
+              companyId,
+              context,
+            })
+            await saveScan(supabaseAdmin, scan, { documentId: doc.id, companyId, entityId: doc.entity_id })
+            if (scan.status === 'could_not_read') couldNotRead++; else read++
+          } catch (e) {
+            // RULE 4. This document failed; the next one still runs.
+            errors.push({ document: doc.id, error: e instanceof Error ? e.message : String(e) })
+            /**
+             * *** A FAILURE BELOW THE LIMIT IS TRIED AGAIN — R7, item S6. ***
+             *
+             * Everything in the try can throw for a reason that has nothing to do with the file: the
+             * company row, the scan context (`lib/companyContext.ts` throws since Job E), the model
+             * call. Settling the document as `could_not_read` on the first of those saved
+             * "Something went wrong at our end" as its reading with no automatic retry, and the only
+             * way back was a person noticing and pressing Read it again.
+             *
+             * Below the limit the row goes back to the queue and the claim is released by the
+             * `finally`, so the next pass takes it. At the limit it settles, with the sentence
+             * below, which is where the old behaviour was right: a document that has thrown three
+             * times will throw again, and a row that cycles for ever is a failure nobody sees.
+             */
+            if (attempts < READ_ATTEMPT_LIMIT) {
               await supabaseAdmin.from('documents').update({ status: 'uploaded' }).eq('id', doc.id)
               continue
             }
-            // The file is not where its row says it is. That is a product failure and it is
-            // said out loud ON THE ROW, as a reading, rather than thrown away as a log line.
-            await saveScan(supabaseAdmin, failedScan(FILE_GONE.reason, FILE_GONE.wayForward),
-              { documentId: doc.id, companyId, entityId: doc.entity_id })
+            // *** AND THE REASON GOES ON THE ROW, NOT ONLY IN job_runs. ***
+            // Setting the status alone left `could_not_read_reason` null, so the page, the drawer
+            // and the batch email all said "Could not read" with nothing after it — §5.1's exact
+            // failure, and the one migration 044 and `failedScan` exist to prevent. Found by
+            // reading the banner after the injected-throw test rather than by reading the code.
+            // The technical detail stays in job_runs above; this is the sentence for a person.
+            try {
+              await saveScan(supabaseAdmin, failedScan(
+                'Something went wrong at our end while reading this one.',
+                'Ask for it to be read again — this is usually temporary.',
+              ), { documentId: doc.id, companyId, entityId: doc.entity_id })
+            } catch {
+              // Even the record of the failure failed. The status is the last thing we can say.
+              await supabaseAdmin.from('documents').update({ status: 'could_not_read' }).eq('id', doc.id)
+            }
+            // `could_not_read` rather than back to `uploaded`: a document that threw will throw
+            // again, and a row that cycles through the queue for ever is a failure nobody sees.
+            // A person can ask for it to be read again.
             couldNotRead++
-            continue
+          } finally {
+            // The claim is released whatever happened. `saveScan` has already moved the status to
+            // read or could_not_read; if something threw before that, the catch above set it.
+            await supabaseAdmin.from('documents').update({ reading_since: null }).eq('id', doc.id)
           }
-
-          // *** THE CONTEXT IS REBUILT FOR EVERY DOCUMENT, NEVER HOISTED. *** That is the whole
-          // point of reading one company's files in order: document three is scanned knowing the
-          // labels and fact keys documents one and two produced. Building it once before the
-          // loop would make the ordering pointless — and is exactly the bug Run 2b found in
-          // `scripts/scan-document.js`.
-          const context = await buildScanContext(supabaseAdmin, company, doc.id)
-          const scan = await runDocumentScan({
-            buffer: await blob.arrayBuffer(),
-            fileName: doc.name,
-            fileType: doc.file_type || 'application/pdf',
-            companyId,
-            context,
-          })
-          await saveScan(supabaseAdmin, scan, { documentId: doc.id, companyId, entityId: doc.entity_id })
-          if (scan.status === 'could_not_read') couldNotRead++; else read++
-        } catch (e) {
-          // RULE 4. This document failed; the next one still runs.
-          errors.push({ document: doc.id, error: e instanceof Error ? e.message : String(e) })
-          // *** AND THE REASON GOES ON THE ROW, NOT ONLY IN job_runs. ***
-          // Setting the status alone left `could_not_read_reason` null, so the page, the drawer
-          // and the batch email all said "Could not read" with nothing after it — §5.1's exact
-          // failure, and the one migration 044 and `failedScan` exist to prevent. Found by
-          // reading the banner after the injected-throw test rather than by reading the code.
-          // The technical detail stays in job_runs above; this is the sentence for a person.
-          try {
-            await saveScan(supabaseAdmin, failedScan(
-              'Something went wrong at our end while reading this one.',
-              'Ask for it to be read again — this is usually temporary.',
-            ), { documentId: doc.id, companyId, entityId: doc.entity_id })
-          } catch {
-            // Even the record of the failure failed. The status is the last thing we can say.
-            await supabaseAdmin.from('documents').update({ status: 'could_not_read' }).eq('id', doc.id)
-          }
-          // `could_not_read` rather than back to `uploaded`: a document that threw will throw
-          // again, and a row that cycles through the queue for ever is a failure nobody sees.
-          // A person can ask for it to be read again.
-          couldNotRead++
-        } finally {
-          // The claim is released whatever happened. `saveScan` has already moved the status to
-          // read or could_not_read; if something threw before that, the catch above set it.
-          await supabaseAdmin.from('documents').update({ reading_since: null }).eq('id', doc.id)
         }
-      }
 
-      // ---- the batches this company's queue belonged to ----
-      const batchIds = [...new Set(queue.map((d) => d.batch_id).filter(Boolean))] as string[]
-      for (const batchId of batchIds) {
-        try {
-          const finished = await finishBatchIfDone(batchId)
-          if (finished.done) batchesFinished++
+        // ---- the batches this company's queue belonged to ----
+        const batchIds = [...new Set(queue.map((d) => d.batch_id).filter(Boolean))] as string[]
+        for (const batchId of batchIds) {
+          try {
+            const finished = await finishBatchIfDone(batchId)
+            if (finished.done) batchesFinished++
+            if (finished.notified) notified++
+            const r = finished.resend as
+              { ok?: boolean; id?: string | null; to?: string; error?: string } | undefined
+            if (r && (r.id || r.error)) {
+              sent.push({ batch: batchId, to: r.to ?? '', id: r.id ?? null, ...(r.error ? { error: r.error } : {}) })
+            }
+          } catch (e) {
+            errors.push({ document: `batch:${batchId}`, error: e instanceof Error ? e.message : String(e) })
+          }
+        }
+      } catch (e) {
+        // S3: recorded against the company, and the run goes on to the next one. The claim stays,
+        // and rule 3 above frees it on the next sweep after the stuck window.
+        errors.push({ document: `company:${companyId}`, error: e instanceof Error ? e.message : String(e) })
+      }
+    }
+
+    /**
+     * *** THE BATCHES A THROW LEFT UNFINISHED — R7, item S4. ***
+     *
+     * `finishBatchIfDone` is called only for the batches of the queue this run just processed, and
+     * it can throw: `summariseBatch` reads rows, and since Job E those reads throw rather than
+     * answering zero. A batch whose summary read failed was then **never looked at again** — every
+     * one of its documents is settled, so no later sweep's queue contains them — and the comment
+     * saying "the next pass summarises it properly" was false. The person waits for an email that
+     * will never come.
+     *
+     * So the sweep ends by looking for exactly that state: a batch not done whose every document
+     * has settled. It is the recovery rule for the state the throw leaves behind, and it costs one
+     * query on a run that already found work.
+     */
+    const unfinished = mustRows<{ id: string }>('the batches that did not finish', await supabaseAdmin
+      .from('document_batches').select('id').neq('status', 'done')
+      .order('created_at', { ascending: true }).limit(50))
+    for (const b of unfinished) {
+      try {
+        const finished = await finishBatchIfDone(b.id)
+        if (finished.done) {
+          // An email is the most consequential thing this job does, so the run's row exists before
+          // it goes — even on a sweep that found no documents to read (`lib/jobRun.ts`).
+          await run.open()
+          batchesFinished++
           if (finished.notified) notified++
           const r = finished.resend as
             { ok?: boolean; id?: string | null; to?: string; error?: string } | undefined
           if (r && (r.id || r.error)) {
-            sent.push({ batch: batchId, to: r.to ?? '', id: r.id ?? null, ...(r.error ? { error: r.error } : {}) })
+            sent.push({ batch: b.id, to: r.to ?? '', id: r.id ?? null, ...(r.error ? { error: r.error } : {}) })
           }
-        } catch (e) {
-          errors.push({ document: `batch:${batchId}`, error: e instanceof Error ? e.message : String(e) })
         }
+      } catch (e) {
+        errors.push({ document: `batch:${b.id}`, error: e instanceof Error ? e.message : String(e) })
       }
     }
   } catch (e) {

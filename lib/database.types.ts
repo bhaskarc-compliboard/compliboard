@@ -2243,6 +2243,7 @@ export type Database = {
           is_recurring: boolean | null
           latest_confirmed_at: string | null
           name: string
+          read_attempts: number
           reading_since: string | null
           recurrence_period: string | null
           source: string
@@ -2265,6 +2266,7 @@ export type Database = {
           is_recurring?: boolean | null
           latest_confirmed_at?: string | null
           name: string
+          read_attempts?: number
           reading_since?: string | null
           recurrence_period?: string | null
           source?: string
@@ -2287,6 +2289,7 @@ export type Database = {
           is_recurring?: boolean | null
           latest_confirmed_at?: string | null
           name?: string
+          read_attempts?: number
           reading_since?: string | null
           recurrence_period?: string | null
           source?: string

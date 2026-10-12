@@ -63,3 +63,20 @@ export const STORAGE_UNREACHABLE = {
   wayForward: 'Nothing about your file needs changing, and nothing needs uploading again. '
     + 'We will try it again on our next pass; press Read it again if you would rather not wait.',
 } as const
+
+/**
+ * *** AND THE SAME FAILURE ONCE WE HAVE STOPPED TRYING — the owner's words, R7 item S1. ***
+ *
+ * The sentence above promises "we will try it again on our next pass", and that is TRUE while the
+ * sweep has attempts left (`READ_ATTEMPT_LIMIT`, migration 084). At the limit it is not true any
+ * more, and a promise the product has stopped keeping is worse than no promise: the person waits
+ * instead of pressing the button that would fix it.
+ *
+ * So this is the wording for the row that has run out of attempts. It says the same three things
+ * §5.1 asks for — whose problem it is, that nothing about their file is wrong, and what they can do
+ * — and it asks for the press rather than promising a pass.
+ */
+export const STORAGE_UNREACHABLE_FINAL = {
+  reason: "We couldn't reach your stored file just now. That's on our side, not yours.",
+  wayForward: 'Press Read it again in a little while.',
+} as const

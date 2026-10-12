@@ -30,7 +30,7 @@ import { PRIMARY, TEXT_ACTION, OUTLINE } from '@/components/buttonStyles'
 import { HR_EXAMPLE_QUESTIONS } from '@/config/examples'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
-import { LIST_CAP, countOf, countWord, fmtDate, displayTitle } from '@/lib/listWords'
+import { LIST_CAP, countOf, countWord, fmtDate, displayTitle, PAGE_COULD_NOT_LOAD, PAGE_COULD_NOT_LOAD_NOTE } from '@/lib/listWords'
 import { friendlyDate, conversationStatus } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
 import {
@@ -269,28 +269,46 @@ export default function HrWorkspace() {
     }
   }
 
+  /**
+   * *** THE PAGE SAYS SO WHEN ITS OWN READ FAILED — R7, items S14 and S15. ***
+   *
+   * `readTopicList` throws since Job E (`mustRows`), and this `Promise.all` had no catch. So none
+   * of the state below landed: no company id, no company name, no conversations, no sites, and
+   * `loadHandbooks()` never ran. The page then rendered its EMPTY STATES — "No conversations yet"
+   * and "No handbooks yet" about a company whose data could not be read — and refused uploads,
+   * because the company id it needs was never set. An unhandled rejection in a browser is silent.
+   */
+  const [loadFailed, setLoadFailed] = useState(false)
+
   useEffect(() => {
     let live = true
     ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data: profile } = user
-        ? await supabase.from('profiles').select('company_id').eq('id', user.id).maybeSingle()
-        : { data: null }
-      const co = (profile?.company_id as string | undefined) ?? null
-      // THE DATES TAB IS HIDDEN (owner, Step 11a): its dates came from the structured check, parked on
-      // `parked/hr-check-structured`, and it returns with that switch. Its data is not loaded.
-      const [t, s, c] = await Promise.all([
-        // HR's conversations only — topics.section 'hr' (migration 066), the workspace's own read.
-        readTopicList(supabase, 'hr'),
-        supabase.from('entities').select('id, name').order('name'),
-        co ? supabase.from('companies').select('name').eq('id', co).maybeSingle() : Promise.resolve({ data: null }),
-      ])
-      if (!live) return
-      setCompanyId(co)
-      setCompanyName((c.data as { name?: string } | null)?.name ?? null)
-      setTopics(t)
-      setSites((s.data ?? []) as Site[])
-      await loadHandbooks()
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        const { data: profile } = user
+          ? await supabase.from('profiles').select('company_id').eq('id', user.id).maybeSingle()
+          : { data: null }
+        const co = (profile?.company_id as string | undefined) ?? null
+        // THE DATES TAB IS HIDDEN (owner, Step 11a): its dates came from the structured check, parked on
+        // `parked/hr-check-structured`, and it returns with that switch. Its data is not loaded.
+        const [t, s, c] = await Promise.all([
+          // HR's conversations only — topics.section 'hr' (migration 066), the workspace's own read.
+          readTopicList(supabase, 'hr'),
+          supabase.from('entities').select('id, name').order('name'),
+          co ? supabase.from('companies').select('name').eq('id', co).maybeSingle() : Promise.resolve({ data: null }),
+        ])
+        if (!live) return
+        setCompanyId(co)
+        setCompanyName((c.data as { name?: string } | null)?.name ?? null)
+        setTopics(t)
+        setSites((s.data ?? []) as Site[])
+        setLoadFailed(false)
+        await loadHandbooks()
+      } catch (e) {
+        if (!live) return
+        console.error('HR: the page could not be loaded:', e)
+        setLoadFailed(true)
+      }
     })()
     return () => { live = false }
   }, [supabase, loadHandbooks])
@@ -833,7 +851,9 @@ export default function HrWorkspace() {
               </p>
             </div>
             {topics.length === 0 ? (
-              <div className="mt-4"><Empty title="No conversations yet" note="Ask a question and it will appear here." /></div>
+              <div className="mt-4">{loadFailed
+                ? <Empty title={PAGE_COULD_NOT_LOAD} note={PAGE_COULD_NOT_LOAD_NOTE} />
+                : <Empty title="No conversations yet" note="Ask a question and it will appear here." />}</div>
             ) : (
               <div className="mt-4">
                 {/* A row opens the workspace's summary drawer (Step 6b). No summary is written for HR until step 7. */}
@@ -856,7 +876,9 @@ export default function HrWorkspace() {
             </div>
             {current.length === 0 ? (
               <div className="mt-4">
-                <Empty title="No handbooks yet" note="Add your employee handbook, and any site or state addendum. Your answers come from them." />
+                {loadFailed
+                  ? <Empty title={PAGE_COULD_NOT_LOAD} note={PAGE_COULD_NOT_LOAD_NOTE} />
+                  : <Empty title="No handbooks yet" note="Add your employee handbook, and any site or state addendum. Your answers come from them." />}
               </div>
             ) : (
               <div className="mt-4">

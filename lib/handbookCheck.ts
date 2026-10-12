@@ -565,8 +565,54 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
     recovered: { putBack: 0, failed: 0, released: 0 }, checks_finished: 0, notified: 0, sent: [], stopped_for_time: false, wall_ms: 0 }
   const visited = new Set<string>()
   try {
-    c.recovered = await recoverStuck(admin, clock())
-    if (c.recovered.putBack || c.recovered.failed || c.recovered.released) await run.open()
+    /**
+     * *** A FAILED RECOVERY MUST NOT STOP TONIGHT'S CHECKS — R7, item S11. ***
+     *
+     * `recoverStuck` reads three times and every read throws since Job E (rightly: an empty list
+     * from a failure looks exactly like "nothing to recover"). The throw went to the sweep's own
+     * catch, so nothing was checked at all that night — for every company — because the recovery
+     * of a few stalled rows failed. Recorded and carried on: recovery first is the rule, but
+     * recovery FAILING is not a reason to do no work.
+     */
+    try {
+      c.recovered = await recoverStuck(admin, clock())
+      if (c.recovered.putBack || c.recovered.failed || c.recovered.released) await run.open()
+    } catch (e) {
+      errors.push({ piece: '(recovery)', error: e instanceof Error ? e.message : String(e) })
+      await run.open()
+    }
+
+    /**
+     * *** THE CHECKS NOTHING IS LEFT TO DO ON — R7, item S11, the same shape as the audit sweep's
+     * S8. *** `finishCheckIfDone` reads rows and can throw, and every one of that check's rows is
+     * settled by then — so no later sweep's queue contains them and the check said "Checking…" for
+     * ever, with no email and nothing on the page to press. Once per sweep, and on an ordinary one
+     * it finds nothing.
+     */
+    try {
+      const openChecks = mustRows<{ id: string }>('the checks that did not finish',
+        await admin.from('handbook_checks').select('id')
+          .in('status', ['queued', 'checking']).order('created_at', { ascending: true }).limit(50))
+      for (const ck of openChecks) {
+        const left = mustRows<{ id: string }>('the parts of that check still to run',
+          await admin.from('handbook_check_sections').select('id')
+            .eq('check_id', ck.id).in('status', ['queued', 'checking']).limit(1))
+        if (left.length) continue
+        const fin = await finishCheckIfDone(admin, ck.id)
+        if (!fin.finished) continue
+        await run.open()
+        c.checks_finished++
+        try {
+          const r = await notifyCheck(admin as Parameters<typeof notifyCheck>[0], ck.id)
+          if (r.notified) c.notified++
+          if (r.id || (r.error && r.to)) c.sent.push({ check: ck.id, to: r.to ?? '', id: r.id ?? null, ...(r.error ? { error: r.error } : {}) })
+        } catch (e) {
+          errors.push({ piece: `notify:${ck.id}`, error: e instanceof Error ? e.message : String(e) })
+        }
+      }
+    } catch (e) {
+      errors.push({ piece: '(finishing what was left)', error: e instanceof Error ? e.message : String(e) })
+    }
 
     for (;;) {
       if (clock() - startedAt > BUDGET_MS - RESERVE_MS) { c.stopped_for_time = true; break }
@@ -637,7 +683,14 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
             c.failed += piece.length
             errors.push({ piece: ids.join(','), error: e instanceof Error ? e.message : String(e) })
           }
-          const fin = await finishCheckIfDone(admin, piece[0].checkId)
+          // Its own try — R7, item S11: a throw here used to end the sweep for every company after
+          // this one, with the remaining pieces of THIS company unrun as well.
+          let fin: { finished: boolean } = { finished: false }
+          try {
+            fin = await finishCheckIfDone(admin, piece[0].checkId)
+          } catch (e) {
+            errors.push({ piece: `finish:${piece[0].checkId}`, error: e instanceof Error ? e.message : String(e) })
+          }
           if (fin.finished) {
             c.checks_finished++
             // THE EMAIL, where Audits' sweep sends its own: right after the finish, and only here. Only a check someone
@@ -651,6 +704,12 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
             }
           }
         }
+      } catch (e) {
+        // *** ONE COMPANY'S FAILURE MUST NOT END THE SWEEP — R7, item S11. *** The reads between
+        // the claim and the pieces (the checks, their handbook sections) throw since Job E, and the
+        // throw reached the sweep's catch: every company after this one went unchecked. `visited`
+        // already holds this company, so the loop cannot come back to it in this run.
+        errors.push({ piece: `company:${companyId}`, error: e instanceof Error ? e.message : String(e) })
       } finally {
         // ONLY this run's own unstarted claims, as the audit sweep (Workspace Stage 4 Part 3).
         await admin.from('handbook_check_sections').update({ claimed_at: null })
