@@ -86,14 +86,35 @@ export async function GET(request: NextRequest) {
 
     // ---- sections, read FIRST, because the last-done-run-per-agency depends on them ----
     const runIds = runs.map((r) => r.id as string)
-    let sections: Array<Record<string, unknown>> = []
+    const sections: Array<Record<string, unknown>> = []
+    /**
+     * *** READ IN PAGES, BECAUSE POSTGREST STOPS AT 1,000 AND SAYS NOTHING — E10, §4 (A10's read). ***
+     *
+     * The runs above are capped at 100, and an agency run has one section per agency — eleven for
+     * this company. So at about ninety-one runs the sections cross PostgREST's default ceiling and
+     * the rest are **silently dropped**, with no error and no sign. Worse, the order was `ordinal`
+     * alone, so what fell off was the highest ordinal of EVERY run: the last agency of all of them
+     * disappeared from "done per agency" at once, and A10's whole point is that "done" is per
+     * agency.
+     *
+     * Paged until a short page comes back, ordered by (run_id, ordinal) so each page is stable.
+     * `PAGE` is below the ceiling on purpose: a page that came back exactly full because the server
+     * truncated it, rather than because that is all there was, would end the loop one page early.
+     */
     if (runIds.length) {
-      const { data, error } = await db.from('audit_sections')
-        .select('id, run_id, ordinal, title, status, started_at, finished_at, ai_call_id, '
-              + 'could_not_complete_reason')
-        .in('run_id', runIds).order('ordinal')
-      if (error) throw new Error(`audit_sections: ${error.message}`)
-      sections = (data ?? []) as unknown as Array<Record<string, unknown>>
+      const PAGE = 500
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await db.from('audit_sections')
+          .select('id, run_id, ordinal, title, status, started_at, finished_at, ai_call_id, '
+                + 'could_not_complete_reason')
+          .in('run_id', runIds).order('run_id').order('ordinal').range(from, from + PAGE - 1)
+        if (error) throw new Error(`audit_sections: ${error.message}`)
+        const page = (data ?? []) as unknown as Array<Record<string, unknown>>
+        sections.push(...page)
+        if (page.length < PAGE) break
+      }
+      // The order the rest of this route expects, restored once: by ordinal across every run.
+      sections.sort((a, b) => Number(a.ordinal ?? 0) - Number(b.ordinal ?? 0))
     }
 
     /** Which agencies each run finished a section for, and which it failed. A10, Job E3. */

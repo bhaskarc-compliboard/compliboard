@@ -140,13 +140,22 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     // uploaded file name; `document_index_v.title` is what the reading called it and what the
     // report, the page and the drawer all show. The zip is read beside the printed report, so the
     // two must name the same document the same way.
-    const [{ data: docs }, { data: titled }] = await Promise.all([
+    //
+    // *** AND THESE TWO ARE CHECKED NOW — E10, §4. *** A12's comment above says "all three reads"
+    // and only the three above it were fixed. These are the ones the sentence is actually about: a
+    // failed `documents` read makes `byId` empty, so `index.txt` says
+    // **"(a document this audit cited is no longer on file)" for every document** — inside a file
+    // somebody hands an inspector, about files sitting in the bucket. A failed titles read names
+    // each document by its uploaded file name instead of the title the report prints, so the zip
+    // and the printed report stop agreeing, which is the one thing this pairing exists for.
+    const [docsRes, titledRes] = await Promise.all([
       db.from('documents').select('id, name, file_url, file_type').in('id', order),
       db.from('document_index_v').select('document_id, title').in('document_id', order),
     ])
-    const titleById = new Map(((titled ?? []) as unknown as Array<{ document_id: string; title: string }>)
-      .map((t) => [t.document_id, t.title]))
-    const byId = new Map((docs ?? []).map((d: Record<string, unknown>) => [d.id as string, d]))
+    const docs = mustRows('the documents this audit read', docsRes) as unknown as Array<Record<string, unknown>>
+    const titled = mustRows('the titles of your documents', titledRes) as unknown as Array<{ document_id: string; title: string }>
+    const titleById = new Map(titled.map((t) => [t.document_id, t.title]))
+    const byId = new Map(docs.map((d: Record<string, unknown>) => [d.id as string, d]))
 
     const files: Array<{ name: string; bytes: Buffer }> = []
     const index: string[] = [

@@ -172,9 +172,27 @@ export function titleFromQuestion(question: string): string {
   return one.length <= 200 ? one : one.slice(0, 197) + '…'
 }
 
-/** Set the title on the first turn only — a later question must not rename the conversation. */
+/**
+ * Set the title on the first turn only — a later question must not rename the conversation.
+ *
+ * *** THE READ IS CHECKED, BECAUSE A FAILURE RENAMED THE CONVERSATION — E9's X1, E10 §4. ***
+ *
+ * It was `const { data } = …`. A failed read made `current` the empty string, which reads as "this
+ * conversation has no title yet", and the update below then **renamed an existing conversation to
+ * the newest question** — on every turn, for as long as the read kept failing. The person's own
+ * title, or the title their summary wrote, gone; and nothing said so.
+ *
+ * It does not throw: the title is not the answer, and failing a question over it would be a worse
+ * trade. It returns, having changed nothing, and says why — which is the one direction that cannot
+ * lose anything the person wrote.
+ */
 export async function setTitleIfFirst(db: Db, topicId: string, question: string): Promise<void> {
-  const { data } = await db.from('topics').select('title').eq('id', topicId).maybeSingle()
+  const { data, error: readErr } = await db.from('topics').select('title').eq('id', topicId).maybeSingle()
+  if (readErr) {
+    console.error(`setTitleIfFirst(${topicId}): the conversation's title could not be read, so it `
+      + `was left alone rather than renamed to the newest question: ${readErr.message}`)
+    return
+  }
   const current = String(data?.title ?? '').trim()
   if (current && current !== 'New conversation') return
   const { error } = await db.from('topics').update({ title: titleFromQuestion(question) }).eq('id', topicId)

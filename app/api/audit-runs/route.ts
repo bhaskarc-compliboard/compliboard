@@ -18,6 +18,7 @@ import { extractTemplate, countLines } from '@/lib/auditTemplate'
 import { estimateRun } from '@/lib/auditEstimate'
 import { auditAgenciesFor } from '@/lib/audit'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
+import { mustRow } from '@/lib/mustRead'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,11 +38,21 @@ export async function POST(request: NextRequest) {
     // cannot be probed by watching which error comes back. The template branch used to pass it
     // straight through unchecked, and the agency branch dropped it entirely.
     let previousRunId: string | null = null
+    /** The run being re-run, when there is one — its stored checklist lines are reused (E10, §4). */
+    let previousRun: { id: string; template_document_id: string | null; template_lines: unknown } | null = null
     if (body?.previous_run_id != null) {
       const asked = String(body.previous_run_id)
-      const { data: prev } = await db.from('audit_runs').select('id').eq('id', asked).maybeSingle()
+      // Checked (E10, §4): a failed read answered "That earlier audit was not found" — a claim
+      // about the person's own audit — and the new run was then started with NO previous run, so
+      // nothing was carried forward and A1's matcher never ran. Two wrong things from one
+      // discarded error. `mustRow` throws and the catch answers 500 saying it is our side.
+      const prev = mustRow<{ id: string; template_document_id: string | null
+                             template_lines: unknown }>('that earlier audit',
+        await db.from('audit_runs').select('id, template_document_id, template_lines')
+          .eq('id', asked).maybeSingle())
       if (!prev) return NextResponse.json({ error: 'That earlier audit was not found.' }, { status: 404 })
       previousRunId = asked
+      previousRun = prev
     }
 
     // ---------------------------------------------------------------------------
@@ -85,14 +96,34 @@ export async function POST(request: NextRequest) {
        * call: $0.5405 against $0.5634 on the rev 1 baseline. Passing the reading as a function lets
        * `createRun` insert the run, stamp `started_at`, and only then spend the money.
        */
+      /**
+       * *** AND A RE-RUN DOES NOT PAY TO READ THE CHECKLIST AGAIN — E10, §4. ***
+       *
+       * Migration 059 stores a run's `template_lines` on the run precisely so that "the questions
+       * are asked in the same order rather than paid for again" — the section runner reads them
+       * from there and never re-extracts. But "Audit again" came back through this branch and
+       * always called `extractTemplate`, a billed model call, before `createRun`. So every re-run
+       * of a checklist paid for an extraction whose answer was already on the previous run, and the
+       * two runs could even come out with different lines, which is the one thing that makes two
+       * runs of one checklist comparable at all (059's own reasoning).
+       *
+       * Reused only when the stored lines are for THE SAME checklist document: a re-run against a
+       * different file is a different question and has to be read.
+       */
+      const storedLines = previousRun?.template_document_id === templateDocumentId
+        && Array.isArray(previousRun?.template_lines) && (previousRun.template_lines as unknown[]).length
+        ? previousRun.template_lines as Parameters<typeof createRun>[1]['templateSections']
+        : null
       const buffer = await blob.arrayBuffer()
       const run = await createRun(supabaseAdmin, {
         companyId, kind: 'template', scope, entityId, createdBy: userId,
         templateDocumentId,
-        templateExtract: () => extractTemplate({
-          buffer, fileName: String(doc.name), fileType: String(doc.file_type),
-          companyId, db: supabaseAdmin,
-        }),
+        ...(storedLines
+          ? { templateSections: storedLines }
+          : { templateExtract: () => extractTemplate({
+              buffer, fileName: String(doc.name), fileType: String(doc.file_type),
+              companyId, db: supabaseAdmin,
+            }) }),
         companyName: company?.name ?? null,
         previousRunId,
       })

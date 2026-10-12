@@ -27,6 +27,7 @@ import { formatMoment } from '@/lib/calendarDate'
 import { authHeaders } from '@/lib/supabase'
 import { Drawer, printDrawer } from '@/components/Drawer'
 import { DRAFT_NOTICE } from '@/prompts/document-draft'
+import { wayForwardFor } from '@/lib/storageMiss'
 
 /* ── the shapes, as the report route returns them ─────────────────────────── */
 interface Row {
@@ -553,9 +554,15 @@ export default function DocumentReport({
             forward the reading wrote is not stored, only its reason), so both are offered, the
             cheap and usually-correct one first, with the sentence that stops somebody uploading a
             duplicate of a file that is fine. */}
+        {/* *** AND WHEN WE RECOGNISE THE REASON, ITS OWN WAY FORWARD (E10, §4). *** The generic
+            line below is wrong advice for one reason in particular: "We could not fetch the stored
+            file for this document" means the record is here and the file is not, so pressing Read
+            it again cannot work however often it is pressed — and "nothing about your file needs
+            changing" sends the person away from the one thing that would fix it.
+            `wayForwardFor` matches the reason back to the words it was written with. */}
         <p className="mt-4 text-[13px] text-gray-500">
-          If that reads like something at our end, press Read it again below — nothing about your
-          file needs changing.
+          {wayForwardFor(row.could_not_read_reason)
+            ?? 'If that reads like something at our end, press Read it again below — nothing about your file needs changing.'}
         </p>
         <button onClick={() => onPickFile()}
           className="mt-2 text-[14px] text-gray-600 underline hover:text-gray-900">Upload a clearer copy</button>

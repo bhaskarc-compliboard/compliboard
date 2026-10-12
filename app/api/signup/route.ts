@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { mustRows } from '@/lib/mustRead'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,6 +26,38 @@ function toHeadcount(value: unknown): number | null {
 export async function POST(request: NextRequest) {
   try {
     const { email, password, companyName, industry, state, county, city, employeeCount, websiteUrl, scanResult } = await request.json()
+
+    /**
+     * *** THE INDUSTRY HAS TO BE ONE THE LIBRARY KNOWS — E9's X3, E10 §4. ***
+     *
+     * Nothing checked it. The dropdown is built from the library's own `industries` arrays
+     * (`app/api/industries/route.ts`), so a slug that came from there always matched — but this
+     * route accepts whatever the request carries, and a display label where a slug belongs
+     * ("Chemical Manufacturing" for `chemical-manufacturing`) creates a company **to which nothing
+     * will ever apply**: `resolve` matches on the array, finds nothing, and the person is told
+     * their requirements were worked out and none apply. §3.2's jurisdiction rule in the other
+     * dimension — the match key has to be right, or the answer is confidently wrong.
+     *
+     * Checked against the library itself rather than a list in code (§7: verticals are data), and
+     * the read is checked, because an empty answer here would refuse every signup.
+     */
+    const industrySlug = String(industry ?? '').trim()
+    if (!industrySlug) {
+      return NextResponse.json({ error: 'Choose your industry so we can work out what applies to you.' },
+        { status: 400 })
+    }
+    const covered = mustRows<{ industries: string[] | null }>('the industries we cover',
+      await supabaseAdmin.from('requirement_templates').select('industries').is('effective_to', null))
+    const slugs = new Set(covered.flatMap((r) => r.industries ?? []).filter(Boolean))
+    if (!slugs.has(industrySlug)) {
+      // §5.1: whose problem it is, and what they can do. It never says their industry is wrong —
+      // it says we do not have a list for it, which is the true thing and is ours.
+      return NextResponse.json({
+        error: "We don't have requirements for that industry yet, so we can't set your account up "
+          + 'against it. That is a gap on our side — please tell us and we will let you know when '
+          + 'it is ready.',
+      }, { status: 400 })
+    }
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,

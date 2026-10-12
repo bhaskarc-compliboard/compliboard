@@ -188,6 +188,16 @@ export const IN_USE_NEW_UNREADABLE = 'in use — the new version could not be re
  */
 export function inUseNote(h: HandbookRow, all: HandbookRow[]): string | null {
   if (!h.is_current) return null
+  /**
+   * *** AND THE ROW'S OWN STATUS DECIDES WHETHER IT IS IN USE AT ALL — E10, §4. ***
+   *
+   * This read only the NEWER version's status, so a row that could not be read itself was labelled
+   * "in use while the new version is read" — about a handbook that is not in use and cannot be,
+   * because nothing could be read out of it. Under H4 that state is ordinary: v2 fails, v1 and v2
+   * are both current, somebody adds v3, and for a while v2 is a current row with a newer one behind
+   * it. Only a row that has been READ can be the one answering questions.
+   */
+  if (h.status !== 'read') return null
   const next = supersededBy(h, all)
   if (!next || !next.is_current) return null
   if (next.status === 'read') return null
@@ -219,12 +229,25 @@ export function handbookList(all: HandbookRow[], sites: Array<{ id: string; name
     ...[...sites].sort((a, b) => a.name.localeCompare(b.name)).map((s) => ({ key: s.id, label: s.name, removed: false })),
     { key: 'removed', label: 'Site removed', removed: true },
   ]
+  /**
+   * *** AND NO ROW IS LISTED TWICE — E10, §4. ***
+   *
+   * Two current versions of one handbook (H4's state, and every fork in `ancestorsOf`'s note) each
+   * walk DOWN the same chain, so a version older than both appeared under both of them: v1 and v3
+   * are current, and v0 was listed once under each. The person then sees the same file twice, with
+   * two Delete buttons, in one group.
+   *
+   * Kept across groups as well as within one, because a site handbook whose site changed can reach
+   * the same older row from two places.
+   */
+  const seen = new Set<string>()
+  const once = (rows: HandbookRow[]) => rows.filter((h) => !seen.has(h.id) && (seen.add(h.id), true))
   return order.map((g) => ({
     ...g,
-    rows: [
+    rows: once([
       ...current.filter((h) => groupKey(h, sites) === g.key).flatMap((h) => [h, ...olderVersions(h, all)]),
       ...loose.filter((h) => groupKey(h, sites) === g.key),
-    ],
+    ]),
   })).filter((g) => g.rows.length > 0)
 }
 

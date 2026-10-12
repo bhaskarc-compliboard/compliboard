@@ -195,7 +195,10 @@ describe('*** W5: "How do I do this?" researched with no subject, and kept it fo
   const howto = strip('app/api/checklist-items/[id]/how-to/route.ts')
 
   test('the checklist read is checked, and the claim is released so it can be tried again', () => {
-    assert.match(howto, /const listRes = await db\.from\('checklists'\)\.select\('title, question'\)/)
+    // E10 §4: the read is SKIPPED, not made to fail, for a legacy item with no checklist —
+    // `.eq('id', '')` is an invalid uuid, so that item could never be researched at all.
+    assert.match(howto, /const listRes = item\.checklist_id\s*\n?\s*\? await db\.from\('checklists'\)\.select\('title, question'\)/)
+    assert.match(howto, /: \{ data: null, error: null \}/)
     assert.match(howto, /if \(listRes\.error\) \{[\s\S]*?await release\(\)/)
   })
 

@@ -145,12 +145,21 @@ function needsOf(s: RunSummary | null | undefined): number {
   * (B10's follow-on, Job E4): the drawer printed it in the BROWSER's zone, so one audit read
   * "8 October" at the plant and "9 October" to anybody east of it.
   */
-const fmt = (iso: string | null | undefined) => {
-  if (!iso) return ''
-  const d = new Date(String(iso).length === 10 ? `${iso}T00:00:00` : String(iso))
-  return Number.isNaN(d.getTime()) ? ''
-    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-}
+/**
+ * *** ONE ZONE FOR EVERY DATE ON THIS REPORT — E10, §4. ***
+ *
+ * "Readings as of" went through `formatMoment` with the company's zone (B10's follow-on, Job E4) and
+ * everything beside it — "Audited", "Company information as of", every finding's date, the Past
+ * audits list — went through this helper, which used the BROWSER's. So the same audit read
+ * "8 October" at the plant and "9 October" to anybody east of it, and two lines of one report could
+ * name two different days for one moment. A compliance record that dates itself differently
+ * depending on who opens it is the thing B10 was about.
+ *
+ * `fmt` is now `formatMoment` with the report's own zone, which the route sends. The fallback inside
+ * `formatMoment` is Pacific, and it says so rather than picking up whatever the reader's machine is
+ * set to.
+ */
+const fmtIn = (tz: string | undefined) => (iso: string | null | undefined) => formatMoment(iso, tz)
 
 function Section_({ title, count, children, open, onToggle }: {
   title: string; count?: number; children: React.ReactNode; open: boolean; onToggle: () => void
@@ -721,6 +730,9 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       setNotice('We could not build that download just now. Nothing was changed; try again in a moment.')
     } finally { setBusy(false) }
   }
+
+  // Every date on this report in the company's zone, not the reader's (E10, §4).
+  const fmt = fmtIn(rep.timezone)
 
   // THE ONE META LINE. Audited date, sections, what it read and what it only listed, and how fresh
   // the evidence was. No cost: what a reading cost us is our business, not a line on the report

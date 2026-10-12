@@ -43,6 +43,13 @@ export interface SummaryPatch {
   append?: Record<string, unknown[]>
   /** Keys whose value is a running count this step adds to. */
   add?: Record<string, number>
+  /**
+   * Keys this step states outright, whatever was there — E10, §4. Added for `emailed_before`: the
+   * retry reads `notified_at` before clearing it, because the second email opens "This replaces the
+   * email we sent before" and that was said even when the first one never went. It is a fact, not a
+   * count and not a list, and it is only ever set to true.
+   */
+  set?: Record<string, unknown>
 }
 
 /**
@@ -65,6 +72,8 @@ export function mergeSummary(prev: Summary, patch: SummaryPatch): Summary {
     const was = Number(prev[key])
     out[key] = (Number.isFinite(was) ? was : 0) + n
   }
+  // Stated last, so a key named in both `set` and `add` ends as the thing it was stated to be.
+  for (const [key, v] of Object.entries(patch.set ?? {})) out[key] = v
   return out
 }
 
@@ -72,6 +81,7 @@ export function mergeSummary(prev: Summary, patch: SummaryPatch): Summary {
 export function patchIsEmpty(patch: SummaryPatch): boolean {
   return !Object.values(patch.append ?? {}).some((v) => v.length)
     && !Object.values(patch.add ?? {}).some((v) => !!v)
+    && !Object.keys(patch.set ?? {}).length
 }
 
 export type PatchResult =

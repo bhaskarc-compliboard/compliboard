@@ -24,6 +24,7 @@
  * succeeded, never before.
  */
 import { nameFromFile, isOwnHandbookPath } from './handbooks.ts'
+import { mustRow } from './mustRead.ts'
 
 type Db = { from: (t: string) => any }   // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -92,7 +93,25 @@ export async function setHandbookSite(db: Db, companyId: string, body: { id?: st
     const { data: site } = await db.from('entities').select('id').eq('id', entityId).eq('company_id', companyId).maybeSingle()
     if (!site) return { status: 404, json: { error: 'Site not found' } }
   }
-  const { data: start } = await db.from('handbooks').select('id, version_of, is_current').eq('id', id).eq('company_id', companyId).maybeSingle()
+  /**
+   * *** THESE THREE READS NOW THROW — E9's X1, E10 §4. ***
+   *
+   * All three were `const { data } = …`, and every one of them falls through to a WRITE that
+   * changes which site a handbook applies to:
+   *
+   *   · a failed read of the handbook itself answered "That handbook was not found" — a claim about
+   *     the person's own data from a failure of ours (A15's shape);
+   *   · a failed read of the NEWER version defeated this guard entirely, so the scope and site were
+   *     written from an OLDER version down the chain — the exact split H4 exists to prevent, and
+   *     the comment below says so;
+   *   · a failed read inside the walk `break`s, so the write lands on a SHORTER chain and leaves
+   *     the older versions on the old site.
+   *
+   * `mustRow` throws and the route answers 500 with a sentence saying it is our side, which is the
+   * one honest answer when we could not read what we were about to change.
+   */
+  const start = mustRow<{ id: string; version_of: string | null; is_current: boolean }>('that handbook',
+    await db.from('handbooks').select('id, version_of, is_current').eq('id', id).eq('company_id', companyId).maybeSingle())
   if (!start) return { status: 404, json: { error: 'That handbook was not found.' } }
   // Only from the NEWEST version in the chain (owner, Step 11a): the walk goes DOWN the chain, so starting from
   // an older version would leave the newer ones on no site and split the versions.
@@ -101,14 +120,16 @@ export async function setHandbookSite(db: Db, companyId: string, body: { id?: st
   // versions are current, and `is_current` would then let a person set the site from the older one, which is
   // exactly the split this guard exists to prevent. "Newest" means nothing names it as the version it
   // replaces.
-  const { data: newer } = await db.from('handbooks').select('id').eq('company_id', companyId)
-    .eq('version_of', start.id).limit(1).maybeSingle()
+  const newer = mustRow<{ id: string }>('the newer versions of that handbook',
+    await db.from('handbooks').select('id').eq('company_id', companyId)
+      .eq('version_of', start.id).limit(1).maybeSingle())
   if (newer) return { status: 400, json: { error: ONLY_CURRENT_MOVES } }
   // The handbook, then each older version it names, down the chain (a guard against a loop in bad data).
   const ids: string[] = [start.id]
   let next: string | null = start.version_of
   while (next && !ids.includes(next) && ids.length < 100) {
-    const { data: older } = await db.from('handbooks').select('id, version_of').eq('id', next).eq('company_id', companyId).maybeSingle()
+    const older = mustRow<{ id: string; version_of: string | null }>('the older versions of that handbook',
+      await db.from('handbooks').select('id, version_of').eq('id', next).eq('company_id', companyId).maybeSingle())
     if (!older) break
     ids.push(older.id); next = older.version_of
   }

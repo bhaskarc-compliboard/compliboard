@@ -122,7 +122,21 @@ describe('A9: and the corrected result is emailed after a retry', () => {
   })
 
   test('and it counts the retry on the summary, so a second email can say why', () => {
-    assert.match(retry, /patchRunSummary\(supabaseAdmin, id, \{ add: \{ retried_parts: 1 \} \}\)/)
+    assert.match(retry, /patchRunSummary\(supabaseAdmin, id, \{\s*\n\s*add: \{ retried_parts: 1 \},/)
+  })
+
+  /**
+   * *** AND WHETHER AN EMAIL ACTUALLY WENT IS READ BEFORE IT IS CLEARED — E10, §4. ***
+   *
+   * The sentence below was said whenever a part had been re-run, including when no email had gone
+   * at all — which is the commonest reason somebody retries a part. Clearing `notified_at` destroys
+   * the only record of it, so the retry reads it first and keeps it on the summary.
+   */
+  test('the retry records whether an email had gone, before clearing notified_at', () => {
+    assert.match(retry, /mustRow<\{ notified_at: string \| null \}>\('this audit'/)
+    assert.ok(retry.indexOf("select('notified_at')") < retry.indexOf('notified_at: null'),
+      'it must be read BEFORE the update that clears it')
+    assert.match(retry, /set: \{ emailed_before: true \}/)
   })
 
   test('summariseRun carries `retried_parts` past the end-of-run write', () => {
@@ -131,10 +145,12 @@ describe('A9: and the corrected result is emailed after a retry', () => {
     assert.match(strip('lib/auditRun.ts'), /retried_parts: Number\(\(\(run\?\.summary \?\? \{\}\)/)
   })
 
-  test('the email says why the second one came', () => {
+  test('the email says why the second one came — and only when there WAS a first one', () => {
     const notify = strip('lib/auditNotify.ts')
-    assert.match(notify, /if \(summary\.retried_parts\) \{/)
+    assert.match(notify, /if \(summary\.retried_parts && summary\.emailed_before\) \{/)
     assert.match(notify, /This replaces the email we sent before/)
+    // And the key survives the end-of-run write, like `retried_parts` beside it.
+    assert.match(strip('lib/auditRun.ts'), /emailed_before: Boolean\(\(\(run\?\.summary \?\? \{\}\)/)
   })
 })
 

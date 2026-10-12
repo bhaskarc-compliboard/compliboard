@@ -356,14 +356,17 @@ describe('*** O1: "Audit again" never linked the two runs ***', () => {
 
   test('both branches take the SAME validated value, read as the caller', () => {
     assert.equal((route.match(/previousRunId,/g) ?? []).length, 2, 'the template branch and the agency one')
-    assert.match(route, /from\('audit_runs'\)\.select\('id'\)\.eq\('id', asked\)\.maybeSingle\(\)/)
+    // E10 §4: checked through `mustRow`, and the select widened so a checklist re-run can reuse
+    // the lines migration 059 stored instead of paying to read the checklist again.
+    assert.match(route, /mustRow<\{ id: string; template_document_id: string \| null[\s\S]{0,120}that earlier audit'/)
+    assert.match(route, /\.select\('id, template_document_id, template_lines'\)\s*\n?\s*\.eq\('id', asked\)\.maybeSingle\(\)/)
     assert.match(route, /That earlier audit was not found\./)
     assert.ok(!/previousRunId: body\?\.previous_run_id/.test(route),
       'the template branch used to pass a client id straight through, unchecked')
   })
 
   test('404, not 403, so an id cannot be probed by which error comes back (§3.6)', () => {
-    const check = route.slice(route.indexOf('let previousRunId'), route.indexOf('let previousRunId') + 500)
+    const check = route.slice(route.indexOf('let previousRunId'), route.indexOf('let previousRunId') + 1400)
     assert.match(check, /status: 404/)
     assert.ok(!/status: 403/.test(check))
   })

@@ -447,9 +447,12 @@ export async function sweep() {
      * has settled. It is the recovery rule for the state the throw leaves behind, and it costs one
      * query on a run that already found work.
      */
+    // Not done (S4), AND done with no email sent (E9's 9b — a send that failed is never retried,
+    // because the batch is `done` by then and nothing looked at it again).
     const unfinished = mustRows<{ id: string }>('the batches that did not finish', await supabaseAdmin
-      .from('document_batches').select('id').neq('status', 'done')
-      .order('created_at', { ascending: true }).limit(50))
+      .from('document_batches').select('id')
+      .or('status.neq.done,notified_at.is.null')
+      .order('created_at', { ascending: false }).limit(50))
     for (const b of unfinished) {
       try {
         const finished = await finishBatchIfDone(b.id)
@@ -500,10 +503,38 @@ export async function finishBatchIfDone(
   // a failed DOCUMENTS read made `settled` empty, which on an empty-looking batch finishes it —
   // and a batch is marked done FOR GOOD, which is what makes that permanent.
   const batch = mustRow<{ id: string; company_id: string; created_by: string | null
-                          status: string; notified_at: string | null; file_count: number }>(
+                          status: string; notified_at: string | null; file_count: number
+                          summary: Record<string, unknown> | null; created_at: string }>(
     'this batch', await supabaseAdmin.from('document_batches')
-      .select('id, company_id, created_by, status, notified_at, file_count').eq('id', batchId).maybeSingle())
-  if (!batch || batch.status === 'done') return { done: false, notified: false }
+      .select('id, company_id, created_by, status, notified_at, file_count, summary, created_at')
+      .eq('id', batchId).maybeSingle())
+  if (!batch) return { done: false, notified: false }
+  /**
+   * *** A SEND THAT FAILED IS TRIED AGAIN — E9's 9b, E10 §4. ***
+   *
+   * `notified_at` is set only after a successful send, which is right: a row stamped before it
+   * means a failed send is never retried and nobody ever knows. But nothing retried it either —
+   * the batch is already `done` by then, and this function used to return at once for a done batch,
+   * so a Resend outage of one minute lost that person's email for good.
+   *
+   * The work is not redone: the summary is on the row, written in the same statement that claimed
+   * the batch. Only the send is repeated, and the claim is `notified_at` still being null, so two
+   * sweeps cannot both send. Seven days, because an email about a batch somebody uploaded a month
+   * ago is worse than no email — by then they have looked.
+   */
+  if (batch.status === 'done') {
+    const SEVEN_DAYS = 7 * 86_400_000
+    if (!opts.email || batch.notified_at || (batch.file_count ?? 0) <= 1 || !batch.summary
+        || Date.now() - Date.parse(batch.created_at) > SEVEN_DAYS) {
+      return { done: false, notified: false }
+    }
+    // The stored summary, which `summariseBatch` wrote in the statement that claimed the batch.
+    // Asserted once, as the route's other multi-column reads are: it is this shape or the row is
+    // from a build that did not store one, and the guard above refuses a row with no summary.
+    const again = await sendBatchEmail(batch.id, batch.company_id, batch.created_by,
+      batch.summary as unknown as Parameters<typeof notifyBatch>[0]['summary'])
+    return { done: false, notified: again.notified, resend: again.resend }
+  }
 
   const rows = mustRows<{ id: string; status: string }>("this batch's documents",
     await supabaseAdmin.from('documents').select('id, status').eq('batch_id', batchId))
@@ -575,8 +606,41 @@ export async function finishBatchIfDone(
 
   const sent = await notifyBatch({ to, companyName: company?.name ?? null, summary })
   if (sent.ok) {
+    // *** THE STAMP IS A CLAIM — E9's 9b. *** `.is('notified_at', null)` so the retry path above and
+    // this one cannot both land, and the person never gets the same email twice.
     await supabaseAdmin.from('document_batches')
-      .update({ notified_at: new Date().toISOString() }).eq('id', batchId)
+      .update({ notified_at: new Date().toISOString() }).eq('id', batchId).is('notified_at', null)
   }
   return { done: true, notified: sent.ok, resend: sent }
+}
+
+/**
+ * The send, on its own, so the finish and the RETRY of a failed send are one piece of code — E9's
+ * 9b. It reads the recipient the same way and stamps `notified_at` under the same claim.
+ */
+async function sendBatchEmail(
+  batchId: string, companyId: string, createdBy: string | null,
+  summary: Parameters<typeof notifyBatch>[0]['summary'],
+): Promise<{ notified: boolean; resend: unknown }> {
+  let to = ''
+  if (createdBy) {
+    const { data: who, error } = await supabaseAdmin.auth.admin.getUserById(createdBy)
+    if (error) {
+      return { notified: false, resend: { error: `the uploading login could not be read: ${error.message}` } }
+    }
+    to = who?.user?.email ?? ''
+  }
+  if (!to && !process.env.NOTIFY_TEST_TO) {
+    return { notified: false, resend: { error: 'no recipient on the uploading login' } }
+  }
+  // Said and the fallback kept, exactly as the finish path does it (E4): the email is still worth
+  // sending without the company's name on it.
+  const coRead = await supabaseAdmin.from('companies').select('name').eq('id', companyId).maybeSingle()
+  if (coRead.error) console.error(`BATCH EMAIL: could not read the company name: ${coRead.error.message}`)
+  const sent = await notifyBatch({ to, companyName: coRead.data?.name ?? null, summary })
+  if (sent.ok) {
+    await supabaseAdmin.from('document_batches')
+      .update({ notified_at: new Date().toISOString() }).eq('id', batchId).is('notified_at', null)
+  }
+  return { notified: sent.ok, resend: sent }
 }

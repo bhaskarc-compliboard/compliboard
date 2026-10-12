@@ -97,6 +97,11 @@ export interface RunSummary {
    * the same audit says why a second one came.
    */
   retried_parts?: number
+  /**
+   * Whether an email for this run had actually gone before a retry cleared `notified_at` — E10, §4.
+   * The second email may only say "This replaces the email we sent before" when this is true.
+   */
+  emailed_before?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -1624,6 +1629,9 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     // A9: and how many parts were re-run, for the same reason — this write replaces the summary, so
     // a key nobody carries forward is a key that disappears when the run finishes.
     retried_parts: Number(((run?.summary ?? {}) as Record<string, unknown>).retried_parts) || 0,
+    // E10 §4: and whether an email had actually gone before the retry cleared `notified_at`, which
+    // is what decides whether the second one may say it replaces the first.
+    emailed_before: Boolean(((run?.summary ?? {}) as Record<string, unknown>).emailed_before),
   }
 }
 

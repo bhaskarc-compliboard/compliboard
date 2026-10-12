@@ -93,9 +93,27 @@ async function run(asOf: string | undefined, dryRun: boolean) {
            dry_run: dryRun, counts, errors, sent }
 }
 
+/**
+ * *** GET REFUSES A FLAG IT DOES NOT HONOUR — E9's X2, E10 §4. ***
+ *
+ * Vercel Cron calls with GET, and GET ran the job for real whatever the query said: `?dry=1` was
+ * silently ignored. During E9 that sent a REAL monthly email to a live address, because the harness
+ * asked for a dry run through the wrong verb and got a wet one with a 200. The flag belongs to POST
+ * (a person running it by hand), so GET now says so rather than accepting it and doing the
+ * opposite. `as_of` is refused for the same reason: a cron call has no business asking for a
+ * different day, and silently ignoring it would make the answer describe a run nobody asked for.
+ */
 export async function GET(request: NextRequest) {
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
+  const p = request.nextUrl.searchParams
+  const asked = ['dry', 'as_of'].filter((k) => p.has(k))
+  if (asked.length) {
+    return NextResponse.json({
+      error: `GET runs the job for real and honours no options. ${asked.join(' and ')} `
+        + `${asked.length === 1 ? 'is' : 'are'} POST's, with x-cron-secret — this call did nothing.`,
+    }, { status: 400 })
+  }
   return NextResponse.json(await run(undefined, false))
 }
 

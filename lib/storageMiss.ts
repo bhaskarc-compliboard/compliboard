@@ -80,3 +80,30 @@ export const STORAGE_UNREACHABLE_FINAL = {
   reason: "We couldn't reach your stored file just now. That's on our side, not yours.",
   wayForward: 'Press Read it again in a little while.',
 } as const
+
+
+/**
+ * *** THE WAY FORWARD FOR A REASON WE RECOGNISE — §4 of the independent read of Job E (E10). ***
+ *
+ * The "Could not read" drawer prints the reading's own `could_not_read_reason` and then one generic
+ * line: *"If that reads like something at our end, press Read it again below — nothing about your
+ * file needs changing."* For most failures that is right, and D13 put it there deliberately.
+ *
+ * For **FILE_GONE** it is wrong advice, and the drawer was giving it: the record is here and the
+ * file is not, so pressing Read it again cannot work however many times it is pressed, and
+ * "nothing about your file needs changing" sends the person away from the one thing that would fix
+ * it. The way forward each of these reasons wrote is not stored on the row — only the reason is —
+ * so the reason is matched back to it here, which costs nothing and cannot drift, because both
+ * halves are in this file.
+ *
+ * Null for a reason we do not recognise: the generic line is then the right one, and inventing
+ * advice for a failure we cannot name is how the sentence D13 removed came to exist.
+ */
+export function wayForwardFor(reason: string | null | undefined): string | null {
+  const r = String(reason ?? '').trim()
+  if (!r) return null
+  for (const known of [FILE_GONE, STORAGE_UNREACHABLE, STORAGE_UNREACHABLE_FINAL]) {
+    if (r === known.reason) return known.wayForward
+  }
+  return null
+}

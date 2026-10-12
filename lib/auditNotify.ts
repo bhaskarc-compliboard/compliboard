@@ -249,7 +249,12 @@ export async function notifyRun(
   // *** WHY A SECOND EMAIL CAME ABOUT ONE AUDIT *** (A9, Job E3). The retry clears `notified_at`,
   // so a corrected run is emailed — and an email that arrives with no explanation of why it is the
   // second one reads like a mistake.
-  if (summary.retried_parts) {
+  // *** AND ONLY WHEN ONE ACTUALLY WENT (E10, §4). *** `emailed_before` is written by the retry
+  // route from `notified_at` as it was BEFORE it cleared it. Without it this sentence was said
+  // whenever a part had been re-run — including when the first email never went, because the run
+  // failed before `notifyRun` or the send itself failed, which is the commonest reason somebody
+  // retries a part in the first place.
+  if (summary.retried_parts && summary.emailed_before) {
     blocks.push({ kind: 'para', text: `This replaces the email we sent before: `
       + `${summary.retried_parts === 1 ? 'one part' : `${summary.retried_parts} parts`} of this `
       + `audit ${summary.retried_parts === 1 ? 'was' : 'were'} run again, and the result below is `

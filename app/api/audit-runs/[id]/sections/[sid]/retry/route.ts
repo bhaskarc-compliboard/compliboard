@@ -14,6 +14,7 @@ import { after } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
 import { patchRunSummary } from '@/lib/auditSummary'
+import { mustRow } from '@/lib/mustRead'
 
 export async function POST(request: NextRequest, ctx: { params: Promise<{ id: string; sid: string }> }) {
   try {
@@ -25,10 +26,15 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
     // Ownership of BOTH, on the caller's client, and the section must belong to this run — a
     // section id from another run of the same company would otherwise be retryable through the
     // wrong URL, which is a smaller version of the same bug 404-not-403 exists to close.
-    const { data: run } = await db.from('audit_runs').select('id').eq('id', id).maybeSingle()
+    // A15's shape, finished here (E10, §4): a failed read answering "not found" is a claim about
+    // the person's own audit, and only one of the two possible causes is theirs. `mustRow` throws
+    // and the catch below answers 500 with a sentence saying it is our side.
+    const run = mustRow<{ id: string }>('that audit',
+      await db.from('audit_runs').select('id').eq('id', id).maybeSingle())
     if (!run) return NextResponse.json({ error: 'That audit was not found.' }, { status: 404 })
-    const { data: section } = await db.from('audit_sections')
-      .select('id, status, title').eq('id', sid).eq('run_id', id).maybeSingle()
+    const section = mustRow<{ id: string; title: string; status: string }>('that part of the audit',
+      await db.from('audit_sections')
+        .select('id, status, title').eq('id', sid).eq('run_id', id).maybeSingle())
     if (!section) return NextResponse.json({ error: 'That part of the audit was not found.' }, { status: 404 })
 
     if (section.status !== 'could_not_complete') {
@@ -73,6 +79,16 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
     // corrected result was never emailed at all.** The person was told "nothing needs you" about an
     // audit whose every part had failed, pressed Run again, it worked, and they heard nothing. One
     // duplicate is recoverable; a correction nobody is told about is not.
+    //
+    // *** AND WHETHER ONE HAD ACTUALLY GONE IS READ BEFORE IT IS CLEARED (E10, §4). *** The second
+    // email opens "This replaces the email we sent before", and that was said whenever a part had
+    // been re-run — including when the first email never went at all, because the run failed before
+    // `notifyRun` or because the send itself failed. Clearing `notified_at` destroys the only
+    // record of it, so it is read first and kept on the summary. Checked, because reading it as
+    // absent is exactly how the false sentence gets said (root R2).
+    const before = mustRow<{ notified_at: string | null }>('this audit',
+      await supabaseAdmin.from('audit_runs').select('notified_at').eq('id', id).maybeSingle())
+
     const { error: runErr } = await supabaseAdmin.from('audit_runs')
       .update({ status: 'running', finished_at: null, notified_at: null }).eq('id', id)
     if (runErr) throw runErr
@@ -80,7 +96,13 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
     // Counted on the summary so the second email can say why it is the second. There is no column
     // for it; `patchRunSummary` keeps every other key (fix list A2) and `summariseRun` carries this
     // one forward past the end-of-run write.
-    const patched = await patchRunSummary(supabaseAdmin, id, { add: { retried_parts: 1 } })
+    //
+    // `emailed_before` goes with it, and is only ever set to true: a later retry does not un-send
+    // an email that went, and `patchRunSummary`'s `set` keeps every other key.
+    const patched = await patchRunSummary(supabaseAdmin, id, {
+      add: { retried_parts: 1 },
+      ...(before?.notified_at ? { set: { emailed_before: true } } : {}),
+    })
     if (!patched.ok) {
       console.warn(`audit retry ${sid}: the run's summary was left as it was — ${patched.error.message}`)
     }

@@ -293,8 +293,17 @@ export async function addDate(db: Db, args: AddDateArgs): Promise<AddResult> {
     entity_id: args.entityId ?? date.entity_id,
   }
   if (date.state === 'withdrawn') patch.state = args.state
-  const { data: freshened } = await db.from('calendar_events')
+  // *** SAID, NOT SWALLOWED — E9's X1, E10 §4. *** This was `const { data: freshened } = …`, and
+  // the fallback is the date as it was BEFORE the patch — so a refused update answered "already",
+  // with the stale row, and the screen showed the old link and the old state as though the
+  // freshening had worked. The row the caller is given is now either the one that was written or
+  // the one that was there, with the difference recorded.
+  const { data: freshened, error: freshErr } = await db.from('calendar_events')
     .update(patch).eq('id', date.id).eq('company_id', args.companyId).select(DATE_COLUMNS).single()
+  if (freshErr) {
+    console.error(`calendar: ${date.id} was already on the calendar but could not be re-pointed at `
+      + `the newest reading, so it still names the older one: ${freshErr.message}`)
+  }
   return { created: false, reason: 'already', date: (freshened as CalendarDate) ?? date }
 }
 

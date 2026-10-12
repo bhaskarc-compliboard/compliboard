@@ -91,7 +91,22 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       // item with no subject around it — and the answer was **saved and never redone**, because
       // `:61` above returns a stored `howto` without asking anything. One failed read, one wrong
       // answer, kept for good. Checked, and the claim released so the next press can try again.
-      const listRes = await db.from('checklists').select('title, question').eq('id', item.checklist_id ?? '').maybeSingle()
+      /**
+       * *** AND AN ITEM WITH NO CHECKLIST IS NOT A FAILED READ — E10, §4. ***
+       *
+       * This was `.eq('id', item.checklist_id ?? '')`. An item with no checklist — a legacy row
+       * from before the checklist link existed — made that `.eq('id', '')`, which Postgres refuses
+       * as an **invalid input syntax for type uuid**. The refusal is an error, so the branch below
+       * released the claim and returned: that item could never be researched, and pressing again
+       * did the same thing for ever. The empty string was there to satisfy the type, and it turned
+       * a missing link into a permanent failure.
+       *
+       * No checklist is a real state and the answer for it is "no title and no question", which is
+       * what the model is given. The read is skipped rather than made to fail.
+       */
+      const listRes = item.checklist_id
+        ? await db.from('checklists').select('title, question').eq('id', item.checklist_id).maybeSingle()
+        : { data: null, error: null }
       if (listRes.error) {
         console.error(`how-to: the checklist could not be read: ${listRes.error.message}; `
           + 'nothing was researched, and the claim is released so it can be tried again')

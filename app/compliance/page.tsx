@@ -407,8 +407,18 @@ export default function CompliancePage() {
   /** Copy the document's current kind and folder onto the cards that show it — one read for all. */
   async function cardInfo(ids: string[]): Promise<Record<string, { kind: string | null; folder: string | null; title: string | null }>> {
     if (!ids.length) return {}
-    const { data } = await supabase.from('document_index_v')
+    // *** SAID, NOT SWALLOWED — E9's X1, E10 §4. *** This was `const { data } = …`. A failed read
+    // made every attachment card on the conversation show no kind and no folder, which reads as
+    // "this document is filed nowhere and is of no particular kind" about documents that are. The
+    // card still shows the file's name, which is the part that matters, so the answer is to say so
+    // rather than to refuse the whole conversation.
+    const { data, error } = await supabase.from('document_index_v')
       .select('document_id, kind, folder_name, title').in('document_id', ids)
+    if (error) {
+      console.error(`workspace: the attached documents could not be read: ${error.message}`)
+      setNotice('We could not load the details of the files in this conversation. '
+        + "That's on our side, not yours — the files themselves are fine.")
+    }
     return Object.fromEntries(((data ?? []) as Array<{ document_id: string; kind: string | null; folder_name: string | null; title: string | null }>)
       .map((r) => [r.document_id, { kind: r.kind, folder: r.folder_name, title: r.title }]))
   }

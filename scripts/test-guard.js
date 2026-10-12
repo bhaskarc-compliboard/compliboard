@@ -145,7 +145,14 @@ import { readdirSync, readFileSync } from 'node:fs'
 // survives it; and it pins, per item, every claim being freed, every sweep catching per company,
 // every state a throw leaves behind having a rule that moves it on, and both pages showing their
 // failure line instead of an empty state.
-const FLOOR = 1468
+//
+// 1468 -> 1493 at E10's last checkpoint, Part 5: the wrong words and the smaller items of the
+// independent read's §4. `smallerItems.test.ts` (19) and `uncheckedReadFloor.test.ts` (5). The
+// second is the owner's own instruction — "a guard test that counts them and may only go down, like
+// the test floor" — for the reads that still discard their error: 89 when E10 opened, 84 after the
+// ones that fall through to a WRITE were taken, and a new one now fails the suite. It is proved
+// against a planted read, and against a comment quoting the pattern.
+const FLOOR = 1493
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
