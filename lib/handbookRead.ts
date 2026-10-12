@@ -22,7 +22,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import officeParser from 'officeparser'
 import { parseDocumentToBlocks, extensionOf } from './documentContent.ts'
 import { CLAIM_LOCK_MS } from './topicClaim.ts'
-import { READ_REASONS } from './handbooks.ts'
+import { READ_REASONS, ancestorsOf } from './handbooks.ts'
 import { askAIJson } from './ai.ts'
 import { hrOutlinePrompt } from '../prompts/hr-outline.ts'
 import { answerWith } from './answerShape.ts'
@@ -276,12 +276,30 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
     // If THIS write fails, both versions stay current — the safe direction, and the state the list already
     // renders — and it is logged rather than returned, because the reading itself succeeded and the caller's
     // own words are about the reading.
+    //
+    // *** EVERY OLDER VERSION IN THE CHAIN, NOT ONLY THE PARENT — E10, N6. *** This was
+    // `.eq('id', row.version_of)`. Three ways then left two versions current for good, both used for
+    // answers and both checked every night (`lib/handbooks.ts`, above `ancestorsOf`, sets out A, B
+    // and C). The commonest: v2 cannot be read so v1 and v2 are both current, the person adds v3
+    // from v2's drawer — the natural move — v3 retires v2, and v1 stays current for ever.
     if (row.version_of) {
-      const { error: retireErr } = await db.from('handbooks')
-        .update({ is_current: false }).eq('id', row.version_of).eq('company_id', companyId)
-      if (retireErr) {
-        console.error(`handbooks: ${id} was read but the version it replaces (${row.version_of}) is still `
-          + `current: ${retireErr.message}`)
+      const { data: siblings, error: chainErr } = await db.from('handbooks')
+        .select('id, version_of, created_at').eq('company_id', companyId)
+      if (chainErr) {
+        console.error(`handbooks: ${id} was read but its older versions could not be listed, so they `
+          + `may still be current: ${chainErr.message}`)
+      } else {
+        const older = ancestorsOf({ id, version_of: row.version_of },
+          (siblings ?? []) as Array<{ id: string; version_of: string | null; created_at: string }>)
+        const ids = older.map((h) => h.id)
+        if (ids.length) {
+          const { error: retireErr } = await db.from('handbooks')
+            .update({ is_current: false }).in('id', ids).eq('company_id', companyId)
+          if (retireErr) {
+            console.error(`handbooks: ${id} was read but the ${ids.length} version(s) it replaces `
+              + `(${ids.join(', ')}) are still current: ${retireErr.message}`)
+          }
+        }
       }
     }
     return `read: ${out.pageCount ?? '—'} pages, ${out.sections.length} sections, ${out.dropped} anchor(s) dropped, ${out.parts} part(s)`

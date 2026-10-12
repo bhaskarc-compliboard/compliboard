@@ -214,7 +214,10 @@ describe('the loader', () => {
       return { select: () => ({ eq: (_c: string, id: string) => ({ order: () => Promise.resolve({ data: sections[id] ?? [], error: null }) }) }) }
     } }
   }
-  const row = (id: string, o: Record<string, unknown>) => ({ id, name: id, scope: 'company', entity_id: null, status: 'read', status_reason: null, extracted_text: 'x', page_count: 1, created_at: id, ...o })
+  // `is_current` and `version_of` are on the row because the loader now reads EVERY handbook row and
+  // picks one version per chain (E10, N5/N6): the retired rows are what the `version_of` links are
+  // made of. A row with no `version_of` is a handbook of its own, which is what these cases are.
+  const row = (id: string, o: Record<string, unknown>) => ({ id, name: id, scope: 'company', entity_id: null, status: 'read', status_reason: null, extracted_text: 'x', page_count: 1, created_at: id, is_current: true, version_of: null, ...o })
   test('the two refusals, before any model call; a handbook still being read is never a refusal (§183)', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const run = (rows: Array<Record<string, unknown>>) => loadHandbooksForAnswer(fake(rows) as any, 'co')

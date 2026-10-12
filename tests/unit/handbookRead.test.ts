@@ -87,19 +87,35 @@ describe('THE HAIKU GUARD', () => {
 
 describe('the one write', () => {
   /** Stand-ins for the person's client and the server key, recording every write. */
-  function fakes(opts: { claimHeld: boolean; textClaimHeld?: boolean; versionOf?: string | null; retireFails?: boolean; clearFails?: boolean }) {
+  function fakes(opts: { claimHeld: boolean; textClaimHeld?: boolean; versionOf?: string | null; retireFails?: boolean
+                         clearFails?: boolean
+                         /** E10, N6: the company's handbook rows, for the chain walk. */
+                         chain?: Array<{ id: string; version_of: string | null; created_at: string }>
+                         chainFails?: boolean }) {
     const log: string[] = []
+    /** Which ids the retire step actually switched off — E10, N6: every OLDER version, not one. */
+    const retired: string[] = []
     const chain = (result: unknown) => {
       const q: Record<string, unknown> = {}
-      for (const m of ['eq', 'in', 'select']) q[m] = () => q
+      for (const m of ['eq', 'select']) q[m] = () => q
+      q.in = (_col: string, ids: string[]) => { retired.push(...ids); return q }
       q.maybeSingle = async () => result
       q.then = (res: (v: unknown) => unknown) => Promise.resolve(result).then(res)
       return q
     }
+    /** The chain the company holds: h1 over old1 over older0, unless a test says otherwise. */
+    const chainRows = opts.chain ?? [
+      { id: 'h1', version_of: opts.versionOf ?? null, created_at: '2026-10-03T09:00:00Z' },
+      { id: 'old1', version_of: 'older0', created_at: '2026-10-02T09:00:00Z' },
+      { id: 'older0', version_of: null, created_at: '2026-10-01T09:00:00Z' },
+    ]
     const db = {
       from: () => ({
-        select: () => chain({ data: { file_path: 'co/handbooks/h.pdf', file_name: 'h.pdf',
-                                      mime_type: 'application/pdf', version_of: opts.versionOf ?? null } }),
+        // The columns decide which read this is: the row being read, or the chain around it (N6).
+        select: (cols: string) => String(cols).includes('file_path')
+          ? chain({ data: { file_path: 'co/handbooks/h.pdf', file_name: 'h.pdf',
+                            mime_type: 'application/pdf', version_of: opts.versionOf ?? null } })
+          : chain(opts.chainFails ? { data: null, error: { message: 'refused' } } : { data: chainRows, error: null }),
         update: (patch: Record<string, unknown>) => {
           if ('extracted_text' in patch && !('status' in patch)) {
             log.push(`db.update text (${String(patch.extracted_text).length} chars, ${patch.page_count} pages)`)
@@ -127,7 +143,7 @@ describe('the one write', () => {
         insert: (rows: unknown[]) => { log.push(`admin.insert ${rows.length} sections`); return chain({ data: [{ id: 's1' }, { id: 's2' }], error: null }) },
       }),
     }
-    return { log, db, admin }
+    return { log, db, admin, retired }
   }
   const pages = async () => ['1 Welcome Employees are welcome here at the plant.', '2 Pay Employees are paid every second Friday by deposit.']
   const outline = async () => [{ title: '1 Welcome', anchor: '1 Welcome Employees are welcome here' }, { title: '2 Pay', anchor: '2 Pay Employees are paid every' }]
@@ -167,6 +183,47 @@ describe('the one write', () => {
     assert.equal(f.log.at(-1), 'db.update is_current=false', 'the older version is retired')
     assert.ok(f.log.indexOf('db.update status=read') < f.log.indexOf('db.update is_current=false'),
       'and AFTER the read landed, never before — that order is the whole of H4')
+  })
+
+  /**
+   * *** E10, N6: EVERY OLDER VERSION IN THE CHAIN, NOT ONLY THE PARENT. ***
+   *
+   * The shipped line was `.eq('id', row.version_of)`. The commonest way that forks a chain for good:
+   * v2 cannot be read, so v1 and v2 are both current (H4 working); the person adds v3 from v2's
+   * drawer, which is the natural move; v3 retires v2 — and v1 stays current for ever, used for
+   * answers and checked every night, with nothing on the page explaining it.
+   */
+  test('*** N6: a successful read retires every older version in its chain ***', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    // h1 replaces old1, which replaces older0. All three are one handbook.
+    const f = fakes({ claimHeld: true, versionOf: 'old1' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.match(out, /^read: 2 pages/)
+    assert.deepEqual(f.retired, ['old1', 'older0'],
+      'the parent AND its own older version. Retiring only the parent is what left v1 current for ever.')
+    assert.ok(!f.retired.includes('h1'), 'the version just read is the current one')
+  })
+
+  test('N6: a chain read that fails leaves the older versions current and says so, and the reading stands', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: true, versionOf: 'old1', chainFails: true })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.match(out, /^read: 2 pages/, 'the reading succeeded; this write is not what the caller asked for')
+    assert.deepEqual(f.retired, [])
+    // And `newestPerChain` is what keeps that state from being used twice
+    // (`tests/unit/oneVersionPerChain.test.ts`).
+  })
+
+  test('N6: a chain of two retires one — the plain case is unchanged', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const f = fakes({ claimHeld: true, versionOf: 'old1',
+      chain: [{ id: 'h1', version_of: 'old1', created_at: '2026-10-02T09:00:00Z' },
+              { id: 'old1', version_of: null, created_at: '2026-10-01T09:00:00Z' }] })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.deepEqual(f.retired, ['old1'])
   })
 
   test('H4: a reading that FAILED retires nothing, so the older version stays in use', async () => {

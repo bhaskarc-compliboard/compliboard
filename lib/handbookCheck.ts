@@ -33,6 +33,7 @@ import { buildCompanyContext } from './companyContext.ts'
 import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
 import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
 import { lazyJobRun } from './jobRun.ts'
+import { newestPerChain } from './handbooks.ts'
 import { notifyCheck } from './handbookCheckNotify.ts'
 import { hrAnswerPrompt, hrAnswerMessage } from '../prompts/hr-answer.ts'
 
@@ -611,10 +612,25 @@ export function dueReason(h: { version_of: string | null; next_check_at: string 
 export async function queueDueChecks(admin: Db, now = Date.now()): Promise<{
   queued: Array<{ handbook: string; reason: QueueReason; check: string }>; skippedOpen: string[]; notDue: number
 }> {
+  // Every row, so the `version_of` chains can be walked (E10, N5/N6 — the retired rows ARE the links).
   const { data: books, error } = await admin.from('handbooks')
-    .select('id, company_id, version_of, next_check_at').eq('is_current', true).eq('status', 'read')
+    .select('id, company_id, version_of, next_check_at, is_current, status, created_at')
   if (error) throw new Error(`queueDueChecks: ${error.message}`)
-  const list = (books ?? []) as Array<{ id: string; company_id: string; version_of: string | null; next_check_at: string | null }>
+  const every = (books ?? []) as Array<{ id: string; company_id: string; version_of: string | null
+                                         next_check_at: string | null; is_current: boolean; status: string; created_at: string }>
+  /**
+   * *** ONE VERSION OF EACH HANDBOOK IS CHECKED — E10, N6. ***
+   *
+   * The filter was `.eq('is_current', true).eq('status', 'read')` and nothing more, so under any of
+   * N6's three forks a company with two current versions of one handbook had BOTH checked every
+   * night: two checks, two bills, and two answers about the same document, with nothing on the page
+   * explaining it. The retire step in `lib/handbookRead.ts` now closes the forks, and this is what
+   * holds when that write fails — which it is allowed to do, because both versions staying current
+   * is the safe direction.
+   */
+  const list = newestPerChain(
+    every.filter((b) => b.is_current && b.status === 'read'), every, () => 1,
+  )
   // *** H3 (root R2, Job E4): A FAILED READ HERE CHECKS EVERY HANDBOOK OF EVERY COMPANY AGAIN,
   // AND IT COSTS MONEY. *** Unchecked, `checked` was empty, so `dueReason` returned
   // 'new_handbook' or 'new_version' for every current, read handbook in the product — each one

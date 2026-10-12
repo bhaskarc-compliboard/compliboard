@@ -36,7 +36,7 @@ import { readTopicList, type TopicRow } from '@/lib/topicList'
 import {
   statusWords, handbookList, sectionCount, type HandbookRow, checkLine, HANDBOOKS_TAB_LINE, uploadLede, NOT_CHECKED_YET,
   checkingSections, readAgainNote, PART_NOT_CHECKED, CHECK_FAILED, earlierCheckHeading, LEGACY_WORD, OLDER_VERSION_NOTE,
-  siteRemovedLede, CHOOSE_WHERE, inUseNote,
+  siteRemovedLede, CHOOSE_WHERE, inUseNote, supersededBy,
 } from '@/lib/handbooks'
 import { loadRowChecks, loadCheckView, type RowCheckState, type CheckView } from '@/lib/handbookCheckView'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
@@ -1013,8 +1013,14 @@ export default function HrWorkspace() {
                 <button onClick={() => checkNow(drawer)} disabled={startingCheck || !!drawerCheck?.open} className={OUTLINE}>Check now</button>
               )}
               <button onClick={() => openHandbook(drawer)} className={TEXT_ACTION}>Open the handbook</button>
-              {/* A newer version is added to the CURRENT one only (owner, 7 October). */}
-              {drawer.is_current && (
+              {/* A newer version is added to the CURRENT one only (owner, 7 October) — *** AND TO THE
+                  NEWEST ROW OF THE CHAIN (E10, N6). *** It used to show on ANY current row, and under
+                  H4 two rows of one handbook are current while the newer one is read or after it
+                  could not be read. Adding v3 from v2's drawer was the natural move and left v1
+                  current for ever; adding it from v1's drawer left v2 current and answers saying
+                  "<Name> could not be read" while quoting "<Name>". `supersededBy` is null only on
+                  the newest row, so that is the one row that offers it. */}
+              {drawer.is_current && !supersededBy(drawer, allHandbooks) && (
                 <button onClick={() => pickFile(drawer.id)} disabled={saving} className={TEXT_ACTION}>Add a newer version</button>
               )}
               {/* The current version only (owner, Step 11a): its older versions move with it; an older version's drawer

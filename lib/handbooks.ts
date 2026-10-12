@@ -78,6 +78,89 @@ export function olderVersions(current: HandbookRow, all: HandbookRow[]): Handboo
   return out
 }
 
+// ---------------------------------------------------------------------------------------------------------
+// *** ONE VERSION OF A HANDBOOK ANSWERS A QUESTION — E10, N5 and N6. ***
+//
+// H4 (Job E) stopped retiring the older version at upload and moved it to the write that proves the new one
+// can be read. That was right, and it left three ways for a chain to end up with two versions current at
+// once, each of them used for answers and checked every night, with nothing on the page explaining it:
+//
+//   A. v2 cannot be read, so v1 and v2 are both current (H4 working). The person adds v3 from v2's drawer —
+//      the natural move — and `lib/handbookRead.ts` retired only the IMMEDIATE parent, v2. v1 stayed
+//      current for ever.
+//   B. They add v3 from v1's drawer instead. v3 retires v1, v2 stays current, and the answer says
+//      "<Name> could not be read" while quoting "<Name>".
+//   C. v1 is deleted while v2 is being read: `lib/handbookDelete.ts` makes v1's own older version current
+//      again, so v0 comes back.
+//
+// And one window with no fork at all: while v2 is being read, `lib/handbookRead.ts` saves its text BEFORE
+// the status reaches 'read' (deliberately — §183, so a FIRST handbook can answer before its outline is
+// finished). v1 is read and v2 is half-read, and both went into the prompt under one name (N5, measured in
+// E9 item 4).
+//
+// Two rules, applied by the three functions below:
+//   · a successful read retires every OLDER version in its chain, not only its parent (`ancestorsOf`);
+//   · whatever is current, ONE version of each chain is used for answers and checked — the newest that can
+//     be used (`newestPerChain`). The second rule is what holds when the first one's write fails, which it
+//     is allowed to do: both versions staying current is the safe direction.
+// ---------------------------------------------------------------------------------------------------------
+
+/** The two columns that make a chain. Both callers' row types are wider than this. */
+export interface VersionLink { id: string; version_of: string | null; created_at?: string | null }
+
+/**
+ * Older versions of this row, up the `version_of` chain, nearest first — current or not.
+ *
+ * `start` is only the two link columns, so a caller that holds nothing but the id and the parent (the
+ * read step, which has just written the row) can ask without assembling a whole row.
+ */
+export function ancestorsOf<T extends VersionLink>(start: VersionLink, all: T[]): T[] {
+  const byId = new Map(all.map((h) => [h.id, h]))
+  const out: T[] = []
+  const seen = new Set([start.id])
+  let at = start.version_of
+  while (at && byId.has(at) && !seen.has(at)) {
+    seen.add(at)
+    const h = byId.get(at)!
+    out.push(h)
+    at = h.version_of
+  }
+  return out
+}
+
+/** Which chain a row belongs to: the oldest id its `version_of` links reach, or its own. */
+export function chainKey<T extends VersionLink>(h: T, all: T[]): string {
+  const up = ancestorsOf(h, all)
+  return up.length ? up[up.length - 1].id : h.id
+}
+
+/**
+ * ONE ROW PER CHAIN: the newest that can be used.
+ *
+ * `rank` scores a row — **0 means it cannot be used at all** and the row is dropped, so a chain whose every
+ * version is unreadable contributes nothing and the caller's own "could not be read" wording still runs.
+ * A higher rank always beats a newer date: a version that has been read in full outranks one that is half
+ * read, which is what keeps a part-read upload from displacing the version in use while it is read.
+ * Ties on rank break on `created_at`, newest first, then on id so the answer is deterministic (§3.2).
+ */
+export function newestPerChain<T extends VersionLink>(rows: T[], all: T[], rank: (h: T) => number): T[] {
+  const best = new Map<string, { row: T; rank: number }>()
+  for (const h of rows) {
+    const r = rank(h)
+    if (r <= 0) continue
+    const key = chainKey(h, all)
+    const held = best.get(key)
+    if (!held) { best.set(key, { row: h, rank: r }); continue }
+    const newer = r !== held.rank ? r > held.rank
+      : String(h.created_at ?? '') !== String(held.row.created_at ?? '')
+        ? String(h.created_at ?? '') > String(held.row.created_at ?? '')
+        : h.id > held.row.id
+    if (newer) best.set(key, { row: h, rank: r })
+  }
+  // In the order they arrived, so a caller that ordered by `created_at` keeps its order.
+  return rows.filter((h) => best.get(chainKey(h, all))?.row.id === h.id)
+}
+
 /**
  * The newer version that replaces this one, when there is one — fix list **H4**, Job E.
  *

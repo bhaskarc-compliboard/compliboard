@@ -104,7 +104,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 // (`noteIsNotAnEmptyState.test.ts`, which also corrects two assertions in `auditWords.test.ts` that
 // pinned the defect); and N8, the copyright line that was deleted from every page on screen
 // (`footerCopyright.test.ts`).
-const FLOOR = 1357
+//
+// 1357 -> 1378 at E10's second checkpoint, N5 and N6: one version of a handbook answers a question
+// and is checked. `oneVersionPerChain.test.ts` (18) holds the two rules — a successful read retires
+// every OLDER version in its chain, not only its parent, and whatever is current, one version per
+// chain is used, the newest that can be used — through all three ways a chain forks (A, B, C) and
+// through the window where a version is half-extracted. `handbookRead.test.ts` gains three (the
+// retire step walking the chain, a failed chain read leaving the reading intact, and the plain
+// two-version case unchanged).
+const FLOOR = 1378
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

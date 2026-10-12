@@ -17,6 +17,7 @@ import { normaliseForQuote } from './documentScan.ts'
 import { findReturned, labelFor } from './howTo.ts'
 import { splitPages, plainText, PAGE_BREAK } from './handbookSections.ts'
 import { HR_REFUSALS, NOT_IN_HANDBOOK, draftParagraphs, readingFirstWords, WAIT_LIMIT_MS } from './hrAnswerWords.ts'
+import { newestPerChain, chainKey } from './handbooks.ts'
 
 type Db = SupabaseClient<any, any, any>   // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -104,6 +105,7 @@ export type Loaded =
 interface HandbookRowForAnswer {
   id: string; name: string; scope: string; entity_id: string | null; status: string; status_reason: string | null
   extracted_text: string | null; page_count: number | null; created_at: string; version_of: string | null
+  is_current: boolean
 }
 
 type SectionRow = { id: string; title: string | null; page_from: number | null; page_to: number | null; text: string }
@@ -115,11 +117,19 @@ type SectionRow = { id: string; title: string | null; page_from: number | null; 
  *   · WAITING — one that does not fit and whose sections are not found yet: the answer waits for them.
  */
 export async function loadHandbooksForAnswer(db: Db, companyId: string, budget = budgetTokens()): Promise<Loaded> {
+  /**
+   * *** EVERY ROW, NOT ONLY THE CURRENT ONES — E10, N5/N6. *** The `is_current` filter moved out of
+   * the query and into the line below, because the retired rows are what the `version_of` links are
+   * made of: without them a chain cannot be walked and two current versions of one handbook cannot
+   * be told from two different handbooks. A company has a handful of handbook rows, so this costs
+   * nothing.
+   */
   const { data: rows, error } = await db.from('handbooks')
-    .select('id, name, scope, entity_id, status, status_reason, extracted_text, page_count, created_at, version_of')
-    .eq('company_id', companyId).eq('is_current', true).order('created_at')
+    .select('id, name, scope, entity_id, status, status_reason, extracted_text, page_count, created_at, version_of, is_current')
+    .eq('company_id', companyId).order('created_at')
   if (error) throw new Error(`loading handbooks: ${error.message}`)
-  const current = (rows ?? []) as HandbookRowForAnswer[]
+  const all = (rows ?? []) as HandbookRowForAnswer[]
+  const current = all.filter((h) => h.is_current)
   if (!current.length) return { ok: false, refusal: HR_REFUSALS.none }
 
   // *** H5 (root R2, Job E4): A FAILED SITES READ TOLD THE MODEL EVERY SITE HANDBOOK APPLIED TO A
@@ -133,13 +143,41 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
   const applies = (h: HandbookRowForAnswer) => h.scope === 'company' ? 'Every site'
     : (h.entity_id && siteName.get(h.entity_id)) || 'a site that was removed'
 
-  const withText = current.filter((h) => h.extracted_text && (h.status === 'read' || h.status === 'reading'))
-  const notUsed = current.filter((h) => !withText.includes(h)).map((h) =>
+  /**
+   * *** ONE VERSION OF EACH HANDBOOK, THE NEWEST THAT CAN BE USED — E10, N5 and N6. ***
+   *
+   * This was `current.filter((h) => h.extracted_text && (h.status === 'read' || h.status === 'reading'))`:
+   * every current row with text. `lib/handbookRead.ts` saves a version's text while its status is
+   * still `reading` (deliberately, §183), so for the minutes a new version is being read the model
+   * got the same handbook twice under one name — once in full and once half-extracted — and could
+   * quote the superseded one (N5, measured in E9 item 4). And under any of N6's three forks, two
+   * versions stay current for good and both went in.
+   *
+   * `rank`: read in full (2) beats half read (1), and a higher rank always beats a newer date. So the
+   * version in use while a new one is read keeps answering — which is what the page says is
+   * happening — and a chain with no fully-read version still falls back to the one being read, so
+   * §183's "a first handbook answers before its outline is finished" is not lost.
+   */
+  const withText = newestPerChain(current, all, (h) =>
+    !h.extracted_text ? 0 : h.status === 'read' ? 2 : h.status === 'reading' ? 1 : 0)
+  // A version left out because a newer one of the SAME handbook is in use is not "not used" — saying
+  // so would name the handbook twice in one answer, once as used and once as not (§5.1). Only rows
+  // whose own chain gave nothing are named.
+  const usedChains = new Set(withText.map((h) => chainKey(h, all)))
+  const notUsed = current.filter((h) => !withText.includes(h) && !usedChains.has(chainKey(h, all))).map((h) =>
     h.status === 'could_not_read' ? `"${h.name}" (could not be read: ${h.status_reason ?? 'no reason recorded'})`
       : `"${h.name}" (still being read)`)
   // NEVER WITHOUT A HANDBOOK STILL BEING READ (§183, the owner): one whose text is not saved yet is not left out
   // quietly — the route waits for it. With none ready, the answer waits rather than refusing.
-  const unread: UnreadHandbook[] = current.filter((h) => !withText.includes(h) && (h.status === 'uploaded' || h.status === 'reading'))
+  //
+  // *** AND IT WAITS PER HANDBOOK, NOT PER ROW — E10, N5. *** A new VERSION being read is not a
+  // handbook we have nothing for: the previous version is answering, and the list says so ("in use
+  // while the new version is read"). Waiting there would stop every answer for the minutes after an
+  // upload, which is neither what the page says nor what happened before. So the wait is for a chain
+  // that has given us nothing — the first upload of a handbook, which is the case §183 is about.
+  const unread: UnreadHandbook[] = current
+    .filter((h) => !withText.includes(h) && !usedChains.has(chainKey(h, all))
+      && (h.status === 'uploaded' || h.status === 'reading'))
     .map((h) => ({ id: h.id, name: h.name, status: h.status }))
   if (!withText.length) {
     if (unread.length) return { ok: true, blocks: [], used: [], notUsed, long: [], waiting: [], unread, spent: 0, budget }
