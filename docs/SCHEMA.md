@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-15 18:55 UTC
-**Migrations applied:** 74 — `000` to `073`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-15 19:50 UTC
+**Migrations applied:** 75 — `000` to `074`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -40,7 +40,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 - `requirement_templates` — 205 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
 - `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
 - `company_switches` — 16 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
-- `switch_determinations` — 0 rows · touched by route switches/answer, script audit-data-checks, script check-live
+- `switch_determinations` — 1 rows · touched by route switches/answer, script audit-data-checks, script check-live
 - `obligations` — 0 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
 - `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
@@ -69,18 +69,18 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Chemicals and substances**
 
-- `company_chemicals` — 0 rows · touched by script audit-data-checks, script check-live
+- `company_chemicals` — 1 rows · touched by script audit-data-checks, script check-live
 - `regulated_substances` — 0 rows · touched by script audit-data-checks
 
 **Tenancy and accounts**
 
-- `companies` — 6 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +19 more
+- `companies` — 6 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +20 more
 - `profiles` — 5 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
-- `entities` — 7 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +18 more
+- `entities` — 7 rows · touched by route audit-runs, route audits/index, route calendar, route company-information, route document-actions, +19 more
 
 **Calendar**
 
-- `calendar_events` — 0 rows · touched by route calendar, route document-actions
+- `calendar_events` — 37 rows · touched by route calendar, lib calendarDates, script check-live
 
 **Worker queue**
 
@@ -493,9 +493,9 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `calendar_events`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 37 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route calendar`, `route document-actions`
+**Read or written by:** `route calendar`, `lib calendarDates`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -573,7 +573,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 The secret address for the subscription feed (decision 20). GET /api/calendar/feed?t=<token> is the one route in the product with no session, so this token IS the credential: it is never put in the account export (app/api/account/export/route.ts says why). Migration 073.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by: NOTHING in app/, lib/ or scripts/.**
 
@@ -759,7 +759,7 @@ The secret address for the subscription feed (decision 20). GET /api/calendar/fe
 
 **Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -846,7 +846,7 @@ The secret address for the subscription feed (decision 20). GET /api/calendar/fe
 
 What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean switches that were stand-ins for a per-substance calculation: a site with 9,000 lb each of five chemicals is below every threshold and reports nothing, which is correct and is not expressible as a boolean. Does NOT replace the exposure_* switches, which are airborne concentration rather than quantity held. Migration 013.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `script audit-data-checks`, `script check-live`
 
@@ -1720,7 +1720,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audit-runs`, `route audits/index`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route audit-runs`, `route audits/index`, `route calendar`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2799,7 +2799,7 @@ document-versus-document disagreement is recorded WITHOUT reusing user_locked, w
 PERSON decided and must keep meaning only that. DECISIONS.md §24.1, §47;
 docs/SWITCH-DETERMINATION.md §7.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `script audit-data-checks`, `script check-live`
 
@@ -3289,4 +3289,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 071
 072
 073
+074
 ```
