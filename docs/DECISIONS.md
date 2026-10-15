@@ -12315,3 +12315,72 @@ switch to Handbooks.
       The reading's outline: `hr_check`, Opus, effort null, $0.016584, 6 s.
 - **A NEW OPEN DEFECT, seen by the owner:** a page left open across a night check shows the old row and the drawer's
   old top line until it is reloaded (`HANDOFF-CODE.md` §7). Not fixed.
+
+---
+
+## 185. THE CALENDAR SECTION: THE PLAN — 15 October 2026
+
+§185 — docs only. No code, no migration, no model call. The read-only map is
+`docs/CALENDAR-MACHINERY.md` (step 3, commit `2d1da2e`, read at `2dab12c`); the plan, the owner's
+vision and every decision in full are `docs/CALENDAR-PLAN.md` v2 (§2.1 the vision, §2.3 the
+decisions with their effects, §2.6 the contract, §2.7 the effects by file). The owner decided all of
+these on 15 October 2026. Written by Claude Code at the start of step 5, as HR's §164 was.
+
+**The vision, in the owner's own frame (§2.1).** In an office, a person walks over to the regulatory
+expert and asks "when is that report due?" They do not scan a calendar. So the first tab is a chat:
+it answers calendar questions from the calendar's own rows and the readings of the documents behind
+them, with web search for the rule, the way the HR Workspace answers from handbooks. The second tab
+is the calendar itself, month view by default with a list beside it. Clicking a date opens a drawer
+with everything about it, nothing hidden. The third tab is the queue: Dates to confirm. Dates come
+from three sections today, Documents above all; from now on those sections stop asking the person
+anything about dates — what they find flows to the one calendar, and the calendar is where a person
+confirms. **Many people will never confirm; the product promised to be a guard, so a date shows on
+the calendar and in the email whether it is confirmed or not.** The layout is the HR section's,
+exactly. The words are the product's: never "AI", never "compliant", never "done" or "overdue" (a
+date has passed), no cost on a customer screen, not legal advice.
+
+**The decisions.** Copied from `docs/CALENDAR-PLAN.md` §2.3, not reworded; the numbers are the
+plan's own, and so is their order — **the plan lists 27 before 26, and that is left as it stands** so
+a citation to either number means the same thing in both files. "None" means no file outside Calendar
+changes for that decision.
+
+1. **Nothing from the first attempt carries over.** Not the branch, the plan, the migrations or the decisions. What is needed is redone here. *Effect: none.*
+2. **The layout is HR's, exactly.** The HR boards are the reference; `components/Drawer.tsx`, `Sheet.tsx`, `Tabs.tsx`, `Empty.tsx`, `buttonStyles.ts`, `AnswerBody.tsx`, `ReportView.tsx`, `ConversationList.tsx` and `lib/printFrame.ts` are imported, never copied (map C6). *Effect: none; shared files are read, not changed.*
+3. **Four tabs:** Ask a question · Conversations · Calendar · Dates to confirm (N). The Calendar tab opens on the month view. *Effect: none.*
+4. **The chat is the first tab.** It answers from the calendar rows and the readings of the documents behind them, with web search for the rule. *Effect: `lib/ai.ts` and `lib/costLedger.ts` gain a `calendar` tier and ledger task (map C7, five touches); `topics.section` gains `'calendar'` (map C3, a migration).*
+5. **One table for every date, `calendar_events`.** Every row names its source, the line it was read from, its site and its status. §2.6 is the contract. *Effect: `app/api/account/export/route.ts` and `app/api/account/route.ts` keep covering it; `scripts/check-live.js` gains its probes (map B10).*
+6. **One shared function, `proposeDate()`** in `lib/calendarDates.ts`. Sections that find a date call it and keep no calendar logic of their own. *Effect: one call added in `lib/documentScan.ts` beside the `document_deadlines` insert (map B2, :893–898) and one in `lib/auditRun.ts` beside the findings insert (map B3, :497).*
+7. **Sections stop asking.** The "Add to calendar" button in `components/DocumentReport.tsx` (:827–831) becomes a line with a link; the `deadline_to_calendar` case in `app/api/document-actions/route.ts` (:127–152) goes; the `/calendar?add=` link in `components/AuditReport.tsx` (:1052–1055) becomes a line. *Effect: Documents and Audits, those three files; their free checks re-run.*
+8. **Unconfirmed dates show everywhere:** the month, the list, the chat's answers and the email. On the page they are marked "not confirmed"; the email carries no such mark. Confirming is a quality mark, not a gate. *Effect: the Dashboard reads the new table and shows them the same way (map B8).*
+9. **Confirm all from this document,** so a first scan's flood is a few clicks. *Effect: none.*
+10. **Clicking a date opens a drawer with everything.** Nothing hidden. *Effect: none.*
+11. **No done tick.** Never "done" or "overdue"; a date has passed, and it stays until a newer document replaces it or a person removes it with a reason. Close, never delete: `completed` and `completed_at` go; `authenticated` loses DELETE on the table. *Effect: `app/dashboard/page.tsx` stops reading `completed` (map D8).*
+12. **A recurring date has a period and an anchor;** the next date is worked out when read, never stored (migration 049's rule). A recurring date with no day is allowed and shown as "repeats, day not known yet" (map B3, migration 060's rule). *Effect: none.*
+13. **The same date is never proposed twice.** The key is the document, not the scan: a re-read that finds the same `(document_id, title, date)` leaves the row alone; a moved date is proposed anew and the old row marked `replaced_by`. (`document_deadlines` rows are per scan — map B2 — so the scan's row id cannot be the key.) *Effect: none.*
+14. **A date whose document is gone or has a newer version stays,** with a line saying so. `document_id` is already ON DELETE SET NULL (map B1). *Effect: none.*
+15. **The old import goes.** `app/api/extract-dates/route.ts` and `prompts/extract-dates.ts` are deleted; their only caller was the old page (map B5). A file dropped on the calendar is a document and goes through `/api/document-scan`. Calendar has no document store of its own. *Effect: none outside Calendar; `docs/TODO.md:2799` and `INVENTORY-2026-09.md:164` close.*
+16. **The chat's baseline sends readings, not files.** Every date row with its document's stored reading (kind, agency, summary, conditions, the other deadlines); the file itself only when attached, or later as a measured switch. A quality decision, the owner's. *Effect: none.*
+17. **The chat may offer a date it found in a rule,** with the source. One click puts it on the calendar as confirmed with the person's name, the same as typing it in. *Effect: none.*
+18. **A monthly email on the 1st:** what is due this month by site, each with its source; what passed last month; one link. No confirmed marks; the footer says to remove a wrong date in CompliBoard. Every person at the company receives it. *Effect: `vercel.json`, `lib/jobAuth.ts:66`, `lib/jobRun.ts:27` and the `job_runs_job_check` CHECK gain `calendar_month` (map C4).*
+19. **The Resend sending-domain DNS is a release gate** for the email, not Calendar work. *Effect: all four emails.*
+20. **Their calendar, kept in step.** "Send to your calendar" on the Calendar tab: a subscription link for Google Calendar or Outlook, copy-the-link, and a one-time `.ics` download. "Send to my calendar" in a date's drawer: that one date through Google's and Outlook's add-an-event pages (the old page's links, map B5 :247–256). The link is a secret address per company, replaceable later in My Account. *Effect: a new public route `/api/calendar/feed` that answers to a token, not a session — named in §2.6 because it is the one place a session is not required.*
+21. **"Add a document" sits under the ask box,** where HR puts "Add a handbook". *Effect: none.*
+22. **Cross-section changes are made from this chat,** not from the other sections' chats: the feed is one feature with one contract. The other chats learn of it through the step reports, `HANDOFF-CODE.md` §7 and `DECISIONS.md`. *Effect: as decisions 6 and 7.*
+23. **The scan's prompt is not changed.** The scan says only whether a date repeats, not how often (map B2: `recurs` is a boolean, there is no period column). A repeating date from a document shows as "repeats, how often not read yet"; the person sets the period when confirming. Returning the period from the scan is a measured switch for the Documents section later. Of the 37 deadlines on staging, 33 repeat — this is the common case. *Effect: none now.*
+24. **Sites.** A date inherits the site of whatever found it; "Every site" is a real value (`entity_id` null). With one site nothing about sites shows, as in HR. A document-sourced date's site is read live from the document through the view, never copied, so a correction or a removed site in Documents or HR reaches the calendar with no new code there. *Effect: none. For the My Account chat: when a second site is added, ask once which documents and dates marked for every site belong to the first site only.*
+25. **The one shared email template** is built in step 11 (`lib/email.ts`: wordmark, title, lede, grouped rows, one green button, footer; HTML plus a plain-text twin), the calendar email first. The three existing plain-text emails (map C5) move onto it as a small follow-up. *Effect: Audits, HR and Documents, in the follow-up only.*
+27. **The drawer has two tabs: "The date" and "The report".** The second shows the document's report through `components/DocumentReport.tsx` exactly as Documents and the workspace show it, with every action on it live; an audit-sourced date shows `components/AuditReport.tsx`; a handbook-sourced date the handbook check drawer; a typed or rule-sourced date has no second tab. The same drawer opens from a chat answer's source card, from the monthly email's link (`/calendar?date=<id>`) and from the Dashboard's upcoming rows. The first tab ends with: "If you have already handled this, add the proof in Company Documents and it will show here." Matching a later-uploaded filed report to its date is a rev 2 switch. *Effect: `DocumentReport.tsx` and `AuditReport.tsx` become shared files for Calendar's J list (read, not changed); `app/dashboard/page.tsx` rows open the drawer.*
+26. **The standing instruction for every coding job (the owner, 15 October).** Before any change, find every file, query, view, job, test and page that reads or writes what is about to be touched, by searching the repository and reading the live schema, never from memory and never from the docs alone, and list them in the job's plan with what happens to each. After the change, re-run every touched section's free checks and walk one real customer path per touched section on Haiku. A change that breaks a section the plan did not name is a stop, not a fix.
+
+**Decision 26 is the one that outlives the section.** It is `HOW-WE-BUILD.md` §5a and `CLAUDE.md` §9.1
+pointed at *scope* rather than at causes: the impact list is written from `grep` and the live catalog
+before the change, and a section it did not name breaking afterwards is a **stop**. Every step 5–12
+instruction opens with it and closes with the cross-section gate.
+
+**The fifteen steps** are `docs/CALENDAR-PLAN.md` §2.4. Steps 1–3 are done (the vision, the eleven
+boards, the map); step 4 is this record; steps 5–12 are the build, one or two Claude Code jobs each;
+13 is the machinery on Opus, 14 the release, 15 the morning after and the close-out. The quality
+tests — the yardstick, the manual sets and every switch — are **held for the finish line** like every
+other section's (§2.8).
+
+**Cost of step 4: $0.** No model call.
