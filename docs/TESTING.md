@@ -3666,3 +3666,62 @@ The old `/calendar` page is still the old page. Two of its buttons no longer hav
    `calendar_v` hides the other company's row too. **Prove the probe can see a presence first** —
    read the other company's row as the service role and get 1, then as the caller and get 0.
    A caller that can see nothing looks exactly like RLS working.
+
+---
+
+## Calendar — step 6, the feeds (15 October 2026)
+
+**On staging only.** Migrations 073 and 074 are not on production. `docs/CALENDAR-PLAN.md` step 6,
+`DECISIONS.md` §187. Two per feature, as `HOW-WE-BUILD.md` §2 step 12 asks.
+
+The automated half runs already: `tests/unit/calendarDates.test.ts` (42 tests, and the suite was
+shown to fail against six deliberate mutations) and `check:live`'s Calendar probes, which now call
+the scan's own filing function. **C6-1 and C6-2 cost one model call each; C6-3 and C6-4 are free.**
+
+### C6-1 · Scan one file and watch its dates arrive — the perfect case
+
+1. On a dev server pointed at **staging**, signed in as yourself, open `/documents` and add one
+   document that sets a date — a permit with a renewal date, or
+   `tests/golden/audits/fixtures/11-fire-extinguisher-certificate.pdf`.
+2. When the reading finishes, open its report drawer and find **"Dates this document sets"**.
+3. **Pass:** every dated line carries a grey line under it reading **"On your calendar — waiting
+   for your confirmation"**, and there is **no "Add to calendar" button anywhere**. **Fail:** a
+   button, or a date with no line under it.
+4. Open `/calendar`. **Pass:** the dates are there without you having done anything. **Fail:** an
+   empty calendar over a document you have just watched being read — that is the failure this whole
+   step exists to end.
+5. **The one to judge as a domain expert:** read the titles. The product has turned a sentence in a
+   permit into a line on a calendar, and the question is not whether the field is filled — it is
+   whether somebody who knows the permit would agree that is what it says.
+
+### C6-2 · Press "Read it again" — the edge case, and the one with a known fault
+
+1. In the drawer, press **Read it again** on the same document.
+2. **What should happen:** the same dates, no new rows on the calendar.
+3. **⚠ WHAT WILL PROBABLY HAPPEN, AND IT IS A KNOWN OPEN FINDING:** one or two of the dates appear
+   **twice**, under slightly different wording — "Next annual maintenance due for all units" beside
+   "Next annual maintenance for all units". The dedupe key includes the title and the model does not
+   keep the title still. Measured: three scans of one certificate made **seven rows for two real
+   dates**. `HANDOFF-CODE.md` §7 and `DECISIONS.md` §187 carry it; **it is the owner's decision, not
+   a bug to report again.** Look at it and say which of §187's three ways out you want.
+4. **What must still hold, and is the part to check:** a date you have **removed** does not come
+   back. Remove one with a reason, press Read it again, and **pass** if it is still removed with
+   your reason on it. **Fail** if it reappears as a new proposal — that would be the product
+   overruling you.
+
+### C6-3 · The audit's dates, and the second audit (free if a run already exists)
+
+1. Open `/audits`, open a finished run's report, find the **Dates** section.
+2. **Pass:** each date carries the same grey line, and there is **no "Add to calendar" link**. An
+   **undated recurring** date reads "recurs, no date in the reading" **and still gets the line** —
+   it is on the calendar, because 073 allows a recurring date with no day (060's rule).
+3. Run the same agency again. **Pass:** the calendar does not grow for the dates whose wording did
+   not change, and the drawer's line still points at the newest run. The run's own summary records
+   it: `audit_runs.summary.calendar_filed` reads `{"existing": n}` rather than `{"created": n}`.
+
+### C6-4 · The link that does not work yet — and must fail quietly (free)
+
+1. Click the grey line on any date in either drawer.
+2. **Pass:** `/calendar` opens and shows the month as usual. The parameter is ignored because step 8
+   has not built it. **Fail:** an error, a blank page, or a notice about something being missing.
+   `HANDOFF-CODE.md` §7 records this as expected until step 8.

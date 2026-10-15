@@ -1,6 +1,6 @@
 # The Calendar section — the plan
 
-**Version:** 3 · **Updated:** 15 October 2026: step 5 marked done (staging only); `proposeDate`'s fourth outcome `revived` and its two extra rules recorded in §2.6. **Version 2:** 15 October 2026: decision 27, the drawer's second tab shows the report. **Version 1:** 15 October 2026, by the Calendar chat, after the owner's vision (this chat), the boards (step 2) and the read-only map (`docs/CALENDAR-MACHINERY.md`, step 3, commit `2d1da2e`).
+**Version:** 4 · **Updated:** 15 October 2026: step 6 done (staging only); §2.6 gains the AUDIT no-duplicates rule and the filing-never-fails-the-reading rule, and records the title-drift finding the paid walks found. **Version 3:** 15 October 2026: step 5 marked done (staging only); `proposeDate`'s fourth outcome `revived` and its two extra rules recorded in §2.6. **Version 2:** 15 October 2026: decision 27, the drawer's second tab shows the report. **Version 1:** 15 October 2026, by the Calendar chat, after the owner's vision (this chat), the boards (step 2) and the read-only map (`docs/CALENDAR-MACHINERY.md`, step 3, commit `2d1da2e`).
 **Supersedes:** nothing on main. **Nothing from the branch `calendar-attempt-1` or its `CALENDAR-PLAN.md` is carried here**; that attempt is abandoned (the owner, 15 October 2026).
 **For:** the owner, Claude Code, and the next section's chat. The owner's living copy of the same plan is the Claude doc "Calendar — the master plan"; this file is the repository's record and is updated at every step.
 **Line numbers** are `docs/CALENDAR-MACHINERY.md`'s, read at commit `2dab12c`; re-read before citing.
@@ -66,7 +66,7 @@ Each decision names its effect on other sections. "None" means no file outside C
 | 3 | The map (read-only) | `docs/CALENDAR-MACHINERY.md`; the tree is `calendar-v2` from main and staging is on 072. | The report. | done 15 Oct, `2d1da2e` |
 | 4 | The plan, locked | This file; `DECISIONS.md` §185 records it (written by Claude Code at the start of step 5, as HR's §164 was). | The owner's yes. | **in progress** |
 | 5 | Foundations | Migration 073 (§2.6); `lib/calendarDates.ts` with `proposeDate()` and the no-duplicates rule; `calendar_v`; the three CHECKs widened (`ai_calls`, `job_runs`, `topics.section`); the ledger task and tier; unit tests; `check:live` probes for `calendar_events`. One SELECT-only read of production first: any row with a null `company_id`. | The migration reviewed in the chat before it runs on staging. | **done 15 Oct**, staging only (`DECISIONS.md` §186). Production read first: 47 rows, 0 null `company_id`. `proposeDate` gained a fourth outcome, `revived` (the owner) |
-| 6 | The feeds | The two `proposeDate()` calls (Documents, Audits); the report's line; the Audits line; `deadline_to_calendar` removed. Documents' golden set and both sections' free checks re-run. | The owner scans a file on localhost and sees its dates arrive. | not started |
+| 6 | The feeds | The two `proposeDate()` calls (Documents, Audits); the report's line; the Audits line; `deadline_to_calendar` removed. Documents' golden set and both sections' free checks re-run. | The owner scans a file on localhost and sees its dates arrive. | **done 15 Oct**, staging only (`DECISIONS.md` §187). Migration 074 filed the 37 dates already read. **Open for the owner: the title-drift finding below.** `golden:docs` NOT run — see §187 |
 | 7 | The page shell | `/calendar` rebuilt in the HR frame: title, lede, four tabs, info bars, empty states. | The owner looks. | not started |
 | 8 | The Calendar tab | Month view, list view, the drawer with its two tabs (the report tab reusing `DocumentReport` / `AuditReport`), Add a date, the Remove sheet, "passed", recurrence, print through the shared frame, `?date=<id>` opening the drawer. | The owner looks. | not started |
 | 9 | Dates to confirm | The queue by document; Confirm, Confirm all, Not right with a reason; the counts. | The owner looks. | not started |
@@ -114,6 +114,38 @@ Steps 5 to 12 are the build, one or two Claude Code jobs each, smaller than HR's
 **`calendar_v`** (security_invoker): every column above, plus `site_id` = the document's current site for a document-sourced row (through `document_index_v`), else the row's own `entity_id`; `site_name`; `next_due` = `due_date` for a one-off, the next occurrence of `due_date` by `period` on or after today for a repeating date with a period, null otherwise; `days_until`; `has_passed`; `source_title` (the document's title from `document_index_v`, the handbook's name, the audit's agency and date). Nothing derived is stored.
 
 **`proposeDate(client, input)`** in `lib/calendarDates.ts`: `{ companyId, source, title, dueOn, recurs, description?, sourceLine?, sourceUrl?, sourcePage?, documentId?, deadlineId?, auditFindingId?, handbookId?, entityId?, addedBy?, status? }` → `{ id, outcome: 'created' | 'existing' | 'replaced' | 'revived' }`. Rules: a `document` source with the same `(company_id, document_id, lower(title), due_date)` returns `existing`, even when dismissed; the same title with a different date marks the old row `replaced_by` and creates the new one; `person` and `rule` sources are created `confirmed` with `added_by`; everything else `proposed`. Pure except for the two queries; unit-tested on every branch.
+
+**THE AUDIT NO-DUPLICATES RULE, IN CODE (step 6).** 073's unique index is partial on
+`source = 'document'`, so it cannot hold an audit date: every run writes new `audit_findings` rows,
+so `audit_finding_id` changes each time the same agency is audited and an index keyed on it would
+file one obligation once per audit. The key for an audit date is therefore **(company,
+`lower(title)`, `coalesce(due_date)`) among LIVE audit rows** — live meaning `replaced_by` and
+`dismissed_by` both null — and a match is `existing` with **one** write: `audit_finding_id` moves to
+the newest finding, so the drawer opens the audit a person last ran. A person-dismissed match is
+`existing` and **untouched**: re-pointing a row somebody removed would revive it on every screen
+that reads the finding. An audit date never matches a document row with the same title and day —
+two pieces of evidence for one obligation, and the drawer opens each differently.
+
+**AND THE RULE THAT GOVERNS BOTH FEEDS: a date that cannot be filed must never fail the reading or
+the audit that found it.** The scan and the audit are the paid work and are already billed by the
+time filing runs; filing is a side effect. Every `proposeDate()` call in `lib/documentScan.ts` and
+`lib/auditRun.ts` is wrapped on its own — a failure is logged with the document or finding id,
+counted, and the loop carries on, and the reading or run completes exactly as before. The counts go
+to the server log for Documents (`document_scans` has no column for them) and to
+`audit_runs.summary.calendar_filed` / `calendar_failed` for Audits.
+
+**⚠ OPEN FOR THE OWNER — THE TITLE IS PART OF THE KEY AND THE MODEL DOES NOT KEEP IT STILL.**
+Measured on staging, 15 October, three Haiku scans of one fire-extinguisher certificate: **two real
+dates became seven calendar rows**, because each reading reworded the obligation ("Next annual
+maintenance due for all units" / "Next annual maintenance for all units" / "Annual maintenance on
+all extinguishers"), and a new wording is a new key. The same thing happened on the second audit of
+one agency (one row re-pointed, one new row from "for all" → "of all"). Neither is a code fault:
+`proposeDate` does exactly what this section specifies. It is the **identity** of a date that needs
+deciding, and three ways out are set down in `DECISIONS.md` §187 — the one consistent with decisions
+13 and 14 being that **the current reading wins**: when a scan finishes, any unconfirmed
+document-sourced row for that document which this reading did not propose is superseded, the way
+`document_gaps` is already marked `not_seen_at`. Step 9 (Dates to confirm) is where a person meets
+the consequence, so the decision is wanted before it.
 
 **Two more rules and a fourth outcome, the owner, 15 October (built in step 5).** (a) A document-sourced row that was only SUPERSEDED — `replaced_by` set, `dismissed_by` null — and that a later reading proposes again **comes back**: status `proposed`, `replaced_by` cleared, and the row that had replaced it marked replaced by this one. The outcome is **`revived`**, because the latest reading of a document is the truth. (b) A row a PERSON dismissed — `dismissed_by` set — **never comes back**, whatever a reading says; the outcome is `existing` and nothing is written. A dismissal therefore outranks a superseding. The invariant both rules keep, which no constraint can see: **at most one LIVE row per (company, document, lower(title))**, live meaning `dismissed_by is null and replaced_by is null`. Readers filter on `replaced_by is null`. `description` is in the signature too — the person's own note, distinct from `sourceLine`, which is the sentence a document set the date in.
 

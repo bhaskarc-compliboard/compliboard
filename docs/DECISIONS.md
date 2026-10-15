@@ -12543,3 +12543,175 @@ here rather than inventing one. **`lib/documentScan.ts` and `lib/auditRun.ts` do
 `proposeDate()` yet** — that is step 6. **The old `/calendar` page's tick and × are expected-broken
 on staging** (`HANDOFF-CODE.md` §7), measured: 400 and 405. Save still works, including the old
 form's `is_recurring` / `recurrence_period`, which the route maps. **073 is not on production.**
+
+---
+
+## 187. CALENDAR STEP 6: THE FEEDS — 15 October 2026
+
+§187 — migration **074 on STAGING ONLY** (staging is on 073 and 074; production is on 072, and
+`npm run preflight` reads 2 pending, which is correct). Code: `lib/documentScan.ts`,
+`lib/auditRun.ts`, `lib/calendarDates.ts`, `app/api/documents/report/route.ts`,
+`app/api/audit-runs/[id]/route.ts`, `app/api/document-actions/route.ts`,
+`components/DocumentReport.tsx`, `components/AuditReport.tsx`, `scripts/check-live.js`,
+`scripts/check-schema-contracts.js`. **1002 tests** (was 993). **Cost: $0.16, 7 Haiku calls**, against
+a $1.00 budget; `npm run cost` read $1.05/15 Opus calls before and $1.21/22 after, the difference
+being Haiku's 7.
+
+### The rule this step was given, and what it is worth
+
+**A date that cannot be filed must never fail the reading or the audit that found it.** By the time
+filing runs, the model call over a customer's document is made and billed and the findings are
+saved; filing is a side effect. So every `proposeDate()` call in both feeds is wrapped on its own —
+a failure is logged with the document or finding id, counted, and the loop carries on. Neither
+`saveScan` nor `runSection` can fail for a calendar row. The counts go to the server log for
+Documents, because `document_scans` has **no** column for them (its jsonb columns are `agencies`,
+`subjects`, `jurisdiction`, `page_refs` and `expected_missing`, each a specific thing, and
+`confidence_notes` is the model's own prose — writing counts into one would overwrite a reading),
+and to `audit_runs.summary.calendar_filed` / `calendar_failed` for Audits, which already exists for
+exactly this.
+
+### Migration 074 — the dates already read
+
+A customer who dropped a folder of permits in September would have opened the calendar in November
+and seen nothing: the step-5 writer only reaches forward. 074 files every `document_deadlines` row
+whose scan is the document's **current** one and whose `calendar_event_id` is null — not every
+deadline ever written, because those rows are per scan, so three readings of one permit hold three
+generations of the same dates.
+
+**Read back from the database, not from the exit code:** 75 migrations, highest `074`; **37 calendar
+rows, 37 stamps, 0 fileable current deadlines left unstamped**, all 37 `source document` / `proposed`
+/ `period` null / `entity_id` null / naming their deadline; the probe company and the helper
+function both gone, which only the verify blocks' own cleanup does.
+
+**Its verify block is one function called three times.** The filing statements exist once
+(`public.file_current_deadlines_074`, created and dropped inside the transaction) so the real run and
+the idempotence proof cannot drift. §0 plants four witnesses first, because **staging had zero
+undated one-offs** — a skip-and-count branch tested against nothing passes by having nothing to
+skip. What it refused: an undated one-off reaching the calendar; a superseded reading's deadline
+being filed; a second run writing anything; and a `(document, title)` pair with two live rows. What
+it proved besides: unstamping a deadline whose row still exists takes the `ON CONFLICT DO NOTHING`
+path and stamps without inserting — a branch nothing else would ever have taken.
+
+**One thing I could not test before it ran:** the `ON CONFLICT` inference against a partial
+expression index. The Supabase CLI connects read-only — `EXPLAIN` of the statement answers
+`42501: permission denied for table document_deadlines`, which is a useful guarantee about every
+production read this section has made. The `picked` CTE alone was run as a SELECT first and offered
+37 rows.
+
+### ⚠ THE FINDING, AND IT IS THE OWNER'S TO DECIDE: THE TITLE IS PART OF A DATE'S IDENTITY, AND THE MODEL DOES NOT KEEP IT STILL
+
+Decision 13 keys a document date on `(document, title, date)`. The paid walks measured what that
+costs against a model that paraphrases.
+
+**Three Haiku scans of one fire-extinguisher certificate: two real dates, seven calendar rows.**
+
+| The real date | Rows | The wordings |
+|---|---|---|
+| 2026-08-20, recurring | **3** | "Next annual maintenance due for all units" · "Next annual maintenance for all units" · "Annual maintenance on all extinguishers" |
+| 2026-11-30, one-off | **4** | per-unit for L-1 and for W-3 · "…on units W-3 and L-1" · "Six-year maintenance for units W-3 and L-1" |
+
+The model also varied whether it **split** the two extinguisher units or combined them, so the count
+of real obligations is itself arguable between three and four. **The second audit of one agency did
+the same thing**: the row whose title was unchanged was correctly matched and its
+`audit_finding_id` moved to the newer finding; a second row appeared from "Annual maintenance **for**
+all portable fire extinguishers" → "**of** all".
+
+**This is not a code fault.** `proposeDate` does exactly what §2.6 specifies and its 42 unit tests
+prove every branch, six of them shown to fail against deliberate mutations. What is underspecified is
+what makes two dates the same date. Three ways out:
+
+1. **Key on `(document, date)` and treat the title as content.** Two rows here, stable across
+   re-reads. Loses the ability to hold two genuinely different obligations that share a document and
+   a day — which is this fixture's own 2026-11-30 case, where L-1 and W-3 are different units.
+2. **The current reading wins.** When a scan finishes, every unconfirmed document-sourced row for
+   that document which this reading did not propose is superseded. This is the one consistent with
+   what is already written: decision 14, the owner's own step-5 rule that "the latest reading of a
+   document is the truth", and `document_gaps`' existing `not_seen_at` treatment of a finding a new
+   reading stopped mentioning. It keeps per-unit distinctions when the model makes them.
+3. **Leave it and let "Dates to confirm" absorb it** — a person confirms one and removes the rest.
+   It costs the person exactly the work this product exists to save.
+
+**Not implemented.** Deciding what identity a date has is a product question (`HOW-WE-BUILD.md` §5),
+and step 9 builds the queue where a person meets the consequence, so the decision is wanted before
+it. `HANDOFF-CODE.md` §7 carries it.
+
+### Two defects the walks found, both fixed and both invisible to every check
+
+- **The report drawer returned ZERO dates, silently.** The embed
+  `calendar_events(id, status)` is ambiguous — migration 073's `calendar_events.deadline_id` created
+  a **second** foreign key between the same two tables, so PostgREST refused it with
+  `PGRST201: Could not embed because more than one relationship was found`. The route then turned
+  that error into `[]` with `?? []`, so the drawer said "this document sets no dates" about a
+  document with seven. Two fixes: the constraint is named
+  (`calendar_events!document_deadlines_calendar_event_id_fkey`), and **the deadlines query no longer
+  swallows its error** — a reading we cannot load is a 500 the catch turns into words, because
+  `?? []` on a failed query makes "we could not read the dates" and "there are none" the same
+  sentence, and the wrong one reads as a fact (`CLAUDE.md` §5.1).
+- **The audit's filing counts were written per section and then dropped.** `finishRunIfDone` stores
+  `{ ...summariseRun(...), collapsed_duplicates }`, so a key `summariseRun` does not name is a key
+  the run loses when it finishes — which is precisely the trap `reshaped_to_dates` was written to
+  escape, documented in that function, and which I walked into anyway. Found by reading a real
+  Haiku audit's summary and seeing `calendar_filed: undefined` after two runs that had plainly
+  filed dates. **No test reads a finished run's summary**, so nothing else could have found it.
+  Fixed, and the fix proved: `calendar_filed: {"created":0,"revived":0,"existing":2,"replaced":0}`.
+
+**And a third, in the guard itself.** `scripts/check-schema-contracts.js` read
+`calendar_events!document_deadlines_calendar_event_id_fkey` as two identifiers and reported both as
+unknown — two false positives on a line proven to work. A guard that cries wolf gets its output
+skimmed and the next real finding goes with it (`HOW-WE-BUILD.md` §4), so the script now understands
+PostgREST's disambiguating form and **judges the foreign-key name against the generated types' own
+`foreignKeyName` values**. Both new branches were shown to refuse a bad key name and a bad table.
+
+### What each check proved
+
+- **`npm run check`: 1002 tests, 0 failures** (993 before; +9 audit-dedupe tests). `check:schema` ok,
+  280 files, 58 relations.
+- **`check:live` on 3999: 0 failures**, with two new probes that call **the scan's own filing
+  function** rather than reimplementing it: a service-role deadline reaches the calendar as
+  `proposed` with a null period and no copied site, a second write of the same deadline makes **no**
+  second row (`existing`, same id, 1 row), and `calendar_v` computes its `next_due` and carries the
+  document's title.
+- **PAID, Haiku, the Documents walk:** three scans of fixture 11 through `/api/document-scan`. Every
+  deadline filed, every row `source document` / `proposed` / `period` null / site null / naming its
+  deadline, `source_line` carried over. A date removed with a reason **stayed removed across two
+  further scans and was not re-proposed** — rule (b) holding where it matters most.
+- **PAID, Haiku, the Audits walk:** two agency runs. Both date findings filed as `source audit`,
+  both naming their finding, both `proposed`. On the second run the calendar did not grow for the
+  unchanged title and `audit_finding_id` moved to the newer finding — the audit rule, held.
+  `source_line` was null both times, because `what_to_do` is null on a date finding; recorded rather
+  than worked around, and the Dates section does not render that field anyway.
+- **The gate:** all eight pages 200, zero server errors; both drawers return the status with every
+  date and both links are `<a href>`; **37 of 49 tables unchanged**, and the twelve that moved are
+  exactly Documents, Audits, Calendar and `ai_calls`. **Every HR table unchanged**, and HR's 16 test
+  files pass.
+
+### What was NOT run, and why
+
+**`npm run golden:docs` was not run, and the override is not the reason** — it works: the guard
+printed **13 of 13 tiers on `claude-haiku-4-5`, `calendar` among them**, which also demonstrates
+that `scripts/haiku-names.mjs` picks up a tier added later with no change to the guard. Two measured
+reasons:
+
+1. **The default is three runs of every case**, and 14 cases have a readable fixture. A Haiku
+   document scan measured **$0.0412**, so 42 scans is **~$1.73** — over this step's whole budget on
+   its own.
+2. **At one run per case it refused anyway, and was right to.** `DEV_MAX_SEARCHES=2` is set, and the
+   script stops with "This suite is the OPEN BASELINE — search uncapped, as production runs it — and
+   a capped run is money spent on a result that cannot be compared." Running it uncapped puts the
+   per-scan cost back above the estimate (§3.4a: a retrieved source is ~4,500 input tokens).
+
+The refusal cost **$0** — confirmed, the ledger still read 7 Haiku calls after it. What stands in its
+place is three real scans of a real fixture through the real route, which is the brief's own
+fallback, plus `npm run check` over the parts.
+
+**And what the diffs confirm was not touched:** `prompts/` has no diff at all;
+`chooseSignificantDate`, `normaliseScan` and `document_index_v` are unchanged in
+`lib/documentScan.ts`; the audit prompt is unchanged. The scan and audit prompts are quality surface
+(§3.1) and this step had no business in them.
+
+### Left on staging deliberately
+
+Testgamma now holds the fire-extinguisher document with three readings, **seven calendar rows for
+two dates**, and four audit runs. **Not cleaned up**: those rows are the evidence for the finding
+above, and the owner will want to look at them on `/calendar` at step 7. Named here so nobody
+mistakes them for drift.
