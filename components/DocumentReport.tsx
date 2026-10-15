@@ -56,6 +56,13 @@ interface Condition { id: string; title: string; condition_ref: string | null; e
 interface Deadline {
   id: string; title: string; due_on: string | null; source_line: string | null
   recurs: boolean; calendar_event_id: string | null
+  /**
+   * The calendar row this date is, embedded by `app/api/documents/report/route.ts` through the
+   * `calendar_event_id` foreign key (Calendar step 6). `null` only while a date has not been filed
+   * — an undated one-off, which 073's CHECK refuses on the calendar and which this drawer therefore
+   * still shows with the words it always had.
+   */
+  calendar_events: { id: string; status: string } | null
 }
 interface Fact {
   id: string; switch_key: string; proposed_value: string; quote: string | null
@@ -822,14 +829,35 @@ export default function DocumentReport({
                     {past && <span className="text-[var(--amber)]"> · Passed</span>}
                   </p>
                   {d.source_line && <p className="mt-0.5 text-[12px] text-gray-500">{d.source_line}</p>}
-                  {d.calendar_event_id
-                    ? <p className="mt-0.5 text-[12px] text-gray-400">In your calendar</p>
-                    : d.due_on && (
-                      <button disabled={busy} onClick={() => act({ action: 'deadline_to_calendar', deadline_id: d.id })}
-                        className="mt-0.5 text-[12px] text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
-                        Add to calendar
-                      </button>
-                    )}
+                  {/**
+                    * *** DOCUMENTS STOPS ASKING — Calendar step 6, decision 7. ***
+                    *
+                    * There was an "Add to calendar" button here, and it was the wrong shape twice
+                    * over: it asked a person to do what the product already knew — it had read the
+                    * permit's renewal date and was keeping it to itself until somebody found this
+                    * drawer — and it meant a calendar whose completeness depended on who clicked.
+                    * The scan files every date as it finds them now (`lib/documentScan.ts`), so
+                    * this is a STATEMENT, not a request.
+                    *
+                    * An HREF AND NOT A BUTTON, deliberately. `/calendar?date=<id>` opens nothing
+                    * until step 8 builds the parameter, and a link to a page that does not read it
+                    * yet starts working the moment it does — a button would need its handler
+                    * written twice. `docs/HANDOFF-CODE.md` §7 records it as expected on staging.
+                    */}
+                  {d.calendar_events
+                    ? <p className="mt-0.5 text-[12px] text-gray-400">
+                        <a href={`/calendar?date=${d.calendar_events.id}`} className="underline hover:text-gray-600">
+                          {d.calendar_events.status === 'confirmed' ? 'On your calendar'
+                            : d.calendar_events.status === 'dismissed' ? 'Removed from your calendar'
+                            : 'On your calendar — waiting for your confirmation'}
+                        </a>
+                      </p>
+                    /* An undated one-off is not on the calendar and cannot be: 073's
+                       `calendar_events_date_or_recurs` refuses a date with no day that does not
+                       recur, and an invented day would be a deadline nobody set (migration 060's
+                       rule). It keeps the words it has always had, which are just the title and
+                       the source line above. */
+                    : null}
                 </li>
               )
             })}

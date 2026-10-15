@@ -1,6 +1,7 @@
 // WHAT THE PERSON SAYS BACK — Documents Run 4, the drawer's writes.
 //
-// *** ONE ROUTE, SEVEN VERBS, AND THAT IS DELIBERATE. *** Every action here is the same shape:
+// *** ONE ROUTE, SIX VERBS, AND THAT IS DELIBERATE. *** (Seven until Calendar step 6 removed
+// `deadline_to_calendar`; the reason is below, where it used to be.) Every action here is the same shape:
 // somebody reading a report tells us the scan got something wrong, or accepts something it got
 // right, about ONE document they own. Each needs the identical three steps first — verify the
 // token, resolve the company, prove this document is theirs — and splitting them into six routes
@@ -21,15 +22,15 @@
 //     company"; it cannot say "through the route that recorded who did it and what it replaced",
 //     so the route holds that and the grant does not. §3.6's named-statement exception.
 //
-// *** AND THOSE THREE ARE NOW THE WHOLE LIST (Calendar step 5; map D6). ***
-// `document_deadlines.calendar_event_id` was a fourth, written with the service role while this
-// header named only three — and `authenticated` has held UPDATE on that table since migration 040,
-// which granted it for precisely this press. It is on `authed.db` now. §3.6: a route may hold the
-// key for a NAMED statement; it may not hold it out of habit.
+// *** AND THOSE THREE ARE THE WHOLE LIST (Calendar steps 5 and 6; map D6). ***
+// There was a fourth — `document_deadlines.calendar_event_id`, written with the service role while
+// this header named only three, on a table `authenticated` has held UPDATE on since migration 040,
+// which granted it for precisely that press. Step 5 moved it onto `authed.db`; step 6 removed the
+// statement with the case that made it. §3.6: a route may hold the key for a NAMED statement; it
+// may not hold it out of habit.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-import { proposeDate } from '@/lib/calendarDates'
 
 const CORRECTABLE = ['kind', 'agencies', 'subjects', 'site', 'doc_date', 'title'] as const
 const SCAN_KINDS = ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other']
@@ -129,48 +130,18 @@ export async function POST(request: NextRequest) {
       }
 
       // -----------------------------------------------------------------------
-      // "Add to calendar" on a deadline.
+      // *** `deadline_to_calendar` IS GONE — Calendar step 6, decision 7. ***
+      //
+      // It was "Add to calendar" on a deadline, and the case for removing it is not tidiness. The
+      // product had already READ the permit's renewal date; this route existed so that a person who
+      // found the report drawer could grant permission to keep it. A calendar whose completeness
+      // depends on who clicked is not a guard. `lib/documentScan.ts` files every date as the scan
+      // finds them now, and `components/DocumentReport.tsx` shows a line saying so.
+      //
+      // WHAT WENT WITH IT: the last of this route's four service-role statements had already moved
+      // onto `authed.db` in step 5 (map D6); now the statement itself is gone, so `supabaseAdmin`
+      // here is exactly the three in this file's header and nothing else.
       // -----------------------------------------------------------------------
-      case 'deadline_to_calendar': {
-        // *** THROUGH `proposeDate()` NOW — Calendar step 5, decision 6. ***
-        // This branch used to build its own `calendar_events` row: `category: 'document'`, and
-        // `recurrence_period: 'annually'` for anything that recurs, which was a GUESS — the scan says
-        // only whether a date repeats, never how often (map B2, decision 23). The shared function
-        // leaves `period` null, which after migration 073 means "repeats, how often not known yet",
-        // and the person sets it. Nothing about dates is decided here any more.
-        //
-        // IT ALSO GAINS THE NO-DUPLICATES RULE FOR FREE (decision 13): pressing the button twice, or
-        // pressing it after a re-read of the same permit, now returns the row that is already there
-        // instead of a second one — `document_deadlines` rows are written per SCAN, so the old
-        // `calendar_event_id` stamp could not see across readings.
-        const { deadline_id: deadlineId } = body
-        if (!deadlineId) return NextResponse.json({ error: 'Missing deadline_id.' }, { status: 400 })
-        const { data: dl } = await db.from('document_deadlines')
-          .select('id, document_id, title, due_on, source_line, recurs, calendar_event_id')
-          .eq('id', deadlineId).maybeSingle()
-        if (!dl || dl.document_id !== documentId) {
-          return NextResponse.json({ error: 'Deadline not found' }, { status: 404 })
-        }
-        if (dl.calendar_event_id) return NextResponse.json({ ok: true, already: true })
-        if (!dl.due_on) {
-          return NextResponse.json({ error: 'That deadline has no date to add.' }, { status: 400 })
-        }
-        const { id: eventId, outcome } = await proposeDate(db, {
-          companyId, source: 'document', title: dl.title, dueOn: dl.due_on, recurs: !!dl.recurs,
-          sourceLine: dl.source_line ?? null, documentId, deadlineId: dl.id, addedBy: userId,
-        })
-        // *** THE STAMP GOES THROUGH `authed.db`, NOT `supabaseAdmin` (map D6). ***
-        // `authenticated` holds UPDATE on `document_deadlines` and has since migration 040, which
-        // granted it for exactly this — 040:240–241: "A person may correct a gap … and CONFIRM A
-        // DEADLINE, so those two take UPDATE." Writing it with the service role bypassed the policy
-        // and so gave up the second of §3.6's two independent layers on a statement that never
-        // needed it; this route's own header lists the three statements that genuinely do, and this
-        // was not one of them.
-        const { error } = await db.from('document_deadlines')
-          .update({ calendar_event_id: eventId }).eq('id', deadlineId)
-        if (error) throw error
-        return NextResponse.json({ ok: true, calendar_event_id: eventId, outcome })
-      }
 
       // -----------------------------------------------------------------------
       // "This is the latest" — the second answer to the freshness nudge.

@@ -40,7 +40,31 @@ export async function GET(request: NextRequest) {
       db.from('document_gaps').select('*').eq('document_id', documentId)
         .order('scan_id').order('ordinal'),
       db.from('document_conditions').select('*').eq('document_id', documentId).order('ordinal'),
-      db.from('document_deadlines').select('*').eq('document_id', documentId).order('due_on', { nullsFirst: false }).order('title'),
+      // *** THE CALENDAR ROW COMES WITH THE DEADLINE — Calendar step 6. ***
+      // The drawer's line says whether this date is on the calendar and whether anybody has
+      // confirmed it, so it needs `status`. EMBEDDED rather than fetched separately, because
+      // `document_deadlines.calendar_event_id` → `calendar_events.id` is a real single-column
+      // foreign key (`document_deadlines_calendar_event_id_fkey`, read from `pg_constraint`), so
+      // PostgREST can join it in this query — one round trip, through `authed.db`, so
+      // `calendar_events_select` applies and another company's row simply is not there.
+      //
+      // NOT `calendar_v`: it has no foreign key, so it cannot be embedded. And NOT a second query
+      // keyed on `calendar_events.deadline_id`, which would MISS rows — `proposeDate`'s `existing`
+      // outcome leaves `deadline_id` pointing at the scan generation that first filed the date,
+      // while every later deadline row carries its own stamp. The line needs no computed column,
+      // so the raw table is enough.
+      //
+      // *** THE CONSTRAINT IS NAMED, AND IT HAS TO BE. ***
+      // There are now TWO foreign keys between these tables, pointing at each other:
+      // `document_deadlines.calendar_event_id` → `calendar_events.id` (migration 040) and
+      // `calendar_events.deadline_id` → `document_deadlines.id` (migration 073). An unqualified
+      // embed is therefore ambiguous and PostgREST refuses it —
+      // `PGRST201: Could not embed because more than one relationship was found` — which is what
+      // this query did on its first run, measured on staging. The wanted direction is the stamp,
+      // so the key is named.
+      db.from('document_deadlines')
+        .select('*, calendar_events!document_deadlines_calendar_event_id_fkey(id, status)')
+        .eq('document_id', documentId).order('due_on', { nullsFirst: false }).order('title'),
       db.from('fact_proposals').select('*').eq('document_id', documentId).order('created_at').order('id'),
       db.from('document_corrections').select('*').eq('document_id', documentId)
         .order('created_at', { ascending: false }).order('id', { ascending: false }),
@@ -88,7 +112,16 @@ export async function GET(request: NextRequest) {
       gaps: current,
       earlierGaps: earlier,
       conditions: conditions.data ?? [],
-      deadlines: deadlines.data ?? [],
+      // *** AND THIS ONE IS NOT SWALLOWED. ***
+      // `?? []` on a failed query turns "we could not read the dates" into "this document sets no
+      // dates" — the two are indistinguishable on screen and the wrong one reads as a fact
+      // (`CLAUDE.md` §5.1: an empty state is a claim, and it has to be true). It is exactly how the
+      // ambiguous embed above survived its first run: 0 deadlines, no error, a report that looked
+      // complete. A reading we cannot load is now a 500 the catch below turns into words.
+      deadlines: (() => {
+        if (deadlines.error) throw new Error(`document_deadlines: ${deadlines.error.message}`)
+        return deadlines.data ?? []
+      })(),
       facts: facts.data ?? [],
       corrections: corrections.data ?? [],
       versions: chain,

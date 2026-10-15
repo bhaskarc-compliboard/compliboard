@@ -472,6 +472,78 @@ const CAL_TABLES = ['calendar_events', 'calendar_mailings', 'calendar_feed_token
     await admin.from('companies').delete().eq('id', otherCompany.id)
   }
 
+  // *** THE SCAN'S OWN PATH, WITHOUT A SCAN — Calendar step 6. ***
+  //
+  // `lib/documentScan.ts` writes a `document_deadlines` row and then calls `proposeDate()`. The
+  // paid half is the model call; the filing is the half that can break without anybody noticing,
+  // because a scan that files nothing still returns a perfectly good reading. So this probe calls
+  // THE SAME FUNCTION the scan calls — imported, not reimplemented — against a deadline the service
+  // role writes, and then calls it again to prove a second write makes no second calendar row.
+  //
+  // Importing `lib/calendarDates.ts` here is safe: it is the one file in the chain with no Next.js
+  // and no model in it, which is why it takes a client as an argument.
+  {
+    const { proposeDate } = await import('../lib/calendarDates.ts')
+    const stamp2 = Date.now()
+    const doc = await seedRow(admin, 'documents', {
+      company_id: companyId, name: `check-live-cal-${stamp2}.pdf`, file_url: `probe/cal-${stamp2}`,
+      file_type: 'application/pdf', source: 'upload', status: 'read',
+    }, 'id')
+    const scan = await seedRow(admin, 'document_scans', {
+      document_id: doc.id, company_id: companyId, kind: 'permit', status: 'current', is_current: true,
+      title: 'check:live calendar probe permit',
+    }, 'id')
+    const dl = await seedRow(admin, 'document_deadlines', {
+      scan_id: scan.id, document_id: doc.id, company_id: companyId,
+      title: 'Permit expires (calendar probe)', due_on: '2027-09-30', recurs: false,
+      source_line: 'Condition 9.9',
+    }, 'id')
+
+    // 1. the same path the scan takes.
+    const first = await proposeDate(admin, {
+      companyId, source: 'document', documentId: doc.id, deadlineId: dl.id,
+      title: 'Permit expires (calendar probe)', dueOn: '2027-09-30', recurs: false,
+      sourceLine: 'Condition 9.9',
+    })
+    const { data: made } = await admin.from('calendar_events')
+      .select('id, source, status, period, source_line, entity_id, deadline_id, document_id')
+      .eq('id', first.id).maybeSingle()
+    ok(`${'calendar_events'.padEnd(26)} a deadline reaches the calendar through the scan's own function`,
+      first.outcome === 'created' && made?.source === 'document' && made?.status === 'proposed'
+      && made?.period === null && made?.source_line === 'Condition 9.9' && made?.entity_id === null
+      && made?.deadline_id === dl.id,
+      `outcome ${first.outcome}, status ${made?.status}, period ${made?.period}, site ${made?.entity_id}`)
+
+    // 2. and a SECOND write of the same deadline makes no second row. This is the rule the unique
+    //    index holds in the database and `proposeDate` holds in code; here they are tested together.
+    const second = await proposeDate(admin, {
+      companyId, source: 'document', documentId: doc.id, deadlineId: dl.id,
+      title: 'Permit expires (calendar probe)', dueOn: '2027-09-30', recurs: false,
+      sourceLine: 'Condition 9.9',
+    })
+    const { count: howMany } = await admin.from('calendar_events')
+      .select('id', { count: 'exact', head: true }).eq('document_id', doc.id)
+    ok(`${'calendar_events'.padEnd(26)} a second write of the same deadline makes no second row`,
+      second.outcome === 'existing' && second.id === first.id && howMany === 1,
+      `outcome ${second.outcome}, same row ${second.id === first.id}, rows ${howMany}`)
+
+    // 3. ...and the view computes next_due for it, which is the whole reason the view exists.
+    const { data: vrow } = await asUser.from('calendar_v')
+      .select('next_due, has_passed, source_title, site_id').eq('id', first.id).maybeSingle()
+    ok(`${'calendar_v'.padEnd(26)} the filed date carries next_due and its document's title`,
+      vrow?.next_due === '2027-09-30' && vrow?.has_passed === false
+      && vrow?.source_title === 'check:live calendar probe permit',
+      `next_due ${vrow?.next_due}, source_title "${vrow?.source_title}"`)
+
+    // The document goes, and the deadline and the calendar row go with it — document_id is ON
+    // DELETE SET NULL on calendar_events, so the row is removed by id rather than left orphaned.
+    await admin.from('calendar_events').delete().eq('id', first.id)
+    await admin.from('documents').delete().eq('id', doc.id)
+    const { count: leftOver } = await admin.from('calendar_events')
+      .select('id', { count: 'exact', head: true }).eq('id', first.id)
+    ok(`${'calendar_events'.padEnd(26)} the probe rows removed`, leftOver === 0, `${leftOver} left`)
+  }
+
   // calendar_mailings and calendar_feed_tokens: the server writes, the person only reads.
   for (const [t, row] of [
     ['calendar_mailings', { company_id: companyId, month: `probe-${stamp}`, sent_to: ['probe@example.com'] }],

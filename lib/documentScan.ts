@@ -27,6 +27,9 @@ import { askAIWithCitations, extractJsonText, modelForTask, scanStructuredOutput
 import { parseDocumentToBlocks } from './documentContent.ts'
 import { buildCompanyContext } from './companyContext.ts'
 import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts/document-scan.ts'
+// The ONE writer for every date in the product (Calendar step 5, decision 6). The scan files its
+// deadlines through it rather than keeping calendar logic of its own.
+import { proposeDate } from './calendarDates.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -891,11 +894,70 @@ export async function saveScan(
     if (e) throw new Error(`document_conditions: ${e.message}`)
   }
   if (scan.deadlines.length) {
-    const { error: e } = await db.from('document_deadlines').insert(scan.deadlines.map((d) => ({
+    // `.select()` now, because the calendar needs each row's id: `calendar_events.deadline_id`
+    // records which reading a date was last read from (migration 073).
+    const { data: written, error: e } = await db.from('document_deadlines').insert(scan.deadlines.map((d) => ({
       scan_id: scanId, document_id: documentId, company_id: companyId,
       title: d.title, due_on: d.due_on, source_line: d.source_line, recurs: d.recurs,
-    })))
+    }))).select('id, title, due_on, recurs, source_line')
     if (e) throw new Error(`document_deadlines: ${e.message}`)
+
+    // ---------------------------------------------------------------------------------------
+    // *** AND STRAIGHT ONTO THE CALENDAR — Calendar step 6 (`docs/CALENDAR-PLAN.md` decision 6).
+    //
+    // The scan stops asking. Before this, a date sat in `document_deadlines` until somebody found
+    // the report drawer and pressed "Add to calendar", which meant the product had read a permit's
+    // renewal date and was keeping it to itself. `proposeDate()` is the one writer for every date
+    // in the product; this is its first automatic caller.
+    //
+    // *** A DATE THAT CANNOT BE FILED MUST NEVER FAIL THE READING THAT FOUND IT. ***
+    // The reading is the paid work — one model call over a customer's document, already made and
+    // already billed by the time this line runs. Filing is a side effect. So every call is wrapped
+    // on its own: a failure is logged with the document and the deadline, counted, and the loop
+    // carries on, and `saveScan` returns exactly what it returned before. The alternative is a
+    // reading thrown away because a calendar row would not insert, which is the expensive failure.
+    //
+    // THE COUNTS GO TO THE SERVER LOG, and that is a choice with a reason: `document_scans` has no
+    // jsonb or counts column to put them on — read from the catalog, its jsonb columns are
+    // `agencies`, `subjects`, `jurisdiction`, `page_refs` and `expected_missing`, each a specific
+    // thing, and `confidence_notes` is the model's own prose. Writing counts into one of those
+    // would overwrite part of a reading. On Next 16 this lands in
+    // `.next/dev/logs/next-development.log`, not the terminal (`HOW-WE-BUILD.md` §3b).
+    //
+    // `entityId` is NOT passed: decision 24 reads a document date's site LIVE from the document
+    // through `calendar_v`, never copied, so a corrected site in Documents reaches the calendar
+    // with no code here.
+    // ---------------------------------------------------------------------------------------
+    const filed: Record<string, number> = { created: 0, existing: 0, replaced: 0, revived: 0 }
+    const failed: Array<{ deadline: string; title: string; error: string }> = []
+    for (const row of (written ?? []) as Array<{ id: string; title: string; due_on: string | null
+      recurs: boolean; source_line: string | null }>) {
+      try {
+        const { id: eventId, outcome } = await proposeDate(db, {
+          companyId, source: 'document', documentId, deadlineId: row.id,
+          title: row.title, dueOn: row.due_on, recurs: row.recurs, sourceLine: row.source_line,
+        })
+        filed[outcome] = (filed[outcome] ?? 0) + 1
+        // The stamp is what the report drawer reads to show "On your calendar". A failure here is
+        // the same class as a failure above: counted, logged, and never thrown.
+        const { error: stampErr } = await db.from('document_deadlines')
+          .update({ calendar_event_id: eventId }).eq('id', row.id)
+        if (stampErr) failed.push({ deadline: row.id, title: row.title, error: `stamp: ${stampErr.message}` })
+      } catch (err) {
+        failed.push({ deadline: row.id, title: row.title,
+          error: err instanceof Error ? err.message : String(err) })
+      }
+    }
+    // Said out loud whichever way it went, because a rule that fires silently is a rule nobody can
+    // tell is firing — the reason `reshaped_to_dates` is reported in `lib/auditRun.ts`.
+    console.log(`document scan ${documentId}: calendar — `
+      + Object.entries(filed).map(([k, v]) => `${k} ${v}`).join(', ')
+      + `, failed ${failed.length}`)
+    if (failed.length) {
+      console.error(`document scan ${documentId}: ${failed.length} date(s) were read but not filed; `
+        + `the reading is saved and complete. `
+        + failed.map((f) => `[deadline ${f.deadline} "${f.title}": ${f.error}]`).join(' '))
+    }
   }
   // *** READING A DOCUMENT AGAIN WITHDRAWS EVERY PENDING PROPOSAL FROM ITS EARLIER READINGS. ***
   //

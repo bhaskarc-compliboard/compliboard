@@ -19,6 +19,12 @@
  * — and this file holds the other half, which no constraint can see: a date that MOVED supersedes
  * the one it replaces rather than sitting beside it. Readers filter on `replaced_by is null`.
  *
+ * *** AND FOR AN AUDIT DATE THE WHOLE RULE IS HERE, BECAUSE NO INDEX CAN HOLD IT. ***
+ * The index is partial on `source = 'document'`. An audit finding's id changes with every run, so
+ * there is nothing stable to key on in the database; the key is (company, lower(title), day) among
+ * LIVE audit rows, and a match moves `audit_finding_id` to the newest finding instead of inserting.
+ * `auditSiblingsOf` below. One obligation found by three DEQ runs is one date on the calendar.
+ *
  * Called with the CALLER'S OWN client wherever a session exists, so RLS applies and a row of
  * another company is simply not there; with the service role only where there is no session (the
  * document scan). It never reads `profiles` and never derives a company: `companyId` is passed in,
@@ -76,7 +82,8 @@ export interface ProposeInput {
 
 /**
  * `created`  — a new row.
- * `existing` — this exact date is already on the calendar and was left alone.
+ * `existing` — this exact date is already on the calendar and was left alone. (For an audit source,
+ *              `audit_finding_id` is moved to the newest finding, which is the one write.)
  * `replaced` — the date MOVED: a new row, and every live row with the same title superseded.
  * `revived`  — a date a later reading had superseded has come back, because the newest reading of
  *              the document found it again (the owner, 15 October).
@@ -134,6 +141,30 @@ async function siblingsOf(db: Db, companyId: string, documentId: string, title: 
   return ((data ?? []) as Sibling[]).filter((r) => normaliseTitle(r.title ?? '') === key)
 }
 
+/**
+ * THE AUDIT TWIN OF `siblingsOf`, AND IT EXISTS BECAUSE NO INDEX CAN DO THIS ONE.
+ *
+ * 073's partial unique index covers `source = 'document'` only, and deliberately: a document date's
+ * identity is the DOCUMENT it came from (decision 13). An audit finding has no such anchor — every
+ * run writes new `audit_findings` rows, so `audit_finding_id` changes every time the same agency is
+ * audited again, and an index keyed on it would let one obligation land on the calendar once per
+ * audit. "The permit expires on 15 November" found by three DEQ runs is one date, not three.
+ *
+ * So the key for an audit date is what a person would call the same date: this company, the same
+ * title, the same day. Matched against LIVE rows only — a superseded row is history and a dismissed
+ * one is a decision — and against `source = 'audit'`, because a document's row and an audit's row
+ * for the same obligation are two different pieces of evidence and the drawer opens each differently.
+ */
+async function auditSiblingsOf(db: Db, companyId: string, title: string, dueOn: string | null): Promise<Sibling[]> {
+  const { data, error } = await db.from('calendar_events')
+    .select('id, title, due_date, status, dismissed_by, replaced_by')
+    .eq('company_id', companyId).eq('source', 'audit')
+  if (error) throw new Error(`calendar_events: ${error.message}`)
+  const key = normaliseTitle(title)
+  return ((data ?? []) as Sibling[]).filter((r) =>
+    normaliseTitle(r.title ?? '') === key && (r.due_date ?? null) === dueOn)
+}
+
 /** `replaced_by = winner` on every sibling but the winner that a PERSON has not dismissed. */
 async function supersede(db: Db, sibs: Sibling[], winnerId: string): Promise<void> {
   // A person's dismissal is never touched (rule b). Rows already superseded ARE re-pointed, so
@@ -180,7 +211,32 @@ export async function proposeDate(db: Db, input: ProposeInput): Promise<ProposeR
     return data.id as string
   }
 
-  // *** THE DEDUPE IS FOR DOCUMENT DATES ONLY, AND IT NEEDS THE DOCUMENT. ***
+  // *** AN AUDIT DATE IS DEDUPED IN CODE, BECAUSE THE INDEX CANNOT SEE IT (Calendar step 6). ***
+  // Same company, same title, same day, source 'audit', and the row must be LIVE. On a match the
+  // row is left exactly as it is except for one thing: `audit_finding_id` moves to the NEWEST
+  // finding, so the drawer opens the audit a person last ran rather than one from September. That
+  // is the only write, and it is the point — without it the calendar would keep pointing at a
+  // finding whose run is three audits old.
+  if (input.source === 'audit') {
+    const sibs = await auditSiblingsOf(db, input.companyId, input.title, input.dueOn)
+    // A person's dismissal is final here as it is for a document (rule b): matched, untouched,
+    // and `audit_finding_id` is NOT moved — re-pointing a row somebody removed would quietly
+    // revive it in every screen that reads the finding.
+    const dismissed = sibs.find((r) => r.dismissed_by)
+    if (dismissed) return { id: dismissed.id, outcome: 'existing' }
+    const live = sibs.find((r) => !r.dismissed_by && !r.replaced_by)
+    if (live) {
+      if (input.auditFindingId) {
+        const { error } = await db.from('calendar_events')
+          .update({ audit_finding_id: input.auditFindingId }).eq('id', live.id)
+        if (error) throw new Error(`calendar_events: ${error.message}`)
+      }
+      return { id: live.id, outcome: 'existing' }
+    }
+    return { id: await insert(), outcome: 'created' }
+  }
+
+  // *** THE INDEX-BACKED DEDUPE IS FOR DOCUMENT DATES ONLY, AND IT NEEDS THE DOCUMENT. ***
   // Decision 13: the key is the document, never the scan, because `document_deadlines` rows are
   // written per scan (map B2) so a re-read makes a new row for the same real-world date. A date
   // from any other source is a new row every time — two people may type the same reminder.

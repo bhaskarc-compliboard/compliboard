@@ -63,6 +63,14 @@ interface Finding {
   status: string; same_as: string | null; dismissed_reason: string | null; handle_error: boolean
   /** Other sections of this run that raised the same thing (migration 061, Run 7b item 5). */
   also_in_sections?: string[] | null
+  /**
+   * The calendar row this date IS, attached by `app/api/audit-runs/[id]/route.ts` (Calendar step 6).
+   * Null on every finding that is not a date, and on a date whose filing failed — which is logged
+   * and counted on the run rather than hidden, because a date the audit found and could not file is
+   * the one thing this line must not claim.
+   */
+  calendar_event_id?: string | null
+  calendar_status?: string | null
 }
 interface Section {
   id: string; ordinal: number; title: string; status: string
@@ -1026,8 +1034,13 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
              * line says so in words rather than showing a blank where a date goes — a blank reads
              * as a bug, and an invented day would be a deadline nobody set.
              *
-             * No "Add to calendar" on one of these: the link would put a row on the calendar with
-             * no date, which is the same false precision one step further on.
+             * *** AND SINCE CALENDAR STEP 6 IT IS ON THE CALENDAR TOO. ***
+             * This comment used to end "No 'Add to calendar' on one of these: the link would put a
+             * row on the calendar with no date." That was right about the OLD link, which carried
+             * the date in the address and would have carried an empty one. It is not a reason to
+             * hide the line: migration 073's `calendar_events_date_or_recurs` holds a recurring
+             * date with no day — 060's rule, copied — so an undated recurring obligation IS filed,
+             * and saying nothing about it here would be the one screen that pretends otherwise.
              */
             const undated = !f.due_on
             const meta = [
@@ -1048,10 +1061,26 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
                   {meta.slice(1).map((x) => ` · ${x}`).join('')}
                 </p>
               </div>
-              {!undated && (
-                <a href={`/calendar?add=${encodeURIComponent(f.title)}&on=${f.due_on ?? ''}`}
-                  className="no-print shrink-0 text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
-                  Add to calendar
+              {/**
+                * *** AUDITS STOPS ASKING — Calendar step 6, decision 7. ***
+                *
+                * There was an "Add to calendar" link here carrying the title and the day in the
+                * address, which `app/calendar/page.tsx:78–88` turned into a prefilled form for a
+                * person to save. Two things were wrong with it: the product had already found the
+                * date and was asking to be allowed to keep it, and the link could name no finding,
+                * so the calendar row it made could never say which audit it came from
+                * (`docs/CALENDAR-MACHINERY.md` B7). `lib/auditRun.ts` files it now, and this is a
+                * statement with a way back to the date.
+                *
+                * An HREF, not a button: `?finding=` is read at step 8, and a link starts working
+                * the moment it is (`docs/HANDOFF-CODE.md` §7).
+                */}
+              {f.calendar_event_id && (
+                <a href={`/calendar?finding=${f.id}`}
+                  className="no-print shrink-0 text-[12px] text-gray-400 underline hover:text-gray-600">
+                  {f.calendar_status === 'confirmed' ? 'On your calendar'
+                    : f.calendar_status === 'dismissed' ? 'Removed from your calendar'
+                    : 'On your calendar — waiting for your confirmation'}
                 </a>
               )}
             </div>

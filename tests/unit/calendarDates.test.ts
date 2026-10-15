@@ -264,6 +264,96 @@ describe('proposeDate — the owner\'s two rules, 15 October', () => {
   })
 })
 
+describe('proposeDate — an AUDIT date is deduped in code, because no index can be (step 6)', () => {
+  const audit = { companyId: CO, source: 'audit' as const, title: 'Annual report', dueOn: '2027-02-15', recurs: false }
+  const live = { id: 'old', company_id: CO, source: 'audit', title: 'Annual report',
+                 due_date: '2027-02-15', status: 'proposed', audit_finding_id: 'finding-1' }
+
+  test('the first audit to find a date creates it, proposed, naming the finding', async () => {
+    const f = fake()
+    const r = await proposeDate(f.db, { ...audit, auditFindingId: 'finding-1' })
+    assert.equal(r.outcome, 'created')
+    assert.equal(f.rows[0].status, 'proposed')
+    assert.equal(f.rows[0].source, 'audit')
+    assert.equal(f.rows[0].audit_finding_id, 'finding-1')
+  })
+
+  test('A SECOND AUDIT FINDING THE SAME DATE IS "existing", AND MOVES audit_finding_id TO IT', async () => {
+    // "The permit expires on 15 November" found by three DEQ runs is ONE date, not three — and the
+    // drawer must open the audit the person last ran.
+    const f = fake([{ ...live }])
+    const r = await proposeDate(f.db, { ...audit, auditFindingId: 'finding-2' })
+    assert.deepEqual(r, { id: 'old', outcome: 'existing' })
+    assert.equal(f.rows.length, 1, 'no second row')
+    assert.equal(f.rows[0].audit_finding_id, 'finding-2', 'the pointer moved to the newest finding')
+    assert.equal(f.rows[0].status, 'proposed', 'and nothing else about the row changed')
+  })
+
+  test('...and the match is case-insensitive, as the document rule is', async () => {
+    const f = fake([{ ...live }])
+    const r = await proposeDate(f.db, { ...audit, title: 'ANNUAL REPORT', auditFindingId: 'finding-2' })
+    assert.equal(r.outcome, 'existing')
+    assert.equal(f.rows.length, 1)
+  })
+
+  test('a DIFFERENT day is a different date: audits do not supersede, they coexist', async () => {
+    // Two real obligations can share a title and differ by day — an annual report for 2027 and for
+    // 2028. A document date MOVES (one permit, one expiry); an audit finding is an observation.
+    const f = fake([{ ...live }])
+    const r = await proposeDate(f.db, { ...audit, dueOn: '2028-02-15', auditFindingId: 'finding-2' })
+    assert.equal(r.outcome, 'created')
+    assert.equal(f.rows.length, 2)
+    assert.equal(f.rows.find((x) => x.id === 'old')!.replaced_by, null, 'the earlier one is NOT superseded')
+  })
+
+  test('an UNDATED recurring audit date dedupes against another undated one', async () => {
+    const f = fake([{ id: 'old', company_id: CO, source: 'audit', title: 'Annual permit fee',
+                      due_date: null, status: 'proposed', audit_finding_id: 'finding-1' }])
+    const r = await proposeDate(f.db, { companyId: CO, source: 'audit', title: 'Annual permit fee',
+      dueOn: null, recurs: true, auditFindingId: 'finding-2' })
+    assert.deepEqual(r, { id: 'old', outcome: 'existing' })
+    assert.equal(f.rows[0].audit_finding_id, 'finding-2')
+  })
+
+  test('a DISMISSED audit date is "existing" AND its audit_finding_id is NOT moved', async () => {
+    // Re-pointing a row a person removed would quietly revive it on every screen that reads the
+    // finding. The dismissal outranks the newer audit.
+    const f = fake([{ ...live, status: 'dismissed', dismissed_by: 'user-9',
+                      dismissed_reason: 'we surrendered that permit' }])
+    const r = await proposeDate(f.db, { ...audit, auditFindingId: 'finding-2' })
+    assert.deepEqual(r, { id: 'old', outcome: 'existing' })
+    assert.equal(f.rows[0].audit_finding_id, 'finding-1', 'untouched')
+    assert.equal(f.rows[0].status, 'dismissed')
+    assert.deepEqual(f.log, [], 'nothing was written at all')
+  })
+
+  test('a SUPERSEDED audit row is not matched: a new one is created', async () => {
+    // `replaced_by` means history. Only a live row counts as the same date.
+    const f = fake([{ ...live, replaced_by: 'something' }])
+    const r = await proposeDate(f.db, { ...audit, auditFindingId: 'finding-2' })
+    assert.equal(r.outcome, 'created')
+    assert.equal(f.rows.length, 2)
+  })
+
+  test("an audit date never matches a DOCUMENT row with the same title and day", async () => {
+    // Two different pieces of evidence for one obligation, and the drawer opens each differently:
+    // one shows the document's report, one shows the audit's.
+    const f = fake([{ id: 'doc-row', company_id: CO, source: 'document', document_id: DOC,
+                      title: 'Annual report', due_date: '2027-02-15', status: 'proposed' }])
+    const r = await proposeDate(f.db, { ...audit, auditFindingId: 'finding-1' })
+    assert.equal(r.outcome, 'created')
+    assert.equal(f.rows.length, 2)
+  })
+
+  test('an audit date with NO finding id still dedupes, and writes nothing on a match', async () => {
+    const f = fake([{ ...live }])
+    const r = await proposeDate(f.db, { ...audit })
+    assert.deepEqual(r, { id: 'old', outcome: 'existing' })
+    assert.equal(f.rows[0].audit_finding_id, 'finding-1')
+    assert.deepEqual(f.log, [])
+  })
+})
+
 // -------------------------------------------------------------------------------------------
 describe('confirmDate', () => {
   const row = { id: 'd1', company_id: CO, status: 'proposed', title: 'x', due_date: '2027-01-01' }

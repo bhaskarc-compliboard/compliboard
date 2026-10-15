@@ -18,6 +18,9 @@
 // them because "a number is never shown without what it is made of" (that file, `BatchSummary`).
 
 import { createHash } from 'node:crypto'
+// The ONE writer for every date in the product (Calendar step 5, decision 6). An audit's date
+// findings are filed through it; Audits keeps no calendar logic of its own.
+import { proposeDate } from './calendarDates.ts'
 
 import { askAIWithCitations, extractJsonText, modelForTask } from './ai.ts'
 import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
@@ -66,6 +69,13 @@ export interface RunSummary {
   /** Dropped by the shaper, counted so a silent rule is visible. Audits Run 6a, item 1. */
   dropped_undated?: Array<{ title: string; recurs: boolean | null }>
   dropped_wordless?: Array<{ title: string; kind: string }>
+  /**
+   * What filing the run's date findings onto the calendar did (Calendar step 6). A running total
+   * per outcome, because what matters is whether the dates arrived; `calendar_failed` is a LIST,
+   * because a date the audit found and could not file has to be chasable by its finding.
+   */
+  calendar_filed?: Record<string, number>
+  calendar_failed?: Array<{ finding: string; title: string; error: string }>
   /** The ledger row the checklist extraction wrote, on a template run. Run 6a, item 3. */
   extraction_ai_call_id?: string | null
   /** How many findings two sections both raised and were collapsed into one. Run 7b, item 5. */
@@ -379,8 +389,11 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     // *** A TEMPLATE SECTION IS A DIFFERENT QUESTION OVER THE SAME EVIDENCE. ***
     // The run's kind decides. A template section is shown EVERY document the company holds, because
     // a checklist spans regulators; the sentinel `'*'` is what `buildAuditInput` takes to mean that.
+    // `entity_id` is new here (Calendar step 6): an audit runs against ONE site, and a date finding
+    // has no document to read a site from, so the run's site is the date's site (decision 24's other
+    // half). One more column on a row this function already loads — no extra query.
     const { data: runRow } = await db.from('audit_runs')
-      .select('kind, template_lines, previous_run_id, template_document_id').eq('id', sec.run_id).maybeSingle()
+      .select('kind, template_lines, previous_run_id, template_document_id, entity_id').eq('id', sec.run_id).maybeSingle()
     const isTemplate = runRow?.kind === 'template'
 
     const built = await buildAuditInput(db, sec.company_id, isTemplate ? '*' : sec.title,
@@ -493,14 +506,68 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
         + mappedWords.map((m) => `${m.ref} ${m.from}→${m.to}`).join(', '))
     }
 
+    /** What the filing did, accumulated onto the run's summary below beside `reshaped_to_dates`. */
+    const filedDates: Record<string, number> = { created: 0, existing: 0, replaced: 0, revived: 0 }
+    const dateFailures: Array<{ finding: string; title: string; error: string }> = []
+
     if (rows.length) {
-      const { error } = await db.from('audit_findings').insert(rows)
+      // `.select()` now, because a date finding's calendar row must name the finding it came from
+      // (`calendar_events.audit_finding_id`, migration 073) — and the id only exists after the write.
+      const { data: saved, error } = await db.from('audit_findings').insert(rows)
+        .select('id, kind, title, due_on, recurs, what_to_do, document_id')
       if (error) {
         await db.from('audit_sections').update({
           model, prompt_sha256: promptSha, input_sha256: built.sha256, ai_call_id: aiCallId,
           raw_text: raw.slice(0, 20000), json_parsed: true, handles: built.input.handles,
         }).eq('id', sectionId)
         return await fail(`The audit was read but its rows would not save: ${error.message}`)
+      }
+
+      // -------------------------------------------------------------------------------------
+      // *** EVERY DATE THE AUDIT FOUND GOES ON THE CALENDAR — Calendar step 6, decision 6.
+      //
+      // The same rule as the document scan: Audits stops asking. The drawer's "Add to calendar"
+      // link is replaced by a line saying the date is already there (`components/AuditReport.tsx`).
+      //
+      // *** AND FILING MUST NEVER FAIL THE AUDIT THAT FOUND IT. ***
+      // By this line the section's model call is made and billed, its findings are saved, and the
+      // sweep is counting on this function to finish. Each `proposeDate` is wrapped on its own: a
+      // failure is logged with the finding, counted onto the run, and the loop carries on. A
+      // section is never failed, and `fail()` above is never reached, for a calendar row.
+      //
+      // `sourceLine` is `what_to_do` — the finding's own words, and the field the drawer shows
+      // under the title. `entityId` is the RUN's site, because an audit is run against one site
+      // and the finding has no document to read a site from (unlike a document date, decision 24).
+      // `documentId` is passed only when the finding cites EXACTLY ONE document: a date that names
+      // two is not a date about one of them, and guessing which would put a wrong document in the
+      // calendar drawer.
+      // -------------------------------------------------------------------------------------
+      const dateRows = ((saved ?? []) as Array<{ id: string; kind: string; title: string
+        due_on: string | null; recurs: boolean | null; what_to_do: string | null
+        document_id: string | null }>).filter((r) => r.kind === 'date')
+      for (const f of dateRows) {
+        try {
+          const { outcome } = await proposeDate(db, {
+            companyId: sec.company_id, source: 'audit', auditFindingId: f.id,
+            title: f.title, dueOn: f.due_on, recurs: f.recurs === true,
+            sourceLine: f.what_to_do, entityId: (runRow?.entity_id as string | null) ?? null,
+            documentId: f.document_id ?? null,
+          })
+          filedDates[outcome] = (filedDates[outcome] ?? 0) + 1
+        } catch (err) {
+          dateFailures.push({ finding: f.id, title: f.title,
+            error: err instanceof Error ? err.message : String(err) })
+        }
+      }
+      if (dateRows.length) {
+        console.log(`audit section ${sectionId}: calendar — `
+          + Object.entries(filedDates).map(([k, v]) => `${k} ${v}`).join(', ')
+          + `, failed ${dateFailures.length}`)
+      }
+      if (dateFailures.length) {
+        console.error(`audit section ${sectionId}: ${dateFailures.length} date(s) were found but not `
+          + `filed; the audit is saved and complete. `
+          + dateFailures.map((x) => `[finding ${x.finding} "${x.title}": ${x.error}]`).join(' '))
       }
     }
 
@@ -509,15 +576,27 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     // column for it on a section, so it accumulates on the run's `summary` jsonb — read-modify-write,
     // which is safe because the sweep claims one company at a time and runs its sections one after
     // another (`app/api/jobs/audit-sections/route.ts`). `summariseRun` carries it forward.
-    if (reshaped.length || droppedUndated.length || droppedWordless.length) {
+    //
+    // *** AND THE CALENDAR COUNTS RIDE ALONG — Calendar step 6. ***
+    // Same place, same reason, same safety: `audit_runs.summary` already exists for a count that has
+    // no column, and read-modify-write is safe here because the sweep claims one company at a time
+    // and runs its sections one after another. `calendar_filed` is a running total per run rather
+    // than a list, because what matters is "did the dates arrive", not which ones; `calendar_failed`
+    // IS a list, because a failure needs the finding named to be chased.
+    const filedAny = Object.values(filedDates).some((n) => n > 0)
+    if (reshaped.length || droppedUndated.length || droppedWordless.length || filedAny || dateFailures.length) {
       const { data: cur } = await db.from('audit_runs').select('summary').eq('id', sec.run_id).maybeSingle()
       const prevSummary = (cur?.summary ?? {}) as Record<string, unknown>
       const was = (k: string) => (Array.isArray(prevSummary[k]) ? prevSummary[k] as unknown[] : [])
+      const wasCounts = (prevSummary.calendar_filed ?? {}) as Record<string, number>
       await db.from('audit_runs').update({
         summary: { ...prevSummary,
           reshaped_to_dates: [...was('reshaped_to_dates'), ...reshaped],
           dropped_undated: [...was('dropped_undated'), ...droppedUndated],
           dropped_wordless: [...was('dropped_wordless'), ...droppedWordless],
+          calendar_filed: Object.fromEntries(Object.keys(filedDates).map((k) =>
+            [k, (Number(wasCounts[k]) || 0) + filedDates[k]])),
+          calendar_failed: [...was('calendar_failed'), ...dateFailures],
         },
       }).eq('id', sec.run_id)
     }
@@ -1246,6 +1325,17 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
       ?? []) as Array<{ title: string; recurs: boolean | null }>,
     dropped_wordless: (((run?.summary ?? {}) as Record<string, unknown>).dropped_wordless
       ?? []) as Array<{ title: string; kind: string }>,
+    // *** AND THE CALENDAR'S TWO, FOR EXACTLY THE SAME REASON — Calendar step 6. ***
+    // They were written per section and then LOST: `finishRunIfDone` stores
+    // `{ ...summariseRun(...), collapsed_duplicates }`, so a key this function does not name is a
+    // key the run drops when it finishes. Found by reading a real Haiku audit's summary and seeing
+    // `calendar_filed: undefined` after two runs that had plainly filed dates — not by any test,
+    // because no test reads a finished run's summary. The same trap `reshaped_to_dates` above was
+    // written to escape.
+    calendar_filed: (((run?.summary ?? {}) as Record<string, unknown>).calendar_filed
+      ?? {}) as Record<string, number>,
+    calendar_failed: (((run?.summary ?? {}) as Record<string, unknown>).calendar_failed
+      ?? []) as Array<{ finding: string; title: string; error: string }>,
     // A note put on the run before it ran — "this checklist names somebody else" — is carried
     // forward rather than overwritten when the run is summarised at the end.
     note: (((run?.summary ?? {}) as Record<string, unknown>).note as string | null) ?? null,

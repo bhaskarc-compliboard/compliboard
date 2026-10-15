@@ -46,6 +46,30 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     // Asserted once, as in the collection route: the generated types cannot narrow a
     // multi-column select made through a policy. The columns are the ones named above.
     const rows = (findings ?? []) as unknown as Array<Record<string, unknown>>
+
+    // *** EACH DATE FINDING'S CALENDAR ROW — Calendar step 6, decision 7. ***
+    // The drawer's Dates section says whether the date is on the calendar and whether anybody has
+    // confirmed it, so it needs the row's id and status.
+    //
+    // A SECOND QUERY, NOT AN EMBED, and the reason is the direction of the key: there is no foreign
+    // key from `audit_findings` to `calendar_events` — it points the other way, and it is COMPOSITE
+    // (`calendar_events_finding_in_same_company`, `(company_id, audit_finding_id)`). A reverse embed
+    // would rest on PostgREST resolving a two-column constraint by name, which nothing here has
+    // tested; one `.in()` is unambiguous and runs through the caller's own policies.
+    const byFinding = new Map<string, { id: string; status: string }>()
+    const findingIds = rows.map((r) => r.id as string)
+    if (findingIds.length) {
+      const { data: cal } = await db.from('calendar_events')
+        .select('id, status, audit_finding_id').in('audit_finding_id', findingIds)
+      for (const c of (cal ?? []) as Array<{ id: string; status: string; audit_finding_id: string }>) {
+        byFinding.set(c.audit_finding_id, { id: c.id, status: c.status })
+      }
+    }
+    for (const r of rows) {
+      const hit = byFinding.get(r.id as string)
+      r.calendar_event_id = hit?.id ?? null
+      r.calendar_status = hit?.status ?? null
+    }
     const secs = (sections ?? []) as unknown as Array<Record<string, unknown> & {
       ai_call_id: string | null; started_at: string | null; finished_at: string | null }>
     const runRow = run as unknown as Record<string, unknown> & { status: string }

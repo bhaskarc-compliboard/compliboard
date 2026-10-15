@@ -129,6 +129,13 @@ const note = (file, msg) => problems.push(`${relative(ROOT, file)}\n      ${msg}
 function fail(msg) { console.error(`\n  check-schema-contracts: ${msg}\n`); process.exit(1); }
 
 const schema = loadSchema();
+/**
+ * Every foreign-key name the generated types know, read ONCE — a disambiguated embed
+ * (`related!constraint(cols)`) names one of these, and a name that is not here is a real error.
+ * Module level and not per file: there are ~280 files and one types file.
+ */
+const FK_NAMES = new Set([...readFileSync(TYPES, "utf8")
+  .matchAll(/foreignKeyName: "([a-z_0-9]+)"/g)].map((m) => m[1]));
 const files = walk(ROOT);
 
 // ---------------------------------------------------------------------------
@@ -169,11 +176,34 @@ for (const file of files) {
     const sel = body.match(SELECT);
     if (sel) {
       const raw = sel[1];
+      // *** AN EMBED MAY NAME ITS FOREIGN KEY, AND THAT IS NOT A COLUMN — 15 October 2026. ***
+      //
+      // PostgREST's disambiguating form is `related_table!constraint_name(cols)`, and it is not
+      // optional: where TWO foreign keys join the same pair of tables, a bare `related_table(cols)`
+      // is refused with `PGRST201: Could not embed because more than one relationship was found`.
+      // Calendar step 6 created exactly that pair — `document_deadlines.calendar_event_id` →
+      // `calendar_events.id` (migration 040) and `calendar_events.deadline_id` →
+      // `document_deadlines.id` (073) — so `app/api/documents/report/route.ts` has to name the key.
+      //
+      // This script read `calendar_events!document_deadlines_calendar_event_id_fkey` as two
+      // identifiers and reported BOTH as unknown, on a query proven to work against staging. Two
+      // false positives on a correct line is the failure `HOW-WE-BUILD.md` §4 is about: a guard that
+      // cries wolf gets its output skimmed, and the next real finding is skimmed with it.
+      //
+      // So the constraint name is stripped before anything is judged, and it IS judged — against
+      // the generated types' own `foreignKeyName` values, so a key that does not exist is still
+      // caught. `lib/database.types.ts` carries every one.
+      for (const [, rel, fk] of raw.matchAll(/([a-z_0-9]+)!([a-z_0-9]+)\s*\(/g)) {
+        if (!schema[rel]) note(file, `.from('${table}').select(...) embeds '${rel}', which is not a table`);
+        if (!FK_NAMES.has(fk)) note(file, `.from('${table}').select(...) embeds through '${fk}', which is not a foreign key in the generated types`);
+      }
+      // ...and now the plain form, with any `!constraint` already accounted for above.
+      const bare = raw.replace(/([a-z_0-9]+)!([a-z_0-9]+)(\s*\()/g, "$1$3");
       // A nested `other_table ( cols )` is an embedded resource, checked as its own table.
-      for (const [, rel] of raw.matchAll(/([a-z_0-9]+)\s*\(/g)) {
+      for (const [, rel] of bare.matchAll(/([a-z_0-9]+)\s*\(/g)) {
         if (!schema[rel] && !cols.has(rel)) note(file, `.from('${table}').select(...) embeds '${rel}', which is neither a table nor a column`);
       }
-      const flat = raw.replace(/[a-z_0-9]+\s*\([^)]*\)/g, " ");
+      const flat = bare.replace(/[a-z_0-9]+\s*\([^)]*\)/g, " ");
       for (const name of flat.match(/[a-z_0-9]+/g) || []) {
         if (["count", "exact", "head", "planned", "estimated"].includes(name)) continue;
         if (!cols.has(name)) note(file, `.from('${table}').select('… ${name} …') — no such column`);
