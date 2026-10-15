@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -571,55 +571,85 @@ export type Database = {
       }
       calendar_events: {
         Row: {
-          category: string | null
-          company_id: string | null
-          completed: boolean | null
-          completed_at: string | null
+          added_by: string | null
+          audit_finding_id: string | null
+          company_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string | null
+          deadline_id: string | null
           description: string | null
+          dismissed_at: string | null
+          dismissed_by: string | null
+          dismissed_reason: string | null
           document_id: string | null
-          due_date: string
+          due_date: string | null
           entity_id: string | null
           handbook_id: string | null
           id: string
-          is_recurring: boolean | null
-          recurrence_period: string | null
+          period: string | null
+          recurs: boolean
+          replaced_by: string | null
+          source: string
+          source_line: string | null
+          source_page: string | null
+          source_url: string | null
+          status: string
           title: string
-          user_id: string | null
         }
         Insert: {
-          category?: string | null
-          company_id?: string | null
-          completed?: boolean | null
-          completed_at?: string | null
+          added_by?: string | null
+          audit_finding_id?: string | null
+          company_id: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string | null
+          deadline_id?: string | null
           description?: string | null
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          dismissed_reason?: string | null
           document_id?: string | null
-          due_date: string
+          due_date?: string | null
           entity_id?: string | null
           handbook_id?: string | null
           id?: string
-          is_recurring?: boolean | null
-          recurrence_period?: string | null
+          period?: string | null
+          recurs?: boolean
+          replaced_by?: string | null
+          source: string
+          source_line?: string | null
+          source_page?: string | null
+          source_url?: string | null
+          status?: string
           title: string
-          user_id?: string | null
         }
         Update: {
-          category?: string | null
-          company_id?: string | null
-          completed?: boolean | null
-          completed_at?: string | null
+          added_by?: string | null
+          audit_finding_id?: string | null
+          company_id?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string | null
+          deadline_id?: string | null
           description?: string | null
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          dismissed_reason?: string | null
           document_id?: string | null
-          due_date?: string
+          due_date?: string | null
           entity_id?: string | null
           handbook_id?: string | null
           id?: string
-          is_recurring?: boolean | null
-          recurrence_period?: string | null
+          period?: string | null
+          recurs?: boolean
+          replaced_by?: string | null
+          source?: string
+          source_line?: string | null
+          source_page?: string | null
+          source_url?: string | null
+          status?: string
           title?: string
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -627,6 +657,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_deadline_id_fkey"
+            columns: ["deadline_id"]
+            isOneToOne: false
+            referencedRelation: "document_deadlines"
             referencedColumns: ["id"]
           },
           {
@@ -651,11 +688,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "calendar_events_finding_in_same_company"
+            columns: ["company_id", "audit_finding_id"]
+            isOneToOne: false
+            referencedRelation: "audit_findings"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
             foreignKeyName: "calendar_events_handbook_in_same_company"
             columns: ["company_id", "handbook_id"]
             isOneToOne: false
             referencedRelation: "handbooks"
             referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "calendar_events_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "calendar_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_feed_tokens: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          token: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_feed_tokens_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_mailings: {
+        Row: {
+          company_id: string
+          id: string
+          month: string
+          sent_at: string
+          sent_to: string[]
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          month: string
+          sent_at?: string
+          sent_to?: string[]
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          month?: string
+          sent_at?: string
+          sent_to?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_mailings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1694,6 +1816,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "document_deadlines_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "document_deadlines_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -2645,6 +2774,13 @@ export type Database = {
             columns: ["calendar_event_id"]
             isOneToOne: false
             referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handbook_dates_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_v"
             referencedColumns: ["id"]
           },
           {
@@ -3992,6 +4128,106 @@ export type Database = {
       }
     }
     Views: {
+      calendar_v: {
+        Row: {
+          added_by: string | null
+          audit_finding_id: string | null
+          company_id: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string | null
+          days_until: number | null
+          deadline_id: string | null
+          description: string | null
+          dismissed_at: string | null
+          dismissed_by: string | null
+          dismissed_reason: string | null
+          document_id: string | null
+          due_date: string | null
+          entity_id: string | null
+          handbook_id: string | null
+          has_passed: boolean | null
+          id: string | null
+          next_due: string | null
+          period: string | null
+          recurs: boolean | null
+          replaced_by: string | null
+          site_id: string | null
+          site_name: string | null
+          source: string | null
+          source_line: string | null
+          source_page: string | null
+          source_title: string | null
+          source_url: string | null
+          status: string | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_deadline_id_fkey"
+            columns: ["deadline_id"]
+            isOneToOne: false
+            referencedRelation: "document_deadlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "calendar_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_finding_in_same_company"
+            columns: ["company_id", "audit_finding_id"]
+            isOneToOne: false
+            referencedRelation: "audit_findings"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "calendar_events_handbook_in_same_company"
+            columns: ["company_id", "handbook_id"]
+            isOneToOne: false
+            referencedRelation: "handbooks"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "calendar_events_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "calendar_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_list_v: {
         Row: {
           added: number | null

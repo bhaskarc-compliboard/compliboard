@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
       hrAudits,
       checklists,
       calendarEvents,
+      calendarMailings,
       obligations,
       entities,
       corrections,
@@ -89,6 +90,17 @@ export async function GET(request: NextRequest) {
       byCompany('hr_audits'),
       byCompany('checklists'),
       byCompany('calendar_events'),
+      // The record of which monthly emails went out and to whom (migration 073). The person's own
+      // history of what we told them, so it belongs in their copy.
+      //
+      // *** `calendar_feed_tokens` IS DELIBERATELY NOT HERE. ***
+      // It is not the customer's data — it is a CREDENTIAL. `GET /api/calendar/feed?t=<token>` is
+      // the one route in the product that answers without a session (decision 20), so that string
+      // is the whole of the authentication for a live calendar feed. An export is a file people
+      // email to themselves and forward to an accountant; putting a bearer token in it would hand
+      // that calendar to anyone the file reaches, for as long as the token is unrevoked. Rotating
+      // it lives in My Account, where a person can see what they are replacing.
+      byCompany('calendar_mailings'),
       byCompany('obligations'),
       byCompany('entities'),
       byCompany('corrections'),
@@ -189,6 +201,7 @@ export async function GET(request: NextRequest) {
       checklists,
       checklist_items: checklistItems,
       calendar_events: calendarEvents,
+      calendar_mailings: calendarMailings,
       obligations,
       obligation_evidence: obligationEvidence,
       entities,
@@ -214,6 +227,7 @@ export async function GET(request: NextRequest) {
           checklists: checklists.length,
           checklist_items: checklistItems.length,
           calendar_events: calendarEvents.length,
+          calendar_mailings: calendarMailings.length,
           obligations: obligations.length,
           obligation_evidence: obligationEvidence.length,
           entities: entities.length,

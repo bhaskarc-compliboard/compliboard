@@ -24,7 +24,7 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto' | 'hr' | 'hr_check'
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto' | 'hr' | 'hr_check' | 'calendar'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -143,6 +143,12 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // each can be moved on its own; production sets both to claude-opus-5-5 at HR's release (RELEASE.md).
   hr: () => process.env.AI_MODEL_HR || TASK_MODELS.prose(),
   hr_check: () => process.env.AI_MODEL_HR_CHECK || TASK_MODELS.prose(),
+  // *** THE CALENDAR'S ANSWER — Calendar step 5 (`docs/CALENDAR-PLAN.md` decision 4). ***
+  // "When is the Tier II report due?" answered from the calendar's own rows and the readings of the
+  // documents behind them, with web search for the rule — the same shape as `hr`, which reads
+  // handbooks. So it falls back to the research tier (`prose`) unset, exactly as `howto` and `hr`
+  // do: the pattern copied, not a new one. NOTHING ASKS FOR THIS TIER YET; step 10 is the caller.
+  calendar: () => process.env.AI_MODEL_CALENDAR || TASK_MODELS.prose(),
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 

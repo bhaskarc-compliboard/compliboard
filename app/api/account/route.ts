@@ -218,6 +218,14 @@ const COMPANY_SCOPED_TABLES = [
   'handbook_sections',
   'handbooks',
   'calendar_events',
+  // ---- THE CALENDAR'S TWO (migration 073, `docs/CALENDAR-PLAN.md` decisions 18, 20) ----
+  // Both cascade from `companies`; named here because `scripts/check-schema-contracts.js` check 2
+  // demands every relation carrying `company_id` be in one of these two lists, and because this
+  // list is where a reviewer sees what a deletion destroys. `calendar_feed_tokens` is the secret
+  // address behind a person's subscribed calendar: deleting the company must stop that link
+  // answering, which is exactly what removing the row does.
+  'calendar_mailings',
+  'calendar_feed_tokens',
   'documents',
   'company_folders',
   'jobs',

@@ -20,9 +20,16 @@
 //     model on this customer's screen and is fed to the next scan as fact. RLS can say "your
 //     company"; it cannot say "through the route that recorded who did it and what it replaced",
 //     so the route holds that and the grant does not. §3.6's named-statement exception.
+//
+// *** AND THOSE THREE ARE NOW THE WHOLE LIST (Calendar step 5; map D6). ***
+// `document_deadlines.calendar_event_id` was a fourth, written with the service role while this
+// header named only three — and `authenticated` has held UPDATE on that table since migration 040,
+// which granted it for precisely this press. It is on `authed.db` now. §3.6: a route may hold the
+// key for a NAMED statement; it may not hold it out of habit.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { proposeDate } from '@/lib/calendarDates'
 
 const CORRECTABLE = ['kind', 'agencies', 'subjects', 'site', 'doc_date', 'title'] as const
 const SCAN_KINDS = ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other']
@@ -125,6 +132,17 @@ export async function POST(request: NextRequest) {
       // "Add to calendar" on a deadline.
       // -----------------------------------------------------------------------
       case 'deadline_to_calendar': {
+        // *** THROUGH `proposeDate()` NOW — Calendar step 5, decision 6. ***
+        // This branch used to build its own `calendar_events` row: `category: 'document'`, and
+        // `recurrence_period: 'annually'` for anything that recurs, which was a GUESS — the scan says
+        // only whether a date repeats, never how often (map B2, decision 23). The shared function
+        // leaves `period` null, which after migration 073 means "repeats, how often not known yet",
+        // and the person sets it. Nothing about dates is decided here any more.
+        //
+        // IT ALSO GAINS THE NO-DUPLICATES RULE FOR FREE (decision 13): pressing the button twice, or
+        // pressing it after a re-read of the same permit, now returns the row that is already there
+        // instead of a second one — `document_deadlines` rows are written per SCAN, so the old
+        // `calendar_event_id` stamp could not see across readings.
         const { deadline_id: deadlineId } = body
         if (!deadlineId) return NextResponse.json({ error: 'Missing deadline_id.' }, { status: 400 })
         const { data: dl } = await db.from('document_deadlines')
@@ -137,18 +155,21 @@ export async function POST(request: NextRequest) {
         if (!dl.due_on) {
           return NextResponse.json({ error: 'That deadline has no date to add.' }, { status: 400 })
         }
-        const { data: event, error: evErr } = await db.from('calendar_events').insert({
-          company_id: companyId, user_id: userId,
-          title: dl.title, description: dl.source_line ?? null,
-          due_date: dl.due_on, category: 'document',
-          is_recurring: !!dl.recurs, recurrence_period: dl.recurs ? 'annually' : null,
-          document_id: documentId,
-        }).select('id').single()
-        if (evErr) throw evErr
-        const { error } = await supabaseAdmin.from('document_deadlines')
-          .update({ calendar_event_id: event.id }).eq('id', deadlineId)
+        const { id: eventId, outcome } = await proposeDate(db, {
+          companyId, source: 'document', title: dl.title, dueOn: dl.due_on, recurs: !!dl.recurs,
+          sourceLine: dl.source_line ?? null, documentId, deadlineId: dl.id, addedBy: userId,
+        })
+        // *** THE STAMP GOES THROUGH `authed.db`, NOT `supabaseAdmin` (map D6). ***
+        // `authenticated` holds UPDATE on `document_deadlines` and has since migration 040, which
+        // granted it for exactly this — 040:240–241: "A person may correct a gap … and CONFIRM A
+        // DEADLINE, so those two take UPDATE." Writing it with the service role bypassed the policy
+        // and so gave up the second of §3.6's two independent layers on a statement that never
+        // needed it; this route's own header lists the three statements that genuinely do, and this
+        // was not one of them.
+        const { error } = await db.from('document_deadlines')
+          .update({ calendar_event_id: eventId }).eq('id', deadlineId)
         if (error) throw error
-        return NextResponse.json({ ok: true, calendar_event_id: event.id })
+        return NextResponse.json({ ok: true, calendar_event_id: eventId, outcome })
       }
 
       // -----------------------------------------------------------------------

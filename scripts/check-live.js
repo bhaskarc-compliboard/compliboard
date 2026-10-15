@@ -221,6 +221,9 @@ for (const c of CASES) {
 // ---------------------------------------------------------------------------
 const HR_TABLES = ['handbooks', 'handbook_sections', 'handbook_checks', 'handbook_check_sections',
   'handbook_findings', 'handbook_dates']
+// The Calendar's relations (migration 073). Named at this level so the closing summary counts the
+// same list the probes walk, rather than a number typed beside it.
+const CAL_TABLES = ['calendar_events', 'calendar_mailings', 'calendar_feed_tokens', 'calendar_v']
 {
   const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
   const ok = (label, good, detail = '') => {
@@ -332,6 +335,163 @@ const HR_TABLES = ['handbooks', 'handbook_sections', 'handbook_checks', 'handboo
   if (!otherErr) {   // only if the refusal failed — tidy what should never have been written
     const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
     await admin.storage.from(BUCKET).remove([other])
+  }
+}
+
+// ---------------------------------------------------------------------------
+// THE CALENDAR'S TABLES — migration 073, Calendar step 5.
+//
+// `calendar_events` had NO probe here at all before this: 0 occurrences of the name in this file,
+// found by the read-only map (`docs/CALENDAR-MACHINERY.md` B10). It is the one table in the date
+// family a signed-in person may INSERT, and until 073 it was also the one with a NULLABLE
+// `company_id` and a DELETE grant held since `000_baseline.sql:758`. Nothing checked any of it, and
+// `npm run check` cannot: none of its tests makes an authenticated request.
+//
+// Each probe says what the grant should allow AND what it should refuse, and a refusal must be the
+// permission error itself (42501) or a genuinely empty read — an error of any other kind would look
+// like a refusal and prove nothing. Free: no route, no model. Every probe row is removed again.
+// ---------------------------------------------------------------------------
+{
+  const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+  const ok = (label, good, detail = '') => {
+    console.log(`  ${good ? '✓' : '✗'} ${label}${detail ? ` — ${detail}` : ''}`)
+    if (!good) failures++
+  }
+  const refused = (err) => !!err && err.code === '42501'
+  const ZERO = '00000000-0000-0000-0000-000000000000'
+  const CAL = CAL_TABLES
+  const stamp = Date.now()
+
+  // anon: no READ on any of the four, and the refusal is the permission error itself.
+  for (const t of CAL) {
+    const { error: r } = await asAnon.from(t).select('id').limit(1)
+    ok(`${t.padEnd(26)} anon refused read (42501)`, refused(r), r?.code ?? 'READ ALLOWED')
+  }
+  // ...and no WRITE on the three tables, also 42501.
+  for (const t of CAL.filter((t) => t !== 'calendar_v')) {
+    const { error: w } = await asAnon.from(t).insert({ company_id: companyId })
+    ok(`${t.padEnd(26)} anon refused insert (42501)`, refused(w), w?.code ?? 'INSERT ALLOWED')
+  }
+  // *** THE VIEW REFUSES EVERY WRITE WITH 55000, NOT 42501, AND THAT IS A STRONGER GUARANTEE. ***
+  // Measured on staging, 15 October: `cannot insert into view "calendar_v"` for anon AND for a
+  // signed-in person. Postgres checks auto-updatability before privileges, so this is not a grant
+  // that could be loosened by a later migration — the view carries LATERAL joins and so is not
+  // auto-updatable at all, and `next_due` could not be written even if somebody tried. The probe
+  // asserts the code rather than "some error", because an error of any other kind would look like a
+  // refusal and prove nothing (`HOW-WE-BUILD.md` §3).
+  for (const [verb, run] of [
+    ['insert', (c) => c.from('calendar_v').insert({ title: 'x', due_date: '2027-01-01', source: 'person' })],
+    ['update', (c) => c.from('calendar_v').update({ title: 'y' }).eq('id', ZERO)],
+    ['delete', (c) => c.from('calendar_v').delete().eq('id', ZERO)],
+  ]) {
+    for (const [who, client] of [['anon', asAnon], ['authenticated', asUser]]) {
+      const { error } = await run(client)
+      ok(`${'calendar_v'.padEnd(26)} ${who} cannot ${verb} through it (55000)`,
+        !!error && error.code === '55000', error ? `${error.code} ${error.message}` : `${verb.toUpperCase()} ALLOWED`)
+    }
+  }
+  // authenticated can read every one.
+  for (const t of CAL) {
+    const { error } = await asUser.from(t).select('id').limit(1)
+    ok(`${t.padEnd(26)} authenticated can read`, !error, error ? `${error.code} ${error.message}` : '')
+  }
+
+  // calendar_events: insert its own row, read it back, update it, and be refused a DELETE.
+  const title = `check:live probe ${stamp}`
+  const { data: ev, error: evErr } = await asUser.from('calendar_events')
+    .insert({ company_id: companyId, title, due_date: '2027-06-01', source: 'person', status: 'confirmed' })
+    .select('id, status, recurs, period').maybeSingle()
+  ok(`${'calendar_events'.padEnd(26)} authenticated can insert its own row`, !evErr && !!ev,
+    evErr ? `${evErr.code} ${evErr.message}` : `status ${ev?.status}, recurs ${ev?.recurs}, period ${ev?.period}`)
+
+  // *** THE REFUSAL THAT MATTERS: A ROW WRITTEN INTO ANOTHER COMPANY. ***
+  // This is what the INSERT policy's WITH CHECK is for, and it is a 42501 rather than an empty
+  // result, because a write fails loudly where a read fails quietly (`HOW-WE-BUILD.md` §3).
+  const { error: otherCo } = await asUser.from('calendar_events')
+    .insert({ company_id: ZERO, title: 'not yours', due_date: '2027-06-01', source: 'person' })
+  ok(`${'calendar_events'.padEnd(26)} refused for another company (42501)`, refused(otherCo), otherCo?.code ?? 'ALLOWED')
+
+  if (ev) {
+    const { data: upd, error: updErr } = await asUser.from('calendar_events')
+      .update({ status: 'dismissed', dismissed_reason: 'check:live probe' }).eq('id', ev.id)
+      .select('status').maybeSingle()
+    ok(`${'calendar_events'.padEnd(26)} authenticated can update its own row`,
+      !updErr && upd?.status === 'dismissed', updErr ? `${updErr.code} ${updErr.message}` : '')
+
+    // DELETE IS GONE (decision 11): the grant was removed and the policy dropped by 073.
+    const { error: delErr } = await asUser.from('calendar_events').delete().eq('id', ev.id)
+    ok(`${'calendar_events'.padEnd(26)} authenticated REFUSED delete (42501)`, refused(delErr), delErr?.code ?? 'ALLOWED')
+    const { count: still } = await admin.from('calendar_events').select('id', { count: 'exact', head: true }).eq('id', ev.id)
+    ok(`${'calendar_events'.padEnd(26)} and the row is still there after the refusal`, still === 1, `${still} row(s)`)
+
+    // *** calendar_v, WITH A PRESENCE BEFORE ANY ABSENCE IS REPORTED. ***
+    // The view's whole reason for existing is `next_due`, which is computed, so a probe that only
+    // checked the SELECT grant would pass against a view returning nulls. This one reads the row it
+    // just wrote and insists the computed columns are there.
+    const { data: vrow, error: vErr } = await asUser.from('calendar_v')
+      .select('id, next_due, days_until, has_passed, site_id, source_title').eq('id', ev.id).maybeSingle()
+    ok(`${'calendar_v'.padEnd(26)} the caller's own row is visible, with next_due computed`,
+      !vErr && !!vrow && vrow.next_due === '2027-06-01' && typeof vrow.days_until === 'number' && vrow.has_passed === false,
+      vErr ? `${vErr.code} ${vErr.message}` : `next_due ${vrow?.next_due}, days_until ${vrow?.days_until}, has_passed ${vrow?.has_passed}`)
+
+    // A REPEATING date with a period: next_due is worked out, not stored, and lands in the future.
+    const { data: rep } = await admin.from('calendar_events')
+      .insert({ company_id: companyId, title: `${title} yearly`, due_date: '2021-09-01', recurs: true, period: 'year', source: 'person' })
+      .select('id').maybeSingle()
+    if (rep) {
+      const { data: vrep } = await asUser.from('calendar_v').select('next_due, has_passed').eq('id', rep.id).maybeSingle()
+      const future = !!vrep?.next_due && vrep.next_due > new Date().toISOString().slice(0, 10)
+      ok(`${'calendar_v'.padEnd(26)} a 2021 yearly anchor's next_due is in the future, not stored`,
+        future && vrep?.has_passed === false, `next_due ${vrep?.next_due}, has_passed ${vrep?.has_passed}`)
+      await admin.from('calendar_events').delete().eq('id', rep.id)
+    }
+
+    await admin.from('calendar_events').delete().eq('id', ev.id)
+    const { count: gone } = await admin.from('calendar_events').select('id', { count: 'exact', head: true }).eq('id', ev.id)
+    ok(`${'calendar_events'.padEnd(26)} the probe row removed by the server`, gone === 0, `${gone} left`)
+  }
+
+  // *** AND THE CROSS-TENANT READ, PROVEN AGAINST A ROW THAT REALLY EXISTS. ***
+  // "0 rows of another company" is worthless if there is no other company's row to miss — that is
+  // `HOW-WE-BUILD.md` §3's absence trap exactly. So the service role writes one under a company
+  // this probe creates, the caller reads 0, the service role reads 1, and it goes again.
+  const { data: otherCompany } = await admin.from('companies').insert({ name: `check:live calendar probe ${stamp}` }).select('id').maybeSingle()
+  if (!otherCompany) {
+    ok(`${'calendar_events'.padEnd(26)} cross-tenant read`, false, 'could not create the other company')
+  } else {
+    const { data: theirs } = await admin.from('calendar_events')
+      .insert({ company_id: otherCompany.id, title: `${title} theirs`, due_date: '2027-06-01', source: 'person' })
+      .select('id').maybeSingle()
+    const { count: byServer } = await admin.from('calendar_events').select('id', { count: 'exact', head: true }).eq('company_id', otherCompany.id)
+    const { count: byCaller } = await asUser.from('calendar_events').select('id', { count: 'exact', head: true }).eq('company_id', otherCompany.id)
+    const { count: viewByCaller } = await asUser.from('calendar_v').select('id', { count: 'exact', head: true }).eq('company_id', otherCompany.id)
+    ok(`${'calendar_events'.padEnd(26)} another company's row exists (${byServer}) and the caller reads 0`,
+      byServer === 1 && byCaller === 0, `server ${byServer}, caller ${byCaller}`)
+    ok(`${'calendar_v'.padEnd(26)} and the view hides it too (security_invoker)`, viewByCaller === 0, `caller ${viewByCaller}`)
+    if (theirs) await admin.from('calendar_events').delete().eq('id', theirs.id)
+    await admin.from('companies').delete().eq('id', otherCompany.id)
+  }
+
+  // calendar_mailings and calendar_feed_tokens: the server writes, the person only reads.
+  for (const [t, row] of [
+    ['calendar_mailings', { company_id: companyId, month: `probe-${stamp}`, sent_to: ['probe@example.com'] }],
+    ['calendar_feed_tokens', { company_id: companyId, token: `check-live-probe-${stamp}` }],
+  ]) {
+    const { error: iErr } = await asUser.from(t).insert(row)
+    ok(`${t.padEnd(26)} authenticated refused INSERT (42501)`, refused(iErr), iErr?.code ?? 'ALLOWED')
+    const { data: made, error: sErr } = await admin.from(t).insert(row).select('id').maybeSingle()
+    ok(`${t.padEnd(26)} the server can write a row`, !sErr && !!made, sErr ? `${sErr.code} ${sErr.message}` : '')
+    if (made) {
+      // A PRESENCE BEFORE AN ABSENCE: the person must be able to SEE their own row, or "refused
+      // INSERT" above would be indistinguishable from a table they cannot read at all.
+      const { count: mine } = await asUser.from(t).select('id', { count: 'exact', head: true }).eq('id', made.id)
+      ok(`${t.padEnd(26)} and the person can read it (${mine})`, mine === 1, `${mine} row(s)`)
+      const { error: uErr } = await asUser.from(t).update({ company_id: companyId }).eq('id', made.id)
+      ok(`${t.padEnd(26)} authenticated refused UPDATE (42501)`, refused(uErr), uErr?.code ?? 'ALLOWED')
+      const { error: dErr } = await asUser.from(t).delete().eq('id', made.id)
+      ok(`${t.padEnd(26)} authenticated refused DELETE (42501)`, refused(dErr), dErr?.code ?? 'ALLOWED')
+      await admin.from(t).delete().eq('id', made.id)
+    }
   }
 }
 
@@ -1419,4 +1579,6 @@ const writable = CASES.filter((c) => !c.reads_only).length
 const readable = CASES.length - writable
 console.log(`  check:live: ok — ${CASES.length} tenant table(s): ${writable} writable by a signed-in `
   + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon; `
-  + `and HR's ${HR_TABLES.length} tables (066), each allowing and refusing exactly its grant.\n`)
+  + `and HR's ${HR_TABLES.length} tables (066), each allowing and refusing exactly its grant; `
+  + `and the Calendar's ${CAL_TABLES.length} relations (073) — insert and update as the person, `
+  + `DELETE refused, a cross-tenant row proven present and unread, and calendar_v computing next_due.\n`)

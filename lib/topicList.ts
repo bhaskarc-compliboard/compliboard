@@ -45,8 +45,12 @@ export const toTopicRow = (r: TopicListRow): TopicRow => ({
   summaryInProgress: !!r.summary_in_progress, checklistInProgress: !!r.checklist_in_progress,
 })
 
-/** Which list a conversation belongs to — `topics.section` (migration 066). */
-export type TopicSection = 'workspace' | 'hr'
+/**
+ * Which list a conversation belongs to — `topics.section` (migration 066, widened by 073).
+ * `readTopicList` below is the ONE place a section is filtered on, so a third section is this word
+ * plus the migration and nothing else. Nothing passes 'calendar' yet — Calendar step 10 is the caller.
+ */
+export type TopicSection = 'workspace' | 'hr' | 'calendar'
 
 /**
  * ONE SECTION'S CONVERSATIONS, NEWEST FIRST, AT MOST `LIST_CAP` — the read the workspace's

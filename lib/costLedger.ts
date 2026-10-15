@@ -22,7 +22,7 @@ import { MODEL_PRICES, PRICE_PER_SEARCH, type ModelPrice } from '../config/prici
 export type LedgerTask =
   | 'research' | 'checklist' | 'substeps' | 'convert' | 'summarise'
   | 'gate' | 'critique' | 'audit' | 'document_review' | 'document_scan' | 'document_draft' | 'howto' | 'other'
-  | 'hr' | 'hr_check'
+  | 'hr' | 'hr_check' | 'calendar'
 
 export const LEDGER_TASKS: readonly LedgerTask[] = [
   'research', 'checklist', 'substeps', 'convert', 'summarise',
@@ -38,6 +38,9 @@ export const LEDGER_TASKS: readonly LedgerTask[] = [
   // `ai_calls_task_check`): an answer from the handbooks, and the handbook check.
   'hr',
   'hr_check',
+  // THE CALENDAR SECTION (Calendar step 5, `docs/CALENDAR-PLAN.md` decision 4; migration 073 adds it
+  // to `ai_calls_task_check`): the calendar's answer. Nothing writes it yet — step 10 is the caller.
+  'calendar',
 ] as const
 
 export interface CallUsage {

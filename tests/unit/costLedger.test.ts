@@ -108,11 +108,12 @@ describe('the task list matches the CHECK constraint', () => {
     // **migration 050 owns it now**, having dropped and recreated the constraint to add
     // `document_draft` beside `document_scan`. **Migration 064 owns it now** (Workspace Task 6),
     // having recreated it again to add `howto`. **Migration 066 owns it now** (HR Step 3b), having
-    // recreated it to add `hr` and `hr_check`.
+    // recreated it to add `hr` and `hr_check`. **Migration 073 owns it now** (Calendar step 5),
+    // having recreated it to add `calendar`.
     const inMigration = [
       'research', 'checklist', 'substeps', 'convert', 'summarise',
       'gate', 'critique', 'audit', 'document_review', 'document_scan', 'document_draft', 'howto', 'other',
-      'hr', 'hr_check',
+      'hr', 'hr_check', 'calendar',
     ]
     assert.deepEqual([...LEDGER_TASKS].sort(), inMigration.sort())
   })

@@ -24,7 +24,12 @@ type Db = { from: (t: string) => any }   // eslint-disable-line @typescript-esli
 
 // 'handbook_checks' is HR's queue (HR Step 3b; migration 066 adds it to job_runs_job_check). No route
 // yet — that is HR step 10.
-export type SweepJob = 'scan_documents' | 'audit_sections' | 'handbook_checks'
+//
+// 'calendar_month' is the Calendar's monthly email (Calendar step 5; migration 073 adds it to the same
+// CHECK). It is listed here for the name's sake and is NOT a five-minute sweep: it runs once on the 1st
+// and so uses `startJobRun` (`lib/jobAuth.ts`), whose row is the evidence that it ran. No route yet —
+// that is Calendar step 11.
+export type SweepJob = 'scan_documents' | 'audit_sections' | 'handbook_checks' | 'calendar_month'
 
 /** What `finish` does: close the opened row, write a whole one, or write nothing. */
 export type RecordDecision = 'update' | 'insert' | 'none'
