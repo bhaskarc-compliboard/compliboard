@@ -12383,3 +12383,163 @@ tests — the yardstick, the manual sets and every switch — are **held for the
 other section's (§2.8).
 
 **Cost of step 4: $0.** No model call.
+
+---
+
+## 186. CALENDAR STEP 5: FOUNDATIONS — 15 October 2026
+
+§186 — migration **073 on STAGING ONLY**, not production. Code: `lib/calendarDates.ts` (new),
+`app/api/calendar/route.ts`, `app/api/document-actions/route.ts`, `lib/ai.ts`, `lib/costLedger.ts`,
+`lib/jobAuth.ts`, `lib/jobRun.ts`, `lib/topicList.ts`, `app/api/account/route.ts`,
+`app/api/account/export/route.ts`, `scripts/check-live.js`, two test files. **No model call: $0**,
+read back from `ai_calls` (0 rows in the two hours the step took).
+
+**The production read first, as §2.6 asked** — SELECT only, one query, through the Supabase CLI's
+own connection (`SUPABASE_PROD_SERVICE_ROLE_KEY` is blank on a laptop, `CLAUDE.md` §3.8):
+`select count(*) as total, count(*) filter (where company_id is null) as no_company, count(*) filter
+(where document_id is not null) as from_documents from public.calendar_events` → **47 / 0 / 0**. So
+`company_id NOT NULL` lands with nothing to lose, and every production row backfills to
+`source = 'person'`: with no `document_id` there is no document to point at.
+
+### What migration 073 does
+
+`calendar_events` is the oldest table in the product (`000_baseline.sql:90`) and had been carried
+rather than designed. Four faults, each a decision in §185: **`company_id` was nullable** (the only
+one in the date family); **`category` had three vocabularies and no CHECK**, which
+`006_enums_and_constraints.sql:66–71` saw in September and deliberately left — *"the stored set and
+the offered set are DISJOINT … Needs its own decision, not a default"* — and decision 5 is that
+decision, replacing it with `source`; **there was no `status`**, so nothing could be proposed and
+the only ways in were a person typing a date or pressing a button; and **`completed` /
+`completed_at` said "done"**, which the product must not.
+
+- **`calendar_events`:** `status`, `source`, `recurs`, `period`, `source_line`, `source_url`,
+  `source_page`, `audit_finding_id`, `deadline_id`, `confirmed_by/at`, `dismissed_by/at/reason`,
+  `replaced_by` added; `user_id` → `added_by`; `category`, `is_recurring`, `recurrence_period`,
+  `completed`, `completed_at` dropped; `company_id` NOT NULL; `due_date` nullable under
+  **migration 060's rule copied word for word in behaviour** — `due_date is not null or recurs is
+  true`. 25 columns, 15 constraints, 6 indexes, 3 policies, read back from the catalog.
+- **`added_by`'s foreign key changes behaviour, and that is the point.** It was `ON DELETE CASCADE`
+  (`000_baseline.sql:364`): deleting an auth user DESTROYED the company's calendar rows that person
+  had created. It is `SET NULL` now, and **`confirmed_by` and `dismissed_by` take the same key** (the
+  owner, after reading the draft), so a departed person's id disappears from every history field
+  alike rather than from one of three. All three read back `confdeltype = 'n'` and all three point
+  at `auth.users`.
+- **Nothing derived is stored** — migration 049's rule. `calendar_v` (security_invoker, 31 columns)
+  computes `next_due`, `days_until`, `has_passed` and `source_title`, and reads the site LIVE from
+  the document through `document_index_v`, so a correction in Documents reaches the calendar with no
+  code here. **The arithmetic was proved before it was written into the file**, by a read-only SELECT
+  over ten anchors on staging: the leap-day clamp (`2024-02-29` + 36 months → `2027-02-28`) and the
+  end-of-month case (`2025-01-31` + 20 months → `2026-09-30`, behind today, so one more step to
+  `2026-10-31`) both correct.
+- **The no-duplicates key is a partial UNIQUE INDEX**, `(company_id, document_id, lower(title),
+  coalesce(due_date, date '0001-01-01'))` where `source = 'document'` — keyed on the DOCUMENT and not
+  the scan, because `document_deadlines` rows are written per scan so a re-read makes a new one for
+  the same real date (decision 13).
+- **Grants:** REVOKE then GRANT for both roles. `000_baseline.sql:758` granted `all` to anon,
+  authenticated AND service_role, and `004:397` revoked only anon's — so **`authenticated` had held
+  DELETE on this table since the first day.** Decision 11 takes it away and drops the DELETE policy.
+- **Three CHECKs widened**, each drop-and-recreate with every prior value restated:
+  `ai_calls_task_check` + `calendar`, `job_runs_job_check` + `calendar_month`,
+  `topics_section_is_known` + `calendar`.
+- **Two new tables:** `calendar_mailings` (UNIQUE `(company_id, month)`, the stamp against a double
+  send) and `calendar_feed_tokens` (UNIQUE `token`). Both SELECT-only to a person.
+- **One change to a table this section does not own:** `audit_findings` gains
+  `unique (company_id, id)`. §2.6's composite foreign key for `audit_finding_id` cannot exist without
+  it, and `audit_findings` did not have it — read from `pg_constraint`: nine relations in `public`
+  carry that key and it was not among them. Additive and unfailable. **Named in the step's impact
+  plan as an Audits effect rather than slipped in** (decision 26).
+
+### What the verify blocks refused, and the one that tested the backfill
+
+**§0 and §3 exist because `calendar_events` is EMPTY on staging** and holds 47 rows on production. A
+backfill verified against an empty table is `HOW-WE-BUILD.md` §3's worst case — a check that passes
+because it can see nothing. So §0 inserts **six witness rows in the OLD shape** before the backfill
+and §3 asserts the witness count is six **first**, then every mapping: `document`/`person` from
+whether a `document_id` is present; `monthly→month`, `quarterly→quarter`, `annually→year`, and
+**`weekly→null`, never silently `year`**; `is_recurring` NULL → `recurs` false, which is what lets
+`recurs` be NOT NULL and keeps the `due_date` CHECK from ever evaluating to NULL; the source line
+**copied** from `description`, with `description` asserted unchanged. Then the witnesses are deleted.
+
+**§10 broke every constraint on purpose.** Refused: a one-off date with no day; `status = 'done'`;
+`source = 'compliance'` (the old vocabulary, not obvious junk); `period = 'annually'`; the same
+document date twice, again in different case, and again undated; a calendar row citing another
+company's audit finding or handbook; `ai_calls.task = 'calendarx'`; `job_runs.job =
+'calendar_months'`; `topics.section = 'calendars'`. Accepted, because testing only the refusals
+would pass against the wrong rule: a recurring date with no day; all five periods; a MOVED date on
+the same document; two typed dates sharing a title and a day; a second `calendar` ledger row; all 15
+prior ledger tasks and all 6 prior job names; a topic with no section still defaulting to
+`workspace`. Read back from the catalog: all three person keys SET NULL onto `auth.users`, the six
+old columns gone, `calendar_v` security_invoker, **all eight privileges for anon, authenticated and
+service_role on three tables and the view**, RLS on, no DELETE policy, both write policies carrying
+WITH CHECK, and all three indexes by name.
+
+**The notices did not print** — the Supabase CLI swallows them. So the result was read from the
+database: `supabase_migrations.schema_migrations` **74 rows, highest 073**, and every probe company,
+ledger row and `job_runs` row the verify blocks made is **gone**, which only their own cleanup does.
+`CLAUDE.md` §3.7: the result of a migration is taken from the database, never from the exit code.
+
+### `proposeDate()` — one writer, and the owner's two extra rules
+
+`lib/calendarDates.ts`. Before it, two writers each built their own row with their own vocabulary
+against a column with no CHECK. Beyond §2.6: **a fourth outcome, `revived`** (the owner), and
+`description` in the signature — the person's own note, distinct from `sourceLine`, which is the
+sentence a document set the date in.
+
+- **(a) A date only SUPERSEDED comes back** when the newest reading finds it again: status
+  `proposed`, `replaced_by` cleared, and everything that had superseded it superseded by it. The
+  permit said 15 November, a re-read said 18 July, today's reading says 15 November again — the
+  middle reading was most likely wrong, and the latest reading of a document is the truth.
+- **(b) A date a PERSON dismissed never comes back,** whatever a reading says; the outcome is
+  `existing` and **nothing is written**. A dismissal outranks a superseding: a row that is both
+  dismissed and replaced stays dismissed.
+- **The invariant no constraint can see: at most one LIVE row per (company, document,
+  lower(title))**, live meaning `dismissed_by is null and replaced_by is null`. The database holds
+  the other half. Readers filter on `replaced_by is null`.
+
+**33 unit tests, and the suite was shown to FAIL.** Three deliberate mutations — dropping rule (b)'s
+dismissal guard, making the title match case-sensitive, and superseding dismissed rows — each broke
+exactly one test. A validator that has only ever said PASS is untested (`HOW-WE-BUILD.md` §3).
+
+### What else changed, and the defect reading the diff caught
+
+- **`app/api/calendar/route.ts`:** POST and PATCH are now three lines each over `calendarDates`.
+  PATCH is `{ id, action: 'confirm' | 'dismiss' | 'period' }`. **DELETE is deleted.**
+- **`app/api/document-actions/route.ts`:** `deadline_to_calendar` goes through `proposeDate()` and no
+  longer guesses `recurrence_period: 'annually'` for anything that recurs — the scan says only
+  WHETHER a date repeats (decision 23), so `period` stays null and the person sets it. And the
+  `document_deadlines.calendar_event_id` stamp moved **off `supabaseAdmin` onto `authed.db`** (map
+  D6): `authenticated` has held UPDATE on that table since `040:243`, granted for precisely this
+  press, and the service role gave up §3.6's second layer for nothing. `supabaseAdmin` in that route
+  is now exactly the three statements its own header names.
+- **⚠ A DEFECT CAUGHT BY READING THE DIFF, NOT BY ANY CHECK.** Adding
+  `byCompany('calendar_mailings')` to `app/api/account/export/route.ts` put the new name **last in
+  the destructure and eighth in the `Promise.all`** — which would have silently assigned
+  `obligations` to `calendarMailings` and shifted every array after it, so the export would have
+  quietly contained the wrong rows under eleven correct-looking keys. `tsc` cannot see it (every
+  element is `any[]`), `check:schema` cannot (it reads query strings, not array order), and no test
+  covers the export. Fixed, and then checked **positionally** — all 18 names printed beside all 18
+  `byCompany` calls. Exactly §3's shape: the failure looks like it worked.
+- **`calendar_feed_tokens` is deliberately NOT exported**, with the reason in the file: it is a
+  credential, not the customer's data. `GET /api/calendar/feed?t=<token>` is the one route that will
+  answer without a session (decision 20), and an export is a file people forward to an accountant.
+
+### Two things the step also proved about the machinery itself
+
+- **The Haiku guard picks up a new tier with no change to the guard.** `scripts/haiku-names.mjs:16–24`
+  derives the model variables and the task list by regex from `lib/ai.ts` itself, and its comment
+  claims a tier added later is covered. It is: the isolated server's guard printed **13 of 13 tiers
+  on `claude-haiku-4-5`, `calendar` among them.**
+- **`calendar_v` refuses every write with 55000, not 42501**, for anon and for a signed-in person —
+  `cannot insert into view "calendar_v"`. That is a STRONGER guarantee than a missing grant: Postgres
+  checks auto-updatability before privileges, so no later migration can loosen it. The probe was
+  rewritten to assert that code rather than "some error", because an error of any other kind would
+  look like a refusal and prove nothing.
+
+### What is NOT done, and is expected
+
+**Nothing calls the new vocabulary yet** — no route asks for ledger task `calendar`, no job writes
+`calendar_month`, no topic is created with section `calendar`. Steps 10 and 11 are the callers; said
+here rather than inventing one. **`lib/documentScan.ts` and `lib/auditRun.ts` do not call
+`proposeDate()` yet** — that is step 6. **The old `/calendar` page's tick and × are expected-broken
+on staging** (`HANDOFF-CODE.md` §7), measured: 400 and 405. Save still works, including the old
+form's `is_recurring` / `recurrence_period`, which the route maps. **073 is not on production.**

@@ -3599,3 +3599,70 @@ $ python3 -c "import zipfile; [print('0x%04x' % i.flag_bits, i.filename[:60]) fo
 `0x0800` is bit 11, and `zipOf` sets it in both the local and the central header. **Do not "fix"
 this.** It was checked before anything was changed, and changing it would break the names that
 currently work.
+
+---
+
+## Calendar — step 5, the foundations (15 October 2026)
+
+**On staging only.** Migration 073 is not on production. `docs/CALENDAR-PLAN.md` step 5,
+`DECISIONS.md` §186. Two per feature, the perfect case and the edge case, as `HOW-WE-BUILD.md` §2
+step 12 asks. **None of these costs a model call.**
+
+The automated half already runs: `tests/unit/calendarDates.test.ts` (33 tests, and the suite was
+shown to fail against three deliberate mutations) and `check:live`'s Calendar probes. What follows is
+what a person has to look at, because a screen and a real press are the only instruments for the
+class of fault these would catch (`HOW-WE-BUILD.md` §3a).
+
+### C5-1 · Add a date, confirm it, remove it — the perfect case
+
+1. Sign in on a dev server pointed at **staging** as `testgamma@example.com` and open `/calendar`.
+2. **+ Add deadline** → title "Tier II report", due 1 March 2027, a description, Save.
+3. The date appears in the month grid and in the List view. **It should read as a confirmed date** —
+   a person typed it, so `status` is `confirmed` and `added_by` and `confirmed_by` are both them.
+4. Through the API as that person (`PATCH /api/calendar` `{ id, action: 'dismiss', reason: '…' }`):
+   the row **stays in the table** with `status = 'dismissed'`, `dismissed_by`, `dismissed_at` and the
+   reason. **Pass:** nothing was deleted. **Fail:** the row is gone, or the reason is empty.
+5. Try to confirm it again. **Pass:** 409 and *"That date was removed. Add it again if you need it
+   back."* **Fail:** it comes back as confirmed, overruling the person who removed it.
+
+### C5-2 · The edge case: a recurring date with no day, and one whose day moved
+
+**This is where domain knowledge does work no script replicates.** A permit that says a fee is
+annual and names no date is a real obligation, and the product must neither invent a day nor drop it.
+
+1. Add a date with **Recurring on and no due date**. **Pass:** it saves, and the row reads
+   "repeats, day not known yet" — `due_date` null, `recurs` true, `period` null. **Fail:** the form
+   refuses it, or a day appears that nothing in the document said.
+2. Add one with Recurring on and **Annually** chosen. **Pass:** `period` is `year`, not `annually` —
+   the old dropdown's word is mapped, and `calendar_v.next_due` is the next 1 September-style
+   anniversary **in the future**, computed, never stored. **Fail:** `next_due` is in the past, or the
+   stored row holds a next date of its own.
+3. On a Cascade document with a dated deadline, press **Add to calendar** in the report drawer, then
+   press it again. **Pass:** one row, `source = 'document'`, `status = 'proposed'`, **`period` null**
+   (the scan says only *whether* a date repeats — decision 23), and the second press changes nothing.
+   **Fail:** two rows, or `period` guessed as `year` from `recurs` alone.
+4. Ask the owner to read one such row out loud as a sentence. **The question that matters is not
+   whether the field is null — it is whether a person reading the row would be misled about what the
+   permit actually says.**
+
+### C5-3 · Expected-broken until step 7, and it must fail HONESTLY
+
+The old `/calendar` page is still the old page. Two of its buttons no longer have anything to write.
+
+1. Press the **tick** on a date. **Pass:** nothing is saved and the row is unchanged on reload —
+   `PATCH` answers 400 *"Expected an action: confirm, dismiss, period."* **Fail:** the tick appears
+   to work and a column somewhere says "done", which is the one word the product must not use.
+2. Press the **×**. **Pass:** the row survives; `DELETE /api/calendar` is 405 because there is no
+   handler and `authenticated` holds no DELETE grant. **Fail:** the row disappears.
+3. **Known and accepted:** the page gives no message for either, because it never reads the
+   response. That is `HANDOFF-CODE.md` §7's row, and step 7 replaces the page rather than patching it.
+
+### C5-4 · The edge case nobody will press by accident: another company's date
+
+1. Signed in as `testcascade@example.com`, `PATCH /api/calendar` with a **Test Gamma** date's id.
+2. **Pass: 404** *"That date was not found."* **Fail: 403**, which confirms the id exists and lets
+   someone probe for real ids one request at a time (`CLAUDE.md` §3.6).
+3. The same with `GET /api/calendar`: the list holds only your own company's rows, and
+   `calendar_v` hides the other company's row too. **Prove the probe can see a presence first** —
+   read the other company's row as the service role and get 1, then as the caller and get 0.
+   A caller that can see nothing looks exactly like RLS working.
