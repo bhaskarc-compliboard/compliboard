@@ -594,9 +594,17 @@ const CAL_TABLES = ['calendar_events', 'calendar_mailings', 'calendar_feed_token
   }
 
   // calendar_mailings and calendar_feed_tokens: the server writes, the person only reads.
+  //
+  // *** THE TOKEN PROBE ROW IS WRITTEN ALREADY REVOKED, AND THAT IS NOT COSMETIC — migration 076. ***
+  // `idx_calendar_feed_tokens_company_live` allows ONE LIVE token per company, and the signed-in
+  // company has one (its own feed link). A live probe row would now be refused with 23505 and this
+  // probe would fail for a reason that has nothing to do with what it tests: what `authenticated`
+  // and the server may each do to the table. `revoked_at` is outside the index's predicate, so the
+  // row is written, read, refused an UPDATE and a DELETE, and removed, exactly as before.
   for (const [t, row] of [
     ['calendar_mailings', { company_id: companyId, month: `probe-${stamp}`, sent_to: ['probe@example.com'] }],
-    ['calendar_feed_tokens', { company_id: companyId, token: `check-live-probe-${stamp}` }],
+    ['calendar_feed_tokens', { company_id: companyId, token: `check-live-probe-${stamp}`,
+                               revoked_at: new Date().toISOString() }],
   ]) {
     const { error: iErr } = await asUser.from(t).insert(row)
     ok(`${t.padEnd(26)} authenticated refused INSERT (42501)`, refused(iErr), iErr?.code ?? 'ALLOWED')
@@ -1725,14 +1733,30 @@ if (want('calendar_feed')) {
   const stamp = Date.now()
   const good = `probe${stamp}${'x'.repeat(30)}`
   const revoked = `revoked${stamp}${'y'.repeat(30)}`
-  let mineId = null, theirCompany = null, theirDateId = null
+  let mineCompany = null, mineId = null, theirCompany = null, theirDateId = null
   try {
-    // This company's date, and another company's, so "does not leak" is proved against a row
-    // that is actually there — a feed that returned nothing would pass a weaker check.
-    const { data: mine } = await admin.from('calendar_events')
-      .insert({ company_id: companyId, title: `feed probe ${stamp}`, due_date: '2027-05-04', source: 'person', status: 'confirmed' })
-      .select('id').maybeSingle()
-    mineId = mine?.id ?? null
+    /**
+     * *** BOTH COMPANIES HERE ARE THE PROBE'S OWN — Calendar step 9, migration 076. ***
+     *
+     * The live token used to be written for the SIGNED-IN company, and 076's
+     * `unique (company_id) where revoked_at is null` refuses that: the signed-in company already
+     * holds its own feed link, so the insert would 23505 and five of these six probes would fail
+     * for a reason that is not about the route. Revoking the real link for the duration was the
+     * alternative and was rejected — a check that takes a customer's working link away, and puts
+     * it back only if it reaches its `finally`, is a check that can break the thing it tests.
+     *
+     * Nothing is lost by owning the company: this route is scoped BY THE TOKEN and never by a
+     * session, so "the token's company's dates and no others" is the whole claim, and it is now
+     * proved between two companies the probe made and deletes.
+     */
+    const { data: mineCo } = await admin.from('companies').insert({ name: `check:live feed probe mine ${stamp}` }).select('id').maybeSingle()
+    mineCompany = mineCo?.id ?? null
+    if (mineCompany) {
+      const { data: mine } = await admin.from('calendar_events')
+        .insert({ company_id: mineCompany, title: `feed probe ${stamp}`, due_date: '2027-05-04', source: 'person', status: 'confirmed' })
+        .select('id').maybeSingle()
+      mineId = mine?.id ?? null
+    }
     const { data: other } = await admin.from('companies').insert({ name: `check:live feed probe ${stamp}` }).select('id').maybeSingle()
     theirCompany = other?.id ?? null
     if (theirCompany) {
@@ -1741,8 +1765,12 @@ if (want('calendar_feed')) {
         .select('id').maybeSingle()
       theirDateId = theirs?.id ?? null
     }
-    await admin.from('calendar_feed_tokens').insert({ company_id: companyId, token: good })
-    await admin.from('calendar_feed_tokens').insert({ company_id: companyId, token: revoked, revoked_at: new Date().toISOString() })
+    // One live token and one revoked one for the probe's own company — which 076 allows, because
+    // the index covers only the live row. A second LIVE row for it would be refused, and §6 of the
+    // migration proves that.
+    const { error: tokenError } = await admin.from('calendar_feed_tokens').insert({ company_id: mineCompany, token: good })
+    say('a live token could be written at all', !tokenError, tokenError ? `${tokenError.code} ${tokenError.message}` : 'written')
+    await admin.from('calendar_feed_tokens').insert({ company_id: mineCompany, token: revoked, revoked_at: new Date().toISOString() })
 
     // 1. a good token answers, as a calendar, with no session at all
     const res = await fetch(`${BASE}/api/calendar/feed?t=${encodeURIComponent(good)}`)
@@ -1750,8 +1778,8 @@ if (want('calendar_feed')) {
     say(`a live token answers 200 text/calendar`,
       res.status === 200 && (res.headers.get('content-type') || '').includes('text/calendar'),
       `${res.status} ${res.headers.get('content-type')}`)
-    // 2. it contains THIS company's date …
-    say(`and carries this company's date`,
+    // 2. it contains the TOKEN'S company's date …
+    say(`and carries the token's company's date`,
       !!mineId && body.includes(`UID:${mineId}@`), mineId ? 'UID present' : 'no probe row')
     // 3. … and not the other company's
     say(`and NOT the other company's`,
@@ -1772,6 +1800,7 @@ if (want('calendar_feed')) {
   } finally {
     await admin.from('calendar_feed_tokens').delete().in('token', [good, revoked])
     if (mineId) await admin.from('calendar_events').delete().eq('id', mineId)
+    if (mineCompany) await admin.from('companies').delete().eq('id', mineCompany)
     if (theirCompany) await admin.from('companies').delete().eq('id', theirCompany)
   }
   }

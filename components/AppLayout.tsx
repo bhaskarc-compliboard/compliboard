@@ -19,6 +19,20 @@ interface AppLayoutProps {
  */
 export const FACTS_CHANGED = 'compliboard:facts-changed'
 
+/**
+ * AND WHAT THE CALENDAR FIRES WHEN IT CONFIRMS OR REMOVES A DATE — Calendar step 9.
+ *
+ * A SECOND NAME RATHER THAN REUSING THE ONE ABOVE, because `FACTS_CHANGED` means "the company
+ * record changed" and the Calendar changes no fact: a listener that had to guess which of two
+ * meanings a single event carried would be one rename away from the silent breakage the paragraph
+ * above describes. Both are listened to here, and each end imports the constant.
+ *
+ * It exists because the badge beside "Calendar" counts the dates waiting, and confirming the last
+ * one from the queue has to take the badge with it — otherwise the nav says 9 while the page it
+ * sits beside says "Nothing waiting", which is the 29 September failure in a new place.
+ */
+export const COUNTS_CHANGED = 'compliboard:counts-changed'
+
 // *** NO ICONS. *** Multicolour OS emoji put seven uncontrolled colour schemes into a product
 // whose rule is one green, used only where it means something — and they render differently on
 // Mac and Windows, so the nav was a different object on each. Text only; no icon library.
@@ -111,7 +125,11 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   useEffect(() => {
     const onChanged = () => { loadCount() }
     window.addEventListener(FACTS_CHANGED, onChanged)
-    return () => window.removeEventListener(FACTS_CHANGED, onChanged)
+    window.addEventListener(COUNTS_CHANGED, onChanged)
+    return () => {
+      window.removeEventListener(FACTS_CHANGED, onChanged)
+      window.removeEventListener(COUNTS_CHANGED, onChanged)
+    }
   }, [loadCount])
 
   useEffect(() => {

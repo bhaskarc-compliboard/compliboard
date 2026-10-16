@@ -45,7 +45,18 @@ export async function POST(request: NextRequest) {
       // NAMED STATEMENT, service role: `authenticated` holds no INSERT here by design (073).
       const { error } = await supabaseAdmin.from('calendar_feed_tokens')
         .insert({ company_id: companyId, token })
-      if (error) throw error
+      /**
+       * *** 23505 HERE MEANS ANOTHER POST WON THE RACE, WHICH IS NOT A FAILURE — migration 076. ***
+       *
+       * `idx_calendar_feed_tokens_company_live` is `unique (company_id) where revoked_at is null`,
+       * so when two POSTs read nothing and both insert, the database now refuses the second one
+       * instead of accepting it. The link the person asked for EXISTS — the other request just made
+       * it — so throwing here would answer "We could not make that link just now" about a working
+       * link. The read below is what we fall through to, and it returns the winner's token.
+       *
+       * Any other error is still an error. 076's verify block §6 runs this exact sequence in SQL.
+       */
+      if (error && error.code !== '23505') throw error
     }
 
     /**
@@ -62,9 +73,11 @@ export async function POST(request: NextRequest) {
      * So after the insert the row set is read again and converged: the OLDEST live token wins and
      * every other is revoked. Idempotent, and it also tidies a company that already has two.
      *
-     * **The durable fix is a partial unique index** — `unique (company_id) where revoked_at is
-     * null` — which would make the second insert fail instead of succeeding. That is a migration,
-     * and step 8b has none; it is recorded in `docs/HANDOFF-CODE.md` §7 for the next one.
+     * **THE DURABLE FIX LANDED IN MIGRATION 076** (Calendar step 9): `unique (company_id) where
+     * revoked_at is null`, so the racing insert is refused above rather than accepted and the
+     * window in which two live credentials exist is gone. This block is kept for the two cases the
+     * index cannot reach: a company that already had two live rows before 076 converged them, and
+     * any future writer that inserts without reading. It is now expected to find nothing.
      */
     const all = await live()
     if (all.length > 1) {

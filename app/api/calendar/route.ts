@@ -22,7 +22,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
-import { proposeDate, confirmDate, dismissDate, setPeriod } from '@/lib/calendarDates'
+import { proposeDate, confirmDate, dismissDate, setPeriod, confirmMany } from '@/lib/calendarDates'
 
 /**
  * THE OLD PAGE'S RECURRENCE WORDS, MAPPED — and ITS CALLER IS NOW GONE (Calendar step 7).
@@ -146,11 +146,21 @@ export async function GET(request: NextRequest) {
  * more — decision 11: a date has passed, it is never done. The old page's tick sends the old body
  * and gets a 400 naming the actions, which is honest; step 7 replaces that page.
  *
+ * *** STEP 9 ADDED TWO THINGS FOR THE QUEUE, AND NEITHER IS A NEW RULE. ***
+ *   · `{ action: 'confirm', period }` — confirm a repeating date and say how often in ONE press,
+ *     which is what the queue's row picker does. A period on a one-off is refused exactly as
+ *     `period` refuses it, through the same function (`periodProblem`), so one call and two cannot
+ *     disagree. `period` absent means "do not touch it", which is what every caller before step 9
+ *     meant.
+ *   · `{ action: 'confirm_many', ids: [...] }` — "Confirm all from this document". It takes IDS and
+ *     not a document, because the ids are the ones the person could see when they pressed it; the
+ *     reasoning is in `lib/calendarDates.ts`.
+ *
  * OWNERSHIP IS PROVED AS IT ALWAYS WAS, and now in one place: each function in
  * `lib/calendarDates.ts` loads the row through `db` — the caller's own client under RLS — so another
  * company's row is simply absent and the answer is 404, never 403, so ids cannot be probed (§3.6).
  */
-const ACTIONS = ['confirm', 'dismiss', 'period'] as const
+const ACTIONS = ['confirm', 'dismiss', 'period', 'confirm_many'] as const
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -161,13 +171,24 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json().catch(() => null)
     const id = typeof body?.id === 'string' ? body.id : ''
     const action = typeof body?.action === 'string' ? body.action : ''
-    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
     if (!(ACTIONS as readonly string[]).includes(action)) {
       return NextResponse.json(
         { error: `Expected an action: ${ACTIONS.join(', ')}.` }, { status: 400 })
     }
+    // `confirm_many` carries `ids`, not `id`, so the id check comes after the action is known —
+    // otherwise the one action that does not take an id would always answer "Missing id".
+    if (action === 'confirm_many') {
+      const many = await confirmMany(db, body?.ids, userId)
+      return NextResponse.json(many.json, { status: many.status })
+    }
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-    const result = action === 'confirm' ? await confirmDate(db, id, userId)
+    const result = action === 'confirm'
+      // `undefined` and `null` are different answers here: absent is "leave the period alone",
+      // and null is the queue's "I don't know yet" — confirm it and leave the period unset, so the
+      // date stays in the strip with its decision-30 line instead of acquiring a frequency.
+      ? await confirmDate(db, id, userId,
+          'period' in (body ?? {}) ? (body.period === null ? null : String(body.period)) : undefined)
       : action === 'dismiss' ? await dismissDate(db, id, userId, String(body?.reason ?? ''))
       : await setPeriod(db, id, body?.period === null || body?.period === undefined ? null : String(body.period))
     return NextResponse.json(result.json, { status: result.status })

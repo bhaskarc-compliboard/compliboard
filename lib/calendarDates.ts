@@ -346,10 +346,56 @@ async function load(db: Db, id: string) {
   return data as { id: string; status: string; dismissed_by: string | null; recurs: boolean } | null
 }
 
-export async function confirmDate(db: Db, id: string, userId: string): Promise<ActResult> {
+/**
+ * THE PERIOD RULES, IN ONE PLACE — Calendar step 9.
+ *
+ * `setPeriod` had both of them inline, and then `confirmDate` grew the one-call case the queue
+ * needs (`{ action: 'confirm', period }` — confirm this repeating date AND say how often, in one
+ * press). Two copies of "what may a period be" is two answers: the queue could have accepted a word
+ * the drawer refuses, or written a period onto a one-off the drawer would not. The sentences are
+ * the ones the owner approved at step 8a, unchanged.
+ *
+ * `null` is always allowed, including on a one-off: it means "nothing is claimed" (decision 23),
+ * and it is how a row written before step 8a's guard gets tidied.
+ */
+export function periodProblem(value: string | null, recurs: boolean): string | null {
+  if (value === null) return null
+  if (!(PERIODS as readonly string[]).includes(value)) {
+    return `"${value}" is not how often a date can repeat.`
+  }
+  if (!recurs) {
+    return 'That date happens once, so it has no "how often". Say that it repeats first.'
+  }
+  return null
+}
+
+/** What a caller sent as a period, as a value this file understands. '' is null, as it always was. */
+const periodValue = (period: string | null): string | null => (period === null || period === '' ? null : period)
+
+/**
+ * CONFIRM A DATE — and, since step 9, optionally say how often it repeats IN THE SAME CALL.
+ *
+ * `period` is `undefined` for "do not touch it", which is what the drawer's Confirm sends and what
+ * every caller before step 9 meant. The queue's row picker sends a word, or `null` for "I don't
+ * know yet" — which confirms the date and leaves the period null on purpose, so it stays in the
+ * strip with its decision-30 line rather than acquiring a frequency nobody read.
+ *
+ * ONE UPDATE, NOT TWO. The queue confirms a repeating date and its period together; writing them
+ * as two statements would leave a window in which the date is confirmed and the period is not, and
+ * a failure in the second would be invisible to the person who pressed one button.
+ */
+export async function confirmDate(
+  db: Db, id: string, userId: string, period?: string | null,
+): Promise<ActResult> {
   if (!id) return { status: 400, json: { error: 'No date given.' } }
   const row = await load(db, id)
   if (!row) return NOT_FOUND
+  const alsoPeriod = period !== undefined
+  const value = alsoPeriod ? periodValue(period as string | null) : null
+  if (alsoPeriod) {
+    const problem = periodProblem(value, (row as { recurs: boolean }).recurs)
+    if (problem) return { status: 400, json: { error: problem } }
+  }
   // A removed date is not re-confirmed into existence: the person who removed it gave a reason,
   // and the honest way back is to add the date again (§5.1 — say what they can do next).
   if (row.status === 'dismissed') {
@@ -361,11 +407,76 @@ export async function confirmDate(db: Db, id: string, userId: string): Promise<A
   // make the row say it was both confirmed and withdrawn, with nothing to say which came last.
   const { data, error } = await db.from('calendar_events')
     .update({ status: 'confirmed', confirmed_by: userId, confirmed_at: new Date().toISOString(),
-              withdrawn_at: null })
+              withdrawn_at: null, ...(alsoPeriod ? { period: value } : {}) })
     .eq('id', id).select(ROW_COLUMNS).maybeSingle()
   if (error) throw new Error(`calendar_events: ${error.message}`)
   if (!data) return NOT_FOUND
   return { status: 200, json: { date: data } }
+}
+
+/**
+ * *** CONFIRM EVERY DATE IN ONE GROUP — Calendar step 9, the queue's "Confirm all from this
+ * document". ***
+ *
+ * THE IDS ARE THE ONES THE PERSON COULD SEE WHEN THEY PRESSED IT, and that is the rule, not an
+ * implementation detail. The alternative — "confirm everything for this document" as a filter on
+ * the server — would confirm a date that arrived between the page loading and the click: a reading
+ * that finished thirty seconds ago would have its dates confirmed by somebody who never saw them,
+ * with their name on it. So the caller sends the ids it drew, this function touches exactly those,
+ * and a row that arrived since stays in the queue where somebody can look at it.
+ *
+ * THE RULES, ALL FOUR FROM THE BRIEF:
+ *   · at most `CONFIRM_MANY_MAX` ids in one call;
+ *   · every id must be the caller's company's, or the WHOLE call is 404 and nothing is written —
+ *     one foreign id does not quietly confirm the other nineteen, and 404 rather than 403 so a
+ *     stranger cannot learn which ids exist (§3.6). Tenancy is RLS's answer here, not a
+ *     `company_id` filter written in this file: `db` is the caller's own client, so a row of
+ *     another company is simply absent from the read;
+ *   · a row already confirmed is left alone and counted — pressing the button twice is not an
+ *     error, and re-stamping `confirmed_by` would rewrite who said yes;
+ *   · a dismissed or withdrawn row is skipped and counted, because a person's removal is not
+ *     undone by a bulk press (rule b) and a withdrawn row is one the newest reading no longer
+ *     says at all.
+ *
+ * ONE UPDATE for all of them, so the numbers the queue shows afterwards are one answer and not a
+ * partial one.
+ */
+export const CONFIRM_MANY_MAX = 200
+
+export async function confirmMany(db: Db, ids: unknown, userId: string): Promise<ActResult> {
+  const given = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string' && !!x) : []
+  const wanted = [...new Set(given)]
+  if (wanted.length === 0) return { status: 400, json: { error: 'No dates given.' } }
+  if (wanted.length > CONFIRM_MANY_MAX) {
+    return {
+      status: 400,
+      json: { error: `That is more than ${CONFIRM_MANY_MAX} dates at once. Confirm them a group at a time.` },
+    }
+  }
+
+  const { data, error } = await db.from('calendar_events').select('id, status').in('id', wanted)
+  if (error) throw new Error(`calendar_events: ${error.message}`)
+  const found = (data ?? []) as Array<{ id: string; status: string }>
+  // *** NOTHING IS WRITTEN WHEN ONE ID IS NOT OURS. *** The read above ran as the caller under RLS,
+  // so "not found" covers another company's id, a deleted one and a typo alike, and says which it
+  // was to nobody.
+  if (found.length !== wanted.length) {
+    return { status: 404, json: { error: 'Some of those dates were not found. Nothing was changed.' } }
+  }
+
+  const toConfirm = found.filter((r) => r.status === 'proposed').map((r) => r.id)
+  const already = found.filter((r) => r.status === 'confirmed').length
+  const skipped = found.length - toConfirm.length - already
+  if (toConfirm.length === 0) {
+    return { status: 200, json: { confirmed: 0, already, skipped, ids: [] } }
+  }
+  const { data: done, error: writeError } = await db.from('calendar_events')
+    .update({ status: 'confirmed', confirmed_by: userId, confirmed_at: new Date().toISOString(),
+              withdrawn_at: null })
+    .in('id', toConfirm).select('id')
+  if (writeError) throw new Error(`calendar_events: ${writeError.message}`)
+  const confirmedIds = ((done ?? []) as Array<{ id: string }>).map((r) => r.id)
+  return { status: 200, json: { confirmed: confirmedIds.length, already, skipped, ids: confirmedIds } }
 }
 
 export async function dismissDate(db: Db, id: string, userId: string, reason: string): Promise<ActResult> {
@@ -400,10 +511,7 @@ export async function setPeriod(db: Db, id: string, period: string | null): Prom
   if (!id) return { status: 400, json: { error: 'No date given.' } }
   // null is a real answer — "it repeats, we do not know how often yet" (decision 23), which is what
   // a document scan gives us, so clearing the period must always be allowed.
-  const value = period === null || period === '' ? null : period
-  if (value !== null && !(PERIODS as readonly string[]).includes(value)) {
-    return { status: 400, json: { error: `"${value}" is not how often a date can repeat.` } }
-  }
+  const value = periodValue(period)
   const row = await load(db, id)
   if (!row) return NOT_FOUND
   /**
@@ -419,12 +527,8 @@ export async function setPeriod(db: Db, id: string, period: string | null): Prom
    * Clearing it is always allowed, including on a one-off — that is how a row written before this
    * guard gets tidied, and null already means "nothing is claimed".
    */
-  if (value !== null && !row.recurs) {
-    return {
-      status: 400,
-      json: { error: 'That date happens once, so it has no "how often". Say that it repeats first.' },
-    }
-  }
+  const problem = periodProblem(value, row.recurs)
+  if (problem) return { status: 400, json: { error: problem } }
   const { data, error } = await db.from('calendar_events')
     .update({ period: value }).eq('id', id).select(ROW_COLUMNS).maybeSingle()
   if (error) throw new Error(`calendar_events: ${error.message}`)

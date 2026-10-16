@@ -254,7 +254,27 @@ describe('the feed route — the one with no session', () => {
     assert.match(issuer, /\.order\('created_at', \{ ascending: true \}\)/, 'the OLDEST wins')
     assert.match(issuer, /\.update\(\{ revoked_at: new Date\(\)\.toISOString\(\) \}\)/)
     assert.match(issuer, /\.neq\('token', keep\)/)
-    assert.match(issuer, /partial unique index/, 'and the durable fix is named')
+  })
+
+  /**
+   * *** AND SINCE MIGRATION 076 THE DATABASE REFUSES THE SECOND ROW, SO THE ROUTE HAS TO READ
+   * 23505 AS "SOMEBODY ELSE JUST MADE IT" — Calendar step 9. ***
+   *
+   * This assertion used to be `/partial unique index/` on the paragraph that recorded the fix as
+   * owed. The index landed (`idx_calendar_feed_tokens_company_live`), and with it a trap: the
+   * racing insert now FAILS, and `if (error) throw error` would have turned a working link into
+   * "We could not make that link just now" for whichever of the two POSTs lost by a microsecond.
+   * The branch below is what stops that, and the converge above is kept for the rows written
+   * before 076 converged them.
+   */
+  test('a racing insert refused by the index (23505) falls through to the read, and does not 500', () => {
+    const issuer = readFileSync('app/api/calendar/feed-token/route.ts', 'utf8')
+    assert.match(issuer, /error\.code !== '23505'/, 'only other errors throw')
+    assert.match(issuer, /migration 076|MIGRATION 076/, 'and the index that causes it is named')
+    // The sequence after the refusal must still be the read — not a second insert, which would
+    // 23505 again, and not a throw.
+    const after = issuer.slice(issuer.indexOf("!== '23505'"))
+    assert.match(after, /const all = await live\(\)/, 'it re-reads, as 076 §6 specifies')
   })
   test('and it is still kept out of the account export, and still deleted with the company', () => {
     assert.match(readFileSync('app/api/account/export/route.ts', 'utf8'),

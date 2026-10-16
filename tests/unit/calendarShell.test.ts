@@ -33,6 +33,15 @@ const CODE = code(PAGE)
 const LAYOUT = readFileSync('components/AppLayout.tsx', 'utf8')
 const HR = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
 const COUNTS = readFileSync('lib/calendarCounts.ts', 'utf8')
+/**
+ * THE QUEUE'S OWN TWO FILES — Calendar step 9. The Dates-to-confirm tab's words left the page when
+ * the queue was built, which is where a words test goes wrong: it keeps asserting against the page
+ * and quietly stops covering the sentence it was written for. So the owner's words are looked for
+ * across the files that draw them, and the test says which file each came from.
+ */
+const QUEUE = readFileSync('lib/calendarQueue.ts', 'utf8')
+const QUEUE_UI = readFileSync('components/DateQueue.tsx', 'utf8')
+const SURFACES = `${PAGE}\n${QUEUE}\n${QUEUE_UI}`
 
 /** A stand-in for the client that records the query built on it. */
 function fakeDb(rows: unknown[], count = 0) {
@@ -223,14 +232,39 @@ describe('the page is the HR frame, imported and not copied', () => {
       const next = CODE.indexOf('{tab === ', at + 1)
       return CODE.slice(at, next === -1 ? CODE.length : next)
     }
-    for (const [t, words] of [['conversations', 'No conversations yet'], ['calendar', 'No dates yet'],
-      ['dates', 'Nothing waiting']] as const) {
+    for (const [t, words] of [['conversations', 'No conversations yet'], ['calendar', 'No dates yet']] as const) {
       const body = bodyOf(t)
       assert.ok(body.includes(words), `"${words}" must be in the ${t} tab`)
       assert.ok(body.includes('!loaded ? waiting'), `"${words}" must be guarded by !loaded`)
       // And the guard comes FIRST: an empty state after it would be drawn whatever `loaded` says.
       assert.ok(body.indexOf('!loaded ? waiting') < body.indexOf(words), `the guard must precede "${words}"`)
     }
+    /**
+     * *** THE DATES TAB DRAWS ITS EMPTY STATE FROM INSIDE THE QUEUE SINCE STEP 9, so the rule is
+     * held in two halves. *** The page must not mount the queue before the read answers, and must
+     * not mount it when the read FAILED — the second half is a defect this step fixed: the tab
+     * tested `counts.toConfirm === 0`, which a failed read leaves 0, so a company with nine dates
+     * waiting was told "Nothing waiting" (§5.1's worked example, exactly as it bit the Calendar tab
+     * at step 8a). The queue's own half is that `Nothing waiting` is behind `waiting.length === 0`,
+     * which is a count of rows that have been read, never of rows nobody has asked for yet.
+     */
+    const dates = bodyOf('dates')
+    assert.ok(dates.includes('!loaded ? waiting'), 'the dates tab must wait for the read')
+    assert.ok(dates.indexOf('!loaded ? waiting') < dates.indexOf('<DateQueue'),
+      'the guard must precede the queue')
+    assert.ok(dates.indexOf('loadFailed') < dates.indexOf('<DateQueue'),
+      'a failed read must be answered before the queue is drawn')
+    assert.match(dates, /COULD_NOT_LOAD/, 'and it says so in the words the Calendar tab uses')
+    assert.ok(!dates.includes('counts.toConfirm'),
+      'the queue must not be drawn off a count: a failed read leaves it 0 and that reads as "none"')
+    const ui = code(QUEUE_UI)
+    assert.match(ui, /if \(waiting\.length === 0\) \{/)
+    // FROM THE GUARD ONWARDS, never from the top of the file: written as an `indexOf` comparison
+    // over the whole source, this passed nothing and failed on the IMPORT of `QUEUE_EMPTY_TITLE`,
+    // which is above everything. The same trap as the page's own header comment (see `code()`).
+    const guarded = ui.slice(ui.indexOf('if (waiting.length === 0)'))
+    assert.match(guarded.slice(0, 200), /QUEUE_EMPTY_TITLE/,
+      'the empty state is behind the count of rows actually read')
     // The info bar is held to the same rule: no numbers before the read answers.
     assert.match(CODE, /\{loaded && bar\.length > 0 && \(/)
   })
@@ -248,13 +282,27 @@ describe('every word on the page is the owner\'s', () => {
     'Add your permits, certificates and reports in Company Documents. The dates they set show up here, with the line they came from.',
     'Nothing waiting',
     'When a reading finds a date, it lands here for you to confirm or set right.',
-    'This view arrives with step 9.',
     'New conversation',
     'Add a date',
   ]
   for (const w of WORDS) {
-    test(`“${w.slice(0, 48)}”`, () => assert.ok(PAGE.includes(w), 'missing from the page'))
+    test(`“${w.slice(0, 48)}”`, () => assert.ok(SURFACES.includes(w),
+      'missing from the page, the queue and the queue\'s words'))
   }
+
+  /**
+   * *** AND THE PLACEHOLDER IS GONE, WHICH IS A CHECK AND NOT A FORMALITY — step 9. ***
+   * "This view arrives with step 9." was in the WORDS list above, which means this file would have
+   * gone on asserting the presence of a sentence about unbuilt work after the work was built. A
+   * staging placeholder that outlives its step is how a product tells a customer it cannot do
+   * something it can; `docs/HANDOFF-CODE.md` §7 lists them so they are removed on purpose.
+   */
+  test('the step 9 placeholder is gone, and so is the name it was called by', () => {
+    assert.ok(!PAGE.includes('This view arrives with step 9.'), 'the sentence must be gone')
+    assert.ok(!PAGE.includes('DATES_ARRIVES'), 'and the constant with it')
+    assert.ok(!readFileSync('docs/HANDOFF-CODE.md', 'utf8').includes('This view arrives with step 9'),
+      '§7 must no longer carry it either')
+  })
   test('the three examples are the owner\'s, and they live in config where he can edit them', () => {
     const examples = readFileSync('config/examples.ts', 'utf8')
     const mine = examples.slice(examples.indexOf('export const CALENDAR_EXAMPLE_QUESTIONS'))

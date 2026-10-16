@@ -3,12 +3,14 @@
  * /calendar — THE CALENDAR, IN THE HR WORKSPACE'S FRAME. Calendar step 7 (`docs/CALENDAR-PLAN.md`
  * §2.4; boards 1, 3 and 7 as empty states).
  *
- * *** STEP 8a BUILT THE CALENDAR TAB; THE OTHER THREE ARE STILL SHELLS. *** The Calendar tab now
- * holds board 4 (the month, the default), board 5 (the list) and board 6's first tab (the date
- * drawer) with board 8's Remove sheet. Ask a question and Dates to confirm still say which step
- * brings them — steps 10 and 9 — rather than offering a control that does nothing, and those two
- * sentences are STAGING PLACEHOLDERS listed in `docs/HANDOFF-CODE.md` §7. `CLAUDE.md` §5.1: an
- * empty state is a message, and "nothing here" is a claim that has to be true.
+ * *** TWO OF THE FOUR TABS ARE BUILT: THE CALENDAR (steps 8a and 8b) AND DATES TO CONFIRM (step
+ * 9). *** The Calendar tab holds board 4 (the month, the default), board 5 (the list), board 6's
+ * drawer with both its tabs, board 9 (Add a date), board 11 (Send to your calendar) and printing.
+ * Dates to confirm holds board 7, the work queue, over `components/DateQueue.tsx`. Ask a question
+ * and Conversations still say which step brings them — step 10 — rather than offering a control
+ * that does nothing, and those two sentences are STAGING PLACEHOLDERS listed in
+ * `docs/HANDOFF-CODE.md` §7. `CLAUDE.md` §5.1: an empty state is a message, and "nothing here" is
+ * a claim that has to be true.
  *
  * *** THE FRAME IS HR'S, AND IT IS IMPORTED, NOT COPIED. *** `AppLayout`, `Tabs`, `Empty`,
  * `AttachControl` and the button strings are the same files the HR page renders; the 900 column, the
@@ -21,7 +23,9 @@
  * `readTopicList(supabase, 'calendar')` for the conversations — the first caller to pass that word
  * (migration 073 widened `topics_section_is_known`; step 10 is the first to WRITE one). Both read as
  * the signed-in person: `calendar_v` is `security_invoker`, so RLS decides what comes back and this
- * page never names a company. **It writes nothing, calls no route and reaches no model.**
+ * page never names a company, plus `document_index_v` for the queue's group headings. **It reaches
+ * no model.** It writes only through `POST` and `PATCH /api/calendar` — `lib/calendarDates.ts`, the
+ * one writer (decision 6) — so it builds no row and names no status.
  *
  * WHAT WENT WITH THE OLD PAGE (601 lines, replaced whole — "keep NOTHING of it"): the add form and
  * its `?add=`/`?on=` prefill, the month grid, the list, the import-a-file form over
@@ -44,7 +48,7 @@
 import { Suspense, useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import AppLayout from '@/components/AppLayout'
+import AppLayout, { COUNTS_CHANGED } from '@/components/AppLayout'
 import { Tabs } from '@/components/Tabs'
 import { Empty } from '@/components/Empty'
 import { AttachControl } from '@/components/AttachControl'
@@ -62,6 +66,8 @@ import {
 } from '@/lib/calendarView'
 import { CalendarDateDrawer, type DocumentFacts, type FindingFacts } from '@/components/CalendarDateDrawer'
 import { AddDateSheet } from '@/components/AddDateSheet'
+import { DateQueue } from '@/components/DateQueue'
+import { type DocumentHead } from '@/lib/calendarQueue'
 import { SendCalendarSheet } from '@/components/SendCalendarSheet'
 import DocumentReport from '@/components/DocumentReport'
 import AuditReport from '@/components/AuditReport'
@@ -79,13 +85,12 @@ const asTab = (v: string | null): Tab =>
 const LEDE = 'Every date your documents set, in one place. Ask when something is due, and we say '
   + 'where the date came from.'
 /**
- * THE THREE STAGING PLACEHOLDERS. Each names the step that replaces it, and each is listed in
+ * THE TWO STAGING PLACEHOLDERS LEFT. Each names the step that replaces it, and each is listed in
  * `docs/HANDOFF-CODE.md` §7. They are not polish-later wording: they are the honest answer to "why
- * is there nothing here", which is that this part is not built yet.
+ * is there nothing here", which is that this part is not built yet. **The third — "This view
+ * arrives with step 9" on the Dates-to-confirm tab — is gone with step 9**, and so is its §7 row.
  */
 const ASK_ARRIVES = 'Asking a question arrives with step 10.'
-const DATES_ARRIVES = (n: number) =>
-  `${n} ${n === 1 ? 'date' : 'dates'} waiting. This view arrives with step 9.`
 /**
  * THE INFO BAR ON THE CALENDAR TAB — board 4's line, which counts what the tab is showing rather
  * than what the whole section holds.
@@ -182,6 +187,13 @@ function Calendar() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [folders, setFolders] = useState<Array<{ id: string; name: string }>>([])
   /**
+   * WHAT THE QUEUE'S GROUP HEADINGS NEED BEYOND THE ROW — the document's kind word and the day the
+   * reading ran (`document_index_v.kind`, `.scanned_at`). The view the dates come from carries the
+   * document's TITLE and nothing else about it, and "a document, its kind word, when it was read"
+   * is the owner's heading for step 9. One read of the company's documents, not one per group.
+   */
+  const [heads, setHeads] = useState<Record<string, DocumentHead>>({})
+  /**
    * THE SECOND TAB, MOUNTED THE WAY AUDITS MOUNTS ONE (`app/audits/page.tsx:792–833`): the date's
    * drawer goes `hidden` and the report's own drawer takes its place, so the report is byte-for-byte
    * what Documents and Audits show and neither shared file changes. The tab row rides along in the
@@ -217,9 +229,9 @@ function Calendar() {
    * "confirmed by…" and "added by…" — its own policy already scopes it to the company.
    */
   const load = useCallback(async () => {
-    let c, t, r, siteRows, people, folderRows
+    let c, t, r, siteRows, people, folderRows, docRows
     try {
-      [c, t, r, siteRows, people, folderRows] = await Promise.all([
+      [c, t, r, siteRows, people, folderRows, docRows] = await Promise.all([
         readCalendarCounts(supabase),
         readTopicList(supabase, 'calendar'),
         readCalendarRows(supabase),
@@ -230,6 +242,9 @@ function Calendar() {
         // The folder list `DocumentReport` files a document into. Documents and Audits each hand it
         // the list they already hold rather than making the drawer fetch one; so does this.
         supabase.from('company_folders').select('id, name').order('name'),
+        // The queue's group headings. `document_index_v` is `security_invoker` like everything else
+        // this page reads, so RLS decides what comes back.
+        supabase.from('document_index_v').select('document_id, kind, scanned_at'),
       ])
     } catch (err) {
       // *** A READ THAT FAILED IS NOT AN EMPTY CALENDAR. *** Drawing "No dates yet" here would be
@@ -250,9 +265,26 @@ function Calendar() {
     setNames(Object.fromEntries(((people.data ?? []) as Array<{ id: string; full_name: string | null }>)
       .filter((x) => x.full_name).map((x) => [x.id, x.full_name as string])))
     setFolders((folderRows.data ?? []) as Array<{ id: string; name: string }>)
+    setHeads(Object.fromEntries(
+      ((docRows.data ?? []) as Array<{ document_id: string; kind: string | null; scanned_at: string | null }>)
+        .map((d) => [d.document_id, { kind: d.kind, scanned_at: d.scanned_at }])))
     setLoaded(true)
     return r
   }, [supabase])
+
+  /**
+   * *** EVERY NUMBER ON THE PAGE, AND THE ONE IN THE NAV, AFTER A WRITE — step 9. ***
+   *
+   * `load()` re-reads the counts and the rows together, so the two tab labels, the info bar and
+   * both views move in one render. The sidebar badge is not this page's to render — it lives in
+   * `AppLayout`, which wraps every page — so it is told, with the event `AppLayout` listens for.
+   * Without this the nav would read "9" beside a queue saying "Nothing waiting", which is exactly
+   * the disagreement `lib/calendarCounts.ts` exists to prevent.
+   */
+  const refresh = useCallback(async () => {
+    await load()
+    window.dispatchEvent(new Event(COUNTS_CHANGED))
+  }, [load])
 
   useEffect(() => {
     let live = true
@@ -676,14 +708,25 @@ function Calendar() {
           </div>
         )}
 
-        {/* ================= DATES TO CONFIRM (board 7; the queue is step 9) ================= */}
+        {/* ================= DATES TO CONFIRM — board 7, the work queue ================= */}
         {tab === 'dates' && (
           <div className="pt-1">
-            {!loaded ? waiting : counts.toConfirm === 0 ? (
-              <Empty title="Nothing waiting"
-                note="When a reading finds a date, it lands here for you to confirm or set right." />
+            {!loaded ? waiting : loadFailed ? (
+              /**
+               * *** A READ THAT FAILED IS NOT AN EMPTY QUEUE, AND THIS TAB SAID IT WAS. ***
+               * Until step 9 this branch did not exist here: the tab tested `counts.toConfirm === 0`,
+               * and a failed read leaves that 0 — so a company with nine dates waiting was told
+               * "Nothing waiting". The Calendar tab was given this guard at step 8a after the same
+               * thing happened to it in front of a screenshot (`lib/calendarView.ts` carries the
+               * full account); the queue inherited the bug and not the fix. §5.1's worked example.
+               */
+              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                {COULD_NOT_LOAD}
+                <button onClick={() => { void load() }} className="ml-2 font-medium underline hover:no-underline">Try again</button>
+              </p>
             ) : (
-              <p className="text-[13px] text-gray-500">{DATES_ARRIVES(counts.toConfirm)}</p>
+              <DateQueue rows={rows} heads={heads} siteCount={sites.length}
+                onOpen={openDate} onChanged={refresh} />
             )}
           </div>
         )}
@@ -711,7 +754,7 @@ function Calendar() {
           company={companyName}
           onClose={closeDate}
           onOpenOther={openDate}
-          onChanged={() => { void load() }}
+          onChanged={() => { void refresh() }}
           /**
            * The second tab exists only when there is a report behind it: a document's reading, or
            * the audit that found the date. A typed date has neither, so the tab is not drawn at all
@@ -735,12 +778,12 @@ function Calendar() {
       {open && report && !openDocId && (
         report.kind === 'audit' ? (
           <AuditReport runId={report.id} companyName={companyName}
-            onClose={closeDate} onChanged={() => { void load() }}
+            onClose={closeDate} onChanged={() => { void refresh() }}
             onOpenDoc={(id) => setOpenDocId(id)}
             topLine={<ReportTabs onBack={() => setReport(null)} second="The audit" />} />
         ) : (
           <DocumentReport documentId={report.id} companyName={companyName} folders={folders}
-            onClose={closeDate} onChanged={() => { void load() }}
+            onClose={closeDate} onChanged={() => { void refresh() }}
             onMove={async (documentId, folderId) => {
               await fetch('/api/documents', {
                 method: 'PATCH',
@@ -780,7 +823,7 @@ function Calendar() {
       {/* A document opened FROM the audit report — Audits' third level, and the same way back. */}
       {openDocId && (
         <DocumentReport documentId={openDocId} companyName={companyName} folders={folders}
-          onClose={() => setOpenDocId(null)} onChanged={() => { void load() }}
+          onClose={() => setOpenDocId(null)} onChanged={() => { void refresh() }}
           onMove={async (documentId, folderId) => {
             await fetch('/api/documents', {
               method: 'PATCH',

@@ -13346,3 +13346,150 @@ And a second fault made it worse: the six feed probes were first written **insid
 flow's block**, which is paid — so the only way to reach them was to spend, and `--only
 calendar_feed` would have skipped them entirely. They are free and they now sit at the top level,
 runnable on their own.
+
+## 194. CALENDAR STEP 9: DATES TO CONFIRM — 16 October 2026
+
+**Branch `calendar-v2`, staging only. `docs/CALENDAR-PLAN.md` step 9; board 7, with board 8's sheet
+for "Not right". Migration 076 applied to staging under STOP 1's GO. Cost: $0.00 — no model call
+was made in this step.**
+
+### Migration 076 — one live feed token per company
+
+The partial unique index §193 recorded as owed:
+`idx_calendar_feed_tokens_company_live`, `unique (company_id) where revoked_at is null`. Read back
+from `pg_indexes` after it ran: `CREATE UNIQUE INDEX … WHERE (revoked_at IS NULL)`, and `076` is in
+`supabase_migrations.schema_migrations` — the result taken from the database, never from the
+command's exit code (§3.7).
+
+**Partial and not a plain `unique (company_id)`**, because rotation is an insert plus a stamp on the
+old row: the rule is one LIVE token, not one token, and only a predicate can say that. Its verify
+block refuses a second live token and compares the **SQLSTATE** (`23505`) rather than trusting the
+handler; runs the two-POST race statement by statement; and proves that a rotation is still accepted
+and that three revoked rows for one company are allowed.
+
+**§1 converges before the index is built**, and that is the only statement in 076 that touches
+customer data: `create unique index` over a company that already has two live rows FAILS rather
+than fixing it, so the migration applies the route's own rule — the oldest live token wins, the rest
+are stamped — and raises the count as a notice. On staging it said **0**: read before writing it,
+`calendar_feed_tokens` held 2 rows for 1 company, 1 live.
+
+**And the index brought a trap, which is why the route changed in the same step.** The racing insert
+now fails, and the issuer's `if (error) throw error` would have turned that into a 500 — so the
+loser of a race by microseconds would be told *"We could not make that link just now"* about a link
+that exists. `error.code !== '23505'` is the whole fix: 23505 means another POST just made it, and
+the read the route already does returns the winner's token. The converge is kept for rows written
+before 076.
+
+**Two `check:live` probes had to move, and that is the index working rather than a cost of it.**
+Both wrote a LIVE token for the signed-in company, which already has one:
+
+- the generic table probe (grants and RLS, not liveness) now writes its row **already revoked**,
+  outside the index's predicate;
+- the six feed probes now own **their own company**. Revoking the real company's link for the
+  duration was the alternative and was rejected: a check that takes a customer's working link away
+  and puts it back only if it reaches its `finally` can break the thing it is testing. Nothing is
+  lost, because the feed is scoped BY THE TOKEN and never by a session — "the token's company's
+  dates and no others" is the whole claim, now proved between two companies the probe makes and
+  deletes.
+
+### The queue
+
+`components/DateQueue.tsx` draws it; **`lib/calendarQueue.ts` decides everything about it** and is
+tested without a database or a browser. The split is the one every step since 7 has used: the boards
+say what is said, the shared components say how it looks, and a rule written inline in JSX is a rule
+nothing tests.
+
+**Grouped by where the dates came from**, because that is how the work arrives — one reading of one
+permit proposes seven dates. A document's heading is its title, its kind word and the day the
+reading ran (`document_index_v.kind`, `.scanned_at`); an audit's is the agency and the run's date,
+which is what `calendar_v.source_title` already is. **An audit groups by the run and not the
+finding**: a finding's id changes with every run, so grouping by it would make every date a group of
+one, the opposite of what this tab is for.
+
+**Groups come soonest-date first; a group with no dated row at all goes last** — its rows are
+repeating dates whose frequency was never read, which is work but is not a deadline, and sorting it
+early would push real deadlines down the page. Inside a group: by date, undated rows last, ties on
+the title so a reload does not reshuffle.
+
+**Each row says what it knows and no more** (decision 30). A repeating date with no period has no
+day to show at all — `calendar_v` cannot compute `next_due` without one — so the date column reads
+*"repeats — how often wasn't read"*, plus the anchor when there is one, because an anchor we HAVE
+must not be hidden by a frequency we do not. A period with no anchor reads *"repeats, no day yet"*.
+The site shows only with more than one site, through 8a's own `siteWords` (decision 24).
+
+### `confirm_many`, and why it takes ids
+
+**The ids are the ones the person could see when they pressed the button.** The alternative —
+"confirm everything for this document", as a filter on the server — would confirm a date that
+arrived between the page loading and the click: a reading that finished thirty seconds ago would
+have its dates confirmed by somebody who never saw them, with their name on it. So the component
+sends what it drew (`idsShown`), and the route confirms exactly those.
+
+The rules, all proved by unit tests against a stand-in client:
+
+- at most 200 ids in one call;
+- **one id that is not the company's and the WHOLE call is 404 with nothing written** — one foreign
+  id must not quietly confirm the other nineteen. Tenancy is RLS's answer, not a `company_id` filter
+  written in `lib/calendarDates.ts`: the read runs as the caller, so another company's row is simply
+  absent, and 404 rather than 403 so ids cannot be probed (§3.6);
+- a row already confirmed is **left alone** and counted — pressing twice is not an error, and
+  re-stamping `confirmed_by` would rewrite who said yes;
+- a dismissed or withdrawn row is **skipped** and counted (rule b, and decision 29).
+
+**`confirm` may now carry a period**, so a queue row's picker confirms the date and says how often
+in ONE update — two statements would leave a window where the date is confirmed and the frequency is
+not, and a failure in the second would be invisible to somebody who pressed one button. A period on
+a one-off is refused in the same words `period` refuses it, through the same function
+(`periodProblem`), which was extracted precisely so one call and two cannot disagree.
+**"I don't know yet" is a real answer**: it confirms and leaves the period null, so the date stays
+in the month view's strip with its own sentence (decision 23).
+
+### Open question 1, decided: the sidebar count is always shown
+
+The owner's instruction for this step: build "always", as step 7 did, and record it as decided. The
+badge beside Calendar is the number of dates waiting, whenever there are any — not a "new since you
+last looked" mark. A count that appears only while something is new needs a per-person "last seen"
+to be honest, and a badge that lies about having nothing to show is worse than one that is
+occasionally ignored.
+
+**So confirming the last row has to take the badge with it**, and the badge is not the page's to
+render: it lives in `AppLayout`, which wraps every page. `COUNTS_CHANGED` is a second exported event
+name beside `FACTS_CHANGED` — a second name rather than reusing one, because `FACTS_CHANGED` means
+"the company record changed" and the Calendar changes no fact; a listener that had to guess which of
+two meanings one event carried would be one rename away from the silent breakage `FACTS_CHANGED`'s
+own comment warns about. The page's `load()` re-reads the counts and the rows together, so both tab
+labels, the info bar and both views move in one render; the badge re-reads on the event.
+
+### Three defects found by reading, two fixed and one named
+
+1. **FIXED, in this section: the Dates-to-confirm tab drew "Nothing waiting" over a failed read.**
+   The tab tested `counts.toConfirm === 0`, and a read that fails leaves that 0 — so a company with
+   nine dates waiting was told there were none. It is §5.1's worked example, and the Calendar tab
+   was given the guard at step 8a after exactly this happened in front of a screenshot; **the queue
+   inherited the bug and not the fix.** It now says `COULD_NOT_LOAD`, with Try again.
+2. **FOUND, NOT FIXED: `app/company-information/page.tsx:318` dispatches `new
+   Event('FACTS_CHANGED')`** — the literal name of the constant, which is not an event anything
+   listens for. The same file imports and dispatches the constant correctly at `:201`. So after
+   whichever write `:318` follows, the sidebar badge keeps the number it last read. Found while
+   adding `COUNTS_CHANGED`, by reading every dispatcher. **Company information is a section this
+   step's plan did not name**, so it is recorded in §7 rather than changed here.
+3. **The drawer's own header said the second tab was unbuilt.** It still described the disabled
+   "Arrives with step 8b" tab that step 8b replaced. Corrected — and the correction broke two tests
+   that asserted the placeholder's ABSENCE against the whole file, comments included. A `codeOf()`
+   helper now strips comments for those checks, as `tests/unit/calendarShell.test.ts` already did
+   for the page: §9a's rule, a check that reads a comment as code looks exactly like a check that
+   found something.
+
+### Shared files this step changed, by file
+
+- `components/AppLayout.tsx` — `COUNTS_CHANGED` exported and listened for, beside `FACTS_CHANGED`.
+  Every page is wrapped by it; nothing else dispatches the new event, so no other section's
+  behaviour moves.
+- `components/RemoveDateSheet.tsx` — **new**: board 8's sheet, lifted out of
+  `components/CalendarDateDrawer.tsx` so the drawer's "Remove" and the queue's "Not right" are the
+  same piece with two titles, which is what board 8's own note asks for. Both are the same action
+  (`dismiss`), and a second copy would be two places for the optional-reason rule and the focus to
+  drift.
+- `scripts/check-live.js` — the two probes above. `lib/calendarDates.ts` — `periodProblem`,
+  `confirmMany`, and `confirmDate`'s optional period.
+

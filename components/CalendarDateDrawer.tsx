@@ -2,14 +2,17 @@
 /**
  * ONE DATE, OPENED — board 6's first tab, "The date" (Calendar step 8a; `docs/calendar-boards.html`).
  *
- * The shared 720 drawer (`components/Drawer.tsx`), the shared sheet for Remove (board 8), and
+ * The shared 720 drawer (`components/Drawer.tsx`), the shared sheet for Remove (board 8, which the
+ * confirm queue's "Not right" opens too since step 9 — `components/RemoveDateSheet.tsx`), and
  * everything the product knows about one date with nothing hidden: when it is, whether it repeats
  * and by what rule, which site, where it was read from with the exact line in quotes, the document's
  * own state, the other live dates that document sets, and who confirmed or removed it.
  *
- * *** THE SECOND TAB IS STEP 8b. *** It is drawn, disabled, with a grey line under it, rather than
- * left off: board 6 has two tabs and a person who can see only one has no way of knowing whether
- * the report is missing or simply not built. Named in `docs/HANDOFF-CODE.md` §7.
+ * *** THE SECOND TAB IS LIVE SINCE STEP 8b, AND IT IS HIDDEN RATHER THAN DISABLED WHEN THERE IS
+ * NOTHING BEHIND IT. *** It was drawn disabled with "Arrives with step 8b" under it for one step;
+ * now `onOpenReport` is a function when a document's reading or an audit's report exists and null
+ * when it does not, and a typed date shows one tab, because a disabled tab promises something that
+ * is never coming (`:106`). This paragraph said the old thing until step 9 corrected it.
  *
  * *** DECISION 30 RUNS THROUGH IT. *** Where the product does not know something it says so in one
  * sentence: a repeating date whose period was never read, a document that has a newer version, a
@@ -24,7 +27,7 @@
 import { useState } from 'react'
 import { authHeaders } from '@/lib/supabase'
 import { Drawer, printDrawer } from '@/components/Drawer'
-import { Sheet } from '@/components/Sheet'
+import { RemoveDateSheet } from '@/components/RemoveDateSheet'
 import { statusWord, KIND_WORD } from '@/lib/documentStatus'
 import {
   type CalendarRow, longDay, longDayAndWeekday, repeatWords, whenWords, passedWords, siteWords,
@@ -379,24 +382,13 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
         </p>
       </Drawer>
 
-      {/* BOARD 8 — one sheet, and Cancel is the button that holds the focus, so Enter never removes. */}
+      {/* BOARD 8 — the shared sheet, which the queue's "Not right" opens with the other title
+          (`components/RemoveDateSheet.tsx`). It was this drawer's own markup until step 9 needed
+          the identical thing in two places. */}
       {removing && (
-        <Sheet title="Remove this date?"
-          lede="It leaves your calendar and the monthly email. It stays on file with your reason, so we do not put it back from the same document."
-          onClose={() => setRemoving(false)}>
-          <label className="block text-[13px] text-gray-700">Why? Optional, one line.</label>
-          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2}
-            placeholder="For example: the permit was renewed, or the date in the document is wrong."
-            className="mt-1.5 w-full resize-none rounded-lg border border-gray-200 p-2.5 text-[13px] text-gray-900 outline-none focus:border-[var(--green)] placeholder:text-gray-400" />
-          <div className="mt-4 flex items-center gap-3">
-            <button disabled={busy}
-              onClick={async () => { if (await act({ action: 'dismiss', reason })) { setRemoving(false); onClose() } }}
-              className="rounded-md bg-red-700 px-3.5 py-1.5 text-[14px] font-medium text-white hover:bg-red-800 disabled:opacity-50">
-              {busy ? 'Removing…' : 'Remove'}
-            </button>
-            <button autoFocus onClick={() => setRemoving(false)} className={`ml-auto ${TEXT_ACTION}`}>Cancel</button>
-          </div>
-        </Sheet>
+        <RemoveDateSheet mode="remove" reason={reason} onReason={setReason} busy={busy}
+          onClose={() => setRemoving(false)}
+          onRemove={async () => { if (await act({ action: 'dismiss', reason })) { setRemoving(false); onClose() } }} />
       )}
     </>
   )

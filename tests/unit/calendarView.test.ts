@@ -22,6 +22,17 @@ import {
 
 const PAGE = readFileSync('app/calendar/page.tsx', 'utf8')
 const DRAWER = readFileSync('components/CalendarDateDrawer.tsx', 'utf8')
+/**
+ * A FILE WITHOUT ITS COMMENTS, for every check that reports an ABSENCE — and this helper exists
+ * because two checks below broke on a comment at step 9. The drawer's header was corrected to say
+ * that the second tab is live and was once *"drawn disabled with 'Arrives with step 8b' under it"*,
+ * and `assert.ok(!DRAWER.includes('Arrives with step 8b'))` failed on that sentence: the
+ * placeholder was gone from the markup and present in the paragraph explaining that it is gone.
+ * `CLAUDE.md` §9a — a check that reads a comment as code looks exactly like a check that found
+ * something. The same helper was already written inline five times in this file.
+ */
+const codeOf = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+const DRAWER_CODE = codeOf(DRAWER)
 const VIEW = readFileSync('lib/calendarView.ts', 'utf8')
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -342,7 +353,7 @@ describe('sending one date to a personal calendar — the old page\'s two URLs, 
 describe('the drawer says what it does not know, and what it cannot do yet', () => {
   test('the second tab opens the real report (step 8b replaced 8a\'s placeholder)', () => {
     assert.match(DRAWER, /The report/)
-    assert.ok(!DRAWER.includes('Arrives with step 8b'))
+    assert.ok(!DRAWER_CODE.includes('Arrives with step 8b'))
     assert.match(DRAWER, /onClick=\{onOpenReport\}/)
   })
   test('decision 27\'s line ends the first tab', () => {
@@ -381,10 +392,26 @@ describe('the drawer says what it does not know, and what it cannot do yet', () 
     assert.ok(!/\.from\('calendar_events'\)/.test(code), 'the drawer never touches the table')
     assert.ok(!/status: '(confirmed|dismissed)'/.test(code), 'it names no status')
   })
+  /**
+   * *** THE SHEET MOVED OUT OF THE DRAWER AT STEP 9, so this test follows it. *** The queue's "Not
+   * right" is the same action on the same row (`dismiss`), and board 8 says so in its own note —
+   * "one sheet, two titles". A second copy would have been two places for the optional-reason rule
+   * and the focus to drift, which is what this test is for.
+   */
   test('Remove asks, and Cancel holds the focus so Enter never removes (board 8)', () => {
-    assert.match(DRAWER, /Remove this date\?/)
-    assert.match(DRAWER, /Why\? Optional, one line\./)
-    assert.match(DRAWER, /<button autoFocus onClick=\{\(\) => setRemoving\(false\)\}/)
+    const sheet = readFileSync('components/RemoveDateSheet.tsx', 'utf8')
+    assert.match(sheet, /Remove this date\?/)
+    assert.match(sheet, /Why\? Optional, one line\./)
+    assert.match(sheet, /<button autoFocus onClick=\{onClose\}/)
+    // Both titles, and the destructive button is the same one in both cases.
+    assert.match(sheet, /NOT_RIGHT_TITLE = 'Not right\?'/)
+    assert.match(sheet, /\{busy \? 'Removing…' : 'Remove'\}/)
+    // And both surfaces render THIS file rather than their own markup.
+    assert.match(DRAWER_CODE, /<RemoveDateSheet mode="remove"/)
+    assert.match(codeOf(readFileSync('components/DateQueue.tsx', 'utf8')), /<RemoveDateSheet mode="not-right"/)
+    for (const [where, src] of [['the drawer', DRAWER], ['the queue', readFileSync('components/DateQueue.tsx', 'utf8')]] as const) {
+      assert.ok(!src.includes('Remove this date?'), `${where} must not hold a second copy of the title`)
+    }
   })
 })
 
@@ -451,7 +478,7 @@ describe('the drawer\'s second tab', () => {
   test('a date with no report HIDES the tab rather than disabling it', () => {
     // There is nothing to arrive later for a typed date, and a greyed tab promises something.
     assert.match(DRAWER, /\{onOpenReport && \(/)
-    assert.ok(!DRAWER.includes('Arrives with step 8b'), "8a's placeholder is gone")
+    assert.ok(!DRAWER_CODE.includes('Arrives with step 8b'), "8a's placeholder is gone")
     assert.match(PAGE, /: open\.document_id\s*\n\s*\? \(\) => setReport\(\{ kind: 'document'/)
   })
   test('AuditReport gained topLine additively, and Audits passes none', () => {

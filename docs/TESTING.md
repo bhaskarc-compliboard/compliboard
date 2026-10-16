@@ -4019,3 +4019,81 @@ sites and three typed dates, which is the only way to see the site rules.
    different links — that is a live credential nobody knows about, and revoking "the" link would
    leave it working. *(This one shipped wrong once and is why the issuer converges.)*
 3. After a company is deleted, its link must stop answering — the token row cascades with it.
+
+## The Calendar, step 9 — Dates to confirm (board 7)
+
+*Added 16 October 2026, staging only. `DECISIONS.md` §194. Every one of these is free: the queue
+reaches no model.*
+
+### C9-1 · The queue, grouped — the perfect case
+
+1. As a company whose documents have just been read, open **Dates to confirm**.
+2. **Pass:** one group per document or audit run, each heading naming the source — a document's
+   title, its kind word and the day it was read; an audit's agency and run date — with "· N dates"
+   and one button saying **Confirm all from this document** (or **… from this audit**). **Fail:** a
+   flat list, or a group per date.
+3. Every row shows the date (or how often), the title, and the line it was read from **in quotes**.
+4. The groups are in date order, soonest first. Inside a group, soonest first.
+5. Click a row: the same drawer the month and the list open, on that date (`?date=`).
+
+### C9-2 · Confirm one, and watch four numbers move together (free)
+
+1. Note the **Calendar (N)** and **Dates to confirm (N)** tab labels, the info bar's "N waiting"
+   fragment and the **sidebar badge** beside Calendar.
+2. Press **Confirm** on one row.
+3. **Pass:** the row leaves the queue; Dates to confirm drops by one; the waiting fragment drops by
+   one; **the sidebar badge drops by one**; Calendar (N) is unchanged, because the date is still on
+   the calendar. On the Calendar tab, that date's "not confirmed" ring is now filled.
+   **Fail:** any one of those four disagreeing with the others — that is the 29 September badge
+   failure in a new place.
+
+### C9-3 · The how-often picker, and "I don't know yet" (free)
+
+1. Find a row that says *repeats — how often wasn't read*. It has a small picker beside Confirm.
+2. Choose **every year** and press Confirm. **Pass:** the date is confirmed AND the period is set in
+   one press; on the Calendar tab it now has a day and sits on the grid.
+3. On another such row, leave the picker at **I don't know yet** and press Confirm. **Pass:** it is
+   confirmed and **stays in the strip above the month grid** — "Repeating, day not read yet" — with
+   the drawer's own sentence offering the period. **Fail:** a frequency appears that nobody chose.
+4. A date that happens **once** must never show a picker. (Through `curl`, a period on a one-off is
+   refused in words: *"That date happens once, so it has no \"how often\"."*)
+
+### C9-4 · Not right (board 8), with nothing typed (free)
+
+1. Press **Not right** on a row. **Pass:** the sheet opens titled **Not right?**, the reason says
+   *Optional, one line*, and **Cancel holds the focus** so Enter removes nothing.
+2. Press **Remove** with the box empty. **Pass:** the row leaves the queue and the calendar, the
+   four numbers move as in C9-2, and the drawer's history shows who removed it and when, with no
+   reason. **Fail:** a refusal asking for a reason.
+
+### C9-5 · Confirm all confirms what you could see (free)
+
+1. Press **Confirm all from this document** on a group of several.
+2. **Pass:** the whole group disappears and the counts fall by exactly that many.
+3. **The edge case, and it is the point:** while the page is open, have a reading propose a new date
+   for the same document (upload and read it again in another tab), and **without reloading** press
+   Confirm all. **Pass:** only the rows that were on the screen are confirmed; the new one is still
+   waiting after a reload. **Fail:** it is confirmed by somebody who never saw it.
+4. Press the button twice. **Pass:** nothing fails; the second press confirms nothing.
+
+### C9-6 · The two states a queue must tell apart (free)
+
+1. A company with nothing waiting: **Nothing waiting** / *"When a reading finds a date, it lands
+   here for you to confirm or set right."*
+2. **Break the read** (sign out in another tab, or block the request) and reload the tab.
+   **Pass:** *"We could not load your dates just now. Nothing has changed — please try again."*
+   with **Try again**. **Fail:** "Nothing waiting" — which is what this tab said until step 9, and
+   is a claim about the customer's compliance that was not true.
+3. Press Confirm with the network blocked. **Pass:** a sentence beside **that row**, and the row
+   stays where it is. **Fail:** the row disappears on a write nobody saw succeed.
+
+### C9-7 · One live feed token per company (migration 076, free)
+
+1. `check:live -- --only calendar_feed` against a running server: six probes green, including
+   "a live token could be written at all".
+2. Open **Send to your calendar** in two tabs at once. **Pass:** the same link in both, and
+   `select count(*) from calendar_feed_tokens where company_id = <id> and revoked_at is null` is
+   **1**. **Fail:** two rows (before 076) or a 500 in one tab (the 23505 trap, if the route's
+   branch is ever removed).
+3. Rotate: stamp the live row's `revoked_at` and open the sheet again. **Pass:** a new link is
+   issued and the old one 404s.

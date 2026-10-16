@@ -51,6 +51,17 @@
 // `--scroll "<text>"` scrolls the first visible element whose text starts with <text> to the top of
 // its scrolling box, after the clicks, before the screenshot.
 //
+// `--select "<row text>=<option>"` chooses an option in a <select> — Calendar step 9. The script
+// could click a button and scroll a box but had no way to answer a dropdown, so the queue's
+// how-often picker and the Calendar's site filter could not be walked at all. The select is found
+// by the row it sits in (the first ancestor within six levels whose text starts with <row text>;
+// an empty key takes the first visible select), and the value is set THROUGH THE NATIVE SETTER
+// before a bubbling `change` — assigning `.value` alone leaves React's own state behind, so the
+// page would photograph as changed and behave as unchanged. Applied before the clicks.
+//
+// `--click "<row text>=<button text>"` clicks the button inside a named row, which is how a row's
+// own action is told apart from a group's: see the note at the matcher.
+//
 // `--click "<text>"` clicks the first visible button, link or row whose text (or, with none, aria-label) starts with <text>,
 // then waits. Repeat it to walk a path (a tab, a row, a button in the drawer). It is the only way
 // to open a drawer, and the block above is what makes it safe.
@@ -76,7 +87,7 @@ let height = 900
 // capture, which is the only honest way to check a print rule without a printer.
 let printMedia = false
 let base = 'http://localhost:3000', allow = null, logFilter = null
-const clicks = [], scrolls = []
+const clicks = [], scrolls = [], selects = []
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i]
   if (a === '--as') email = argv[++i]
@@ -85,6 +96,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--print') printMedia = true
   else if (a === '--shot') shot = argv[++i]
   else if (a === '--click') clicks.push(argv[++i])
+  else if (a === '--select') selects.push(argv[++i])
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
   else if (a === '--base') base = argv[++i].replace(/\/+$/, '')
@@ -215,6 +227,36 @@ try {
   // The page fetches its lists after mount; the title appears before them.
   await new Promise((r) => setTimeout(r, waitMs))
 
+  for (const pair of selects) {
+    const at = pair.indexOf('=')
+    const where = at === -1 ? '' : pair.slice(0, at)
+    const value = at === -1 ? pair : pair.slice(at + 1)
+    const chose = await evaluate(`(() => {
+      const want = ${JSON.stringify(where)}, value = ${JSON.stringify(value)}
+      const visible = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 }
+      const sels = [...document.querySelectorAll('select')].filter(visible)
+      // The select belonging to a named row: the nearest ancestor whose text starts with the key.
+      const near = (el) => { let n = el
+        for (let i = 0; i < 6 && n; i++, n = n.parentElement) {
+          if ((n.textContent || '').trim().startsWith(want)) return true }
+        return false }
+      const el = want ? sels.find(near) : sels[0]
+      if (!el) return null
+      const opt = [...el.options].find((o) => o.text === value || o.value === value)
+      if (!opt) return 'NO OPTION: ' + [...el.options].map((o) => o.text).join(' | ')
+      // React tracks the value on the node; a plain assignment is invisible to it.
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
+      setter.call(el, opt.value)
+      el.dispatchEvent(new Event('change', { bubbles: true }))
+      el.scrollIntoView({ block: 'center' })
+      return (el.getAttribute('aria-label') || 'select') + ' = ' + opt.text
+    })()`)
+    if (!chose) throw new Error(`--select: no visible select in a row starting with "${where}"`)
+    if (String(chose).startsWith('NO OPTION')) throw new Error(`--select: ${chose}`)
+    await new Promise((r) => setTimeout(r, 300))
+    console.log(`chose: ${chose}`)
+  }
+
   for (const text of clicks) {
     // Read BEFORE the click: the event can arrive while the click is still being evaluated, and a
     // count taken after it reported 0 for a picker that had opened (found on this flag's first run).
@@ -234,9 +276,27 @@ try {
       // checklist or conversation id, and nine checklists can share a title (DESIGN.md §7), so a
       // row that must be exactly one row is found by key, not by words.
       const keyOf = (e) => { const k = Object.keys(e).find((x) => x.startsWith('__reactFiber')); return k ? e[k].key : null }
+      /**
+       * "row text=button text" clicks the button inside a NAMED ROW — Calendar step 9, and it is
+       * here because prefix matching quietly clicked the wrong thing: --click Confirm on the
+       * confirm queue matched "Confirm all from this audit", the group button, which comes first
+       * in the document and also starts with Confirm. Two dates were confirmed that the walk never
+       * meant to touch. A row is named the same way --select names one: the nearest ancestor
+       * within six levels whose text starts with the key.
+       *
+       * NO BACKTICKS IN THIS COMMENT. It lives inside the browser template literal, and one
+       * backtick ends the string — which is how this edit first broke the whole script.
+       */
+      const at = want.indexOf('=')
+      const scope = at > 0 && !want.startsWith('key=') ? want.slice(0, at) : null
+      const label = scope ? want.slice(at + 1) : want
+      const inRow = (e) => { let n = e
+        for (let i = 0; i < 6 && n; i++, n = n.parentElement) {
+          if ((n.textContent || '').trim().startsWith(scope)) return true }
+        return false }
       const matches = want.startsWith('key=')
         ? order.filter((e) => keyOf(e) === want.slice(4)).flatMap((e) => [e, ...e.querySelectorAll('button')].slice(0, 2)).slice(-1)
-        : order.filter((e) => name(e).startsWith(want))
+        : order.filter((e) => name(e).startsWith(label) && (!scope || inRow(e)))
       const el = matches.find((e) => !matches.some((o) => o !== e && e.contains(o)))
       if (!el) return null
       el.scrollIntoView({ block: 'center' }); el.click(); return name(el).slice(0, 60)

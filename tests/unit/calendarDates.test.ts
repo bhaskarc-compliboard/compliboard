@@ -20,9 +20,9 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync } from 'node:fs'
 import {
-  proposeDate, confirmDate, dismissDate, setPeriod,
+  proposeDate, confirmDate, dismissDate, setPeriod, confirmMany, periodProblem,
   withdrawUnseenDocumentDates, withdrawAuditDatesNotMatchedBy,
-  PERIODS, SOURCES, STATUSES, CONFIRMED_SOURCES, normaliseTitle,
+  PERIODS, SOURCES, STATUSES, CONFIRMED_SOURCES, normaliseTitle, CONFIRM_MANY_MAX,
 } from '../../lib/calendarDates.ts'
 
 type Row = Record<string, unknown>
@@ -889,5 +889,201 @@ describe('a reader hides a withdrawn row — calendar_v (migration 075)', () => 
       'the whole statement was read, not a fragment cut at a semicolon in a comment')
     assert.match(statement, /where\s+e\.status\s*<>\s*'withdrawn'/i,
       `${newest} re-emits calendar_v without step 6b's filter`)
+  })
+})
+
+// =================================================================================================
+// STEP 9 — THE CONFIRM QUEUE'S TWO ROUTE CHANGES
+//
+// `confirm` may now carry a period, so one press on a queue row confirms the date AND says how
+// often it repeats; and `confirm_many` confirms exactly the ids a person could see. Both are
+// `lib/calendarDates.ts`'s, because every write to a date goes through this file (decision 6).
+// =================================================================================================
+
+describe('confirm with a period, in one call', () => {
+  const repeating = { id: 'r1', company_id: CO, status: 'proposed', recurs: true, title: 'Fit testing', due_date: '2026-08-20' }
+  const once = { id: 'o1', company_id: CO, status: 'proposed', recurs: false, title: 'Permit expires', due_date: '2027-03-01' }
+
+  test('a repeating date is confirmed and its period set by ONE update', () => {
+    const f = fake([{ ...repeating }])
+    return confirmDate(f.db, 'r1', 'u1', 'year').then((r) => {
+      assert.equal(r.status, 200)
+      assert.equal(f.rows[0].status, 'confirmed')
+      assert.equal(f.rows[0].period, 'year')
+      assert.equal(f.rows[0].confirmed_by, 'u1')
+      // ONE write, not two: a confirm that left the period to a second statement would have a
+      // window where the date is confirmed and the frequency is not, and a failure in the second
+      // would be invisible to somebody who pressed one button.
+      assert.equal(f.log.filter((l) => l.startsWith('update')).length, 1, f.log.join(' | '))
+    })
+  })
+
+  test('a period on a date that happens once is refused, and NOTHING is written', async () => {
+    for (const p of PERIODS) {
+      const f = fake([{ ...once }])
+      const r = await confirmDate(f.db, 'o1', 'u1', p)
+      assert.equal(r.status, 400, p)
+      assert.match(String(r.json.error), /happens once, so it has no "how often"/)
+      assert.equal(f.rows[0].status, 'proposed', 'it is not confirmed either')
+      assert.equal(f.rows[0].period, undefined)
+      assert.equal(f.log.filter((l) => l.startsWith('update')).length, 0)
+    }
+  })
+
+  test("\"I don't know yet\" confirms the date and leaves the period null (decisions 23 and 30)", async () => {
+    const f = fake([{ ...repeating }])
+    const r = await confirmDate(f.db, 'r1', 'u1', null)
+    assert.equal(r.status, 200)
+    assert.equal(f.rows[0].status, 'confirmed')
+    assert.equal(f.rows[0].period, null, 'null is a real answer, not a missing one')
+  })
+
+  test('no period at all leaves the column alone — what every caller before step 9 meant', async () => {
+    const f = fake([{ ...repeating, period: 'quarter' }])
+    assert.equal((await confirmDate(f.db, 'r1', 'u1')).status, 200)
+    assert.equal(f.rows[0].period, 'quarter', 'untouched')
+    assert.equal(f.rows[0].status, 'confirmed')
+  })
+
+  test('a word that is not one of the five is refused here as it is in `period`', async () => {
+    const f = fake([{ ...repeating }])
+    const r = await confirmDate(f.db, 'r1', 'u1', 'fortnightly')
+    assert.equal(r.status, 400)
+    assert.match(String(r.json.error), /is not how often a date can repeat/)
+    assert.equal(f.rows[0].status, 'proposed')
+  })
+
+  /**
+   * THE RULES THEMSELVES, ONCE — `periodProblem` is what both `setPeriod` and `confirmDate` ask,
+   * so the queue cannot accept a value the drawer refuses. Written as two copies first, which is
+   * exactly how that drift starts.
+   */
+  test('the two routes ask the same function, so one call and two cannot disagree', () => {
+    assert.equal(periodProblem(null, false), null, 'clearing is always allowed')
+    assert.equal(periodProblem('year', true), null)
+    assert.match(String(periodProblem('year', false)), /happens once/)
+    assert.match(String(periodProblem('weekly', true)), /is not how often/)
+    const lib = readFileSync('lib/calendarDates.ts', 'utf8')
+    assert.equal((lib.match(/is not how often a date can repeat/g) ?? []).length, 1,
+      'one sentence, in one place')
+    assert.equal((lib.match(/happens once, so it has no "how often"/g) ?? []).length, 1)
+  })
+
+  test('a date somebody removed is not confirmed back into existence by the one-call form either', async () => {
+    const f = fake([{ ...repeating, status: 'dismissed' }])
+    const r = await confirmDate(f.db, 'r1', 'u1', 'year')
+    assert.equal(r.status, 409)
+    assert.equal(f.rows[0].period, undefined, 'and its period is not set on the way past')
+  })
+})
+
+describe('confirm_many — "Confirm all from this document"', () => {
+  const rows = () => [
+    { id: 'a', company_id: CO, status: 'proposed', recurs: false, title: 'A', due_date: '2026-11-15' },
+    { id: 'b', company_id: CO, status: 'proposed', recurs: false, title: 'B', due_date: '2026-12-01' },
+    { id: 'c', company_id: CO, status: 'confirmed', recurs: false, title: 'C', due_date: '2027-01-01' },
+    { id: 'd', company_id: CO, status: 'dismissed', recurs: false, title: 'D', due_date: '2027-02-01' },
+  ]
+
+  test('every proposed id is confirmed, by ONE update, with who and when', async () => {
+    const f = fake(rows())
+    const r = await confirmMany(f.db, ['a', 'b'], 'u9')
+    assert.equal(r.status, 200)
+    assert.deepEqual(r.json.ids, ['a', 'b'])
+    assert.equal(r.json.confirmed, 2)
+    assert.equal(f.rows[0].status, 'confirmed')
+    assert.equal(f.rows[1].confirmed_by, 'u9')
+    assert.ok(f.rows[1].confirmed_at, 'and when')
+    assert.equal(f.log.filter((l) => l.startsWith('update')).length, 1, f.log.join(' | '))
+  })
+
+  /**
+   * *** ONE FOREIGN ID AND THE WHOLE CALL IS 404 WITH NOTHING WRITTEN. ***
+   * The read runs as the caller under RLS, so another company's row is simply absent — which is
+   * also why the answer is 404 and not 403: a stranger must not be able to learn which ids exist
+   * by watching which error comes back (§3.6). The danger it guards is the quiet one: confirming
+   * the nineteen ids that WERE ours and saying nothing about the twentieth.
+   */
+  test('a foreign id is 404 and nothing at all is written', async () => {
+    const f = fake(rows())
+    const r = await confirmMany(f.db, ['a', 'b', 'not-ours'], 'u9')
+    assert.equal(r.status, 404)
+    assert.match(String(r.json.error), /Nothing was changed/)
+    assert.deepEqual(f.rows.map((x) => x.status), ['proposed', 'proposed', 'confirmed', 'dismissed'])
+    assert.equal(f.log.filter((l) => l.startsWith('update')).length, 0, 'no write was attempted')
+  })
+
+  test('mixed statuses are counted, not changed: confirmed left alone, dismissed skipped', async () => {
+    const f = fake(rows())
+    const r = await confirmMany(f.db, ['a', 'c', 'd'], 'u9')
+    assert.equal(r.status, 200)
+    assert.equal(r.json.confirmed, 1)
+    assert.equal(r.json.already, 1, 'c was already confirmed')
+    assert.equal(r.json.skipped, 1, 'd was removed by a person and stays removed (rule b)')
+    assert.deepEqual(r.json.ids, ['a'])
+    // The already-confirmed row keeps the stamp it had: re-confirming would rewrite who said yes.
+    assert.equal(f.rows[2].confirmed_by, undefined)
+    assert.equal(f.rows[3].status, 'dismissed')
+  })
+
+  test('a withdrawn row is skipped too — the newest reading no longer says it', async () => {
+    const f = fake([...rows(), { id: 'e', company_id: CO, status: 'withdrawn', recurs: false, title: 'E' }])
+    const r = await confirmMany(f.db, ['e'], 'u9')
+    assert.equal(r.status, 200)
+    assert.equal(r.json.confirmed, 0)
+    assert.equal(r.json.skipped, 1)
+    assert.equal(f.rows[4].status, 'withdrawn')
+  })
+
+  test('pressing it twice is not an error: the second press confirms nothing and says so', async () => {
+    const f = fake(rows())
+    await confirmMany(f.db, ['a', 'b'], 'u9')
+    const again = await confirmMany(f.db, ['a', 'b'], 'u9')
+    assert.equal(again.status, 200)
+    assert.equal(again.json.confirmed, 0)
+    assert.equal(again.json.already, 2)
+  })
+
+  test('no ids is 400; more than the cap is 400 in words', async () => {
+    assert.equal((await confirmMany(fake(rows()).db, [], 'u9')).status, 400)
+    assert.equal((await confirmMany(fake(rows()).db, 'a', 'u9')).status, 400)
+    const many = Array.from({ length: CONFIRM_MANY_MAX + 1 }, (_, i) => `id${i}`)
+    const r = await confirmMany(fake(rows()).db, many, 'u9')
+    assert.equal(r.status, 400)
+    assert.match(String(r.json.error), /more than 200 dates at once/)
+  })
+
+  test('a repeated id is one date, not two', async () => {
+    const f = fake(rows())
+    const r = await confirmMany(f.db, ['a', 'a', 'b'], 'u9')
+    assert.equal(r.status, 200)
+    assert.equal(r.json.confirmed, 2)
+  })
+
+  test('it names no company: tenancy is RLS\'s answer, through the caller\'s own client', () => {
+    const lib = readFileSync('lib/calendarDates.ts', 'utf8')
+    const at = lib.indexOf('export async function confirmMany')
+    const fn = lib.slice(at, lib.indexOf('\nexport ', at + 10))
+    assert.ok(!/company_id/.test(fn.replace(/\/\*[\s\S]*?\*\//g, '')),
+      'a company_id filter written here would be a second answer to tenancy')
+  })
+})
+
+describe('the route hands both of them straight through', () => {
+  const ROUTE = readFileSync('app/api/calendar/route.ts', 'utf8')
+  const code = ROUTE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  test('confirm_many is an action, and it is answered BEFORE the id check', () => {
+    assert.match(code, /const ACTIONS = \['confirm', 'dismiss', 'period', 'confirm_many'\] as const/)
+    assert.ok(code.indexOf("action === 'confirm_many'") < code.indexOf("if (!id) return"),
+      'the one action with no id must not be answered "Missing id"')
+    assert.match(code, /await confirmMany\(db, body\?\.ids, userId\)/)
+  })
+  test('`period` absent and `period: null` are different answers on the wire', () => {
+    assert.match(code, /'period' in \(body \?\? \{\}\)/)
+    assert.match(code, /body\.period === null \? null : String\(body\.period\)/)
+  })
+  test('the route still writes nothing itself', () => {
+    assert.ok(!/\.from\('calendar_events'\)\s*\n?\s*\.update/.test(code))
+    assert.ok(!/status: 'confirmed'/.test(code), 'it names no status')
   })
 })
