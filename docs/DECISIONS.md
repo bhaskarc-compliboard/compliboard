@@ -13968,3 +13968,143 @@ Two things for step 14, neither of them a code change today:
    the prose tier by accident rather than by decision. Setting it explicitly at step 14 — to
    whatever the owner chooses — is how the choice becomes visible in `RELEASE.md`.
 
+
+---
+
+## 200. CALENDAR STEP 14: PREPARING THE RELEASE, AND THE GATE THAT ENFORCES ITSELF — 16 October 2026
+
+**Nothing in this step reached production.** The owner runs `docs/RELEASE.md`'s routine; this step
+wrote the routine, read production to put real numbers in it, and added one guard.
+
+### Where the branch stands
+
+`calendar-v2` is **22 commits ahead of `origin/main` and 0 behind**, and the merge base *is*
+`origin/main`'s head (`54ec6ae`, 9 October). **`main` has not moved since 9 October**, so no other
+chat has pushed and there was nothing to merge — the brief's merge-and-resolve branch did not apply
+and no conflict was resolved. The push is a fast-forward.
+
+### THE GUARD: the sandbox sender cannot reach a customer
+
+Every product email is sent `from: 'CompliBoard <onboarding@resend.dev>'`. **That is Resend's
+shared sandbox address, not a CompliBoard one.** The three existing emails each answer something a
+person just did. The monthly calendar email is different in kind: `0 14 1 * *`, to **every person
+at every company**, with nobody watching — and `NOTIFY_TEST_TO` is deliberately absent on
+production, so there is no test address to catch it.
+
+**So it is a guard in the code, not a step in a runbook.** A runbook step is something a person can
+forget on the 31st. `lib/email.ts` `sandboxSenderRefusal(from, vercelEnv)` is a pure function of
+two strings: on `VERCEL_ENV === 'production'` with the sandbox sender still in place it returns the
+refusal sentence, and `app/api/jobs/calendar-month/route.ts` stops **before the claim** (so no
+month is taken) and **before the render** (so nothing is paid for), prints one line, writes the
+reason onto its `job_runs` row and answers **503** so the Vercel cron log shows red rather than a
+green 200 nobody reads.
+
+**A dry run is let through on purpose.** It claims nothing and sends nothing by construction, so it
+stays the free way to read what production's first email would say — and it reports
+`would_be_refused`, which is how the guard is seen to be armed without an email leaving.
+
+**Proved by running it, not by reading it.** The isolated server (`HOW-WE-BUILD.md` §3c) started
+with `VERCEL_ENV=production`, the job POSTed for `2026-12` — a month nothing had claimed:
+
+- **503**, body `"refused": "the sender is still onboarding@resend.dev…"`, the same sentence in the
+  server log as `CALENDAR EMAIL NOT SENT: …`.
+- **`calendar_mailings` held no row for `2026-12`** afterwards — the claim that a working run makes
+  first was never made.
+- Two `job_runs` rows, each with `refused` in `counts` and in `errors`.
+
+And then both controls, because a guard that refused everything would pass all of that:
+
+- **`?dryRun=1` on the same production-flagged server: 200**, all four staging companies rendered,
+  `would_be_refused` present, `refused` absent. So the guard was the only thing that stopped the
+  real run.
+- **The same code with `VERCEL_ENV` unset: it claimed `2026-12` and sent** (`sent: 1`, `sent_at`
+  stamped, `sent_to` the real address, the To being `NOTIFY_TEST_TO`). The guard is inert off
+  production, which is what makes it safe to add in the week of a release.
+
+### DECIDED: the three older senders do NOT take the guard in this step
+
+They could — it is one line each. **They send from the sandbox address on production today**, so
+switching the guard on for them would silence three emails that work, inside the release of
+something else. They take `sandboxSenderRefusal` in the one commit that moves all four `from:`
+lines to the verified domain, where it is inert from the moment it lands.
+`tests/unit/calendarEmail.test.ts` holds a test that **fails** when any of their `from:` lines
+changes, and the sentence it fails on says to give them the guard. `HANDOFF-CODE.md` §7 carries it
+as owed. A **fifth** sender — `app/api/feedback/route.ts:11` — is out of scope on purpose: it goes
+to `FEEDBACK_EMAIL`, the owner's own inbox, never to a customer. *(The brief said "the other
+three"; there are four other `from:` lines, and this is which.)*
+
+### What production holds, read read-only on 16 October
+
+Six queries, `SELECT` only, each for a need said out loud, through the Supabase CLI's own
+connection — **not** the service role, which is deliberately blank on a laptop (§3.8). The SQL is
+in the step's report and the figures are in `RELEASE.md`'s routine so the owner meets no surprise:
+
+- **`npm run preflight`: 79 files on disk, 73 in production's history, `PENDING COUNT: 6`** —
+  exactly `073`–`078`.
+- **`calendar_events`: 47 rows**, 2 companies, 0 null `company_id`, 0 with a `document_id`, 0
+  `completed`, every row `category = 'compliance'`, 24 recurring. 073's backfill meets what it was
+  written against.
+- **Five rows lose their period, correctly.** 19 `annually` → `year`; **3 `biennially` and 2 `every
+  3 years` map to NULL**, because the product has no word for them. Those five become "repeats —
+  how often wasn't read" and appear in the how-often picker (decision 23). Correct, and five rows a
+  person will be asked about on day one.
+- **074 will file 27 rows and 27 stamps** — 27 deadlines on a current scan, all eligible, all
+  fileable, **0 undated one-offs skipped**, 27 distinct keys, 7 of them repeating with no day.
+  074's own text said production's figures were UNREAD and would be read here; they are now read.
+  `calendar_events` ends at **74 rows**.
+- **The first monthly email reaches 4 people at 4 companies.** 10 companies, 4 `profiles`, each
+  with a `company_id` and each with an address on its login; the other 6 companies have nobody and
+  the job skips them as "nobody to send to". **Every one of those four companies has exactly one
+  site**, so no email in this release groups by site (decision 24). One of the four has 0 dates
+  today and 27 after 074 — its badge goes 0 → 27. One has none at all and gets the empty-month
+  email, which still sends by design.
+- **Nothing 073–078 creates exists yet: all eleven objects ABSENT** — and the probe was re-run
+  **with positive controls** (`calendar_events`, `document_index_v`, `calendar_events.category`,
+  `auth_company_id`, an existing `audit_findings` constraint, all PRESENT), because a catalog read
+  that can see nothing looks exactly like one that found nothing (§9a).
+
+### Two things the brief asked for that do not exist, and were not invented
+
+- **`RELEASE.md` has no backup step and never has.** The brief referred to "the backup step
+  `RELEASE.md` requires"; reading the file, steps 1–6 contain none. It was defensible while every
+  release was additive. **073 is the first migration that drops columns from a table holding
+  customer rows** — five of them, over 47 rows — which reverting a commit cannot undo. So a
+  `supabase db dump --data-only -s public` step is written into the calendar routine as **step 2,
+  marked as new**, with a line count and a `grep` as its own check, because a dump that wrote
+  nothing looks exactly like a dump of an empty database. Whether the generic procedure should
+  carry one is the owner's call.
+- **`check:live` cannot be pointed at production.** The brief asked for "check:live against the
+  production URL, read-only blocks only". It signs in as the staging fixture
+  `testgamma@example.com` and **writes a probe row into every tenant table**, and it builds its
+  database client from `NEXT_PUBLIC_SUPABASE_URL` — staging — while only `CHECK_LIVE_BASE_URL`
+  moves the HTTP target. A run aimed at production would 401 on every route **and still write to
+  staging**. It stays on staging. The production checks are four unauthenticated `curl` probes
+  (200 / 401 / 404 / 404), written into the routine's step 6 in the shape of the free checks that
+  file already carries.
+
+### One variable, and one that is deliberately not set
+
+`AI_MODEL_CALENDAR` is **unset on Vercel**, so the Calendar's answers fall back to
+`AI_MODEL_PROSE` — the same model, `claude-opus-5-5`. Nothing moves by setting it; the point is
+that unset makes the choice an accident of a fallback chain instead of a decision anybody can read
+back off `RELEASE.md`. **It is the one variable this release adds.** `ASK_CONTEXT_BUDGET_TOKENS`
+stays unset (120,000 tokens a question), and there is still **no search cap** on a calendar answer
+— `AI_SEARCH_MAX_HR` is unset and the Calendar inherits "no limit", so step 13's $0.157–$0.273 is
+a floor. Capping it is a code change, not a variable, and nobody has asked for one.
+
+### What was checked
+
+- **`npm run check`: 1353 tests, 0 failures** (1343 before; +10 in
+  `tests/unit/calendarEmail.test.ts`). `check:schema` ok — 311 files, 58 relations. Build compiled.
+- **The eight product pages on the isolated server: all eight 200, zero server errors.**
+- **`check:live --only calendar_month` against the isolated server: all six probes pass**, and the
+  whole table and relation suite with them — 6 tenant tables, HR's 6, the Calendar's 4.
+- The guard's own run, above, with both controls.
+
+### Effects on other sections
+
+**By file: none outside the Calendar.** `lib/email.ts` gained three exports and no existing export
+changed; `app/api/jobs/calendar-month/route.ts` is the only caller. `lib/documentBatch.ts`,
+`lib/auditNotify.ts`, `lib/handbookCheckNotify.ts` and `app/api/feedback/route.ts` are **untouched**
+— the one new test that mentions them only reads them. `docs/RELEASE.md` gains a section and a cron
+row and nothing in the generic procedure changed.

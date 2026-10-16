@@ -4041,6 +4041,55 @@ these only with the owner's say-so; each answer costs about $0.20.
    uncapped; the isolated server caps at 2 (`DEV_MAX_SEARCHES`), so a staging measurement is a
    FLOOR for what production will spend, never a ceiling.
 
+## The Calendar, step 14 — the release, and the gate that enforces itself
+
+*Added 16 October 2026. `DECISIONS.md` §200. All free: the monthly email calls no model.*
+
+### C14-1 · The sandbox sender cannot reach a customer (free, and this is the one that matters)
+
+The thing this prevents happens once, on the first of a month, to every customer at once, and there
+is no recall. So it is tested by **running it**, not by reading the code.
+
+1. Start the isolated server **with the production flag**, from the copy
+   (`HOW-WE-BUILD.md` §3c): `env VERCEL_ENV=production node scripts/haiku.mjs npx next dev -p 3998`.
+2. Pick a month nothing has ever claimed — `2026-12` on staging — and POST a **real** run:
+   `curl -s -X POST -H "x-cron-secret: $SECRET" 'http://localhost:3998/api/jobs/calendar-month?month=2026-12'`.
+3. It must answer **503**, with `"refused": "the sender is still onboarding@resend.dev…"`, and the
+   server must print `CALENDAR EMAIL NOT SENT: …`.
+4. **Then read the database, which is where the proof is:** `calendar_mailings` must hold **no row**
+   for that month (the claim a working run makes first was never made), and `job_runs` must hold a
+   row with `refused` in both `counts` and `errors`.
+5. **Both controls, because a guard that refused everything would pass all of the above.**
+   (a) `&dryRun=1` on the *same* server: **200**, every company rendered, `would_be_refused`
+   present, `refused` absent — so the guard was the only thing that stopped the real run.
+   (b) Restart with `VERCEL_ENV` unset and run the same month: it **claims and sends**, `sent_at`
+   stamped, the To being `NOTIFY_TEST_TO`. Inert off production is what makes it safe to ship.
+
+**What a failure here means:** if step 3 sends, every person at every company gets a calendar email
+from an address that is not CompliBoard's, on the 1st, with nobody watching.
+
+### C14-2 · The preflight and the production figures (free, read-only)
+
+1. `npm run preflight`. **`PENDING COUNT` must be 6** and the six must be `073`–`078`. The script
+   prints both lists in full; do the subtraction yourself rather than trusting the number.
+2. The figures in `docs/RELEASE.md`'s calendar routine, step 3, were read from production on
+   16 October. **Before applying, read them again** — a month of customer use moves them. The one
+   that will surprise somebody: five rows (`biennially` ×3, `every 3 years` ×2) lose their period,
+   because the product has no word for either, and show as "repeats — how often wasn't read".
+3. A catalog probe that reports an absence must be run **with a control that is present**
+   (`CLAUDE.md` §9a). The eleven-object check in the routine was; copy that shape.
+
+### C14-3 · The free production checks after the push (free)
+
+Four `curl`s, in the routine's step 6: `/calendar` → **200** (the page shell, as every signed-in
+page returns), `POST /api/calendar/answer` → **401**, `POST /api/jobs/calendar-month` with no
+secret → **404** (it must not even admit it exists), an unknown feed token → **404**.
+
+**`npm run check:live` is NOT one of these and cannot be made into one.** It signs in as the
+staging fixture and writes a probe row into every tenant table, and its database client is built
+from `NEXT_PUBLIC_SUPABASE_URL` — staging — so a run aimed at production 401s on every route and
+still writes to staging. It stays on staging (`scripts/check-live.js:66–92`).
+
 ## The Calendar, step 12 — the Dashboard, and the moves a person may make
 
 *Added 16 October 2026, staging only. `DECISIONS.md` §198. Both are free.*

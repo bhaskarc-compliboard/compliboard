@@ -142,3 +142,48 @@ export const FOOTER_NOT_LEGAL_ADVICE =
   'This is not legal advice; when in doubt, ask the agency.'
 export const footerBecauseMember = (company: string): string =>
   `You get this because you are a member of ${company} on CompliBoard.`
+
+/**
+ * ====================================================================================
+ * THE SANDBOX SENDER CANNOT REACH A CUSTOMER — Calendar step 14.
+ * ====================================================================================
+ *
+ * Every product email today is sent `from: 'CompliBoard <onboarding@resend.dev>'`. That is
+ * **Resend's shared sandbox address**, not a CompliBoard one: it exists so a new account can send
+ * before it owns a domain, and the domain it claims to come from is not ours. The monthly calendar
+ * email is the first of the four that goes to EVERY person at EVERY company on a schedule nobody
+ * presses — `0 14 1 * *` — so the first of the month is the first moment the product can mail a
+ * customer with nobody watching.
+ *
+ * *** SO THE RULE IS A GUARD AND NOT A NOTE IN A RUNBOOK. *** A runbook step is something a person
+ * can forget on the 31st; this is something the code refuses on the 1st. On production, with the
+ * sandbox sender still in place, the job claims nothing, sends nothing, says why in the log and
+ * writes the refusal onto its `job_runs` row. Off production it is inert, so the laptop and the
+ * isolated server are unchanged and every test still exercises the real path.
+ *
+ * *** IT IS A PURE FUNCTION OF TWO STRINGS *** so it can be tested without an environment and
+ * without a mail client, and so the other three senders (`lib/documentBatch.ts`,
+ * `lib/auditNotify.ts`, `lib/handbookCheckNotify.ts`) can adopt it by calling it — one line each.
+ * **They have NOT adopted it in this step, deliberately:** all three already send from this address
+ * on production today, so switching the guard on for them would silence three emails that work.
+ * They take it in the same commit that moves all four `from:` lines to the verified domain, where
+ * it is inert from the moment it lands. `docs/RELEASE.md`'s calendar section is that commit's
+ * runbook; `docs/HANDOFF-CODE.md` §7 carries it as owed.
+ */
+export const SANDBOX_SENDER = 'onboarding@resend.dev'
+
+/** The `from:` on every product email today. One line to change when the domain is verified. */
+export const SANDBOX_FROM = `CompliBoard <${SANDBOX_SENDER}>`
+
+/**
+ * The refusal sentence, or null when there is nothing to refuse. Production is the exact word
+ * `production` in `VERCEL_ENV`, which Vercel sets itself on every deployment and which exists
+ * nowhere else — a laptop, a test and the isolated server all read `undefined` and pass.
+ */
+export function sandboxSenderRefusal(from: string, vercelEnv: string | undefined): string | null {
+  if ((vercelEnv ?? '').trim() !== 'production') return null
+  if (!from.toLowerCase().includes(SANDBOX_SENDER)) return null
+  return `the sender is still ${SANDBOX_SENDER}, Resend's shared sandbox address, and this is `
+    + 'production. Verify the CompliBoard domain in Resend and change the from: line '
+    + '(docs/RELEASE.md, the calendar section). Nothing was claimed and nothing was sent.'
+}

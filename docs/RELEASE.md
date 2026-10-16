@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 16 October 2026, Calendar step 14 (`DECISIONS.md` §200): **the Calendar's release routine** below, the monthly-email cron row, and the sending-domain gate. Two corrections while writing it: this file has **never** carried a backup step (one is written below, and it is new, not quoted), and **`check:live` cannot be pointed at production** — it signs in as a staging fixture and writes rows. The free production checks are unauthenticated HTTP probes, listed in the routine.*
+
 *Updated 8 October 2026, §183: the cron table, the morning-after paragraph and the free checks describe HR live.*
 
 *Updated 8 October 2026: `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` = `claude-opus-5-5`, added by the owner at HR's release (§181).*
@@ -52,6 +54,7 @@ All three must be true:
 | `/api/jobs/audit-sections` | `*/5 * * * *` | Audits sweep |
 | `/api/jobs/handbook-queue` | `0 10 * * *` — 10:00 | HR's night queue: queues the handbook checks that are due (live since 8 October; a 404 without the cron secret) |
 | `/api/jobs/handbook-checks` | `*/5 * * * *` | HR's handbook sweep (live since 8 October; a 404 without the cron secret) |
+| `/api/jobs/calendar-month` | `0 14 1 * *` — **the 1st at 14:00** | The monthly calendar email, one per company (Calendar step 11, `DECISIONS.md` §197). **It is the only job that mails every person at every company on a schedule nobody presses**, and the only one gated on the sending domain — see the calendar routine below |
 
 The summary job and the deleter ran at 03:00 and 03:30 UTC until 8 October.
 
@@ -94,6 +97,241 @@ Watch the Vercel dashboard until the deployment is green.
 
 **Step 6 — prove it on the live site.**
 Sign in with a test account and run the first three manual tests for the feature: for the research section, ask a question, ask a follow-up, attach a PDF. Only then is the release done.
+
+## THE CALENDAR'S RELEASE ROUTINE — written 16 October 2026 at step 14 (`DECISIONS.md` §200)
+
+*Every command below is one the owner pastes, in this order. Claude Code has run none of them. The
+branch is `calendar-v2`, **22 commits ahead of `origin/main` and 0 behind** (read 16 October); the
+pending migrations are **073–078**, six of them, and `npm run preflight` says so in full.*
+
+**WHAT CAN GO TODAY AND WHAT WAITS FOR THE DNS.** The gate is on the *email*, not on the release:
+
+| | |
+|---|---|
+| **Today, with no DNS** | the backup (2), the migrations (3), `AI_MODEL_CALENDAR` (4), the merge and push (5), the free checks (6), the guard's own probe (7), the one paid answer (8), the morning after (9). **The whole Calendar works for a signed-in person** — the dates, the chat, the queue, the drawer, the feed, printing. |
+| **Waits for the DNS (step 0)** | **the monthly email, and only that.** Until the domain is verified and step 0.3 is pushed, the 1st-of-the-month job refuses itself and nobody is emailed. That is the designed state; `job_runs` records each refusal. |
+
+If the DNS is verified before 1 November, nothing else is needed — the cron sends on its own. If it
+is not, the first email is simply the first of December, and no customer sees anything missing.
+
+> ### ⛔ STEP 0 IS A GATE, NOT A STEP: THE SENDING DOMAIN.
+>
+> Every product email today is sent `from: CompliBoard <onboarding@resend.dev>`. **That is Resend's
+> shared sandbox address, not a CompliBoard one.** The three existing emails (documents, audits, HR
+> checks) are each a reply to something a person just did, and they have been going out that way
+> since June. The monthly calendar email is different in kind: it goes **to every person at every
+> company**, on `0 14 1 * *`, with nobody watching. On production `NOTIFY_TEST_TO` is absent by
+> design, so there is no test address to catch it.
+>
+> **So the code refuses rather than trusting this page.** `lib/email.ts` `sandboxSenderRefusal`:
+> on production, with the sandbox sender still in place, the job claims nothing, sends nothing,
+> prints `CALENDAR EMAIL NOT SENT: …` and writes the reason onto its `job_runs` row. A dry run is
+> still let through, because it sends nothing by construction. **Until step 0.3 is done, the first
+> of the month is safe and the email does not go out.** That is the intended state, not a failure.
+
+**Step 0.1 — add the domain in Resend.** Resend dashboard → Domains → Add Domain. **Use a
+subdomain**, e.g. `send.compliboard.com`: the root `compliboard.com` already carries the Framer
+marketing site's records, and a sending subdomain keeps the two sets of DNS from ever being
+confused with each other. (The From address can still read `dates@compliboard.com` if you prefer;
+the records are what must live on the subdomain.)
+
+**Step 0.2 — add the records your dashboard prints, not the ones in any guide.** Resend's Records
+tab shows the exact records for *your* domain. Historically that is three — an **MX** for the
+return path, a **TXT** SPF record, and a **TXT** DKIM record at `resend._domainkey` — but Resend's
+own troubleshooting page says **domains added after August 2026 may be given CNAME records
+instead**, and this domain would be added now. **Copy what the dashboard shows.** Three things go
+wrong most often, all of them avoidable:
+
+- the DKIM value gets truncated or picks up a stray quote on paste — it is the longest value and the
+  usual culprit;
+- some registrars append your domain to an MX value, which breaks it — a trailing dot fixes it;
+- on Cloudflare, a CNAME must **not** be proxied (grey cloud, not orange).
+
+Confirm from the command line before clicking Verify, so a failure is the registrar's and not a
+mystery (replace the names with the ones the dashboard gave):
+
+```
+nslookup -type=TXT resend._domainkey.send.compliboard.com
+nslookup -type=TXT send.compliboard.com
+nslookup -type=MX  send.compliboard.com
+```
+
+Then press Verify in Resend. It is usually minutes; DNS can take up to 72 hours, and the dashboard
+has a **Restart verification** button for when records were fixed after a failed attempt.
+
+**Step 0.3 — the one commit that moves all four senders.** Four `from:` lines, read from the files
+on 16 October. Change all four in one commit so none is left behind, and give the three older ones
+the guard at the same time:
+
+| File | Line | What it sends |
+|---|---|---|
+| `lib/email.ts` | `SANDBOX_FROM` | the constant the calendar job uses — **change this one and the calendar email moves** |
+| `lib/documentBatch.ts` | 215 | the Documents batch email |
+| `lib/auditNotify.ts` | 186 | an audit run finished |
+| `lib/handbookCheckNotify.ts` | 103 | an HR handbook check finished |
+
+*(There is a **fifth** `from:` — `app/api/feedback/route.ts:11` — and it is deliberately not in
+that table. It goes to `FEEDBACK_EMAIL`, the owner's own inbox, never to a customer, so the gate
+does not apply to it. Move it with the rest if you like the tidiness.)*
+
+> **Why the three older senders do NOT carry the guard today.** All three send from the sandbox
+> address on production **right now**. Switching the guard on for them in this release would
+> silence three emails that work — a change nobody asked for, shipped in the release of something
+> else. They take `sandboxSenderRefusal` in the commit above, where it is inert from the moment it
+> lands. `tests/unit/calendarEmail.test.ts` holds a test that **fails** when their `from:` lines
+> change, and the sentence it fails on says to give them the guard.
+>
+> **And one question only the Resend dashboard can answer**, worth asking while you are in it:
+> the shared sandbox sender is normally limited to the account's own verified address. If that is
+> true here, the audits/documents/HR emails have never reached anyone but you — check
+> Resend → Logs for a delivery to an address that is not yours. This is a hypothesis; the dashboard
+> settles it. Nothing in this repository can.
+
+---
+
+**Step 1 — see what's pending.** As the generic procedure, `npm run preflight`. **It must say
+`PENDING COUNT: 6`** and name exactly `073`–`078`. It said that on 16 October: 79 files on disk,
+73 rows in production's history.
+
+**Step 2 — take a backup first. THIS STEP IS NEW AND THIS FILE HAS NEVER CARRIED ONE.** Every
+release before this one was purely additive — new tables the old code ignores — so there was
+nothing a rollback could not survive. **073 is the first migration that changes a table holding
+customer rows**: it drops `completed`, `completed_at`, `category`, `is_recurring` and
+`recurrence_period` from `calendar_events`, over **47 real rows**, and a dropped column is not
+additive and cannot be reverted by reverting a commit.
+
+`.env.local` is not loaded in your shell, so the ref is read out of it on the same line
+(that is the only reason this looks long):
+
+```
+REF=$(grep -m1 '^SUPABASE_PROD_REF=' .env.local | cut -d= -f2) && \
+OUT=~/Desktop/prod-calendar-backup-$(date +%Y%m%d).sql && \
+npx supabase db dump --project-ref "$REF" --linked --data-only -s public -f "$OUT" && \
+wc -l "$OUT" && grep -c calendar_events "$OUT"
+```
+
+The last two numbers are the check: a line count that is not zero, and `calendar_events` appearing
+in the file. A dump that wrote nothing looks exactly like a dump of an empty database. Supabase
+also takes its own backups — Dashboard → Database → Backups shows the retention on this plan — but
+this one you can point at by name, which is what you want at 2am.
+
+**Step 3 — apply 073–078.** `npm run db:migrate:prod`, the typed `PRODUCTION`, as the generic
+procedure. **What production will do, read from production on 16 October so the numbers are not a
+surprise:**
+
+| | |
+|---|---|
+| `calendar_events` before | **47 rows**, 2 companies, 0 with a null `company_id`, 0 with a `document_id`, 0 `completed`, all `category = 'compliance'` |
+| 073 makes them | all **`confirmed`**, all `source = 'person'` (no row names a document), 24 `recurs = true` |
+| the period words | 19 `annually` → `year`. **3 `biennially` and 2 `every 3 years` map to NULL** — the product has no word for those, so those five become "repeats — how often wasn't read" and appear in the how-often picker on *Dates to confirm* (decision 23). That is correct behaviour, and it is five rows a person will be asked about |
+| 074 then files | **27 rows and 27 stamps** — 27 document deadlines on a current scan, all eligible, all fileable, **0 undated one-offs skipped**, 27 distinct keys. All 27 belong to **one** company, which has **0 calendar rows today**, so its *Dates to confirm* badge goes from 0 to 27 and 7 of those repeat with no day yet |
+| `calendar_events` after | **74 rows** |
+| nothing already exists | `calendar_mailings`, `calendar_feed_tokens`, `calendar_v`, both new indexes, both 078 functions, `calendar_events.status/source/replaced_by` and `audit_findings`'s `unique (company_id, id)` — **all eleven absent**, checked with controls that proved the probe could see what *is* there |
+
+**Step 4 — the variables, BEFORE the push.** A variable change is itself a redeploy, so doing them
+first means the deployment that first serves the Calendar already has them. Vercel → Settings →
+Environment Variables, tick **Production**, Save.
+
+| Variable | Value | Why |
+|---|---|---|
+| `AI_MODEL_CALENDAR` | `claude-opus-5-5` | **The one addition this release needs.** Unset, the Calendar's answers fall back to `AI_MODEL_PROSE`, which is the same model — so nothing moves today, and that is exactly the problem: the choice would be an accident of a fallback chain rather than a decision anybody can read back. Set it and it is in this table. `lib/ai.ts:151` |
+
+And four this release reads and production **already has** — nothing to do, listed so nobody adds a
+second copy: `NEXT_PUBLIC_APP_URL` (the links in the email and the date drawer), `RESEND_API_KEY`,
+`CRON_SECRET` (the job's only door), `AI_EFFORT` (`medium`).
+
+Two that must stay as they are:
+
+- **`NOTIFY_TEST_TO` stays ABSENT.** Set on production, every customer's calendar email goes to that
+  one address instead of to them. The line at the foot of this file already says it; it matters more
+  now, because this is the first email with no human in the loop.
+- **`ASK_CONTEXT_BUDGET_TOKENS` stays unset**, which means 120,000 tokens of context per answer
+  (`lib/ask/calendarBrief.ts:39`). Set it only to make an answer cheaper on purpose.
+- **There is no search cap for the Calendar's answers**, by inheritance: `AI_SEARCH_MAX_HR` is unset
+  and the Calendar reads the same "no limit". Step 13 measured an answer at **$0.157–$0.273 capped
+  at two searches**, so uncapped is a floor, not a ceiling. If that is not acceptable, it is a code
+  change and not a variable — say so and it gets one.
+
+**Step 5 — merge and push.** `main` has not moved since 9 October (`54ec6ae`), so this is a
+fast-forward and there is nothing to resolve:
+
+```
+git status --porcelain && npm run typecheck     # empty, green
+git checkout main && git merge --ff-only calendar-v2 && git push
+```
+
+Watch Vercel until the deployment is green. *(If `main` has moved by the time you run this, stop:
+the merge wants looking at, not forcing.)*
+
+**Step 6 — the free checks on production.** No login, nothing written, nothing paid.
+
+> **`npm run check:live` is NOT one of them, and cannot be made into one.** It signs in as the
+> staging fixture `testgamma@example.com` and **writes a probe row into every tenant table**, and it
+> builds its database client from `NEXT_PUBLIC_SUPABASE_URL` — staging — so pointing
+> `CHECK_LIVE_BASE_URL` at production would drive production's routes with a staging token (401 on
+> everything) while still writing to staging. It stays on staging, where Claude Code runs it.
+> `scripts/check-live.js:66–92`.
+
+These are the calendar's equivalents, in the shape of the existing free checks above:
+
+```
+curl -s -o /dev/null -w '%{http_code}\n' https://compliboard.vercel.app/calendar
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://compliboard.vercel.app/api/calendar/answer
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://compliboard.vercel.app/api/jobs/calendar-month
+curl -s -o /dev/null -w '%{http_code}\n' 'https://compliboard.vercel.app/api/calendar/feed/not-a-real-token'
+```
+
+Expect **200** (the page shell, as every signed-in page returns), **401** (no login), **404** (no
+cron secret — the job must not even admit it exists), **404** (an unknown feed token). Then sign in
+and look at `/calendar`: the four tabs, the counts, and the *Dates to confirm* badge reading what
+step 3's table predicted for your company.
+
+**Step 7 — prove the guard, for free, on production.** One call, and it is the only way to see the
+gate from the outside:
+
+```
+SECRET=$(grep -m1 '^CRON_SECRET=' .env.local | cut -d= -f2-) && \
+curl -s -X POST -H "x-cron-secret: $SECRET" \
+  'https://compliboard.vercel.app/api/jobs/calendar-month?month=2026-12' | python3 -m json.tool
+```
+
+*(`CRON_SECRET` in `.env.local` and the one on Vercel must be the same value for this to work; if
+it answers 404, that is what to check first.)*
+
+Before the DNS is verified this answers **503** with `"refused": "the sender is still
+onboarding@resend.dev…"`, and `calendar_mailings` stays empty for that month. After step 0.3 it
+sends. **Either answer is information and neither costs anything.** To see what the email would
+*say* without sending it, add `&dryRun=1`: a dry run claims nothing, sends nothing, and reports
+`would_be_refused` so you can tell the guard is armed.
+
+**Step 8 — the one paid check.** Sign in as your own company and ask the Calendar one question
+about a date you have. **About $0.20** at production settings (step 13 measured $0.157–$0.273 with
+searches capped at two; production has no cap, so treat $0.20 as the floor). Read the answer
+against the three things step 13 found Opus does well: it cites official sources, it says which
+document a date came from, and it says *"I can't tell you yet"* where it does not know. If it
+asserts a rule number with no source, that is the one failure worth reporting.
+
+**Step 9 — the morning after, and then the 1st.** The generic morning-after paragraph plus one
+calendar row:
+
+```sql
+-- the overnight jobs, as usual, and the calendar email's own row if the 1st has passed
+select job, started_at, finished_at, ok, counts, errors
+  from job_runs where started_at > now() - interval '36 hours' order by started_at desc;
+```
+
+There will be **no `calendar_month` row until the 1st** — it is a monthly cron, so its absence on
+the 17th is correct and not a failure. On **1 November, after 14:00 UTC**, that row is the whole
+step 15:
+
+```sql
+select company_id, month, sent_at, sent_to, error from calendar_mailings where month = '2026-11';
+```
+
+One row per company with a person, `sent_at` stamped, `sent_to` holding the real addresses, `error`
+null. **Four people across four companies** is what production holds today (10 companies, 6 of them
+with nobody on them, which the job skips as "nobody to send to"). Every one of those four companies
+has exactly **one site**, so no email in this release groups its dates by site (decision 24).
 
 ## Rolling back
 

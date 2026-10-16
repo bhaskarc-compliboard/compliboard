@@ -15,7 +15,10 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { renderEmail, FOOTER_NOT_LEGAL_ADVICE, footerBecauseMember, type EmailShape } from '../../lib/email.ts'
+import {
+  renderEmail, FOOTER_NOT_LEGAL_ADVICE, footerBecauseMember, sandboxSenderRefusal,
+  SANDBOX_SENDER, SANDBOX_FROM, type EmailShape,
+} from '../../lib/email.ts'
 import {
   calendarEmail, splitForMonth, emailRow, bySite, sourceWords, nextMonthKey, prevMonthKey,
   EARLY_DAYS, DUE_HEADING, EARLY_HEADING, PASSED_HEADING, UNDATED_LINE, NOT_RIGHT_LINE,
@@ -321,5 +324,99 @@ describe('the job: the claim comes first', () => {
     assert.match(m, /alter column sent_at drop not null/)
     assert.match(m, /add column if not exists error text/)
     assert.match(m, /unique_violation/, 'it proves the claim is refused twice')
+  })
+})
+
+/**
+ * ====================================================================================
+ * THE SANDBOX SENDER GUARD — Calendar step 14 (`DECISIONS.md` §200, `docs/TESTING.md` C14).
+ * ====================================================================================
+ *
+ * The thing this prevents happens once, on the first of a month, to every customer at once, and
+ * there is no recall. So it is tested at both ends: the rule as a pure function of two strings,
+ * and the route as the code that obeys it in the right ORDER — before the claim, so no month is
+ * taken, and before the render, so nothing is paid for.
+ */
+describe('the sandbox sender cannot reach a customer', () => {
+  test('the address the product sends from today, said once', () => {
+    assert.equal(SANDBOX_SENDER, 'onboarding@resend.dev')
+    assert.equal(SANDBOX_FROM, 'CompliBoard <onboarding@resend.dev>')
+  })
+
+  test('production plus the sandbox sender is a refusal that says what to do', () => {
+    const r = sandboxSenderRefusal(SANDBOX_FROM, 'production')
+    assert.ok(r, 'it must refuse')
+    assert.match(r!, /onboarding@resend\.dev/)
+    assert.match(r!, /Verify the CompliBoard domain in Resend/)
+    assert.match(r!, /Nothing was claimed and nothing was sent/)
+  })
+
+  // *** INERT EVERYWHERE ELSE, which is what makes it safe to add before a release. *** The laptop,
+  // the isolated server, `check:live` and every test below read `undefined` and pass through.
+  test('it is silent off production, whatever the sender', () => {
+    for (const env of [undefined, '', 'preview', 'development', 'Production ', 'PRODUCTION']) {
+      assert.equal(sandboxSenderRefusal(SANDBOX_FROM, env), null, `env ${JSON.stringify(env)}`)
+    }
+  })
+
+  // *** AND IT MUST SEE A PRESENCE BEFORE IT REPORTS AN ABSENCE (CLAUDE.md §9a). *** A guard that
+  // returned null for every input would pass the test above having checked nothing.
+  test('a verified sender on production passes, and the probe can tell the two apart', () => {
+    assert.equal(sandboxSenderRefusal('CompliBoard <dates@compliboard.com>', 'production'), null)
+    assert.ok(sandboxSenderRefusal('CompliBoard <onboarding@resend.dev>', 'production'))
+    // Case and surrounding text do not help it through.
+    assert.ok(sandboxSenderRefusal('CompliBoard Dates <Onboarding@Resend.Dev>', 'production'))
+  })
+
+  describe('the job obeys it, and in the right order', () => {
+    const route = readFileSync('app/api/jobs/calendar-month/route.ts', 'utf8')
+    const code = route.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+    test('the refusal is decided before the claim and before the render', () => {
+      const guard = code.indexOf('sandboxSenderRefusal(SANDBOX_FROM, process.env.VERCEL_ENV)')
+      assert.ok(guard > 0, 'the job must ask the rule')
+      assert.ok(guard < code.indexOf(".from('calendar_mailings').insert("), 'before the claim')
+      assert.ok(guard < code.indexOf('calendarEmail('), 'before the render')
+      assert.ok(guard < code.indexOf('resend.emails.send'), 'before the send')
+    })
+
+    test('a refused run writes the reason on its job_runs row and says so out loud', () => {
+      assert.match(code, /await run\.finish\(refused, \[\{ error: sandbox \}\]\)/)
+      assert.match(code, /console\.error\(`CALENDAR EMAIL NOT SENT: \$\{sandbox\}`\)/)
+      assert.match(code, /refused: sandbox/)
+    })
+
+    test('a refused run is loud in the Vercel log: 503, not a green 200', () => {
+      const guard = code.indexOf('if (sandbox && !dryRun) {')
+      assert.ok(guard > 0)
+      assert.match(code.slice(guard, guard + 600), /status: 503/)
+    })
+
+    // A dry run claims nothing and sends nothing by construction, so it stays the free way to read
+    // what production's first email would say — and it reports that the guard is armed.
+    test('a dry run is let through and reports that the guard would have fired', () => {
+      assert.match(code, /if \(sandbox && !dryRun\) \{/)
+      assert.match(code, /\.\.\.\(sandbox \? \{ would_be_refused: sandbox \} : \{\}\)/)
+    })
+
+    test('the from: line is the shared constant, so the DNS change is one line', () => {
+      assert.match(code, /from: SANDBOX_FROM,/)
+      assert.ok(!/from: 'CompliBoard </.test(code), 'no second copy of the sender in this route')
+    })
+  })
+
+  /**
+   * *** THE OTHER THREE SENDERS ARE OWED, NOT DONE, AND THIS TEST IS THE RECORD. ***
+   * All three send from the sandbox address on production TODAY, so switching the guard on for
+   * them would silence three emails that work. They move in the commit that changes all four
+   * `from:` lines to the verified domain, where the guard is inert from the moment it lands.
+   * When that commit happens this test fails, and the sentence it fails on says what to do.
+   */
+  test('the three older senders still carry the sandbox address in their own files', () => {
+    const owed = ['lib/documentBatch.ts', 'lib/auditNotify.ts', 'lib/handbookCheckNotify.ts']
+    for (const f of owed) {
+      assert.match(readFileSync(f, 'utf8'), /onboarding@resend\.dev/,
+        `${f} no longer sends from the sandbox — give it sandboxSenderRefusal and update this test`)
+    }
   })
 })

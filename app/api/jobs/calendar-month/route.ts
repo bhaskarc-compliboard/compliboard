@@ -26,6 +26,11 @@
 // *** NOTHING LEAVES FOR A REAL ADDRESS ON STAGING. *** `NOTIFY_TEST_TO` is the To field when it is
 // set, as the three existing emails do it; the real recipients are in the log line and on the row,
 // never in the To. On production it is unset and the real people receive it.
+//
+// *** AND NOTHING LEAVES AT ALL FROM THE SANDBOX SENDER ON PRODUCTION (step 14). *** `NOTIFY_TEST_TO`
+// is absent on production by design (`docs/RELEASE.md`), so this is the one job that mails real
+// people on a schedule nobody presses. The guard below refuses that run while the `from:` is still
+// Resend's shared sandbox address; `lib/email.ts` sandboxSenderRefusal is the rule.
 import { NextResponse, type NextRequest } from 'next/server'
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/auth'
@@ -33,7 +38,7 @@ import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
 import { liveDatesFor } from '@/lib/calendarCounts'
 import { CALENDAR_VIEW_COLUMNS, type CalendarRow } from '@/lib/calendarView'
 import { calendarEmail } from '@/lib/calendarEmail'
-import { renderEmail } from '@/lib/email'
+import { renderEmail, SANDBOX_FROM, sandboxSenderRefusal } from '@/lib/email'
 
 export const maxDuration = 800
 
@@ -67,6 +72,25 @@ export async function POST(request: NextRequest) {
   const run = await startJobRun(supabaseAdmin, 'calendar_month')
   const errors: Array<{ company_id?: string; error: string }> = []
   const results: CompanyResult[] = []
+
+  // *** THE SANDBOX SENDER CANNOT REACH A CUSTOMER — Calendar step 14. ***
+  // `lib/email.ts` sandboxSenderRefusal carries the reasoning. On production, with the sandbox
+  // `from:` still in place, this run stops HERE: before the claim, so no month is taken, and
+  // before the render, so nothing is paid for. The refusal is on the `job_runs` row, because a
+  // cron that refuses and leaves no trace is indistinguishable from a cron that never fired.
+  //
+  // A DRY RUN IS LET THROUGH, and that is the point of it: it claims nothing and sends nothing by
+  // construction, so it stays the free way to read what the first email would say on production —
+  // and it reports `would_be_refused`, which is how the guard is seen to be armed without one
+  // email leaving.
+  const sandbox = sandboxSenderRefusal(SANDBOX_FROM, process.env.VERCEL_ENV)
+  if (sandbox && !dryRun) {
+    console.error(`CALENDAR EMAIL NOT SENT: ${sandbox}`)
+    const refused = { month, dry_run: false, companies: 0, sent: 0, skipped: 0, failed: 0, refused: sandbox }
+    await run.finish(refused, [{ error: sandbox }])
+    return NextResponse.json({ job: 'calendar_month', run: run.id, ...refused, results: [], errors: [{ error: sandbox }] },
+      { status: 503 })
+  }
 
   try {
     // *** A LINK THAT DOES NOT WORK IS WORSE THAN NO EMAIL — `lib/auditNotify.ts`'s rule, and the
@@ -157,7 +181,7 @@ export async function POST(request: NextRequest) {
           + `for ${addresses.join(', ')}${override ? ` (sent to ${override} instead)` : ''}`)
         const resend = new Resend(key)
         const res = await resend.emails.send({
-          from: 'CompliBoard <onboarding@resend.dev>', to, subject: mail.subject, html, text,
+          from: SANDBOX_FROM, to, subject: mail.subject, html, text,
         })
         if (res.error) throw new Error(`Resend: ${res.error.message}`)
 
@@ -185,6 +209,7 @@ export async function POST(request: NextRequest) {
   const counts = {
     month,
     dry_run: dryRun,
+    ...(sandbox ? { would_be_refused: sandbox } : {}),
     ...(onlyCompany ? { one_company: onlyCompany } : {}),
     companies: results.length,
     sent: results.filter((r) => r.sent).length,
