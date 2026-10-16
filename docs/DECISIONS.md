@@ -13493,3 +13493,100 @@ labels, the info bar and both views move in one render; the badge re-reads on th
 - `scripts/check-live.js` — the two probes above. `lib/calendarDates.ts` — `periodProblem`,
   `confirmMany`, and `confirmDate`'s optional period.
 
+## 195. CALENDAR STEP 10a: THE SHARED CHAT ENGINE, AND CALENDAR AS ITS FIRST CUSTOMER — 16 October 2026
+
+**Branch `calendar-v2`, staging only. `docs/CALENDAR-PLAN.md` step 10a; decision 28. Built and
+stopped at STOP 1: the prompt is a quality change and waits for the owner's yes. Cost: $0.1123
+across four real Haiku runs (the ledger, by row, is in the step report).**
+
+### The engine is HR's answer route lifted out, and HR is not touched
+
+`git diff --stat app/hr app/api/hr` is **empty**, and so is the diff of `lib/hrAnswer.ts`,
+`prompts/hr-answer.ts` and `lib/summaryReport.ts`. HR goes on running its own route; `lib/ask/` is
+a copy of the parts of it that are not about handbooks, made general. A test holds both halves of
+that: no engine file imports anything matching `hrAnswer|hr-answer|handbook`, and HR's route still
+imports its own. **The copies are temporary by decision** — HR, Audits and the Workspace move onto
+the engine after the Calendar's release, and `HANDOFF-CODE.md` §7 carries that as owed.
+
+**What was lifted:** the topic rules (this company's, this section's, open — 404 and 409 in the
+workspace's own words), the question saved before the answer is known, history rebuilt from stored
+turns with each answer's sources put back, the streamed call through `lib/ai.ts`, the check at
+done, the turn and its record, the counter, the ledger row, and the stopped-turn rule in the
+`finally`. **What was left behind:** every handbook thing — the three refusals, the wait for a
+reading, the selection call, the handbook fields of the check record.
+
+**THE CLAIM + after() PATTERN IS NOT IN THE ANSWER, AND THE BRIEF SAID IT WAS.** HR's answer
+streams inside the request (`app/api/hr/answer/route.ts:28`, `maxDuration = 800`) because the
+person is watching the words arrive; the claim and `after()` belong to the SUMMARY
+(`app/api/hr/topics/[id]/summarise/route.ts:46`), where nobody is waiting and a second press would
+pay twice. The engine keeps each where HR has it. Putting a claim on the answer would stop a person
+asking a second question while the first was still writing.
+
+### A brief has five things, and a sixth is a stop
+
+`section`, `words`, `packContext`, `promptSentences`, `offers` — plus an optional `extraStep`,
+which exists for HR's agency check when HR moves over and which Calendar does not pass.
+`checkBrief` throws, by name, at the moment the brief is used: a sixth field is a section asking
+the engine to behave differently in a way no other section can see, and a warning would let it run
+and be subtly wrong in production.
+
+### Calendar's own brief
+
+The context, in the owner's order: the company block every chat sends; **every live date** with the
+line it was read from and its row id; for each document behind those dates, **its stored reading as
+Documents keeps it** (decision 16 — readings, not files); for an audit date, the finding's own
+words. Measured on staging: Test Gamma 3,199 tokens (10 dates, 2 readings, 2 findings), Cascade
+11,882 (37 dates, 11 readings) — about 176 tokens a date and 463–740 a reading.
+
+**The budget is per block and what does not fit is said out loud** — in the block the model reads
+and in the check record stored beside the answer. A chat that quietly dropped half a company's
+dates would answer "that is not on your calendar" about a date that is, which is the worst thing
+this section can say.
+
+### An offer is checked like a citation
+
+Calendar's one offer is `add_date` (decision 17). It is written as a fenced `offer` block, pulled
+out before the person sees anything, and **dropped if its `source_url` is not one this call's
+search returned** — the same `findReturned` the link check uses. The two real runs of the same
+question prove the rule is not decorative: the model offered the same EPA page both times, and in
+one run that page **was** in the ten pages the search returned and in the other it **was not**.
+
+### What four real runs found, and what each one cost in correctness
+
+1. **Internal ids reached the person.** The first run wrote *"we have this on your calendar as
+   dates C6 and C7"*. `C6` is the engine's handle for a passage. Fixed as HR fixed it
+   (`replaceBlockIds`): a bare id becomes the thing it names, a range or a list of three or more
+   becomes "(5 of them)" because five long titles in one parenthesis is worse than the ids were.
+   The prompt also forbids writing one. **And the first fix was half a fix:** ids were given to
+   every date but passages only to dates with a stored line, so some ids could not be named at
+   all — every date the model is shown now has a passage, with an empty text that no quote can
+   match.
+2. **The quote check made a good offer unreadable.** An offer's `source_line` is a quoted sentence
+   inside JSON; the check appended *"(we could not find these words in what we have on file)"*
+   inside the string and `JSON.parse` then failed — counted as `notJson`, a true count of a
+   self-inflicted wound. **The offers are now pulled out before the prose is checked**, and a test
+   holds the order.
+3. **`lib/ai.ts`'s narration rule withdrew the sentence this section exists to say.** It treats
+   everything written before the first web search as the model thinking aloud and withdraws it. In
+   the Tier II run the model wrote *"That date is not on the calendar yet."* and then searched, so
+   the person would never have seen it. **Shared with the Workspace and HR, so it is not changed
+   here** (`HANDOFF-CODE.md` §7). A prompt sentence tells the model to search before it writes,
+   which shortened the loss from 201 characters to 90 but did not end it; the real decision belongs
+   with 10b's screens.
+4. **A rule number from memory.** A run wrote *"The requirement comes from NFPA 10 Section 7.1"*
+   with `searches=0`. No check can catch that — it is neither a quote nor a link — so it is
+   answered in the prompt: cite a page this search returned, or say which document you are reading
+   it from, or describe the rule without numbering it. `CLAUDE.md` §3.3 is the standing rule it
+   offends.
+
+### The prompt, and why every sentence is there
+
+Seven sentences after the workspace's own prompt, which is **imported, never copied**
+(`prompts/ask.ts` → `buildSystemPrompt('research', null, { open: true })`), so a change to how this
+product cites reaches every chat at once. The sentences: what it is given and to answer from the
+dates first; what to say when a date is NOT on the calendar; the product's words (a date HAS
+PASSED, "not confirmed", never "AI", never compliant, not legal advice, and — after run 1 — never
+say an agency has confirmed anything unless the document says so); ids are for markers, not for
+sentences; a rule number is a claim; search before you write; decision 30, say so and ask; and what
+may be offered, in the one shape `lib/ask/offers.ts` can verify.
+
