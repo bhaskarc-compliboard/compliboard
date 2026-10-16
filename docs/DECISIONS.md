@@ -13581,7 +13581,7 @@ one run that page **was** in the ten pages the search returned and in the other 
 
 ### The prompt, and why every sentence is there
 
-Seven sentences after the workspace's own prompt, which is **imported, never copied**
+Nine sentences after the workspace's own prompt, which is **imported, never copied**
 (`prompts/ask.ts` → `buildSystemPrompt('research', null, { open: true })`), so a change to how this
 product cites reaches every chat at once. The sentences: what it is given and to answer from the
 dates first; what to say when a date is NOT on the calendar; the product's words (a date HAS
