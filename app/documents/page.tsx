@@ -181,6 +181,21 @@ function DocumentsPageContent() {
    */
   const searchParams = useSearchParams()
   const addHint = (searchParams.get('add') ?? '').trim().slice(0, 200)
+  /**
+   * *** WHERE THE PERSON CAME FROM, SO THEY CAN GO BACK — Calendar step 10b, ADDITIVE. ***
+   *
+   * The Calendar's chat has no uploader of its own and will not invent a second one: its
+   * "Add a document" is a link here. Without a way back, a person who came from the middle of a
+   * conversation has to find it again. The link is drawn only when `?return=` is present.
+   *
+   * **ONLY AN INTERNAL PATH.** It must start with a single `/` and not `//`, or it is ignored:
+   * a `return=` taken at face value is an open redirect, and this one is written into an anchor
+   * a person will click.
+   */
+  const backTo = (() => {
+    const raw = (searchParams.get('return') ?? '').trim()
+    return /^\/(?!\/)[\w\-/?=&%.]*$/.test(raw) ? raw.slice(0, 200) : null
+  })()
 
   const [rows, setRows] = useState<IndexRow[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
@@ -801,6 +816,11 @@ function DocumentsPageContent() {
           )}
 
           <div className="ml-auto flex items-center gap-3">
+            {backTo && (
+              <a href={backTo} className="text-[12px] text-[var(--green-ink)] underline hover:no-underline">
+                ← Back to where you were
+              </a>
+            )}
             {addHint && (
               <span className="max-w-[300px] truncate text-[12px] text-gray-600" title={addHint}>
                 Add: {addHint}

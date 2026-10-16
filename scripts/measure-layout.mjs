@@ -51,6 +51,11 @@
 // `--scroll "<text>"` scrolls the first visible element whose text starts with <text> to the top of
 // its scrolling box, after the clicks, before the screenshot.
 //
+// `--type "<text>"` types into the first visible textarea — Calendar step 10b, so a question can
+// be ASKED by the harness rather than only clicked at. Set through the native setter and an
+// `input` event, for the reason --select sets a value that way: a plain assignment leaves React's
+// own state behind, so the page would photograph as filled and behave as empty.
+//
 // `--select "<row text>=<option>"` chooses an option in a <select> — Calendar step 9. The script
 // could click a button and scroll a box but had no way to answer a dropdown, so the queue's
 // how-often picker and the Calendar's site filter could not be walked at all. The select is found
@@ -60,7 +65,8 @@
 // page would photograph as changed and behave as unchanged. Applied before the clicks.
 //
 // `--click "<row text>=<button text>"` clicks the button inside a named row, which is how a row's
-// own action is told apart from a group's: see the note at the matcher.
+// own action is told apart from a group's: see the note at the matcher. `--click "=Ask"` matches
+// the text EXACTLY, for a button whose name is the start of something else's.
 //
 // `--click "<text>"` clicks the first visible button, link or row whose text (or, with none, aria-label) starts with <text>,
 // then waits. Repeat it to walk a path (a tab, a row, a button in the drawer). It is the only way
@@ -87,7 +93,15 @@ let height = 900
 // capture, which is the only honest way to check a print rule without a printer.
 let printMedia = false
 let base = 'http://localhost:3000', allow = null, logFilter = null
-const clicks = [], scrolls = [], selects = []
+/**
+ * *** THE ACTIONS RUN IN THE ORDER THEY WERE WRITTEN — Calendar step 10b. ***
+ * They used to run in three loops (every --select, then every --type, then every --click), which
+ * is fine for one step and silently wrong for a walk: `--type A --click Ask --type B --click Send`
+ * typed A, typed B over it, then clicked twice, so the first question was never asked and the
+ * second was asked once. One ordered list, one loop.
+ */
+const actions = []
+const clicks = [], scrolls = []
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i]
   if (a === '--as') email = argv[++i]
@@ -95,8 +109,9 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--height') height = Number(argv[++i])
   else if (a === '--print') printMedia = true
   else if (a === '--shot') shot = argv[++i]
-  else if (a === '--click') clicks.push(argv[++i])
-  else if (a === '--select') selects.push(argv[++i])
+  else if (a === '--click') { const v = argv[++i]; clicks.push(v); actions.push({ kind: 'click', value: v }) }
+  else if (a === '--select') actions.push({ kind: 'select', value: argv[++i] })
+  else if (a === '--type') actions.push({ kind: 'type', value: argv[++i] })
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
   else if (a === '--base') base = argv[++i].replace(/\/+$/, '')
@@ -227,7 +242,25 @@ try {
   // The page fetches its lists after mount; the title appears before them.
   await new Promise((r) => setTimeout(r, waitMs))
 
-  for (const pair of selects) {
+  for (const action of actions) {
+   if (action.kind === 'type') {
+    const text = action.value
+    const typed = await evaluate(`(() => {
+      const want = ${JSON.stringify(text)}
+      const visible = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 }
+      const el = [...document.querySelectorAll('textarea, input[type=text]')].filter(visible)[0]
+      if (!el) return null
+      const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype
+      Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, want)
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+      el.focus()
+      return want.slice(0, 60)
+    })()`)
+    if (!typed) throw new Error('--type: no visible textarea or text input on the page')
+    await new Promise((r) => setTimeout(r, 300))
+    console.log(`typed: ${typed}`)
+   } else if (action.kind === 'select') {
+    const pair = action.value
     const at = pair.indexOf('=')
     const where = at === -1 ? '' : pair.slice(0, at)
     const value = at === -1 ? pair : pair.slice(at + 1)
@@ -255,9 +288,8 @@ try {
     if (String(chose).startsWith('NO OPTION')) throw new Error(`--select: ${chose}`)
     await new Promise((r) => setTimeout(r, 300))
     console.log(`chose: ${chose}`)
-  }
-
-  for (const text of clicks) {
+   } else {
+    const text = action.value
     // Read BEFORE the click: the event can arrive while the click is still being evaluated, and a
     // count taken after it reported 0 for a picker that had opened (found on this flag's first run).
     const before = choosers
@@ -290,13 +322,17 @@ try {
       const at = want.indexOf('=')
       const scope = at > 0 && !want.startsWith('key=') ? want.slice(0, at) : null
       const label = scope ? want.slice(at + 1) : want
+      // A LEADING "=" MEANS EXACTLY THIS TEXT — Calendar step 10b. --click Ask matched the TAB
+      // "Ask a question", which starts with it, and the question was never sent. Prefix matching
+      // is right for a row and wrong for a one-word button beside a tab of the same name.
+      const exact = label.startsWith('=') ? label.slice(1) : null
       const inRow = (e) => { let n = e
         for (let i = 0; i < 6 && n; i++, n = n.parentElement) {
           if ((n.textContent || '').trim().startsWith(scope)) return true }
         return false }
       const matches = want.startsWith('key=')
         ? order.filter((e) => keyOf(e) === want.slice(4)).flatMap((e) => [e, ...e.querySelectorAll('button')].slice(0, 2)).slice(-1)
-        : order.filter((e) => name(e).startsWith(label) && (!scope || inRow(e)))
+        : order.filter((e) => (exact ? name(e) === exact : name(e).startsWith(label)) && (!scope || inRow(e)))
       const el = matches.find((e) => !matches.some((o) => o !== e && e.contains(o)))
       if (!el) return null
       el.scrollIntoView({ block: 'center' }); el.click(); return name(el).slice(0, 60)
@@ -304,6 +340,7 @@ try {
     if (!hit) throw new Error(`--click: nothing visible starts with "${text}"`)
     await new Promise((r) => setTimeout(r, waitMs))
     console.log(`clicked: ${hit}${fileChooser ? `   → Page.fileChooserOpened fired ${choosers - before} time(s)` : ''}`)
+   }
   }
 
   const out = await evaluate(`(() => {

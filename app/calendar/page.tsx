@@ -45,15 +45,12 @@
  *
  * Every word on this page is the owner's (the step 7 and 8a briefs, and boards 3, 4 and 5).
  */
-import { Suspense, useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppLayout, { COUNTS_CHANGED } from '@/components/AppLayout'
 import { Tabs } from '@/components/Tabs'
 import { Empty } from '@/components/Empty'
-import { AttachControl } from '@/components/AttachControl'
-import { PRIMARY } from '@/components/buttonStyles'
-import { CALENDAR_EXAMPLE_QUESTIONS } from '@/config/examples'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
 import { readCalendarCounts, infoBarParts, type CalendarCounts } from '@/lib/calendarCounts'
 import {
@@ -67,12 +64,20 @@ import {
 import { CalendarDateDrawer, type DocumentFacts, type FindingFacts } from '@/components/CalendarDateDrawer'
 import { AddDateSheet } from '@/components/AddDateSheet'
 import { DateQueue } from '@/components/DateQueue'
+import { CalendarAsk, type Exchange } from '@/components/CalendarAsk'
+import { ConversationList } from '@/components/ConversationList'
+import { Drawer, printDrawer } from '@/components/Drawer'
+import { ReportView, WEB_SOURCE, type SourceShape, type ReportLike } from '@/components/ReportView'
+import { AnswerBody, type AnswerSource } from '@/components/AnswerBody'
+import { displayTitle } from '@/lib/listWords'
+import { conversationStatus, friendlyDate } from '@/lib/conversationStatus'
+import { CLAIM_WORDS } from '@/lib/topicClaim'
 import { type DocumentHead } from '@/lib/calendarQueue'
 import { SendCalendarSheet } from '@/components/SendCalendarSheet'
 import DocumentReport from '@/components/DocumentReport'
 import AuditReport from '@/components/AuditReport'
 import { authHeaders } from '@/lib/supabase'
-import { printWithFrame } from '@/lib/printFrame'
+import { printWithFrame, printDate } from '@/lib/printFrame'
 
 type Tab = 'ask' | 'conversations' | 'calendar' | 'dates'
 
@@ -85,12 +90,13 @@ const asTab = (v: string | null): Tab =>
 const LEDE = 'Every date your documents set, in one place. Ask when something is due, and we say '
   + 'where the date came from.'
 /**
- * THE TWO STAGING PLACEHOLDERS LEFT. Each names the step that replaces it, and each is listed in
- * `docs/HANDOFF-CODE.md` §7. They are not polish-later wording: they are the honest answer to "why
- * is there nothing here", which is that this part is not built yet. **The third — "This view
- * arrives with step 9" on the Dates-to-confirm tab — is gone with step 9**, and so is its §7 row.
+ * *** THE LAST STAGING PLACEHOLDER WENT WITH STEP 10b. *** Three sentences named the step that
+ * would replace them — step 9's on Dates to confirm, step 10's under the Ask box, and the
+ * Conversations tab's line for a row that could not exist yet. All three are gone, and so are
+ * their rows in `docs/HANDOFF-CODE.md` §7. `CLAUDE.md` §5.1: an empty state is a message, and
+ * "nothing here" is a claim that has to be true — which is now the only kind of empty state
+ * this page draws.
  */
-const ASK_ARRIVES = 'Asking a question arrives with step 10.'
 /**
  * THE INFO BAR ON THE CALENDAR TAB — board 4's line, which counts what the tab is showing rather
  * than what the whole section holds.
@@ -98,9 +104,10 @@ const ASK_ARRIVES = 'Asking a question arrives with step 10.'
 const CALENDAR_BAR = (dates: number, waiting: number) =>
   `${dates} ${dates === 1 ? 'date' : 'dates'}${waiting > 0 ? `, ${waiting} not confirmed yet` : ''}. `
   + 'Click a date to see where it came from.'
-/** The conversations tab's own line for the case the owner's brief could not have: a row exists. */
-const CONVERSATIONS_ARRIVE = (n: number) =>
-  `${n} ${n === 1 ? 'conversation' : 'conversations'}. This view arrives with step 10.`
+/** What the drawer says about a conversation nobody has summarised yet — the workspace's words. */
+const NOT_SUMMARISED =
+  'This conversation has not been summarised yet. Open it and press "Summarise this conversation" when you are done.'
+const SUMMARY_FAILED = 'That conversation could not be summarised just now. Nothing was changed. Please try again.'
 
 /**
  * BOARD 4'S DOT, DRAWN AND NOT TYPED. The board writes it as ● and ○, and the first build put
@@ -160,8 +167,6 @@ function Calendar() {
    */
   const tab = asTab(params.get('tab') ?? ((linkedDate || linkedFinding) ? 'calendar' : null))
 
-  const [box, setBox] = useState('')
-  const composerRef = useRef<HTMLTextAreaElement>(null)
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [counts, setCounts] = useState<CalendarCounts>({ dates: 0, toConfirm: 0, nextDate: null })
   const [rows, setRows] = useState<CalendarRow[]>([])
@@ -211,13 +216,8 @@ function Calendar() {
    */
   const [loaded, setLoaded] = useState(false)
 
-  // The composer grows with its text, exactly as HR's does (`app/hr/HrWorkspace.tsx`).
-  useLayoutEffect(() => {
-    const el = composerRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [box])
+  // The composer, its examples and its attach line moved into `components/CalendarAsk.tsx` with
+  // the ask view at step 10b; the page keeps the frame, the counts and the other three tabs.
 
   /**
    * ONE READ OF EVERYTHING THE PAGE DRAWS, as the caller. `calendar_v` is `security_invoker`, so
@@ -342,8 +342,137 @@ function Calendar() {
    */
   const open = resolveLink(rows, linkedDate, linkedFinding)
   const linkMissed = loaded && !!(linkedDate || linkedFinding) && !open
+  /**
+   * THE ASK TAB'S CONVERSATION. `askTopicId` is the open one; `askInitial` is what a reopened
+   * conversation's stored turns rebuild into. `CalendarAsk` is keyed on the topic, so opening
+   * another conversation — or starting a new one — gives it fresh state with nothing to reset.
+   */
+  const [askTopicId, setAskTopicId] = useState<string | null>(null)
+  const [askInitial, setAskInitial] = useState<Exchange[]>([])
+  const [askKey, setAskKey] = useState(0)
+  /** The conversation open in the summary drawer, and the summary being written for one. */
+  const [convDrawer, setConvDrawer] = useState<TopicRow | null>(null)
+  const [summaryWait, setSummaryWait] = useState<{ topicId: string; before: string | null } | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  /**
+   * "SUMMARISE THIS CONVERSATION" — the workspace's shape, which HR copied and this copies from
+   * HR: a 202 and then a poll, because the writer runs in `after()` and nobody is watching it.
+   * A claim already held (409 `writing`) is not a failure — somebody else pressed it first.
+   */
+  const summaryRunning = (id: string | null) =>
+    !!id && (summaryWait?.topicId === id || !!topics.find((t) => t.id === id)?.summaryInProgress)
+
+  async function summarise(id: string) {
+    if (summaryRunning(id)) return
+    setNotice(null)
+    const before = topics.find((t) => t.id === id)?.summarised_at ?? null
+    setSummaryWait({ topicId: id, before })
+    let res: Response | null = null
+    try {
+      res = await fetch(`/api/calendar/topics/${id}/summarise`,
+        { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }) })
+    } catch { res = null }
+    const j = res ? await res.json().catch(() => null) : null
+    if (res && (res.status === 202 || (res.status === 409 && j?.status === 'writing'))) {
+      setTopics(await readTopicList(supabase, 'calendar'))
+      return
+    }
+    setNotice(j?.error ?? SUMMARY_FAILED)
+    setSummaryWait(null)
+  }
+
+  /**
+   * THE POLL, every 5 seconds while a summary is being written here or anywhere. When this tab's
+   * own claim clears, the summary opens in the drawer; if it cleared with nothing new, the
+   * failure is said plainly rather than left as a spinner that stops (§5.1).
+   */
+  const summaryWatching = !!summaryWait || topics.some((t) => t.summaryInProgress)
+  useEffect(() => {
+    if (!summaryWatching) return
+    const t = setInterval(async () => {
+      const list = await readTopicList(supabase, 'calendar')
+      setTopics(list)
+      setConvDrawer((d) => (d ? list.find((r) => r.id === d.id) ?? d : d))
+      setSummaryWait((w) => {
+        if (!w) return w
+        const row = list.find((r) => r.id === w.topicId)
+        if (!row || row.summaryInProgress) return w
+        if (row.summarised_at && row.summarised_at !== w.before) setConvDrawer(row)
+        else setNotice(SUMMARY_FAILED)
+        return null
+      })
+    }, 5000)
+    return () => clearInterval(t)
+  }, [summaryWatching, supabase])
+
+  /**
+   * A CONVERSATION REOPENED ON THE ASK TAB, the workspace's way: `/api/topics/[id]`, which is
+   * section-agnostic and scoped by RLS, so nothing new was needed for the Calendar.
+   */
+  async function openConversation(t: TopicRow) {
+    setNotice(null)
+    const res = await fetch(`/api/topics/${t.id}`, { headers: await authHeaders() })
+    const j = await res.json().catch(() => null)
+    if (!res.ok) { setNotice(j?.error ?? 'That conversation could not be opened. Please try again.'); return }
+    const turns = (j.turns ?? []) as Array<{ role: string; text: string; sources: AnswerSource[] | null }>
+    const rebuilt: Exchange[] = []
+    for (let i = 0; i < turns.length; i++) {
+      if (turns[i].role !== 'user') continue
+      const a = turns[i + 1]?.role === 'assistant' ? turns[i + 1] : null
+      rebuilt.push({ id: `r${i}`, question: turns[i].text, text: a?.text ?? '', sources: a?.sources ?? [],
+        offers: [], phase: a ? 'done' : 'failed', searches: 0,
+        ...(a ? {} : { error: 'That question was not answered.' }) })
+    }
+    setAskInitial(rebuilt)
+    setAskTopicId(t.id)
+    setAskKey((n) => n + 1)
+    setConvDrawer(null)
+    selectTab('ask')
+  }
+
+  /**
+   * THE DRAWER'S REPORT, read as the caller when a conversation is opened. `topic_list_v` carries
+   * whether a report exists (`hasReport`) but not the report itself — HR reads it the same way
+   * (`app/hr/HrWorkspace.tsx:447`), because a list of twenty conversations must not carry twenty
+   * reports to show one.
+   */
+  const [convReport, setConvReport] = useState<{ id: string; report: unknown | null } | null>(null)
+  const convDrawerId = convDrawer?.id ?? null
+  const convSummarisedAt = convDrawer?.summarised_at ?? null
+  useEffect(() => {
+    let live = true
+    // No synchronous reset when the drawer closes: the render below already ignores a report
+    // whose id is not the open one (`convReport?.id === convDrawer.id`), and clearing it here is
+    // the setState-inside-an-effect React's own lint rule refuses.
+    if (!convDrawerId) return
+    ;(async () => {
+      const { data } = await supabase.from('topics').select('summary_report').eq('id', convDrawerId).maybeSingle()
+      if (live) setConvReport({ id: convDrawerId, report: (data as { summary_report?: unknown } | null)?.summary_report ?? null })
+    })()
+    return () => { live = false }
+  }, [supabase, convDrawerId, convSummarisedAt])
+
   /** `?new=1` — what the side link has written since step 7, now with the sheet behind it. */
   const adding = params.get('new') === '1'
+  /**
+   * *** "+ NEW CONVERSATION" IS A BUTTON HERE AND A LINK ON THE DATE TABS, and that split is the
+   * lint rule's doing as much as the design's. *** Since step 7 the side control has only written
+   * `?new=1`; on the two date tabs that still opens Add a date. On the two conversation tabs it
+   * now has to clear the conversation, which is a state change — and written as an effect
+   * watching the parameter, React's own rule refuses it ("Avoid calling setState() directly
+   * within an effect"), rightly: the reset belongs to the press, not to a render that notices
+   * the address changed. The same answer as step 8a's, from the other side.
+   */
+  const startNewConversation = () => {
+    setAskTopicId(null)
+    setAskInitial([])
+    setAskKey((n) => n + 1)
+    setNotice(null)
+    setConvDrawer(null)
+    selectTab('ask')
+  }
+
   const closeAdd = () => {
     const p = new URLSearchParams(params.toString())
     p.delete('new')
@@ -509,11 +638,21 @@ function Calendar() {
             { key: 'dates', label: `Dates to confirm${loaded && counts.toConfirm > 0 ? ` (${counts.toConfirm})` : ''}` },
           ]}
           right={
-            <a href={newHref}
-              className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-              <span className="hidden sm:inline">{sideLabel}</span>
-            </a>
+            // The same control, twice: a LINK on the date tabs (it writes `?new=1`, which Add a
+            // date reads) and a BUTTON on the conversation tabs (it clears the conversation).
+            tab === 'calendar' || tab === 'dates' ? (
+              <a href={newHref}
+                className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                <span className="hidden sm:inline">{sideLabel}</span>
+              </a>
+            ) : (
+              <button onClick={startNewConversation}
+                className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                <span className="hidden sm:inline">{sideLabel}</span>
+              </button>
+            )
           } />
 
         {/* A link that pointed at a date the calendar no longer carries (decision 30). */}
@@ -523,66 +662,57 @@ function Calendar() {
           </div>
         )}
 
-        {/* ================= ASK A QUESTION (board 1; the answer is step 10) ================= */}
+        {/* ================= ASK A QUESTION — boards 1 and 2 ================= */}
         {tab === 'ask' && (
-          <div className="no-print">
-            <div>
-              <div className="relative rounded-xl border border-gray-200 bg-white focus-within:border-[var(--green)]">
-                <div className="flex items-end gap-2 p-3.5">
-                  <textarea
-                    ref={composerRef}
-                    value={box}
-                    onChange={(e) => setBox(e.target.value)}
-                    rows={1}
-                    className="max-h-36 min-h-[92px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
-                  />
-                </div>
-                {/* The examples, as HR and the workspace show them: an overlay, gone the moment
-                    anything is typed; not clickable, not a prompt, nothing reaches a model. */}
-                {!box && (
-                  <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-5">
-                    {CALENDAR_EXAMPLE_QUESTIONS.map((e) => (
-                      <p key={e.label} className="truncate text-[14px] text-gray-400">e.g. {e.question}</p>
-                    ))}
-                  </div>
-                )}
+          <div>
+            {/*
+              *** THE KEY IS `askKey` ALONE, AND IT HELD THE TOPIC ID FOR ONE WALK. ***
+              Keying on the conversation is the obvious thing and it is wrong: the FIRST answer of
+              a new conversation sets the topic id, so the key changed from "new" to the id in the
+              same render — React remounted the ask view and the answer that had just arrived
+              vanished, leaving an empty box and a conversation count one higher. Measured on the
+              isolated server, step 10b's first walk. `askKey` changes only when a person opens
+              another conversation or starts a new one, which are the two times the view SHOULD be
+              fresh.
+            */}
+            <CalendarAsk
+              key={askKey}
+              rows={rows}
+              companyName={companyName}
+              topicId={askTopicId}
+              initial={askInitial}
+              onTopicId={setAskTopicId}
+              onChanged={refresh}
+              onSummarise={summarise}
+              summaryBusy={summaryRunning(askTopicId)}
+            />
+            {notice && (
+              <div className="no-print mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                {notice}
+                <button onClick={() => setNotice(null)} className="ml-3 underline">Dismiss</button>
               </div>
+            )}
 
-              {/* One line under the box, HR's: the attach slot left, one action right. The slot is a
-                  LINK to Company Documents, where the uploader is — the Calendar has none of its own
-                  and will not invent a second one. */}
-              <div className="mt-[10px] flex items-start justify-between gap-4">
-                <p className="min-w-0 text-[12px] text-gray-500">
-                  <AttachControl label="Add a document" href="/documents" />
-                </p>
-                <div className="flex shrink-0 items-center gap-3">
-                  <button className={PRIMARY} disabled>Ask</button>
-                </div>
+            {/* THE INFO BAR, HR's counts line and its rule for zero: a fragment whose number is 0
+                is left out, "next date" is left out when nothing is ahead, and all four zero draws
+                no bar at all (`lib/calendarCounts.ts`, where that rule is tested). */}
+            {loaded && bar.length > 0 && (
+              <div className="no-print mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                <p className="text-[13px] text-gray-500">{bar.join(' · ')}</p>
               </div>
-              <p className="mt-2 text-[12px] text-gray-500">{ASK_ARRIVES}</p>
-
-              {/* THE INFO BAR, HR's counts line and its rule for zero: a fragment whose number is 0
-                  is left out, "next date" is left out when nothing is ahead, and all four zero draws
-                  no bar at all (`lib/calendarCounts.ts`, where that rule is tested). */}
-              {loaded && bar.length > 0 && (
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
-                  <p className="text-[13px] text-gray-500">{bar.join(' · ')}</p>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         )}
 
-        {/* ================= CONVERSATIONS (HR's board 9; the list is step 10) ================= */}
+        {/* ================= CONVERSATIONS — HR's board 9, its list and its drawer ================= */}
         {tab === 'conversations' && (
           <div className="pt-1">
             {!loaded ? waiting : topics.length === 0 ? (
               <Empty title="No conversations yet"
                 note="Ask a question and the answer is kept here, with the dates and documents it drew on." />
             ) : (
-              // Unreachable until step 10 writes the first `topics.section = 'calendar'` row — and
-              // here anyway, because an empty state drawn over rows that exist is a false statement.
-              <p className="text-[13px] text-gray-500">{CONVERSATIONS_ARRIVE(topics.length)}</p>
+              <ConversationList topics={topics} running={(t, kind) => kind === 'summary' && summaryRunning(t.id)}
+                onOpen={setConvDrawer} />
             )}
           </div>
         )}
@@ -799,6 +929,49 @@ function Calendar() {
             topLine={<ReportTabs onBack={() => setReport(null)} second={'The report'} />}
           />
         )
+      )}
+
+      {/* ================= THE CONVERSATION DRAWER — HR's, which is the workspace's ================= */}
+      {convDrawer && (
+        <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setConvDrawer(null)} />
+      )}
+      {convDrawer && (
+        <Drawer title={displayTitle(convDrawer.title) ?? 'Conversation'}
+          sub={`${friendlyDate(convDrawer.last_turn_at ?? convDrawer.created_at)} · ${conversationStatus(convDrawer, convDrawer.turnCount > 0).label}`}
+          company={companyName}
+          printType="Summary report"
+          printDates={convDrawer.summarised_at
+            ? `Summarised ${printDate(convDrawer.summarised_at)}`
+            : `Last message ${printDate(convDrawer.last_turn_at ?? convDrawer.created_at)}`}
+          onClose={() => setConvDrawer(null)}
+          footer={
+            <>
+              {convDrawer.turnCount > 0 && (
+                <button onClick={() => openConversation(convDrawer)}
+                  className="rounded-md border border-[var(--green)] px-3 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-green-50">
+                  Open the conversation
+                </button>
+              )}
+              <button onClick={() => summarise(convDrawer.id)} disabled={summaryRunning(convDrawer.id)}
+                className="ml-3 text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+                {summaryRunning(convDrawer.id) ? CLAIM_WORDS.summary : 'Summarise this conversation'}
+              </button>
+              <button onClick={printDrawer} className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
+                Download
+              </button>
+            </>
+          }>
+          <div className="flex min-h-full flex-col">
+            {summaryRunning(convDrawer.id)
+              ? <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
+              : convReport?.id === convDrawer.id && convReport.report
+              ? <ReportView key={convDrawer.id} report={convReport.report as ReportLike<{ n: number; title: string; url: string }>}
+                  factsLine={null} sourceShape={WEB_SOURCE as unknown as SourceShape<{ n: number; title: string; url: string }>} />
+              : convDrawer.summary
+              ? <AnswerBody text={convDrawer.summary} sources={[]} />
+              : <p className="text-[14px] leading-relaxed text-gray-600">{NOT_SUMMARISED}</p>}
+          </div>
+        </Drawer>
       )}
 
       {/* SEND TO YOUR CALENDAR — board 11. It is handed `rows`, not `shownRows`: a subscription is

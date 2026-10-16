@@ -82,8 +82,10 @@ export const CALENDAR_UNSURE =
 export const CALENDAR_OFFERS =
   'The only thing you can do here in one click is add a date to this calendar, so offer only that. The offer '
   + "is for a date THE RULE sets that is not already on the calendar; never offer a date that is already "
-  + 'there. The fenced block takes: kind "add_date"; title, the words a person would recognise on a '
-  + 'calendar; due_on as YYYY-MM-DD for a date that happens once, or recurs true with period one of "month", '
+  + 'there. The fenced block takes: kind "add_date"; title, the obligation\'s plain name as a person '
+  + 'would recognise it on a calendar ("Tier II report") — never hedged and never qualified: no '
+  + '"(if applicable)", no "if required", no question mark. Any doubt about whether it applies belongs in '
+  + 'the sentences above the offer, not in the title; due_on as YYYY-MM-DD for a date that happens once, or recurs true with period one of "month", '
   + '"quarter", "6 months", "year", "2 years" (or null if the rule does not say how often); site null unless '
   + 'the rule applies to one named site; source_url, the page you read the rule on; and source_line, the '
   + "sentence on that page that sets the date."

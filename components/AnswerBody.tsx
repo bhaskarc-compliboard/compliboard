@@ -31,7 +31,21 @@ import { OTHER_SOURCE_LINE, hostOf } from '@/lib/howTo'
  *   kind 'handbook'  a passage of the company's own handbook: no link; the card shows the checked quote.
  *   label 'other'    a web page that is not the agency's own: the card says so (`OTHER_SOURCE_LINE`).
  */
-export interface AnswerSource { n: number; title: string; url: string; kind?: 'web' | 'handbook'; label?: string; quote?: string }
+export interface AnswerSource { n: number; title: string; url: string; kind?: 'web' | 'handbook' | 'passage'
+  label?: string; quote?: string
+  /**
+   * WHERE THE CARD GOES INSIDE THE PRODUCT — Calendar step 10b, ADDITIVE. A calendar source is a
+   * date we hold, not a page on the web: its card links to `/calendar?date=…` or to the document
+   * it was read from. HR passes none and its cards are unchanged.
+   */
+  href?: string | null }
+
+/**
+ * A SOURCE THAT IS A PASSAGE OF THE COMPANY'S OWN MATERIAL, not a page on the web: HR's handbook
+ * quote, and since step 10b the Calendar's date line and document reading. Both show the checked
+ * quote rather than a link to the open internet.
+ */
+const isOurs = (s?: AnswerSource) => s?.kind === 'handbook' || s?.kind === 'passage'
 
 /**
  * The markdown components, so prose reads like prose and a table reads like a table.
@@ -94,7 +108,7 @@ function CiteMarker({ n, source }: { n: number; source?: AnswerSource }) {
           {source.quote && <span className="mt-2 block text-[12px] italic leading-snug text-gray-700">“{source.quote}”</span>}
         </span>
       )}
-      {open && shown && source?.kind !== 'handbook' && (
+      {open && shown && !isOurs(source) && (
         <span className="absolute left-0 top-full z-30 mt-1 block w-72 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-lg">
           <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">Source {n}</span>
           <span className="mt-1 block text-[13px] font-medium leading-snug text-gray-900">{shown.title}</span>
@@ -177,9 +191,13 @@ export function SourceList({ sources }: { sources: AnswerSource[] }) {
           return (
             <li key={s.n} className={`${hidden ? 'hidden print:flex' : 'flex'} gap-2 text-[13px] leading-snug`}>
               <span className="shrink-0 text-gray-400">{s.n}.</span>
-              {s.kind === 'handbook' ? (
+              {isOurs(s) ? (
                 <span>
-                  <span className="text-gray-900">{s.title}</span>
+                  {/* A link only when the section gave one: HR's handbook card has nowhere to go
+                      and is unchanged; a calendar date opens its drawer, a reading its document. */}
+                  {s.href
+                    ? <a href={s.href} className="text-emerald-800 underline underline-offset-2">{s.title}</a>
+                    : <span className="text-gray-900">{s.title}</span>}
                   {' '}<span className="text-gray-400">· {s.label}</span>
                   {s.quote && <span className="mt-0.5 block italic text-gray-600">“{s.quote}”</span>}
                 </span>

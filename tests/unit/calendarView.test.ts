@@ -18,6 +18,8 @@ import {
   splitSiblings, ASKS_BEFORE, siteKeyOf, siteChoices, filterBySite, addDateProblem,
   NEED_A_TITLE, NEED_A_DAY,
   type CalendarRow,
+  offerWords, matchOffer, unconfirmedCited, unconfirmedNote,
+  ON_YOUR_CALENDAR, ALREADY_ON_YOUR_CALENDAR, COULD_NOT_ADD,
 } from '../../lib/calendarView.ts'
 
 const PAGE = readFileSync('app/calendar/page.tsx', 'utf8')
@@ -572,5 +574,85 @@ describe('printing — the month prints as the list', () => {
     assert.match(PAGE, /printWithFrame\(\{ company: companyName \?\? '', type: 'Calendar' \}\)/)
     assert.match(readFileSync('app/hr/HrWorkspace.tsx', 'utf8'),
       /printWithFrame\(\{ company: companyName \?\? '', type: 'Conversation' \}\)/)
+  })
+})
+// =================================================================================================
+// STEP 10b — THE OFFER ON THE ANSWER, AND WHAT IT SAYS AFTERWARDS
+// =================================================================================================
+
+describe('the offer line, board 2', () => {
+  const offer = (p: Partial<{ title: string; due_on: string | null; recurs: boolean; period: string | null }> = {}) =>
+    ({ title: 'Tier II report', due_on: '2027-03-01', recurs: true, period: 'year', ...p })
+
+  test('one line, and the middle says exactly what would be written', () => {
+    assert.equal(offerWords(offer()), 'Add Tier II report — due 1 March 2027, every year — to your calendar')
+  })
+  test('a date that happens once says only when', () => {
+    assert.equal(offerWords(offer({ recurs: false, period: null })),
+      'Add Tier II report — due 1 March 2027 — to your calendar')
+  })
+  test('a repeating date with no day is honest about both halves', () => {
+    assert.equal(offerWords(offer({ due_on: null })), 'Add Tier II report — every year — to your calendar')
+    assert.equal(offerWords(offer({ due_on: null, period: null })),
+      "Add Tier II report — repeats — how often wasn't read — to your calendar")
+  })
+  test('the words after it are the two states, never a third', () => {
+    assert.equal(ON_YOUR_CALENDAR, 'On your calendar')
+    assert.equal(ALREADY_ON_YOUR_CALENDAR, 'Already on your calendar')
+    // A failed add must not say the date is there (§5.1).
+    assert.match(COULD_NOT_ADD, /Nothing has changed/)
+  })
+})
+
+describe('an offer already on the calendar', () => {
+  const rows = [
+    row({ id: 'a', title: 'Tier II report', due_date: '2027-03-01', next_due: '2027-03-01' }),
+    row({ id: 'b', title: 'Permit expires', due_date: '2026-11-15', next_due: '2026-11-15' }),
+    row({ id: 'c', title: 'Visual monitoring', due_date: null, next_due: null, recurs: true }),
+  ]
+  test('same title and same day is the same date, however it is typed', () => {
+    assert.equal(matchOffer(rows, { title: 'Tier II report', due_on: '2027-03-01', recurs: true })?.id, 'a')
+    assert.equal(matchOffer(rows, { title: '  tier ii REPORT ', due_on: '2027-03-01', recurs: true })?.id, 'a')
+  })
+  test('the same name on another day is another date', () => {
+    assert.equal(matchOffer(rows, { title: 'Tier II report', due_on: '2028-03-01', recurs: true }), null)
+  })
+  test('a repeating offer with no day matches the repeating row with no day', () => {
+    assert.equal(matchOffer(rows, { title: 'Visual monitoring', due_on: null, recurs: true })?.id, 'c')
+  })
+  test('something we do not have is not on the calendar', () => {
+    assert.equal(matchOffer(rows, { title: 'Stormwater report', due_on: '2027-01-15', recurs: false }), null)
+  })
+  /**
+   * The match is read against the NEXT occurrence too, because a repeating row's stored anchor is
+   * not the day a person sees: the calendar shows 1 March 2027 for a yearly date anchored in 2025.
+   */
+  test('a repeating row matches on the occurrence the person is looking at', () => {
+    const yearly = [row({ id: 'y', title: 'Annual report', due_date: '2025-03-01', next_due: '2027-03-01', recurs: true, period: 'year' })]
+    assert.equal(matchOffer(yearly, { title: 'Annual report', due_on: '2027-03-01', recurs: true })?.id, 'y')
+  })
+})
+
+describe("board 2's grey line, computed in code and never by the model", () => {
+  const rows = [
+    row({ id: '11111111-1111-1111-1111-111111111111', title: 'Tier II report', status: 'proposed' }),
+    row({ id: '22222222-2222-2222-2222-222222222222', title: 'Permit expires', status: 'confirmed' }),
+  ]
+  const src = (href: string) => ({ kind: 'passage', href })
+  test('only the dates the answer actually cited, and only the unconfirmed ones', () => {
+    const cited = unconfirmedCited([src('/calendar?date=11111111-1111-1111-1111-111111111111'),
+      src('/calendar?date=22222222-2222-2222-2222-222222222222'),
+      { kind: 'web', href: null }], rows)
+    assert.deepEqual(cited.map((r) => r.title), ['Tier II report'])
+  })
+  test('the line names one date, and counts several', () => {
+    assert.equal(unconfirmedNote([rows[0]]),
+      'The Tier II report date has not been confirmed. Open it on the calendar to confirm it or say what is wrong.')
+    assert.match(unconfirmedNote([rows[0], rows[0]]), /^2 of the dates above have not been confirmed\./)
+    assert.equal(unconfirmedNote([]), '', 'nothing to say is said as nothing')
+  })
+  test('a date cited twice is named once', () => {
+    const same = '/calendar?date=11111111-1111-1111-1111-111111111111'
+    assert.equal(unconfirmedCited([src(same), src(same)], rows).length, 1)
   })
 })

@@ -427,6 +427,76 @@ export const ASKS_BEFORE = (n: number) => `What this document asks before then �
  * three buckets HR's `handbookList` uses (`lib/handbooks.ts` `groupKey`), for the same reason: a
  * removed site is a real state and must not be filed under "Every site".
  */
+/**
+ * THE CHAT'S OFFER, AS ONE LINE — Calendar step 10b, board 2.
+ *
+ * "Add Tier II report — due 1 March 2027, every year — to your calendar". One line, one click,
+ * and the middle says exactly what would be written: a person about to put a date on a calendar
+ * should not have to open anything to see what the date IS.
+ *
+ * A repeating date with no day says so in the words the rest of this section uses, because an
+ * offer is allowed to be honest about what the rule did not say (decisions 12 and 23).
+ */
+export function offerWords(offer: { title: string; due_on: string | null; recurs: boolean; period: string | null }): string {
+  const when = offer.due_on ? `due ${longDay(offer.due_on)}` : ''
+  const how = offer.recurs ? (offer.period ? PERIOD_LABEL[offer.period] ?? '' : "repeats — how often wasn't read") : ''
+  const middle = [when, how].filter(Boolean).join(', ')
+  return `Add ${offer.title}${middle ? ` — ${middle} — ` : ' '}to your calendar`
+}
+
+/** What the line says once the date is on the calendar, and what it says when it already was. */
+export const ON_YOUR_CALENDAR = 'On your calendar'
+export const ALREADY_ON_YOUR_CALENDAR = 'Already on your calendar'
+/** A failed add: the row is not there, so the line must not say it is (§5.1). */
+export const COULD_NOT_ADD = 'We could not add that date just now. Nothing has changed — please try again.'
+
+/**
+ * *** IS THIS OFFER ALREADY ON THE CALENDAR? *** Same title, same day — the title compared the way
+ * the database's own unique index compares it (trimmed, lower case), so "Tier II report" and
+ * "tier ii report " are one date and not two.
+ *
+ * A repeating offer with no day matches a repeating row with no day and the same title: a rule
+ * that says "every year" twice is the same obligation twice.
+ */
+export function matchOffer(
+  rows: CalendarRow[], offer: { title: string; due_on: string | null; recurs: boolean },
+): CalendarRow | null {
+  const want = offer.title.trim().toLowerCase()
+  const day = dayOf(offer.due_on)
+  return rows.find((r) => r.title.trim().toLowerCase() === want
+    && (day ? dayOf(r.due_date) === day || dayOf(r.next_due) === day : !dayOf(r.due_date))) ?? null
+}
+
+/**
+ * BOARD 2'S GREY LINE — the day-1 line's cousin. When an answer leaned on dates nobody has
+ * confirmed, the line says so under it, because the answer itself must not have to hedge every
+ * sentence: the dates are real and on the calendar (decision 8), and confirming is a quality mark
+ * rather than a gate.
+ *
+ * It is computed in CODE from the sources the answer actually cited, never written by the model.
+ */
+export function unconfirmedCited(
+  sources: Array<{ kind?: string; href?: string | null }>, rows: CalendarRow[],
+): CalendarRow[] {
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  const out: CalendarRow[] = []
+  for (const s of sources) {
+    const id = /[?&]date=([0-9a-f-]{36})/.exec(String(s.href ?? ''))?.[1]
+    const row = id ? byId.get(id) : undefined
+    if (row && row.status === 'proposed' && !out.includes(row)) out.push(row)
+  }
+  return out
+}
+
+/** The line itself, in board 2's words, for one date or several. */
+export function unconfirmedNote(dates: CalendarRow[]): string {
+  if (!dates.length) return ''
+  if (dates.length === 1) {
+    return `The ${dates[0].title} date has not been confirmed. Open it on the calendar to confirm it or say what is wrong.`
+  }
+  return `${dates.length} of the dates above have not been confirmed. Open them on the calendar to confirm them or say what is wrong.`
+}
+
 export const siteKeyOf = (r: Pick<CalendarRow, 'site_id' | 'entity_id' | 'site_name'>): string => {
   if (r.site_name) return String(r.site_id ?? r.entity_id)
   return r.site_id || r.entity_id ? 'removed' : 'every'

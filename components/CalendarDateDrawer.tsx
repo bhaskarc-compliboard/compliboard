@@ -330,6 +330,31 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
               </p>
             )}
           </div>
+        ) : row.source === 'rule' ? (
+          /**
+           * *** A DATE THE CHAT FOUND IN A RULE — Calendar step 10b, decision 17. ***
+           *
+           * The first one of these was written during step 10b's walk, and the drawer said
+           * **"We cannot say where this date came from."** over a row that carries the page and
+           * the sentence the rule was read on. The fallback below is right for a source with no
+           * card; it was wrong here, and it read as the product losing the one thing that makes
+           * an offer acceptable — where it came from (§5.1: never assert less than we know).
+           */
+          <div className="rounded-lg border border-gray-200 p-3.5">
+            <p className="text-[13px] font-medium text-gray-900">
+              Found in a rule and added by {nameOf(row.added_by)}
+              {row.created_at ? ` on ${longDay(row.created_at)}` : ''}
+            </p>
+            {row.source_line && (
+              <p className="mt-2 text-[12.5px] italic leading-relaxed text-gray-600">&ldquo;{row.source_line}&rdquo;</p>
+            )}
+            {row.source_url && (
+              <a href={row.source_url} target="_blank" rel="noopener noreferrer"
+                className="mt-2 inline-block break-all text-[12px] text-[var(--green-ink)] underline">
+                {row.source_url}
+              </a>
+            )}
+          </div>
         ) : row.source === 'person' ? (
           <div className="rounded-lg border border-gray-200 p-3.5">
             <p className="text-[13px] text-gray-900">
@@ -373,6 +398,10 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
             ? `Added by ${nameOf(row.added_by)}${row.created_at ? ` on ${longDay(row.created_at)}` : ''}.`
             : row.source === 'audit'
             ? `Found by an audit${row.created_at ? ` on ${longDay(row.created_at)}` : ''}.`
+            // A rule date was not read from a document, and saying so was the second thing the
+            // step 10b walk caught on the same row.
+            : row.source === 'rule'
+            ? `Found in a rule and added here${row.created_at ? ` on ${longDay(row.created_at)}` : ''}.`
             : `Read from the document${row.created_at ? ` on ${longDay(row.created_at)}` : ''}.`}
           {' '}
           {row.status === 'confirmed'

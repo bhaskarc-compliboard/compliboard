@@ -41,7 +41,9 @@ const COUNTS = readFileSync('lib/calendarCounts.ts', 'utf8')
  */
 const QUEUE = readFileSync('lib/calendarQueue.ts', 'utf8')
 const QUEUE_UI = readFileSync('components/DateQueue.tsx', 'utf8')
-const SURFACES = `${PAGE}\n${QUEUE}\n${QUEUE_UI}`
+/** Step 10b moved the ask box, its examples and its attach line here, with the answer. */
+const ASK_UI = readFileSync('components/CalendarAsk.tsx', 'utf8')
+const SURFACES = `${PAGE}\n${QUEUE}\n${QUEUE_UI}\n${ASK_UI}`
 
 /** A stand-in for the client that records the query built on it. */
 function fakeDb(rows: unknown[], count = 0) {
@@ -181,10 +183,16 @@ describe('the info bar, and the owner\'s rule for zero', () => {
 
 describe('the page is the HR frame, imported and not copied', () => {
   test('the shared pieces come from the files HR renders', () => {
+    // The frame is the page's; the ask box, its examples and its attach line are the ask view's
+    // since step 10b. Both files are searched, because WHICH of the two holds a shared piece is
+    // this section's business and THAT it is imported is the rule.
     for (const spec of ['@/components/AppLayout', '@/components/Tabs', '@/components/Empty',
       '@/components/AttachControl', '@/components/buttonStyles', '@/config/examples',
-      '@/lib/topicList', '@/lib/calendarCounts']) {
-      assert.match(PAGE, new RegExp(`from '${spec.replace(/[/]/g, '\\/')}'`), `${spec} must be imported`)
+      '@/lib/topicList', '@/lib/calendarCounts',
+      // Step 10b: the answer, the list and the summary are HR's own pieces, imported.
+      '@/components/AnswerBody', '@/components/ConversationList', '@/components/ReportView',
+      '@/components/Drawer', '@/lib/answerStream']) {
+      assert.match(`${PAGE}\n${ASK_UI}`, new RegExp(`from '${spec.replace(/[/]/g, '\\/')}'`), `${spec} must be imported`)
     }
   })
 
@@ -275,7 +283,6 @@ describe('every word on the page is the owner\'s', () => {
     'Every date your documents set, in one place. Ask when something is due, and we say ',
     'where the date came from.',
     'Add a document',
-    'Asking a question arrives with step 10.',
     'No conversations yet',
     'Ask a question and the answer is kept here, with the dates and documents it drew on.',
     'No dates yet',
@@ -303,6 +310,20 @@ describe('every word on the page is the owner\'s', () => {
     assert.ok(!readFileSync('docs/HANDOFF-CODE.md', 'utf8').includes('This view arrives with step 9'),
       '§7 must no longer carry it either')
   })
+
+  /** And step 10b's, the last of the three: the Ask tab answers now. */
+  test('the step 10 placeholders are gone — the sentence, the constant and the disabled button', () => {
+    assert.ok(!PAGE.includes('Asking a question arrives with step 10.'))
+    assert.ok(!PAGE.includes('ASK_ARRIVES'))
+    assert.ok(!PAGE.includes('This view arrives with step 10'))
+    assert.ok(!PAGE.includes('CONVERSATIONS_ARRIVE'))
+    // The Ask button was `disabled` with nothing behind it; now it is disabled only while a
+    // question is in flight or the box is empty.
+    assert.ok(!/<button className=\{PRIMARY\} disabled>Ask<\/button>/.test(PAGE))
+    assert.match(ASK_UI, /disabled=\{busy \|\| !box\.trim\(\)\}/)
+    const handoff = readFileSync('docs/HANDOFF-CODE.md', 'utf8')
+    assert.ok(!handoff.includes('Asking a question arrives with step 10'), '§7 must no longer carry it')
+  })
   test('the three examples are the owner\'s, and they live in config where he can edit them', () => {
     const examples = readFileSync('config/examples.ts', 'utf8')
     const mine = examples.slice(examples.indexOf('export const CALENDAR_EXAMPLE_QUESTIONS'))
@@ -312,10 +333,11 @@ describe('every word on the page is the owner\'s', () => {
       'What expires in the next 90 days?',
       'Is the fire inspection for the Vancouver warehouse on the calendar?',
     ]) assert.ok(mine.includes(q), `missing example: ${q}`)
-    // The page renders them and holds no copy of its own — `config/examples.ts` is the owner's file.
-    assert.match(PAGE, /CALENDAR_EXAMPLE_QUESTIONS\.map/)
+    // The ask view renders them and holds no copy of its own — `config/examples.ts` is the
+    // owner's file. (It was the page's until step 10b moved the box.)
+    assert.match(ASK_UI, /CALENDAR_EXAMPLE_QUESTIONS\.map/)
     for (const q of ['Tier II report', 'next 90 days', 'Vancouver warehouse']) {
-      assert.ok(!PAGE.includes(q), `the page must not hold a second copy of: ${q}`)
+      assert.ok(!`${PAGE}\n${ASK_UI}`.includes(q), `no second copy of: ${q}`)
     }
   })
   /**
@@ -377,8 +399,13 @@ describe('NOTHING OF THE OLD PAGE CAME ACROSS, and the new one writes nothing', 
   })
   test('every relation the page reads is named here, so a fifth is a deliberate act', () => {
     const named = [...CODE.matchAll(/supabase\s*\.from\('([a-z_]+)'\)/g)].map((m) => m[1]).sort()
+    // `topics` joined the list at step 10b, and this test is why it is a sentence rather than a
+    // slip: the conversation drawer reads `summary_report` for the ONE conversation that is
+    // open. `topic_list_v` carries whether a report exists and not the report itself, and a list
+    // of twenty conversations must not carry twenty reports to show one — HR reads it the same
+    // way (`app/hr/HrWorkspace.tsx:447`).
     assert.deepEqual([...new Set(named)].sort(),
-      ['audit_findings', 'companies', 'company_folders', 'document_index_v', 'entities', 'profiles'])
+      ['audit_findings', 'companies', 'company_folders', 'document_index_v', 'entities', 'profiles', 'topics'])
   })
   test('it reads calendar_v through the shared filter, not with a query of its own', () => {
     assert.ok(!CODE.includes('calendar_v'), 'the page must not name the view: lib/calendarCounts.ts does')

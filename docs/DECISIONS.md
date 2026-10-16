@@ -13590,3 +13590,78 @@ say an agency has confirmed anything unless the document says so); ids are for m
 sentences; a rule number is a claim; search before you write; decision 30, say so and ask; and what
 may be offered, in the one shape `lib/ask/offers.ts` can verify.
 
+## 196. CALENDAR STEP 10b: THE SCREENS, THE OFFER, AND THE CONVERSATIONS — 16 October 2026
+
+**Branch `calendar-v2`, staging only. `docs/CALENDAR-PLAN.md` step 10b; boards 1 and 2. The owner's
+yes to 10a's prompt came with one addition, applied before anything else was built. Cost: $0.1009
+— 7 calendar answers and 1 summary, all Haiku.**
+
+### The owner's addition to the prompt, and the owner's ruling on the narration rule
+
+**An offer's title is the obligation's plain name, never hedged.** The second run of 10a offered
+*"Tier II report due (if applicable)"*; a calendar entry carrying a parenthesis of doubt is a
+calendar entry nobody trusts. Sentence 8 now says: the title is the plain name as a person would
+recognise it (*"Tier II report"*), never qualified — no "(if applicable)", no "if required", no
+question mark — and **any doubt belongs in the sentences above the offer**. Measured on the walk:
+the offer came back as *"Add Tier II report — due 1 March 2027 — to your calendar"*, with the
+doubt where it belongs, in the paragraph above it.
+
+**The narration rule stays as it is** (the owner): keep the search-first sentence, measure the loss
+again at step 13 on Opus, and reopen only if it persists. Recorded in `HANDOFF-CODE.md` §7 against
+the finding, so step 13 inherits the measurement rather than the memory of it.
+
+### HR's own components, imported — and the one prop that was added
+
+The thread, the bubble, the docked composer, the Stop button, the action row and its hint are HR's
+shape; `AnswerBody`, `SourceList`, `ConversationList`, `ReportView`, `Drawer` and
+`lib/answerStream.ts` are the shared files themselves. **One prop was added to `AnswerSource`:
+`href`, plus the kind `passage`** — a calendar source is a date we hold, so its card links to the
+date rather than to the open internet. Both are optional and HR passes neither; HR's 217 tests pass
+and its pages were walked.
+
+**`app/documents/page.tsx` gained a `?return=` back link**, additively, because the Calendar's chat
+has no uploader of its own and sends people to Documents to add one. It is drawn only when the
+parameter is there and **only for an internal path** — a `return=` taken at face value is an open
+redirect, and this one is written into an anchor a person will click.
+
+### The offer, end to end
+
+One underlined line — *"Add Tier II report — due 1 March 2027 — to your calendar"* — and one click
+through `POST /api/calendar` with `source: 'rule'`, which is the one other source that route
+accepts from a browser. A body naming 'document', 'audit' or 'handbook' would be a page claiming a
+MACHINE read something; those arrive through `lib/documentScan.ts` and `lib/auditRun.ts`.
+`proposeDate` does the rest: `rule` is in `CONFIRMED_SOURCES`, so the date is confirmed with the
+presser's name on it (decision 17). **Read back from staging after the walk:** `status=confirmed`,
+`source=rule`, `due 2027-03-01`, `recurs` with `period=year`, `confirmed_by = Gamma Tester`,
+`source_url = encamp.com/tier-ii-reporting/oregon/`.
+
+An offer whose date is already there shows **"Already on your calendar"** with the link instead of
+a button — matched on title and day the way the database's own index matches them (trimmed, lower
+case), and against the NEXT occurrence as well, because a yearly date anchored in 2025 is shown to
+the person as 2027.
+
+### Three defects the walk found
+
+1. **The ask view remounted on its own first answer.** `CalendarAsk` was keyed on the conversation,
+   and the first answer sets the conversation — so the key changed in the same render, React
+   remounted, and the answer that had just arrived **vanished**, leaving an empty box and a
+   conversation count one higher. It is keyed on `askKey` now, which changes only when a person
+   opens another conversation or starts a new one. Seen on screen, in the first photograph of the
+   Ask tab with an answer in it.
+2. **The date drawer said it could not say where a rule date came from**, over a row carrying the
+   page and the sentence, and its history line said the date had been *"read from the document"*.
+   Both were true of every source that existed before this step and false of the first one this
+   step created. The drawer has a `rule` branch now: who added it, the line in quotes, and the
+   link.
+3. **The harness could not type, and ran its actions out of order.** `npm run measure` could click
+   and scroll but not fill a box, so a question could not be ASKED by it; and when `--type` was
+   added it ran every type before every click, so `--type A --click Ask --type B --click Send`
+   typed A, typed B over it and asked once. One ordered action list, one loop. Also `--click Ask`
+   matched the TAB "Ask a question", which is why `--click "=Ask"` now means exactly that text.
+
+### What is left to the next steps
+
+The conversation drawer has no Delete and no facts line: deleting a conversation is the
+workspace's sheet and the facts line is its count, and neither was in this brief. HR is still not
+switched over to the engine (decision 28, after the release).
+

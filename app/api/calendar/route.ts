@@ -73,10 +73,29 @@ export async function POST(request: NextRequest) {
       if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
+    /**
+     * *** THE CHAT'S OFFER IS THE ONE OTHER SOURCE THIS ROUTE ACCEPTS — Calendar step 10b,
+     * decision 17. *** `source: 'rule'` means the chat found the date in a rule and a person
+     * pressed the line that adds it. It is `CONFIRMED_SOURCES`, so `proposeDate` makes it
+     * confirmed with that person's name on it, exactly as a typed date is: both are a person
+     * saying "yes, this applies to us".
+     *
+     * ONLY THAT ONE EXTRA WORD. A body naming any other source — 'document', 'audit',
+     * 'handbook' — is a caller claiming a MACHINE read something, and nothing a browser sends
+     * may claim that. Those arrive through `lib/documentScan.ts` and `lib/auditRun.ts`.
+     */
+    const asRule = body?.source === 'rule'
+    const sourceUrl = typeof body?.source_url === 'string' && body.source_url ? body.source_url : null
+    const sourceLine = typeof body?.source_line === 'string' && body.source_line ? body.source_line : null
+    if (asRule && !sourceUrl) {
+      return NextResponse.json({ error: 'A date from a rule needs the page the rule was read on.' }, { status: 400 })
+    }
+
     // A DATE A PERSON TYPED IS CONFIRMED THE MOMENT IT IS MADE (§2.6), and `proposeDate` is what
     // decides that from the source, so this route does not name a status.
     const { id, outcome } = await proposeDate(db, {
-      companyId, source: 'person', title, dueOn: dueDate, recurs,
+      companyId, source: asRule ? 'rule' : 'person', title, dueOn: dueDate, recurs,
+      ...(asRule ? { sourceUrl, sourceLine } : {}),
       // The person's own note. NOT `sourceLine`, which is the sentence a DOCUMENT set the date in.
       description: typeof body?.description === 'string' && body.description ? body.description : null,
       documentId, entityId, addedBy: userId,

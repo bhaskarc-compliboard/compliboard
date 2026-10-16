@@ -4020,6 +4020,64 @@ sites and three typed dates, which is the only way to see the site rules.
    leave it working. *(This one shipped wrong once and is why the issuer converges.)*
 3. After a company is deleted, its link must stop answering — the token row cascades with it.
 
+## The Calendar, step 10b — Ask a question (boards 1 and 2)
+
+*Added 16 October 2026, staging only. `DECISIONS.md` §196. Every one of these costs a model call
+except C10b-5 and C10b-6: run them on the isolated Haiku server (`HOW-WE-BUILD.md` §3c).*
+
+### C10b-1 · A question about a date you have — the perfect case
+
+1. On Ask a question, type "When is our fire extinguisher maintenance due, and is it on the
+   calendar?" and press Ask.
+2. **Pass:** the question appears as a bubble; the answer arrives in the serif answer card; every
+   date it names is one of yours, named by its title, and any quoted line is one from the
+   document. **Fail:** an internal id (C3, D1) anywhere in the prose; a date that is not on your
+   calendar presented as if it were.
+3. If the answer cites a date nobody has confirmed, the grey line under it says so and says what
+   to do.
+
+### C10b-2 · A date you do NOT have — the offer (free to judge, paid to run)
+
+1. Ask about an obligation with no date on the calendar ("When is our Tier II report due?").
+2. **Pass:** it says plainly the date is not on the calendar, gives the rule with a source you can
+   open, and ends with ONE underlined line: *Add ‹plain name› — due ‹date›, ‹how often› — to your
+   calendar*. **Fail:** a hedged title ("(if applicable)"), an offer for a date already on the
+   calendar, or an offer whose source link is not in the Sources list.
+3. Press the line. **Pass:** it becomes **On your calendar**, linking to the date; the Calendar
+   tab's count goes up by one in the same render. Open the date: it is **confirmed, with your
+   name**, and "Where it came from" shows the rule's page and the sentence.
+4. Ask the same question again in a new conversation. The offer must now read **Already on your
+   calendar**, with the link, and no button.
+
+### C10b-3 · A conversation, and the summary
+
+1. Ask a second question in the same conversation. **Pass:** one conversation with two questions —
+   check Conversations shows "2 questions", not two rows.
+2. Press "Summarise this conversation". **Pass:** the row says the summary is being written, then
+   the drawer opens with the report — Your situation, What applies, Still to confirm, Sources.
+   **Fail:** a spinner that stops with nothing said.
+3. Download prints the conversation through the shared frame, with the company in the margin.
+
+### C10b-4 · "+ New conversation" and reopening
+
+1. Press "+ New conversation" on the Ask tab: the thread clears and the next question starts a new
+   conversation (Conversations gains a row rather than lengthening one).
+2. From Conversations, open a row and press "Open the conversation": its questions and answers are
+   back on the Ask tab, and a new question continues THAT conversation.
+
+### C10b-5 · The two states a failed answer must tell apart (free)
+
+1. Stop an answer with the Stop button. **Pass:** "Stopped. What arrived is above — Ask again, or
+   change the question." Nothing is stored as an answer.
+2. Break the network mid-answer. **Pass:** "This answer stopped early… Try again" — never a
+   finished-looking answer. (`lib/answerStream.ts` is where that distinction lives.)
+
+### C10b-6 · Add a document, and the way back (free)
+
+1. Press "Add a document" under the box. **Pass:** Company Documents opens with a
+   **← Back to where you were** link that returns to the Ask tab. **Fail:** a `return=` that goes
+   anywhere off this product — it must be refused and the link not drawn.
+
 ## The Calendar, step 9 — Dates to confirm (board 7)
 
 *Added 16 October 2026, staging only. `DECISIONS.md` §194. Every one of these is free: the queue

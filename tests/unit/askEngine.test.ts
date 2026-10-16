@@ -372,3 +372,56 @@ describe('what the Calendar packs, and the budget', () => {
     assert.equal(tokensOf('a'.repeat(100)), 40)
   })
 })
+describe("the Calendar's own routes, step 10b", () => {
+  const strip = (f: string) => readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+  test('the answer route is a loop over the engine and decides nothing itself', () => {
+    const route = strip('app/api/calendar/answer/route.ts')
+    assert.match(route, /answer\(calendarBrief, \{/)
+    assert.match(route, /requireCompany\(request\)/)
+    // The wire format the shared reader reads: `done` carries `research`.
+    assert.match(route, /type: 'done', research: ev\.text/)
+    // Nothing about an answer is built here.
+    for (const banned of [/askAIOpenStream/, /buildSystemPrompt/, /\.from\('topics'\)/, /\.from\('calendar_v'\)/]) {
+      assert.ok(!banned.test(route), `the route must not do this itself: ${banned}`)
+    }
+  })
+
+  test('a summary is this section\'s, and the claim is in the route where after() can be called', () => {
+    const route = strip('app/api/calendar/topics/[id]/summarise/route.ts')
+    assert.match(route, /topic\.section !== 'calendar'/, 'another section\'s conversation is a 404')
+    assert.match(route, /claimTopic\(db, id, 'summary'\)/)
+    assert.match(route, /after\(async \(\) => \{/)
+    assert.match(route, /releaseTopic\(db, id, 'summary', claim\.claimedAt\)/)
+    assert.match(route, /section: 'calendar'/)
+  })
+
+  /**
+   * *** THE CHAT'S OFFER IS THE ONE OTHER SOURCE `POST /api/calendar` TAKES. *** A body naming
+   * 'document', 'audit' or 'handbook' would be a browser claiming a MACHINE read something; those
+   * arrive through `lib/documentScan.ts` and `lib/auditRun.ts`, never from a page.
+   */
+  test('POST accepts source \'rule\' and nothing else new, and a rule date needs its page', () => {
+    const route = strip('app/api/calendar/route.ts')
+    assert.match(route, /const asRule = body\?\.source === 'rule'/)
+    assert.match(route, /source: asRule \? 'rule' : 'person'/)
+    assert.match(route, /A date from a rule needs the page the rule was read on/)
+    for (const word of ["'document'", "'audit'", "'handbook'"]) {
+      assert.ok(!route.includes(`body?.source === ${word}`), `the route must not accept ${word} from a browser`)
+    }
+  })
+
+  test('the answer is stored as a conversation of THIS section', () => {
+    // The engine writes `section: brief.section`; the brief says 'calendar'; the page reads the
+    // same word back. Three places, one word, and this is the test that they are the same word.
+    assert.equal(calendarBrief.section, 'calendar')
+    assert.match(readFileSync('app/calendar/page.tsx', 'utf8'), /readTopicList\(supabase, 'calendar'\)/)
+  })
+
+  test('the ask view writes through the one writer, and builds no row', () => {
+    const ui = strip('components/CalendarAsk.tsx')
+    assert.match(ui, /method: 'POST'[\s\S]{0,400}source: 'rule'/)
+    assert.ok(!/\.from\('calendar_events'\)/.test(ui), 'the page never touches the table')
+    assert.ok(!/status: 'confirmed'/.test(ui), 'it names no status — proposeDate decides that')
+  })
+})
