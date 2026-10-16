@@ -4074,8 +4074,10 @@ from an address that is not CompliBoard's, on the 1st, with nobody watching.
    prints both lists in full; do the subtraction yourself rather than trusting the number.
 2. The figures in `docs/RELEASE.md`'s calendar routine, step 3, were read from production on
    16 October. **Before applying, read them again** — a month of customer use moves them. The one
-   that will surprise somebody: five rows (`biennially` ×3, `every 3 years` ×2) lose their period,
-   because the product has no word for either, and show as "repeats — how often wasn't read".
+   that will surprise somebody: **two** rows (`every 3 years` ×2) lose their period and show as
+   "repeats — how often wasn't read". The three `biennially` rows **keep** theirs as `2 years`
+   (changed 16 October, `DECISIONS.md` §200a); `every 3 years` cannot, because `period = '3 years'`
+   is refused by 073's own CHECK — 23514, proved on staging rather than assumed.
 3. A catalog probe that reports an absence must be run **with a control that is present**
    (`CLAUDE.md` §9a). The eleven-object check in the routine was; copy that shape.
 

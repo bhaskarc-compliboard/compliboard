@@ -59,9 +59,11 @@
 -- ...AND §0 EXISTS BECAUSE STAGING HOLDS NO CALENDAR ROWS. `calendar_events` is empty on staging
 -- (0 as the service role, read 15 October) and holds 47 rows on production. A backfill verified
 -- against an empty table is `HOW-WE-BUILD.md` §3's worst case — a check that passes because it can
--- see nothing, which looks exactly like a check that found nothing wrong. So §0 inserts six rows
+-- see nothing, which looks exactly like a check that found nothing wrong. So §0 inserts seven rows
 -- IN THE OLD SHAPE before the backfill, §3 proves every mapping on them and that the witness count
--- is six, and then they go. The backfill is tested on staging, not merely run there.
+-- is seven, and then they go. The backfill is tested on staging, not merely run there.
+-- *(Six until 16 October 2026; the seventh is `biennially`, added with the branch that maps it —
+-- see §2 and `DECISIONS.md` §200a.)*
 -- ===========================================================================
 
 begin;
@@ -69,7 +71,7 @@ begin;
 -- ===========================================================================
 -- 0. THE BACKFILL'S OWN WITNESSES, IN THE OLD SHAPE
 -- ===========================================================================
--- Six rows and one document, under a company this migration creates and destroys. They exist only
+-- Seven rows and one document, under a company this migration creates and destroys. They exist only
 -- so §3 can prove the backfill did what it says; §3 deletes the company, which cascades all of it.
 -- They are inserted while `category`, `is_recurring`, `recurrence_period` and `completed` still
 -- exist, which is the only moment they can be.
@@ -91,7 +93,7 @@ begin
   insert into public.calendar_events
        (company_id, title, description, due_date, category, is_recurring, recurrence_period)
        values (co, '073 witness 2', 'typed by hand', '2027-04-01', 'compliance', false, null);
-  -- w3, w4, w5: the three period words that map, and one that does not.
+  -- w3, w4, w5: two more period words that map, and one that does not.
   insert into public.calendar_events (company_id, title, due_date, is_recurring, recurrence_period)
        values (co, '073 witness 3', '2027-05-01', true, 'monthly'),
               (co, '073 witness 4', '2027-06-01', true, 'quarterly'),
@@ -99,6 +101,13 @@ begin
   -- w6: `is_recurring` NULL — allowed today, because the column is nullable with a default.
   insert into public.calendar_events (company_id, title, due_date, is_recurring)
        values (co, '073 witness 6', '2027-08-01', null);
+  -- *** w7 — `biennially`, ADDED 16 OCTOBER 2026 WITH THE BRANCH THAT MAPS IT. ***
+  -- It exists for the reason §0 exists at all. The three real `biennially` rows are on PRODUCTION;
+  -- staging has none, so without this witness the new branch would land on production having been
+  -- run against nothing, and §3 would report success having tested it against an empty set — the
+  -- exact failure this section was written to prevent.
+  insert into public.calendar_events (company_id, title, due_date, is_recurring, recurrence_period)
+       values (co, '073 witness 7', '2027-09-01', true, 'biennially');
 end $$;
 
 -- ===========================================================================
@@ -150,13 +159,35 @@ update public.calendar_events
 update public.calendar_events set recurs = coalesce(is_recurring, false) where recurs is null;
 
 -- The ten words the old dropdown offered and the one the importer wrote were never a vocabulary
--- (006:66–71). Three of them map onto a real period; everything else becomes NULL, which after
+-- (006:66–71). FOUR of them map onto a real period; everything else becomes NULL, which after
 -- this migration means "repeats, how often not known yet" (decision 23) rather than a guess.
+--
+-- *** `biennially` → `2 years` ADDED 16 OCTOBER 2026 (the owner, at step 14; `DECISIONS.md` §200a).
+-- *** The map was written on 15 October from the words the old DROPDOWN offered. At step 14 the
+-- production table was read for the first time and it holds two words the dropdown never had:
+-- `biennially` (3 rows) and `every 3 years` (2 rows). `2 years` IS one of the product's five
+-- period words (§4's CHECK below, `lib/calendarDates.ts` PERIODS, and `calendar_v`'s
+-- `step_months`, which already answers 24 for it), so `biennially` has a real home and losing it
+-- to NULL would have thrown away a fact the old row recorded correctly.
+--
+-- `every 3 years` STAYS NULL, and that is the same decision reached the other way: the product has
+-- no three-year word, and inventing one here would put a value in the column that §4's CHECK
+-- refuses and that no screen can offer. Those two rows become "repeats — how often wasn't read"
+-- and a person is asked, which is decision 23 working, not failing.
+--
+-- STAGING IS UNAFFECTED BY THIS EDIT, read on 16 October before making it: `recurrence_period` and
+-- `is_recurring` are both DROPPED there (§4 took them), so this statement cannot run again, and
+-- staging's `calendar_events` holds only `year` (4) and NULL (62) — nothing in the affected class.
+-- The same query against production returns the 3 and the 2, so the absence is an absence and not
+-- a blind read (`CLAUDE.md` §9a). `scripts/db-migrate.js:206` reads only `version` out of
+-- `supabase_migrations.schema_migrations` — no statement or hash comparison — so an edit to an
+-- applied file changes nothing about staging's history either.
 update public.calendar_events
    set period = case recurrence_period
-                  when 'monthly'   then 'month'
-                  when 'quarterly' then 'quarter'
-                  when 'annually'  then 'year'
+                  when 'monthly'    then 'month'
+                  when 'quarterly'  then 'quarter'
+                  when 'annually'   then 'year'
+                  when 'biennially' then '2 years'
                   else null
                 end
  where period is null;
@@ -183,8 +214,8 @@ begin
     raise exception 'MIGRATION 073 FAILED: §0 left no witness company, so the backfill was not tested.';
   end if;
   select count(*) into n from public.calendar_events where company_id = co;
-  if n <> 6 then
-    raise exception 'MIGRATION 073 FAILED: expected 6 witness rows to test the backfill against, found %.', n;
+  if n <> 7 then
+    raise exception 'MIGRATION 073 FAILED: expected 7 witness rows to test the backfill against, found %.', n;
   end if;
 
   -- Over EVERY row in the table, not only the witnesses: production's 47 are covered by this.
@@ -231,8 +262,15 @@ begin
   select * into r from public.calendar_events where company_id = co and title = '073 witness 6';
   if r.recurs is not false then raise exception 'MIGRATION 073 FAILED: a null is_recurring became %, not false.', coalesce(r.recurs::text, '<null>'); end if;
 
+  -- w7 — `biennially` becomes the product's own word for it, and NOT null. The three rows this
+  -- covers are on production; this is the only place the branch is exercised before it gets there.
+  select * into r from public.calendar_events where company_id = co and title = '073 witness 7';
+  if r.period <> '2 years' then
+    raise exception 'MIGRATION 073 FAILED: biennially became %, not "2 years".', coalesce(r.period, '<null>'); end if;
+  if r.recurs is not true then raise exception 'MIGRATION 073 FAILED: w7 lost its recurrence.'; end if;
+
   delete from public.companies where id = co;
-  raise notice '073 §3 OK: the backfill was tested against 6 witness rows and every mapping held; the witnesses are gone.';
+  raise notice '073 §3 OK: the backfill was tested against 7 witness rows and every mapping held; the witnesses are gone.';
 end $$;
 
 -- ===========================================================================

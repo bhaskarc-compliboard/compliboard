@@ -14044,10 +14044,10 @@ in the step's report and the figures are in `RELEASE.md`'s routine so the owner 
 - **`calendar_events`: 47 rows**, 2 companies, 0 null `company_id`, 0 with a `document_id`, 0
   `completed`, every row `category = 'compliance'`, 24 recurring. 073's backfill meets what it was
   written against.
-- **Five rows lose their period, correctly.** 19 `annually` → `year`; **3 `biennially` and 2 `every
-  3 years` map to NULL**, because the product has no word for them. Those five become "repeats —
-  how often wasn't read" and appear in the how-often picker (decision 23). Correct, and five rows a
-  person will be asked about on day one.
+- **Five rows lose their period.** 19 `annually` → `year`; **3 `biennially` and 2 `every 3 years`
+  map to NULL**, because the map has no word for them. Those five become "repeats — how often
+  wasn't read" and appear in the how-often picker (decision 23). *(**Changed the same day by the
+  owner — §200a below: `biennially` → `2 years`, so it is two rows and not five.**)*
 - **074 will file 27 rows and 27 stamps** — 27 deadlines on a current scan, all eligible, all
   fileable, **0 undated one-offs skipped**, 27 distinct keys, 7 of them repeating with no day.
   074's own text said production's figures were UNREAD and would be read here; they are now read.
@@ -14108,3 +14108,85 @@ changed; `app/api/jobs/calendar-month/route.ts` is the only caller. `lib/documen
 `lib/auditNotify.ts`, `lib/handbookCheckNotify.ts` and `app/api/feedback/route.ts` are **untouched**
 — the one new test that mentions them only reads them. `docs/RELEASE.md` gains a section and a cron
 row and nothing in the generic procedure changed.
+
+---
+
+## 200a. `biennially` IS `2 years`: THE ONE FIX BEFORE THE RELEASE — 16 October 2026
+
+**The owner's fix, decided from §200's production read.** Migration 073's period map was written on
+15 October from the words the old **dropdown** offered. Step 14 read the production table for the
+first time and found two words the dropdown never had: **`biennially` (3 rows)** and **`every 3
+years` (2 rows)**, both of which the map sent to NULL. One of them did not have to be.
+
+### The change
+
+```sql
+set period = case recurrence_period
+               when 'monthly'    then 'month'
+               when 'quarterly'  then 'quarter'
+               when 'annually'   then 'year'
+               when 'biennially' then '2 years'   -- ← added
+               else null
+             end
+```
+
+**`2 years` is one of the product's five period words** — `lib/calendarDates.ts:56` `PERIODS`,
+073 §4's CHECK, and `step_months` in both `calendar_v` definitions (073 and 075), which already
+answers 24 for it. So `biennially` has a real home, and sending it to NULL threw away a fact the
+old row recorded correctly.
+
+**`every 3 years` stays NULL, and that is not a preference.** `period = '3 years'` is **refused by
+073's own CHECK** — proved, not assumed: the insert came back **23514** on staging. There is no
+three-year word to map to, and inventing one would put a value in the column that the migration's
+own constraint rejects and no screen can offer. Those two rows become "repeats — how often wasn't
+read" and a person is asked, which is decision 23 working rather than failing.
+
+### Editing a migration that has already run, and why it is safe here
+
+073 is applied on **staging** and pending on production. Four reads, before the edit:
+
+1. **Staging cannot run the statement again.** `calendar_events.recurrence_period` and
+   `is_recurring` are both **DROPPED** there (§4 took them), read from `information_schema.columns`
+   with `period` as the control (PRESENT). The column the `case` reads does not exist.
+2. **No staging row is in the affected class.** Its `calendar_events` holds `year` (4 rows) and
+   NULL (62) and nothing else; staging had **0** calendar rows when 073 ran, so the backfill never
+   mapped anything there — every row came from 074 or the live writer.
+3. **The absence is an absence and not a blind read** (`CLAUDE.md` §9a). The same query on
+   production returns `biennially` 3 and `every 3 years` 2. The probe can see the words where they
+   exist.
+4. **The history is not hashed.** `scripts/db-migrate.js:206` selects only `version` from
+   `supabase_migrations.schema_migrations` — no statement or checksum comparison — so an edited
+   applied file changes nothing about staging's history or the next `db push`.
+
+### AND THE SEVENTH WITNESS, WHICH IS THE POINT OF §0
+
+The new branch maps three rows **on production and none on staging**. Added without a witness it
+would land on customer data **having been executed nowhere**, and §3 would report success having
+tested it against an empty set — the exact failure §0 of this migration was written to prevent.
+So §0 gains **w7**, `recurrence_period = 'biennially'`, §3's witness count goes **6 → 7**, and §3
+asserts `w7.period = '2 years'` and that it still recurs. The file's header and the closing notice
+say seven.
+
+### What was proved, and what was not
+
+- **The edited `case`, run read-only over all six real words**, on staging: `annually`→`year`,
+  **`biennially`→`2 years`**, `every 3 years`→NULL, `monthly`→`month`, `quarterly`→`quarter`,
+  `weekly`→NULL. The expression itself, not a description of it.
+- **The destination, end to end on staging:** a row with `period = '2 years'` and `recurs = true`
+  **accepted**; the control, `'3 years'`, **refused 23514** by the same CHECK; and `calendar_v`
+  anchored on `2025-09-01` computed `next_due = 2027-09-01`, `days_until 320`, `has_passed false`
+  — 24 months, right. The probe company was removed.
+- **NOT PROVED, and it cannot be from here: the edited 073 has not been executed as a migration
+  anywhere.** `npm run db:reset` is the only thing that would replay it and it is the owner's call
+  (§3.7), held until just before launch. The three statements that changed are each proved above on
+  their own; **the first full run of the file is `npm run db:migrate:prod`**, where §3's new
+  assertion is the thing that catches it if any of this is wrong — which is what a verify block is
+  for.
+
+### Effects on other sections
+
+**None.** `biennially` and `every 3 years` appear nowhere in `app`, `lib`, `components`, `prompts`,
+`config`, `scripts`, `tests/unit` or any other migration — only in 073 and in step 14's own doc
+lines, which now say two rows and not five (`RELEASE.md`'s day-of table, `TESTING.md` C14-2,
+`CALENDAR-PLAN.md`'s step 14 row). The unrelated matches are English prose in the requirement
+library's seed data (`supabase/seed-data/load-chemical-requirements.sql`, `013`).
