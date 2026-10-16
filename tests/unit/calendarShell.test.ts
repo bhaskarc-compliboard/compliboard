@@ -307,22 +307,30 @@ describe('NOTHING OF THE OLD PAGE CAME ACROSS, and the new one writes nothing', 
    * thing worth holding, is that the page READS and never writes: every change to a date goes
    * through `PATCH /api/calendar` from the drawer, over `lib/calendarDates.ts`, the one writer.
    */
-  test('it makes no write, and no reader of it writes a row itself', () => {
+  /**
+   * *** WIDENED AGAIN BY STEP 8b. *** The page now mounts `DocumentReport`, which hands filing back
+   * up as `onMove` — so the page makes exactly ONE kind of write, and it is Documents' own route
+   * moving a document between folders, the same call `app/audits/page.tsx:823` makes for the same
+   * reason. What has not changed, and is what this test is for: **the page never writes a calendar
+   * row.** Every change to a date goes through `PATCH /api/calendar` from the drawer or
+   * `POST /api/calendar` from the Add sheet, both over `lib/calendarDates.ts`, the one writer.
+   */
+  test('the page never writes a CALENDAR row; its only write is Documents\' own filing', () => {
     // *** NOT A SEARCH FOR `.delete(`, AND THAT IS A FINDING OF ITS OWN. *** Written that way
     // first, this test failed on `p.delete(k)` — `URLSearchParams`, which is how the tab leaves the
-    // address when it is the default one. A substring is not a call site (`CLAUDE.md` §9a), so the
-    // check is made against what a write would actually need: a query builder, or a method on a
-    // request.
-    for (const w of ["method: 'POST'", "method: 'PATCH'", "method: 'DELETE'", "method: 'PUT'",
-      '.insert(', '.upsert(', '.update(']) {
+    // address when it is the default one. A substring is not a call site (`CLAUDE.md` §9a).
+    for (const w of ['.insert(', '.upsert(', '.update(']) {
       assert.ok(!CODE.includes(w), `${w} must not be on a page that only reads`)
     }
-    assert.ok(!/\bfetch\(/.test(CODE), 'the page calls no route; the drawer does')
+    const urls = [...CODE.matchAll(/fetch\('([^']+)'/g)].map((m) => m[1])
+    assert.deepEqual([...new Set(urls)], ['/api/documents'],
+      'the only route the page itself calls is the document move')
+    assert.ok(!CODE.includes("'/api/calendar'"), 'a calendar write is the drawer\'s or the sheet\'s')
   })
   test('every relation the page reads is named here, so a fifth is a deliberate act', () => {
     const named = [...CODE.matchAll(/supabase\s*\.from\('([a-z_]+)'\)/g)].map((m) => m[1]).sort()
-    assert.deepEqual([...new Set(named)],
-      ['audit_findings', 'companies', 'document_index_v', 'entities', 'profiles'])
+    assert.deepEqual([...new Set(named)].sort(),
+      ['audit_findings', 'companies', 'company_folders', 'document_index_v', 'entities', 'profiles'])
   })
   test('it reads calendar_v through the shared filter, not with a query of its own', () => {
     assert.ok(!CODE.includes('calendar_v'), 'the page must not name the view: lib/calendarCounts.ts does')

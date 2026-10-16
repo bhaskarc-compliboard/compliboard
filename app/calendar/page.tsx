@@ -55,11 +55,17 @@ import { readCalendarCounts, infoBarParts, type CalendarCounts } from '@/lib/cal
 import {
   readCalendarRows, listGroups, monthGrid, monthTitle, shiftMonth, openingMonth, monthOf,
   repeatWords, whenWords, passedWords, metaParts, hasNoDay, resolveLink,
+  siteChoices, filterBySite,
   WEEKDAYS, PER_DAY, MORE_WORD, UNDATED_GROUP, UNDATED_STRIP, NOT_ON_CALENDAR, NOT_CONFIRMED,
   COULD_NOT_LOAD,
   type CalendarRow,
 } from '@/lib/calendarView'
 import { CalendarDateDrawer, type DocumentFacts, type FindingFacts } from '@/components/CalendarDateDrawer'
+import { AddDateSheet } from '@/components/AddDateSheet'
+import DocumentReport from '@/components/DocumentReport'
+import AuditReport from '@/components/AuditReport'
+import { authHeaders } from '@/lib/supabase'
+import { printWithFrame } from '@/lib/printFrame'
 
 type Tab = 'ask' | 'conversations' | 'calendar' | 'dates'
 
@@ -90,6 +96,41 @@ const CALENDAR_BAR = (dates: number, waiting: number) =>
 const CONVERSATIONS_ARRIVE = (n: number) =>
   `${n} ${n === 1 ? 'conversation' : 'conversations'}. This view arrives with step 10.`
 
+/**
+ * BOARD 4'S DOT, DRAWN AND NOT TYPED. The board writes it as ● and ○, and the first build put
+ * those characters in the button. Two things were wrong with that: they are font-dependent
+ * glyphs, so the mark is a different size and weight on a Mac and on Windows — the reason
+ * `components/AppLayout.tsx` banned emoji from the nav — and they land in the element's text, so
+ * the row's accessible name became "○Six-year internal maintenance…" and nothing could match the
+ * title. A 7px circle, filled when confirmed and hollow when not, says the same thing in any font.
+ */
+const Dot = ({ confirmed, faint }: { confirmed: boolean; faint: boolean }) => (
+  <svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"
+    className={`mt-[1px] shrink-0 ${faint ? 'text-gray-300' : 'text-[var(--green)]'}`}>
+    <circle cx="4" cy="4" r="3" fill={confirmed ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2" />
+  </svg>
+)
+
+/**
+ * THE DRAWER'S TWO TABS, DRAWN ABOVE A REPORT'S TITLE — board 6, kept visible while the report is
+ * open. `Drawer`'s `topLine` slot is the header's own flow above the title (§147), which is where
+ * Audits puts its way back; the Calendar puts the tab row there instead, so the two tabs stay in
+ * the place they were and "The date" goes back to it.
+ */
+function ReportTabs({ onBack, second }: { onBack: () => void; second: string }) {
+  return (
+    <div className="no-print flex items-center gap-6 border-b border-gray-200">
+      <button onClick={onBack}
+        className="-mb-px border-b-2 border-transparent pb-2 text-[14px] font-medium text-gray-500 hover:text-gray-900">
+        The date
+      </button>
+      <span className="-mb-px border-b-2 border-[var(--green)] pb-2 text-[14px] font-medium text-[var(--green-ink)]">
+        {second}
+      </span>
+    </div>
+  )
+}
+
 export default function CalendarPage() {
   return (
     <Suspense fallback={<div className="p-8 text-[14px] text-gray-400">Loading…</div>}>
@@ -118,11 +159,13 @@ function Calendar() {
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [counts, setCounts] = useState<CalendarCounts>({ dates: 0, toConfirm: 0, nextDate: null })
   const [rows, setRows] = useState<CalendarRow[]>([])
-  const [siteCount, setSiteCount] = useState(0)
+  const [sites, setSites] = useState<Array<{ id: string; name: string }>>([])
   const [names, setNames] = useState<Record<string, string>>({})
   const [companyName, setCompanyName] = useState<string | null>(null)
   /** Month is the default view, as board 4 is the tab's first board. */
   const [view, setView] = useState<'month' | 'list'>('month')
+  /** Board 4's site filter. 'all' is off, and with one site it is never drawn (decision 24). */
+  const [siteFilter, setSiteFilter] = useState('all')
   const [month, setMonth] = useState<string | null>(null)
   /**
    * *** WHICH DATE IS OPEN IS THE ADDRESS, NOT A PIECE OF STATE. ***
@@ -134,6 +177,16 @@ function Calendar() {
    */
   /** The read did not answer. NOT the same state as "there are none" (§5.1). */
   const [loadFailed, setLoadFailed] = useState(false)
+  const [folders, setFolders] = useState<Array<{ id: string; name: string }>>([])
+  /**
+   * THE SECOND TAB, MOUNTED THE WAY AUDITS MOUNTS ONE (`app/audits/page.tsx:792–833`): the date's
+   * drawer goes `hidden` and the report's own drawer takes its place, so the report is byte-for-byte
+   * what Documents and Audits show and neither shared file changes. The tab row rides along in the
+   * report's `topLine`, so "The date" is one click away in the place it already was.
+   */
+  const [report, setReport] = useState<{ kind: 'document' | 'audit'; id: string } | null>(null)
+  /** A document opened FROM an audit report, as Audits does it — the third level. */
+  const [openDocId, setOpenDocId] = useState<string | null>(null)
   const [extra, setExtra] = useState<{ id: string; document: DocumentFacts | null; finding: FindingFacts | null } | null>(null)
   /**
    * *** NOTHING IS CLAIMED BEFORE THE READ ANSWERS. *** "No dates yet" drawn while the query is in
@@ -161,14 +214,19 @@ function Calendar() {
    * "confirmed by…" and "added by…" — its own policy already scopes it to the company.
    */
   const load = useCallback(async () => {
-    let c, t, r, sites, people
+    let c, t, r, siteRows, people, folderRows
     try {
-      [c, t, r, sites, people] = await Promise.all([
+      [c, t, r, siteRows, people, folderRows] = await Promise.all([
         readCalendarCounts(supabase),
         readTopicList(supabase, 'calendar'),
         readCalendarRows(supabase),
-        supabase.from('entities').select('id', { count: 'exact', head: true }),
+        // The sites themselves, not just how many: decision 24 needs the count to decide whether
+        // to say anything at all, and the filter and the Add sheet need the names.
+        supabase.from('entities').select('id, name').order('name'),
         supabase.from('profiles').select('id, full_name'),
+        // The folder list `DocumentReport` files a document into. Documents and Audits each hand it
+        // the list they already hold rather than making the drawer fetch one; so does this.
+        supabase.from('company_folders').select('id, name').order('name'),
       ])
     } catch (err) {
       // *** A READ THAT FAILED IS NOT AN EMPTY CALENDAR. *** Drawing "No dates yet" here would be
@@ -185,9 +243,10 @@ function Calendar() {
     setCounts(c)
     setTopics(t)
     setRows(r)
-    setSiteCount(sites.count ?? 0)
+    setSites((siteRows.data ?? []) as Array<{ id: string; name: string }>)
     setNames(Object.fromEntries(((people.data ?? []) as Array<{ id: string; full_name: string | null }>)
       .filter((x) => x.full_name).map((x) => [x.id, x.full_name as string])))
+    setFolders((folderRows.data ?? []) as Array<{ id: string; name: string }>)
     setLoaded(true)
     return r
   }, [supabase])
@@ -248,6 +307,13 @@ function Calendar() {
    */
   const open = resolveLink(rows, linkedDate, linkedFinding)
   const linkMissed = loaded && !!(linkedDate || linkedFinding) && !open
+  /** `?new=1` — what the side link has written since step 7, now with the sheet behind it. */
+  const adding = params.get('new') === '1'
+  const closeAdd = () => {
+    const p = new URLSearchParams(params.toString())
+    p.delete('new')
+    router.replace(`/calendar${p.toString() ? `?${p}` : ''}`, { scroll: false })
+  }
 
   /**
    * WHAT THE DRAWER NEEDS BEYOND THE ROW, read when it opens and not before: the document's own
@@ -255,7 +321,7 @@ function Calendar() {
    * audit date. Three small reads for one date beat five joined columns on every row of the grid.
    */
   const openId = open?.id ?? null
-  const openDocId = open?.document_id ?? null
+  const openDocFor = open?.document_id ?? null
   const openFindingId = open?.audit_finding_id ?? null
   useEffect(() => {
     let live = true
@@ -263,20 +329,20 @@ function Calendar() {
     ;(async () => {
       let document: DocumentFacts | null = null
       let finding: FindingFacts | null = null
-      if (openDocId) {
+      if (openDocFor) {
         const [d, newer] = await Promise.all([
           supabase.from('document_index_v')
             .select('document_id, title, file_name, kind, issuer, display_status, document_status')
-            .eq('document_id', openDocId).maybeSingle(),
+            .eq('document_id', openDocFor).maybeSingle(),
           // Decision 14: somebody uploaded a newer version of the file this date was read from.
-          supabase.from('document_index_v').select('document_id').eq('version_of', openDocId).limit(1),
+          supabase.from('document_index_v').select('document_id').eq('version_of', openDocFor).limit(1),
         ])
         const row = d.data as Omit<DocumentFacts, 'hasNewerVersion'> | null
         if (row) document = { ...row, hasNewerVersion: ((newer.data ?? []) as unknown[]).length > 0 }
       }
       if (openFindingId) {
         const { data } = await supabase.from('audit_findings')
-          .select('id, title, quote, locator').eq('id', openFindingId).maybeSingle()
+          .select('id, title, quote, locator, run_id').eq('id', openFindingId).maybeSingle()
         finding = (data as FindingFacts | null) ?? null
       }
       // Stamped with the row it belongs to, so a slow read landing after the drawer has moved on
@@ -284,44 +350,42 @@ function Calendar() {
       if (live) setExtra({ id: openId, document, finding })
     })()
     return () => { live = false }
-  }, [supabase, openId, openDocId, openFindingId])
+  }, [supabase, openId, openDocFor, openFindingId])
   const shown = extra && extra.id === openId ? extra : { document: null, finding: null }
 
   /** Open a date: the address, which the drawer is derived from, so a reload opens the same one. */
   const openDate = (id: string) => {
+    setReport(null)
+    setOpenDocId(null)
     const p = new URLSearchParams(params.toString())
     p.delete('finding'); p.set('date', id)
     router.replace(`/calendar?${p}`, { scroll: false })
   }
   const closeDate = () => {
+    setReport(null)
+    setOpenDocId(null)
     const p = new URLSearchParams(params.toString())
     p.delete('date'); p.delete('finding')
     router.replace(`/calendar${p.toString() ? `?${p}` : ''}`, { scroll: false })
   }
 
-  const groups = listGroups(rows)
+  /**
+   * THE SITE FILTER NARROWS WHAT THE TAB DRAWS, AND NOTHING ELSE. The month, the list, the strip
+   * and the info bar's own numbers all read `shownRows`. **The tab labels and the sidebar badge
+   * keep the company's totals on purpose**: they are the section's count of work waiting, the
+   * badge is read on every page in the product where no filter exists, and a badge that followed a
+   * filter would disagree with the page the moment somebody picked a site — which is the 29
+   * September failure `components/AppLayout.tsx` carries in full.
+   */
+  const shownRows = filterBySite(rows, siteFilter)
+  const groups = listGroups(shownRows)
   const undated = groups.undated
   /** The month shown: the one chosen, else the linked date's, else the soonest date still ahead. */
   const monthKey = month
     ?? (open && !hasNoDay(open) ? monthOf(open.next_due) : null)
-    ?? openingMonth(rows, new Date().toISOString().slice(0, 10))
-  const cells = monthGrid(monthKey, rows)
+    ?? openingMonth(shownRows, new Date().toISOString().slice(0, 10))
+  const cells = monthGrid(monthKey, shownRows)
   const today = new Date().toISOString().slice(0, 10)
-
-  /**
-   * BOARD 4'S DOT, DRAWN AND NOT TYPED. The board writes it as ● and ○, and the first build put
-   * those characters in the button. Two things were wrong with that: they are font-dependent
-   * glyphs, so the mark is a different size and weight on a Mac and on Windows — the reason
-   * `components/AppLayout.tsx` banned emoji from the nav — and they land in the element's text, so
-   * the row's accessible name became "○Six-year internal maintenance…" and nothing could match the
-   * title. A 7px circle, filled when confirmed and hollow when not, says the same thing in any font.
-   */
-  const Dot = ({ confirmed, faint }: { confirmed: boolean; faint: boolean }) => (
-    <svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"
-      className={`mt-[1px] shrink-0 ${faint ? 'text-gray-300' : 'text-[var(--green)]'}`}>
-      <circle cx="4" cy="4" r="3" fill={confirmed ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  )
 
   /** One date on a day box — board 4. */
   const dateButton = (r: CalendarRow) => (
@@ -331,6 +395,64 @@ function Calendar() {
       <Dot confirmed={r.status === 'confirmed'} faint={!!r.has_passed} />
       <span className="truncate">{r.title}</span>
     </button>
+  )
+
+  /**
+   * THE LIST — board 5, and the one the printer gets. It is a variable rather than inline markup
+   * because it is drawn in two places: as the List view, and, hidden on screen, under the month
+   * grid so that **a printed calendar is always the list**. A month grid on paper is six boxes of
+   * truncated titles; the list prints every date with where it came from, which is what somebody
+   * carries into a meeting. HR prints a conversation the same way (`printWithFrame`), and the
+   * shared frame puts the company and the page numbers in the margins (board 10).
+   */
+  const listBody = (
+    <>
+                {/* THE LIST — board 5. Grouped by month, soonest first; the dates with no day last. */}
+                {groups.months.map((g) => (
+                  <div key={g.key} className="mt-5">
+                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-500">{g.title}</p>
+                    <div className="divide-y divide-gray-100 border-y border-gray-100">
+                      {g.rows.map((r) => (
+                        <button key={r.id} onClick={() => openDate(r.id)}
+                          className="group -mx-3 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-white">
+                          <span className="min-w-0 flex-1">
+                            <span className={`block truncate text-[13px] group-hover:text-[var(--green)] ${
+                              r.has_passed ? 'text-gray-400' : 'text-gray-900'}`}>{r.title}</span>
+                            <span className="mt-0.5 block truncate text-[12px] text-gray-500">
+                              {metaParts(r, sites.length, r.added_by ? names[r.added_by] : null).map((part, i) => (
+                                <span key={i}>
+                                  {i > 0 && <span aria-hidden="true"> · </span>}
+                                  <span className={part === passedWords(r) ? 'text-[var(--amber)]' : ''}>{part}</span>
+                                </span>
+                              ))}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-[12px] text-gray-400">{whenWords(r)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {undated.length > 0 && (
+                  <div className="mt-5">
+                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{UNDATED_GROUP}</p>
+                    <div className="divide-y divide-gray-100 border-y border-gray-100">
+                      {undated.map((r) => (
+                        <button key={r.id} onClick={() => openDate(r.id)}
+                          className="group -mx-3 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-white">
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{r.title}</span>
+                            <span className="mt-0.5 block truncate text-[12px] text-gray-500">
+                              {metaParts(r, sites.length, r.added_by ? names[r.added_by] : null).join(' · ')}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-[12px] text-gray-400">{whenWords(r)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+    </>
   )
 
   return (
@@ -446,14 +568,31 @@ function Calendar() {
                   right, Month first. The site filter and the whole-calendar feed the board also
                   draws there are step 8b's and step 11's; neither is faked here. */}
               <div className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
-                <p className="text-[13px] text-gray-500">{CALENDAR_BAR(counts.dates, counts.toConfirm)}</p>
-                <div className="flex shrink-0 items-center gap-3 text-[13px]">
+                <p className="text-[13px] text-gray-500">
+                  {CALENDAR_BAR(shownRows.length, shownRows.filter((r) => r.status === 'proposed').length)}
+                </p>
+                <div className="flex shrink-0 flex-wrap items-center gap-3 text-[13px]">
                   {(['month', 'list'] as const).map((v) => (
                     <button key={v} onClick={() => setView(v)}
                       className={view === v ? 'font-medium text-[var(--green-ink)]' : 'text-gray-500 hover:text-gray-900'}>
                       {v === 'month' ? 'Month' : 'List'}
                     </button>
                   ))}
+                  {/* The site filter, only when there is a choice to make — decision 24. */}
+                  {sites.length > 1 && (<>
+                    <span aria-hidden="true" className="text-gray-300">·</span>
+                    <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)}
+                      aria-label="Which site"
+                      className="cursor-pointer rounded-md border border-gray-200 bg-white px-2 py-1 text-[13px] text-gray-700 outline-none focus:border-[var(--green)]">
+                      {siteChoices(rows, sites).map((c) => (
+                        <option key={c.key} value={c.key}>{c.label}</option>
+                      ))}
+                    </select>
+                  </>)}
+                  <span aria-hidden="true" className="text-gray-300">·</span>
+                  {/* The shared print frame, as HR prints a conversation (`app/hr/HrWorkspace.tsx:744`). */}
+                  <button onClick={() => printWithFrame({ company: companyName ?? '', type: 'Calendar' })}
+                    className="text-gray-500 underline hover:text-gray-900">Print</button>
                 </div>
               </div>
 
@@ -492,7 +631,7 @@ function Calendar() {
                 {/* THE GRID. Seven equal columns, six equal rows: `grid-rows-6` with a fixed row
                     height, so a busy day scrolls inside its box and the month never changes shape
                     under the pointer when you press next (board 4). */}
-                <div className="mt-3 grid grid-cols-7 border-l border-t border-gray-200">
+                <div className="no-print mt-3 grid grid-cols-7 border-l border-t border-gray-200">
                   {WEEKDAYS.map((d) => (
                     <div key={d} className="border-b border-r border-gray-200 px-2 py-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400">{d}</div>
                   ))}
@@ -518,58 +657,14 @@ function Calendar() {
                     )
                   })}
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] text-gray-400">
+                <div className="no-print mt-2 flex flex-wrap items-center gap-4 text-[11px] text-gray-400">
                   <span className="inline-flex items-center gap-1.5"><Dot confirmed faint={false} />confirmed</span>
                   <span className="inline-flex items-center gap-1.5"><Dot confirmed={false} faint={false} />{NOT_CONFIRMED}</span>
                   {undated.length > 0 && <span>{UNDATED_STRIP(undated.length)} — see the list</span>}
                 </div>
-              </>) : (<>
-                {/* THE LIST — board 5. Grouped by month, soonest first; the dates with no day last. */}
-                {groups.months.map((g) => (
-                  <div key={g.key} className="mt-5">
-                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-500">{g.title}</p>
-                    <div className="divide-y divide-gray-100 border-y border-gray-100">
-                      {g.rows.map((r) => (
-                        <button key={r.id} onClick={() => openDate(r.id)}
-                          className="group -mx-3 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-white">
-                          <span className="min-w-0 flex-1">
-                            <span className={`block truncate text-[13px] group-hover:text-[var(--green)] ${
-                              r.has_passed ? 'text-gray-400' : 'text-gray-900'}`}>{r.title}</span>
-                            <span className="mt-0.5 block truncate text-[12px] text-gray-500">
-                              {metaParts(r, siteCount, r.added_by ? names[r.added_by] : null).map((part, i) => (
-                                <span key={i}>
-                                  {i > 0 && <span aria-hidden="true"> · </span>}
-                                  <span className={part === passedWords(r) ? 'text-[var(--amber)]' : ''}>{part}</span>
-                                </span>
-                              ))}
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-[12px] text-gray-400">{whenWords(r)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                {undated.length > 0 && (
-                  <div className="mt-5">
-                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{UNDATED_GROUP}</p>
-                    <div className="divide-y divide-gray-100 border-y border-gray-100">
-                      {undated.map((r) => (
-                        <button key={r.id} onClick={() => openDate(r.id)}
-                          className="group -mx-3 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-white">
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{r.title}</span>
-                            <span className="mt-0.5 block truncate text-[12px] text-gray-500">
-                              {metaParts(r, siteCount, r.added_by ? names[r.added_by] : null).join(' · ')}
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-[12px] text-gray-400">{whenWords(r)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>)}
+                {/* On paper the month is the list: see `listBody`. */}
+                <div className="hidden print:block">{listBody}</div>
+              </>) : listBody}
             </>)}
           </div>
         )}
@@ -588,8 +683,10 @@ function Calendar() {
       </div>
 
       {/* ONE DATE, OPENED — board 6's first tab. It is mounted outside the column because the
-          shared drawer is `position: fixed`, as it is on Documents and Audits. */}
+          shared drawer is `position: fixed`, as it is on Documents and Audits. `hidden` while a
+          report is over it, exactly as `app/audits/page.tsx:792` hides the audit behind a document. */}
       {open && (
+        <div className={report || openDocId ? 'hidden' : ''}>
         <CalendarDateDrawer
           key={open.id}
           data={{
@@ -602,13 +699,91 @@ function Calendar() {
             document: shown.document,
             finding: shown.finding,
             names,
-            siteCount,
+            siteCount: sites.length,
           }}
           company={companyName}
           onClose={closeDate}
           onOpenOther={openDate}
           onChanged={() => { void load() }}
+          /**
+           * The second tab exists only when there is a report behind it: a document's reading, or
+           * the audit that found the date. A typed date has neither, so the tab is not drawn at all
+           * — there is nothing for it to show later, and a disabled tab promises one.
+           */
+          onOpenReport={
+            open.source === 'audit' && extra?.id === open.id && extra.finding?.run_id
+              ? () => setReport({ kind: 'audit', id: extra.finding!.run_id as string })
+              : open.document_id
+              ? () => setReport({ kind: 'document', id: open.document_id as string })
+              : null
+          }
         />
+        </div>
+      )}
+
+      {/*
+        THE SECOND TAB'S CONTENT — the real report, mounted over the date's drawer. The tab row
+        travels with it in `topLine`, so the two tabs stay where they were and "The date" goes back.
+      */}
+      {open && report && !openDocId && (
+        report.kind === 'audit' ? (
+          <AuditReport runId={report.id} companyName={companyName}
+            onClose={closeDate} onChanged={() => { void load() }}
+            onOpenDoc={(id) => setOpenDocId(id)}
+            topLine={<ReportTabs onBack={() => setReport(null)} second="The audit" />} />
+        ) : (
+          <DocumentReport documentId={report.id} companyName={companyName} folders={folders}
+            onClose={closeDate} onChanged={() => { void load() }}
+            onMove={async (documentId, folderId) => {
+              await fetch('/api/documents', {
+                method: 'PATCH',
+                headers: await authHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ id: documentId, folder_id: folderId }),
+              })
+              await load()
+            }}
+            /* This page has no file picker, and building a second upload path here would be two of
+               them. Documents is the upload surface and shows the hint it is sent — the same answer
+               `app/audits/page.tsx:833` gives. */
+            onPickFile={() => { window.location.href = '/documents?add=a+clearer+copy' }}
+            topLine={<ReportTabs onBack={() => setReport(null)} second={'The report'} />}
+          />
+        )
+      )}
+
+      {/* ADD A DATE — board 9. Only on the two date tabs; "+ New conversation" writes the same
+          `?new=1` on the other two and step 10 answers it there. */}
+      {adding && (tab === 'calendar' || tab === 'dates') && (
+        <AddDateSheet sites={sites} onClose={closeAdd}
+          onSaved={async (id) => {
+            await load()
+            const p = new URLSearchParams(params.toString())
+            p.delete('new'); p.delete('finding')
+            p.set('tab', 'calendar')
+            if (id) p.set('date', id)
+            router.replace(`/calendar?${p}`, { scroll: false })
+          }} />
+      )}
+
+      {/* A document opened FROM the audit report — Audits' third level, and the same way back. */}
+      {openDocId && (
+        <DocumentReport documentId={openDocId} companyName={companyName} folders={folders}
+          onClose={() => setOpenDocId(null)} onChanged={() => { void load() }}
+          onMove={async (documentId, folderId) => {
+            await fetch('/api/documents', {
+              method: 'PATCH',
+              headers: await authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({ id: documentId, folder_id: folderId }),
+            })
+            await load()
+          }}
+          onPickFile={() => { window.location.href = '/documents?add=a+clearer+copy' }}
+          topLine={
+            <button onClick={() => setOpenDocId(null)}
+              className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
+              ← Back to the audit
+            </button>
+          } />
       )}
     </AppLayout>
   )

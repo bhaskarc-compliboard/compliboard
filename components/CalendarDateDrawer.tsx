@@ -29,7 +29,7 @@ import { statusWord, KIND_WORD } from '@/lib/documentStatus'
 import {
   type CalendarRow, longDay, longDayAndWeekday, repeatWords, whenWords, passedWords, siteWords,
   PERIOD_CHOICES, PERIOD_LABEL, NOT_CONFIRMED, PERIOD_NOT_READ, ALREADY_HANDLED, NEWER_VERSION,
-  DOCUMENT_GONE, googleCalendarUrl, outlookCalendarUrl,
+  DOCUMENT_GONE, googleCalendarUrl, outlookCalendarUrl, splitSiblings, ASKS_BEFORE,
 } from '@/lib/calendarView'
 
 /** What the drawer needs about the document a date was read from, when there is one. */
@@ -50,6 +50,8 @@ export interface FindingFacts {
   title: string | null
   quote: string | null
   locator: string | null
+  /** The run the finding belongs to — what the second tab opens for an audit date. */
+  run_id: string | null
 }
 
 export interface DrawerData {
@@ -84,13 +86,25 @@ const Note = ({ children }: { children: React.ReactNode }) => (
   </p>
 )
 
-export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, company }: {
+export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOpenReport, company }: {
   data: DrawerData
   onClose: () => void
   /** Told after every write, so the views behind the drawer re-read. */
   onChanged: () => void
   /** Swap the drawer to another date of the same document. */
   onOpenOther: (id: string) => void
+  /**
+   * *** THE SECOND TAB IS THE PAGE'S TO MOUNT, NOT THIS COMPONENT'S. ***
+   * `components/DocumentReport.tsx` and `components/AuditReport.tsx` each render their OWN
+   * `Drawer`, so showing one here would be a drawer inside a drawer. The page mounts it over this
+   * one exactly as `app/audits/page.tsx:792–833` does — that drawer goes `hidden`, the report's
+   * takes its place, and the report is byte-for-byte what Documents and Audits show, with every
+   * action on it live and no change to either shared file. The tab row travels with it, in the
+   * report's own `topLine` slot, so "The date" is one click away where it has always been.
+   * Null when the date has no report to show (a typed or rule-sourced date): the tab is then
+   * HIDDEN, not disabled — there is nothing to arrive later.
+   */
+  onOpenReport: (() => void) | null
   company: string | null
 }) {
   const { row, siblings, document: doc, finding, names, siteCount } = data
@@ -140,6 +154,22 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, comp
     site, day || (repeat || 'no day yet'), day ? whenWords(row) : '',
     passed || (row.status === 'proposed' ? NOT_CONFIRMED : ''),
   ].filter(Boolean).join(' · ')
+
+  /** Board 6 draws both sibling sections the same way, so they are one function. */
+  const siblingRow = (s: CalendarRow) => (
+    <button key={s.id} onClick={() => onOpenOther(s.id)}
+      className="group flex w-full items-baseline justify-between gap-3 py-2 text-left">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{s.title}</span>
+        <span className="mt-0.5 block text-[12px] text-gray-500">
+          {[longDay(s.next_due) || repeatWords(s) || 'no day yet',
+            s.status === 'proposed' ? NOT_CONFIRMED : 'confirmed'].filter(Boolean).join(' · ')}
+        </span>
+      </span>
+      <span className="shrink-0 text-[12px] text-gray-400">{whenWords(s)}</span>
+    </button>
+  )
+  const { before, others } = splitSiblings(row, siblings)
 
   const footer = (
     <>
@@ -192,16 +222,18 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, comp
       <Drawer title={row.title} sub={sub} onClose={onClose} company={company}
         printType="Calendar date" printDates={day ? `Due ${day}` : undefined} footer={footer}>
 
-        {/* The two tabs, board 6. The second is step 8b and says so rather than being absent. */}
-        <div className="no-print mb-1 flex items-center gap-6 border-b border-gray-200">
-          <span className="-mb-px border-b-2 border-[var(--green)] pb-2.5 text-[14px] font-medium text-[var(--green-ink)]">
-            The date
-          </span>
-          <span className="-mb-px cursor-not-allowed border-b-2 border-transparent pb-2.5 text-[14px] font-medium text-gray-300">
-            The report
-          </span>
-        </div>
-        <p className="no-print text-[12px] text-gray-400">Arrives with step 8b</p>
+        {/* The two tabs, board 6. "The report" is hidden, not greyed, when there is none. */}
+        {onOpenReport && (
+          <div className="no-print mb-1 flex items-center gap-6 border-b border-gray-200">
+            <span className="-mb-px border-b-2 border-[var(--green)] pb-2.5 text-[14px] font-medium text-[var(--green-ink)]">
+              The date
+            </span>
+            <button onClick={onOpenReport}
+              className="-mb-px border-b-2 border-transparent pb-2.5 text-[14px] font-medium text-gray-500 hover:text-gray-900">
+              {row.source === 'audit' ? 'The audit' : 'The report'}
+            </button>
+          </div>
+        )}
 
         {error && (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900">{error}</p>
@@ -312,23 +344,22 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, comp
           </p>
         )}
 
-        {siblings.length > 0 && (
+        {before.length > 0 && (
           <>
-            <SectionHead>Other dates this document sets · {siblings.length}</SectionHead>
+            {/* Board 6's third section. It is the document's own other dates that fall earlier —
+                `lib/calendarView.ts` `splitSiblings` says why it cannot be the conditions. */}
+            <SectionHead>{ASKS_BEFORE(before.length)}</SectionHead>
             <div className="divide-y divide-gray-100 border-y border-gray-100">
-              {siblings.map((s) => (
-                <button key={s.id} onClick={() => onOpenOther(s.id)}
-                  className="group flex w-full items-baseline justify-between gap-3 py-2 text-left">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{s.title}</span>
-                    <span className="mt-0.5 block text-[12px] text-gray-500">
-                      {[longDay(s.next_due) || repeatWords(s) || 'no day yet',
-                        s.status === 'proposed' ? NOT_CONFIRMED : 'confirmed'].filter(Boolean).join(' · ')}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-[12px] text-gray-400">{whenWords(s)}</span>
-                </button>
-              ))}
+              {before.map(siblingRow)}
+            </div>
+          </>
+        )}
+
+        {others.length > 0 && (
+          <>
+            <SectionHead>Other dates this document sets · {others.length}</SectionHead>
+            <div className="divide-y divide-gray-100 border-y border-gray-100">
+              {others.map(siblingRow)}
             </div>
           </>
         )}

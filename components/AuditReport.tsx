@@ -332,10 +332,18 @@ function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: str
   )
 }
 
-export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName }: {
+export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName, topLine }: {
   runId: string; focusWord?: string | null; onClose: () => void; onChanged: () => void
   /** On paper, top left of every page (board 10). The page reads it; this component has no session. */
   companyName?: string | null
+  /**
+   * A LINE ABOVE THE TITLE, IN THE HEADER — `Drawer`'s own `topLine` slot, which
+   * `components/DocumentReport.tsx` has taken since Audits Run 4a and this component did not.
+   * Added additively at Calendar step 8b: the Calendar's date drawer opens an audit's report as
+   * its second tab, and without a way back that tab is a dead end — Close is not "back".
+   * `app/audits/page.tsx` passes nothing and is unchanged, in markup and in behaviour.
+   */
+  topLine?: React.ReactNode
   /**
    * *** THE PAGE OPENS THE DOCUMENT, NOT THIS COMPONENT — Run 3b, item 1. ***
    * This used to render its own panel saying "open it in Documents for its full reading", which is
@@ -746,7 +754,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       : wordFilter ? list.filter((f) => f.word === wordFilter) : list)
 
     return (
-      <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer}
+      <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer} topLine={topLine}
         company={companyName} printType="Audit report" printDates={printDates}>
         <WordFilter counts={tCounts} value={wordFilter} onChange={setWordFilter} />
         <WordCountsPrint counts={tCounts} />
@@ -865,7 +873,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
 
   return (
     <Drawer title={everything ? `Audit of everything · ${run.section_count} sections` : `${agency} audit`}
-      sub={sub} onClose={onClose} footer={footer}
+      sub={sub} onClose={onClose} footer={footer} topLine={topLine}
       company={companyName} printType="Audit report" printDates={printDates}>
       {/*
         *** THE HEADER SAID THE SAME THING TWICE, AND ONE OF THEM CARRIED A PRICE. ***

@@ -288,8 +288,14 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
 
       <div className="flex flex-1">
 
-        {/* Sidebar — desktop */}
-        <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 sticky top-[57px] h-[calc(100vh-57px)]">
+        {/*
+          Sidebar — desktop. `no-print`, for the reason the header above carries it: it is
+          navigation, and a printed page cannot be navigated. **Found at Calendar step 8b**, by
+          photographing a page with print media emulated for the first time: every printed page in
+          the product was carrying the whole nav down its left edge, including HR's conversation and
+          both report drawers. One class, print-only, so nothing on screen changes.
+        */}
+        <aside className="no-print hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 sticky top-[57px] h-[calc(100vh-57px)]">
           <SidebarContent />
         </aside>
 

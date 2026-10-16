@@ -3,6 +3,7 @@
 //   npm run measure -- /compliance
 //   npm run measure -- /compliance --as testgamma@example.com --click Conversations --click "What did I"
 //   npm run measure -- /audits --width 1440 --height 1180 --shot /tmp/audits.png
+//   npm run measure -- /calendar --print --shot shots/calendar-print.png
 //
 // *** MEASURE RATHER THAN LOOK. *** `DESIGN.md` §6 item 10. Two edges that differ by 24px look the
 // same in a screenshot and are not the same; this prints the numbers. Written after Task 1 found
@@ -68,6 +69,12 @@ let path = '/compliance', email = 'testcascade@example.com', width = 1280, shot 
 // fold. `docs/calendar-boards.html` draws board 4 at 900 and board 5 at 1180, and a month grid
 // whose last week is missing from the picture cannot be compared with the board it copies.
 let height = 900
+// *** --print: PHOTOGRAPH THE PAGE AS PAPER SEES IT — Calendar step 8b. ***
+// `.no-print`, `.print-only` and `hidden print:block` only mean anything inside `@media print`, so
+// a screen screenshot cannot show what a printed page looks like — and the Calendar's month view
+// deliberately prints as the LIST. `Emulation.setEmulatedMedia` switches the media type for the
+// capture, which is the only honest way to check a print rule without a printer.
+let printMedia = false
 let base = 'http://localhost:3000', allow = null, logFilter = null
 const clicks = [], scrolls = []
 for (let i = 0; i < argv.length; i++) {
@@ -75,6 +82,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a === '--as') email = argv[++i]
   else if (a === '--width') width = Number(argv[++i])
   else if (a === '--height') height = Number(argv[++i])
+  else if (a === '--print') printMedia = true
   else if (a === '--shot') shot = argv[++i]
   else if (a === '--click') clicks.push(argv[++i])
   else if (a === '--wait') waitMs = Number(argv[++i])
@@ -113,6 +121,13 @@ const cdp = (ws, method, params = {}) => new Promise((res, rej) => {
   ws.addEventListener('message', on); ws.send(JSON.stringify({ id, method, params }))
 })
 
+// *** THE DRAWER MEASURED IS THE VISIBLE ONE — Calendar step 8b. ***
+// `document.querySelector('aside.print-drawer')` takes the FIRST in the document, and since step 8b
+// a page can hold two: the Calendar's date drawer, hidden, with a document's or an audit's report
+// over it (the shape `app/audits/page.tsx` has had since Run 4a). The first one then measures
+// 0–0 (0) and prints the wrong footer — a measurement that is not of the thing on the screen.
+// `components/Drawer.tsx` `visibleDrawer()` already solves this for printing, the same way.
+const VISIBLE_DRAWER = "(() => { const a = [...document.querySelectorAll('aside.print-drawer')].filter((d) => d.getClientRects().length > 0); return a[a.length - 1] ?? null })()"
 // ---- the block. Paid routes: anything that can reach a model. Writes: anything that can change a row.
 const PAID = /\/api\/(chat|document-scan|document-rescan|checklists|checklist-items|document-actions|switches\/answer)|\/summarise\b/
 const allowed = []
@@ -209,7 +224,7 @@ try {
       const visible = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 }
       const cands = [...document.querySelectorAll('button, a, [role=button], .group.-mx-3')].filter(visible)
       // Inside an open drawer first: a drawer's own button beats a row under the scrim.
-      const drawer = document.querySelector('aside.print-drawer')
+      const drawer = ${VISIBLE_DRAWER}
       const order = drawer ? [...cands.filter((e) => drawer.contains(e)), ...cands.filter((e) => !drawer.contains(e))] : cands
       // The INNERMOST match: a workspace row's handler is on the button inside it, a Documents
       // row's on the row itself. Clicking the outer one of the pair does nothing on the first.
@@ -246,7 +261,7 @@ try {
     const footer = document.querySelector('main > footer')
     const footerBox = footer ? footer.firstElementChild : null
     const footerText = footer ? footer.querySelector('p') : null
-    const d = document.querySelector('aside.print-drawer')
+    const d = ${VISIBLE_DRAWER}
     let drawer = null
     if (d) {
       const fs = (e) => e ? getComputedStyle(e).fontSize : null
@@ -387,6 +402,11 @@ try {
   if (allowed.length) console.log(`  let through (--allow ${allow}): ${allowed.join(' · ')}`)
   if (logFilter) { console.log(`  requests matching "${logFilter}": ${seen.length}`); for (const r of seen) console.log(`    ${r.slice(0, 220)}`) }
 
+  if (printMedia) {
+    await cdp(ws, 'Emulation.setEmulatedMedia', { media: 'print' })
+    await new Promise((r) => setTimeout(r, 400))
+    console.log('  media            print (emulated for the capture)')
+  }
   if (shot) {
     const s = await cdp(ws, 'Page.captureScreenshot', { format: 'png' })
     writeFileSync(shot, Buffer.from(s.data, 'base64'))

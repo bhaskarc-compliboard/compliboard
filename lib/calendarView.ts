@@ -203,6 +203,8 @@ export const DOCUMENT_GONE =
   'The document this date was read from has been deleted. The date stays until you remove it.'
 /** Decision 24, through the view: the site the document sat on is not there any more. */
 export const SITE_REMOVED = 'Site removed — choose where it applies'
+/** The same state as one line in a list of choices: HR's own group label (`lib/handbooks.ts`). */
+export const SITE_REMOVED_SHORT = 'Site removed'
 /** A company-wide date. `entity_id` null is a real value, not a gap. */
 export const EVERY_SITE = 'Every site'
 /** The list's last group — the owner's words, step 8a. */
@@ -364,6 +366,91 @@ export function resolveLink(
   if (findingId) return rows.find((r) => r.audit_finding_id === findingId) ?? null
   return null
 }
+
+/**
+ * WHAT THE SAME DOCUMENT ASKS BEFORE THIS DATE — board 6's third section, built at step 8b.
+ *
+ * *** IT IS THE DOCUMENT'S OTHER DATES, BECAUSE NOTHING ELSE IN THE DOCUMENT FAMILY HAS A DAY. ***
+ * The board's example is a dated CONDITION — "Condition 19 asks for the renewal application by
+ * 16 September 2026". `document_conditions` carries `title`, `condition_ref`, `evidence_expected`
+ * and `ordinal`, and **no date**; `document_gaps` carries `locator`, `quote`, `fix` and **no date**
+ * either (both read from `lib/database.types.ts`). The only dated thing a document produces is a
+ * `document_deadlines` row, which IS a calendar row. So "before this date" can only honestly mean
+ * the same document's other live dates that fall earlier — which is real, and is what a person
+ * opening a permit's expiry wants to see: the things that must happen first.
+ *
+ * A date with no day cannot be "before" anything, and neither can anything when THIS date has no
+ * day: both cases put every sibling in `others`, and the page omits the empty section.
+ */
+export function splitSiblings(
+  open: Pick<CalendarRow, 'next_due'>, siblings: CalendarRow[],
+): { before: CalendarRow[]; others: CalendarRow[] } {
+  const mine = dayOf(open.next_due)
+  if (!mine) return { before: [], others: siblings }
+  const before: CalendarRow[] = []
+  const others: CalendarRow[] = []
+  for (const s of siblings) {
+    const d = dayOf(s.next_due)
+    ;(d && d < mine ? before : others).push(s)
+  }
+  const bySoonest = (a: CalendarRow, b: CalendarRow) => dayOf(a.next_due).localeCompare(dayOf(b.next_due))
+  return { before: before.sort(bySoonest), others }
+}
+
+/**
+ * WHAT IS WRONG WITH A TYPED DATE, OR NULL — board 9's two refusals, as a function so they are
+ * tested rather than asserted about markup.
+ *
+ * The two rules are the database's own, asked here so a person reads a sentence instead of a
+ * constraint error: a title, because a date with no name is a row nobody can act on; and a day,
+ * but **only when the date happens once** — migration 060's rule, carried into 073's
+ * `calendar_events_date_or_recurs`. A repeating date with no day is a real, honest state
+ * (decision 23) and the calendar shows it in the strip above the grid.
+ */
+export const NEED_A_TITLE = 'Please say what this date is.'
+export const NEED_A_DAY = 'A date that happens once needs a day. Give one, or say that it repeats.'
+
+export function addDateProblem(
+  draft: { title: string; when: string; recurs: boolean },
+): string | null {
+  if (!draft.title.trim()) return NEED_A_TITLE
+  if (!draft.recurs && !dayOf(draft.when)) return NEED_A_DAY
+  return null
+}
+
+/** Board 6's heading for that section. */
+export const ASKS_BEFORE = (n: number) => `What this document asks before then · ${n}`
+
+/**
+ * WHICH SITE A ROW BELONGS TO, for the info bar's filter — the site's id, or 'every' for a
+ * company-wide date, or 'removed' when the row names a site the company no longer has. The same
+ * three buckets HR's `handbookList` uses (`lib/handbooks.ts` `groupKey`), for the same reason: a
+ * removed site is a real state and must not be filed under "Every site".
+ */
+export const siteKeyOf = (r: Pick<CalendarRow, 'site_id' | 'entity_id' | 'site_name'>): string => {
+  if (r.site_name) return String(r.site_id ?? r.entity_id)
+  return r.site_id || r.entity_id ? 'removed' : 'every'
+}
+
+/** The filter's choices, in HR's order: Every site, then each site by name, then Site removed. */
+export function siteChoices(
+  rows: CalendarRow[], sites: Array<{ id: string; name: string }>,
+): Array<{ key: string; label: string }> {
+  const present = new Set(rows.map(siteKeyOf))
+  const out = [{ key: 'all', label: 'Every site' }]
+  for (const s of [...sites].sort((a, b) => a.name.localeCompare(b.name))) {
+    if (present.has(s.id)) out.push({ key: s.id, label: s.name })
+  }
+  // "Every site" as a VALUE (entity_id null) is a different thing from the filter's "all", and it
+  // is only offered when some row actually is company-wide.
+  if (present.has('every')) out.splice(1, 0, { key: 'every', label: 'Company-wide' })
+  if (present.has('removed')) out.push({ key: 'removed', label: SITE_REMOVED_SHORT })
+  return out
+}
+
+/** The rows one choice of that filter shows. 'all' is every row — the filter is off. */
+export const filterBySite = (rows: CalendarRow[], key: string): CalendarRow[] =>
+  key === 'all' ? rows : rows.filter((r) => siteKeyOf(r) === key)
 
 /** "2026-11" a month either side. */
 export function shiftMonth(key: string, by: number): string {

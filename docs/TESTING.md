@@ -3930,3 +3930,65 @@ A repeating date with no day, or one whose period was never read, has no square 
 3. **If a read fails**, the tab must say *"We could not load your dates just now. Nothing has
    changed — please try again."* and **never "No dates yet"** — an empty calendar is a claim about
    the customer's compliance. *(This one shipped wrong once during step 8a's own screenshots.)*
+
+---
+
+## Calendar — step 8b, the report tab, Add a date, printing (16 October 2026)
+
+**On staging only.** `docs/CALENDAR-PLAN.md` step 8b; boards 6 and 9. **Part 3, "Send to your
+calendar" (board 11), is not built** — it is at STOP 1 — so there is nothing to check for it.
+Every check here is free. **Test Gamma Solvents** has one site; **Test Alpha Chemical** now has two
+sites and three typed dates, which is the only way to see the site rules.
+
+### C8b-1 · The second tab is the real report — the perfect case
+
+1. Open a date that came from a document, press **The report**.
+2. **Pass:** the Documents report, exactly as Company Documents shows it, with its own footer live —
+   Open the file, Read it again, Download, Delete this file. The two tabs stay at the top and
+   **The date** goes back. **Fail:** a summary of the report, a copy of it, or a dead end with only
+   Close.
+3. Press **Open the file**: a tab opens on the document itself.
+4. Open a date that came from an **audit**: the tab reads **The audit** and opens that run's report,
+   with Audit again, Make a checklist, Print, Download the documents. From there, open a document —
+   it must offer "← Back to the audit".
+5. Open a **typed** date: there is **no second tab at all**, not a greyed one.
+
+### C8b-2 · What this document asks before then (free)
+
+1. Open a date whose document sets more than one, with at least one of them earlier.
+2. **Pass:** a section above "Other dates this document sets", listing only the earlier ones,
+   soonest first, each one a link that swaps the drawer. **Fail:** the same date in both sections,
+   or a later date in the "before" one.
+3. Open a date with no day: there is no "before" section, because nothing can be before it.
+
+### C8b-3 · Add a date — the edge cases first (free)
+
+1. Press **+ Add a date**. The sheet is board 9: what is it, when, repeats, a note — and **Site only
+   if the company has more than one**.
+2. Press **Save** with nothing typed. **Pass:** *"Please say what this date is."*, in the sheet.
+   **Fail:** a browser alert, or a saved row.
+3. Type a title, leave **When** empty, leave Repeats on **No**. **Pass:** *"A date that happens once
+   needs a day. Give one, or say that it repeats."*
+4. Now press **Every year** and Save with no day at all. **Pass:** it saves; the sheet closes; the
+   drawer opens on it; it is in the **"Repeating, day not read yet"** strip and in the list's last
+   group. That is migration 060's rule and decision 23's state, not a bug.
+5. The new date is **confirmed**, by you, at once — it never appears in Dates to confirm.
+
+### C8b-4 · The site filter, and the one-site rule (free)
+
+1. As **Test Alpha** (two sites): the info bar has a site picker — Every site, Company-wide, and
+   each site by name. Pick one. **Pass:** the month, the list and the info bar's own numbers narrow.
+   **Fail:** the **tab counts or the sidebar badge** move — those are the company's totals, and the
+   badge is read on pages where no filter exists.
+2. As **Test Gamma** (one site): there is **no picker at all**, and no row mentions a site.
+
+### C8b-5 · Printing (free)
+
+1. On the Calendar tab, in **Month** view, press **Print** (or the browser's print preview).
+2. **Pass:** the printed page is the **list** — grouped by month, every date with where it came
+   from, the undated group at the foot — with the company and page numbers in the margins and the
+   disclaimer at the end. **Fail:** the month grid on paper, the tab row, the info bar, or the
+   **navigation sidebar** down the left edge. *(That last one was true of every page in the product
+   until step 8b.)*
+3. Check one other printed page while you are there — HR's conversation, or a report drawer — and
+   confirm the sidebar is gone from those too.

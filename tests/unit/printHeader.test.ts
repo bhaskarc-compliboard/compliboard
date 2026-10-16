@@ -10,6 +10,10 @@ import { readFileSync } from 'node:fs'
 test('the header carries no-print, and no-print is hidden in print only', () => {
   const layout = readFileSync('components/AppLayout.tsx', 'utf8')
   assert.match(layout, /<header className="no-print [^"]*sticky top-0/)
+  // *** AND SO DOES THE NAV — Calendar step 8b. *** It did not, so every printed page in the
+  // product carried the whole sidebar down its left edge; found by emulating print media for a
+  // screenshot (`npm run measure -- --print`) rather than by reading the markup.
+  assert.match(layout, /<aside className="no-print hidden lg:flex/)
   const css = readFileSync('app/globals.css', 'utf8')
   assert.match(css, /@media print \{\s*\.no-print \{ display: none !important; \}/)
   // Outside @media print nothing hides .no-print, so on screen the header is as it was.

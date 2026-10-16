@@ -15,6 +15,8 @@ import {
   monthGrid, openingMonth, shiftMonth, hasNoDay, resolveLink, googleCalendarUrl, outlookCalendarUrl,
   PERIOD_LABEL, PERIOD_CHOICES, WEEKDAYS, PER_DAY, MORE_WORD, NOT_CONFIRMED, EVERY_SITE, SITE_REMOVED,
   UNDATED_GROUP, UNDATED_STRIP, NOT_ON_CALENDAR, PERIOD_NOT_READ, ALREADY_HANDLED, COULD_NOT_LOAD,
+  splitSiblings, ASKS_BEFORE, siteKeyOf, siteChoices, filterBySite, addDateProblem,
+  NEED_A_TITLE, NEED_A_DAY,
   type CalendarRow,
 } from '../../lib/calendarView.ts'
 
@@ -338,9 +340,10 @@ describe('sending one date to a personal calendar — the old page\'s two URLs, 
 })
 
 describe('the drawer says what it does not know, and what it cannot do yet', () => {
-  test('the second tab is drawn, disabled, and names its step', () => {
+  test('the second tab opens the real report (step 8b replaced 8a\'s placeholder)', () => {
     assert.match(DRAWER, /The report/)
-    assert.match(DRAWER, /Arrives with step 8b/)
+    assert.ok(!DRAWER.includes('Arrives with step 8b'))
+    assert.match(DRAWER, /onClick=\{onOpenReport\}/)
   })
   test('decision 27\'s line ends the first tab', () => {
     assert.equal(ALREADY_HANDLED,
@@ -349,7 +352,7 @@ describe('the drawer says what it does not know, and what it cannot do yet', () 
   })
   test('decision 14: a newer version, and a document that is gone', () => {
     assert.ok(DRAWER.includes('NEWER_VERSION') && DRAWER.includes('DOCUMENT_GONE'))
-    assert.match(PAGE, /\.eq\('version_of', openDocId\)/)
+    assert.match(PAGE, /\.eq\('version_of', openDocFor\)/)
   })
   test('WHERE IT CAME FROM IS DECIDED BY `source`, not by which id is set', () => {
     /**
@@ -382,5 +385,165 @@ describe('the drawer says what it does not know, and what it cannot do yet', () 
     assert.match(DRAWER, /Remove this date\?/)
     assert.match(DRAWER, /Why\? Optional, one line\./)
     assert.match(DRAWER, /<button autoFocus onClick=\{\(\) => setRemoving\(false\)\}/)
+  })
+})
+
+
+// =================================================================================================
+// STEP 8b — the report tab, Add a date, the site filter, printing
+// =================================================================================================
+
+const SHEET = readFileSync('components/AddDateSheet.tsx', 'utf8')
+
+describe('what the same document asks BEFORE this date — board 6', () => {
+  const mine = { next_due: '2026-11-15' }
+  const rows = [
+    row({ id: 'early', next_due: '2026-09-16' }),
+    row({ id: 'later', next_due: '2027-03-01' }),
+    row({ id: 'noday', recurs: true }),
+    row({ id: 'same', next_due: '2026-11-15' }),
+  ]
+  test('earlier dates split out, soonest first; everything else stays', () => {
+    const { before, others } = splitSiblings(mine, rows)
+    assert.deepEqual(before.map((r) => r.id), ['early'])
+    assert.deepEqual(others.map((r) => r.id), ['later', 'noday', 'same'])
+    assert.equal(ASKS_BEFORE(1), 'What this document asks before then · 1')
+  })
+  test('a date with no day cannot be "before" anything, and nor can anything when THIS date has none', () => {
+    assert.deepEqual(splitSiblings({ next_due: null }, rows).before, [])
+    assert.deepEqual(splitSiblings({ next_due: null }, rows).others.map((r) => r.id),
+      ['early', 'later', 'noday', 'same'])
+  })
+  test('the same day is not "before" it', () => {
+    assert.deepEqual(splitSiblings(mine, [row({ id: 'same', next_due: '2026-11-15' })]).before, [])
+  })
+  test('IT IS THE DOCUMENT\'S OTHER DATES, because nothing else in the family has a day', () => {
+    // `document_conditions` has title / condition_ref / evidence_expected / ordinal and no date;
+    // `document_gaps` has locator / quote / fix and no date. Read from the generated types, so this
+    // fails the day either gains one — which is the day the board's literal version becomes possible.
+    const types = readFileSync('lib/database.types.ts', 'utf8')
+    for (const t of ['document_conditions', 'document_gaps']) {
+      const at = types.indexOf(`      ${t}: {`)
+      assert.ok(at > 0, `${t} must exist`)
+      const block = types.slice(at, types.indexOf('Insert:', at))
+      assert.ok(!/\b(due_on|due_date|due_by)\b/.test(block), `${t} must still carry no date`)
+    }
+  })
+})
+
+describe('the drawer\'s second tab', () => {
+  test('it is the PAGE that mounts the report, because the report brings its own drawer', () => {
+    for (const f of ['components/DocumentReport.tsx', 'components/AuditReport.tsx']) {
+      assert.match(readFileSync(f, 'utf8'), /<Drawer\b/, `${f} renders its own Drawer`)
+    }
+    assert.match(DRAWER, /onOpenReport: \(\(\) => void\) \| null/)
+    assert.match(PAGE, /<DocumentReport documentId=\{report\.id\}/)
+    assert.match(PAGE, /<AuditReport runId=\{report\.id\}/)
+  })
+  test('the date\'s drawer is hidden under it, as Audits hides the audit under a document', () => {
+    assert.match(PAGE, /className=\{report \|\| openDocId \? 'hidden' : ''\}/)
+    assert.match(readFileSync('app/audits/page.tsx', 'utf8'), /className=\{openDoc \? 'hidden' : ''\}/)
+  })
+  test('the tab row travels with the report, so "The date" is still one click', () => {
+    assert.match(PAGE, /topLine=\{<ReportTabs onBack=\{\(\) => setReport\(null\)\} second=/)
+    assert.match(PAGE, /function ReportTabs/)
+  })
+  test('a date with no report HIDES the tab rather than disabling it', () => {
+    // There is nothing to arrive later for a typed date, and a greyed tab promises something.
+    assert.match(DRAWER, /\{onOpenReport && \(/)
+    assert.ok(!DRAWER.includes('Arrives with step 8b'), "8a's placeholder is gone")
+    assert.match(PAGE, /: open\.document_id\s*\n\s*\? \(\) => setReport\(\{ kind: 'document'/)
+  })
+  test('AuditReport gained topLine additively, and Audits passes none', () => {
+    const audit = readFileSync('components/AuditReport.tsx', 'utf8')
+    assert.match(audit, /topLine\?: React\.ReactNode/)
+    assert.equal((audit.match(/topLine=\{topLine\}/g) ?? []).length, 2,
+      "both of the report's own drawers take it")
+    // Scoped to the element itself: a looser search matched `topLine` further down the file,
+    // on the DocumentReport that Audits DOES pass one to — a false positive of my own making.
+    const audits = readFileSync('app/audits/page.tsx', 'utf8')
+    const at = audits.indexOf('<AuditReport')
+    assert.ok(at > 0, 'Audits must still mount it')
+    assert.ok(!audits.slice(at, audits.indexOf('/>', at)).includes('topLine'),
+      'Audits must still pass none, so what it draws is unchanged')
+  })
+})
+
+describe('Add a date — board 9', () => {
+  test('a date with no name is refused', () => {
+    assert.equal(addDateProblem({ title: '', when: '2026-11-30', recurs: false }), NEED_A_TITLE)
+    assert.equal(addDateProblem({ title: '   ', when: '2026-11-30', recurs: false }), NEED_A_TITLE)
+  })
+  test('a ONE-OFF with no day is refused, in the database\'s own words', () => {
+    assert.equal(addDateProblem({ title: 'Tier II', when: '', recurs: false }), NEED_A_DAY)
+    assert.equal(addDateProblem({ title: 'Tier II', when: 'not a date', recurs: false }), NEED_A_DAY)
+    assert.match(NEED_A_DAY, /happens once needs a day/)
+  })
+  test('A REPEATING DATE WITH NO DAY SAVES — migration 060\'s rule, decision 23\'s state', () => {
+    assert.equal(addDateProblem({ title: 'Respirator fit testing', when: '', recurs: true }), null)
+    assert.equal(addDateProblem({ title: 'Tier II', when: '2026-11-30', recurs: false }), null)
+  })
+  test('the refusals are sentences in the sheet, never a browser alert', () => {
+    const code = SHEET.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    assert.ok(!/\balert\(|confirm\(|prompt\(/.test(code), 'no browser dialog')
+    assert.match(code, /setError\(problem\)/)
+  })
+  test('it posts to the one route and names no status — proposeDate decides that', () => {
+    const code = SHEET.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    assert.match(code, /fetch\('\/api\/calendar', \{\s*\n?\s*method: 'POST'/)
+    assert.ok(!/status:|source:/.test(code), 'the sheet names neither status nor source')
+    assert.ok(!/\.from\('calendar_events'\)/.test(code))
+  })
+  test('the site is offered only when there is more than one', () => {
+    assert.match(SHEET, /\{sites\.length > 1 && \(/)
+  })
+})
+
+describe('the site filter — decision 24', () => {
+  const sites = [{ id: 's2', name: 'Vancouver warehouse' }, { id: 's1', name: 'Portland plant' }]
+  const rows = [
+    row({ id: 'a', site_id: 's1', entity_id: 's1', site_name: 'Portland plant' }),
+    row({ id: 'b', site_id: 's2', entity_id: 's2', site_name: 'Vancouver warehouse' }),
+    row({ id: 'c' }),
+    row({ id: 'd', site_id: 'gone', entity_id: 'gone', site_name: null }),
+  ]
+  test('each row falls in exactly one bucket, and a removed site is its own', () => {
+    assert.deepEqual(rows.map(siteKeyOf), ['s1', 's2', 'every', 'removed'])
+  })
+  test('the choices are HR\'s order, and only what is actually there', () => {
+    assert.deepEqual(siteChoices(rows, sites).map((c) => c.label),
+      ['Every site', 'Company-wide', 'Portland plant', 'Vancouver warehouse', 'Site removed'])
+    // The filter says "Site removed"; the DRAWER says the full sentence, because there it is an
+    // instruction and here it is a choice in a list.
+    assert.equal(SITE_REMOVED, 'Site removed — choose where it applies')
+    assert.deepEqual(siteChoices([rows[0]], sites).map((c) => c.key), ['all', 's1'])
+  })
+  test('filtering narrows the rows; "all" is the filter off', () => {
+    assert.deepEqual(filterBySite(rows, 's1').map((r) => r.id), ['a'])
+    assert.deepEqual(filterBySite(rows, 'every').map((r) => r.id), ['c'])
+    assert.deepEqual(filterBySite(rows, 'removed').map((r) => r.id), ['d'])
+    assert.equal(filterBySite(rows, 'all').length, 4)
+  })
+  test('THE TAB COUNTS AND THE SIDEBAR BADGE DO NOT FOLLOW IT', () => {
+    // They are the section's totals, and the badge is read on every page where no filter exists.
+    // A badge that followed a filter would disagree with the page the moment a site was picked.
+    assert.match(PAGE, /const shownRows = filterBySite\(rows, siteFilter\)/)
+    assert.match(PAGE, /label: `Calendar\$\{loaded && counts\.dates > 0/)
+    assert.ok(!/counts\.dates = |setCounts\(.*shownRows/.test(PAGE))
+  })
+  test('the filter is never drawn for a company with one site', () => {
+    assert.match(PAGE, /\{sites\.length > 1 && \(<>/)
+  })
+})
+
+describe('printing — the month prints as the list', () => {
+  test('the grid and its legend are no-print; the list is drawn under them for paper', () => {
+    assert.match(PAGE, /className="no-print mt-3 grid grid-cols-7/)
+    assert.match(PAGE, /<div className="hidden print:block">\{listBody\}<\/div>/)
+  })
+  test('it prints through the shared frame, as HR prints a conversation', () => {
+    assert.match(PAGE, /printWithFrame\(\{ company: companyName \?\? '', type: 'Calendar' \}\)/)
+    assert.match(readFileSync('app/hr/HrWorkspace.tsx', 'utf8'),
+      /printWithFrame\(\{ company: companyName \?\? '', type: 'Conversation' \}\)/)
   })
 })
