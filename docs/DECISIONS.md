@@ -13665,3 +13665,81 @@ The conversation drawer has no Delete and no facts line: deleting a conversation
 workspace's sheet and the facts line is its count, and neither was in this brief. HR is still not
 switched over to the engine (decision 28, after the release).
 
+## 197. CALENDAR STEP 11: THE ONE EMAIL TEMPLATE AND THE MONTHLY EMAIL — 16 October 2026
+
+**Branch `calendar-v2`, staging only, built to STOP 1. Board 10; decisions 18, 24 and 25.
+Migration 077 is WRITTEN AND NOT APPLIED, and **nothing has been sent to anybody**. Cost: $0.00 —
+no model is called anywhere in this step.**
+
+### The template (decision 25)
+
+`lib/email.ts` renders any product email from one shape — `{ title, lede, sections, button,
+footer }` — into **HTML and its plain-text twin, from the same object**. A text version written by
+a second author is how an email ends up with a link in one half and not the other; a test asserts
+every row, heading, footer line and href appears in both, and that the text half carries no markup
+at all.
+
+HTML email is not HTML: inline styles only, tables for layout, no stylesheet, no class attribute,
+600px. Board 10's colours are written out by hand because the board's own CSS cannot travel, and
+the wordmark is TEXT — an image is what a mail client blocks by default, and a product whose name
+only appears after "show images" looks like spam.
+
+**The three existing emails are not moved**, as decision 25's follow-up says; their files are
+untouched in this step, and §7 carries the move as owed.
+
+### The Calendar's email is pure data
+
+`lib/calendarEmail.ts` is a function from rows to the shape: no database, no clock, no Resend. The
+job reads `calendar_v` and hands the rows over, so **what the email says is readable in a test**
+rather than only in an inbox — which is the thing the three existing emails cannot do.
+
+Three rulings, closing the plan's open questions 2, 3 and 4:
+
+- **An empty month still sends, short** — "Nothing is due in November." The reassurance is the
+  service: an email that arrives only when something is wrong teaches people to dread it, and
+  silence is indistinguishable from a product that has stopped working.
+- **The first 7 days of the next month are shown**, in their own section, so a 2 November date is
+  not first seen on 1 November.
+- **No confirmed or not-confirmed marks anywhere** (decision 18). A test asserts a `proposed` row
+  and a `confirmed` row render to the identical line, and that neither body contains the word.
+  Every date in the email is on the calendar and is said plainly; the footer says what to do with
+  one that is wrong.
+
+**The brief and the board disagreed about one heading, and the board won for the case it drew.**
+The brief names the section "Due in ‹Month›"; board 10 draws no such heading, because the title
+already says "Due this month at ‹Company›" and the lede says "November 2026 · 4 dates" — what it
+draws instead is one heading per SITE. So: with one site the rows carry the brief's heading, and
+with several they carry the board's site headings (decision 24 decides which, as everywhere else).
+
+### The claim comes first, and that is what migration 077 is for
+
+The job INSERTS `calendar_mailings (company_id, month)` **before it renders and before it sends**.
+The one thing that must never happen is a second email about the same month, and the UNIQUE
+(company_id, month) index is the only thing that can guarantee it: a unique violation means
+another run has this company and this month, and this run skips. Written the other way round — the
+row after a successful send — a crash between sending and writing leaves no stamp and the next run
+sends again, and "we emailed everyone twice" is not recoverable by apologising to a database.
+
+073's columns cannot express a claim: `sent_at` is `not null default now()`, so a claim would
+stamp itself as sent at the moment nothing had been sent. **Migration 077** makes it nullable with
+no default and adds `error`. A row with `sent_at` null is a claim that did not finish, which an
+operator can find; a row stamped at claim time is a lie nobody can. **A failed send keeps its
+claim** and records why — freeing it automatically would email everybody twice at the next cron.
+
+### Who "every person at the company" is
+
+`profiles` rows with that `company_id` — and **the address is not on the profile**. `profiles` has
+no email column at all; the login's address is in `auth.users`, read through the admin API, which
+is how `lib/auditNotify.ts` and `app/api/jobs/scan-documents/route.ts` already resolve a
+recipient. On staging `NOTIFY_TEST_TO` is the To field, as all three existing emails do it; the
+real list goes in the log line and onto the row, never into the To.
+
+### One thing `check:schema` caught, and it was right to
+
+`liveDates(db, cols).eq('company_id', id)` written at the call site made
+`scripts/check-schema-contracts.js` refuse a file: it attributes a chained `.eq()` to the nearest
+`.from(…)` it can see, which in the render script was `companies` — a table with no `company_id`.
+The checker cannot see through a function, and a column name in a string is exactly what it exists
+to catch. The answer is `liveDatesFor(db, companyId, columns)` in `lib/calendarCounts.ts`, where
+the `.from('calendar_v')` is two lines above the `.eq`.
+

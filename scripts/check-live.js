@@ -1815,6 +1815,69 @@ if (failures > 0) {
 // summary line that said otherwise would be the check describing a test it did not run.
 const writable = CASES.filter((c) => !c.reads_only).length
 const readable = CASES.length - writable
+// ===========================================================================================
+// THE MONTHLY EMAIL'S IDEMPOTENCE — Calendar step 11.
+//
+// *** THE ONE THING THAT MUST NEVER HAPPEN IS A SECOND EMAIL ABOUT THE SAME MONTH. *** The job
+// claims `calendar_mailings (company_id, month)` BEFORE it renders or sends, so the unique index
+// is the arbiter. This probe proves the claim is honoured against a running route: a company with
+// a row for the month is skipped, and a company without one is rendered in the same run.
+//
+// Free, and it sends nothing: every call is `dryRun=1`, which claims nothing, writes nothing and
+// reaches no model. The one row it writes is its own probe claim, removed at the end.
+// ===========================================================================================
+if (want('calendar_month')) {
+  const say = (label, good, detail = '') => {
+    console.log(`  ${good ? '✓' : '✗'} ${'calendar month'.padEnd(26)} ${label}${detail ? ` — ${detail}` : ''}`)
+    if (!good) failures++
+  }
+  const alive = await fetch(`${BASE}/api/industries`).then((r) => r.ok).catch(() => false)
+  if (!alive) {
+    console.log(`\n  ! calendar month SKIPPED — no server at ${BASE}. The monthly email job was NOT tested.\n`)
+  } else if (!process.env.CRON_SECRET) {
+    console.log('\n  ! calendar month SKIPPED — CRON_SECRET is not set, so the job cannot be called.\n')
+  } else {
+    const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+    // A month far enough ahead that no real run has ever claimed it.
+    const month = '2099-01'
+    let claimedId = null
+    try {
+      // A refusal first: no secret, no job. The route must not even say it exists.
+      const noSecret = await fetch(`${BASE}/api/jobs/calendar-month?dryRun=1&month=${month}`, { method: 'POST' })
+      say('refused without the cron secret (404)', noSecret.status === 404, String(noSecret.status))
+
+      const { data: claim } = await admin.from('calendar_mailings')
+        .insert({ company_id: companyId, month }).select('id').maybeSingle()
+      claimedId = claim?.id ?? null
+      say('a mailing row could be written for the probe month', !!claimedId, claimedId ? 'claimed' : 'not written')
+
+      const res = await fetch(`${BASE}/api/jobs/calendar-month?dryRun=1&month=${month}`,
+        { method: 'POST', headers: { 'x-cron-secret': process.env.CRON_SECRET } })
+      const body = await res.json().catch(() => null)
+      say('the job ran and sent nothing (dry run)', res.status === 200 && body?.dry_run === true && body?.sent === 0,
+        `${res.status} sent=${body?.sent}`)
+
+      const mine = (body?.results ?? []).find((r) => r.company_id === companyId)
+      say('the claimed company is SKIPPED, by the claim', mine?.skipped === 'already sent this month',
+        mine ? String(mine.skipped ?? 'not skipped') : 'not in the results')
+
+      // A company with no row for this month is rendered in the same run — the proof that the skip
+      // above is the claim doing its job and not the whole run falling over.
+      const others = (body?.results ?? []).filter((r) => r.company_id !== companyId && !r.skipped)
+      say('and another company is still rendered', others.length > 0,
+        others.length ? `${others.length} rendered, e.g. ${others[0].company} (${others[0].dates} due)` : 'none')
+
+      // Nothing was claimed by a dry run: the table still holds only the probe's own row.
+      const { count } = await admin.from('calendar_mailings')
+        .select('id', { count: 'exact', head: true }).eq('month', month)
+      say('a dry run claims nothing', count === 1, `${count} row(s) for ${month}`)
+    } finally {
+      if (claimedId) await admin.from('calendar_mailings').delete().eq('id', claimedId)
+      await admin.from('calendar_mailings').delete().eq('month', '2099-01')
+    }
+  }
+}
+
 console.log(`  check:live: ok — ${CASES.length} tenant table(s): ${writable} writable by a signed-in `
   + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon; `
   + `and HR's ${HR_TABLES.length} tables (066), each allowing and refusing exactly its grant; `

@@ -4020,6 +4020,62 @@ sites and three typed dates, which is the only way to see the site rules.
    leave it working. *(This one shipped wrong once and is why the issuer converges.)*
 3. After a company is deleted, its link must stop answering — the token row cascades with it.
 
+## The Calendar, step 11 — the monthly email (board 10)
+
+*Added 16 October 2026, staging only. `DECISIONS.md` §197. Every one of these is free: the email
+calls no model. **Nothing is sent to a real address on staging** — `NOTIFY_TEST_TO` is the To.*
+
+### C11-1 · What the email says — the perfect case
+
+1. Render it without sending: `node --env-file=.env.local scripts/render-calendar-email.mjs
+   --company "Test Gamma Solvents" --month 2026-11 --out shots/calendar-11-email`. Open the
+   `.html` in a browser and read the `.txt` beside it.
+2. **Pass:** the wordmark, the serif title, the lede with the count, the dates soonest first with
+   where each came from, one green button, the footer. Every row, link and footer line is in BOTH
+   files. **Fail:** anything in one and not the other.
+3. **Fail, hard:** the words "confirmed", "not confirmed", "overdue", "done", "AI" or any mention
+   of cost anywhere in either file (decision 18).
+
+### C11-2 · The sections, at their edges (free)
+
+1. A date on the 1st and a date on the last day of the month are both in "Due in ‹Month›".
+2. A date on the 7th of next month is in "Early in ‹Month›"; one on the 8th is in neither.
+3. A one-off that passed last month is under "Still on your calendar from ‹Month›, passed" —
+   never "overdue". A REPEATING date whose occurrence passed is not there at all: its next one is
+   ahead.
+4. A repeating date with no day is one line at the end, linking to the Calendar tab.
+
+### C11-3 · One site or several (free)
+
+1. Render a one-site company: no site heading anywhere, and no site in any row (decision 24).
+2. Render a two-site company (Test Alpha Chemical): one heading per site, "Every site" last, and
+   a row under a site heading does not repeat the site in its own line.
+
+### C11-4 · The empty month still arrives (free)
+
+1. Render a company with nothing due (Test Beta Cannabis). **Pass:** subject "‹Company›: nothing
+   is due in November", title "Nothing is due in November.", the button still there. **Fail:** no
+   email, or an email that looks like a failure.
+
+### C11-5 · It cannot send twice (free, and this is the one that matters)
+
+1. `npm run check:live -- --only calendar_month` against a running server. Six probes:
+   refused without the cron secret; the claim written; the job runs in dryRun and sends nothing;
+   **the claimed company is skipped**; another company is still rendered in the same run; and a
+   dry run claims nothing.
+2. By hand: run the job for real, then run it again the same month. **Pass:** the second run
+   reports `skipped: already sent this month` and sends nothing. **Fail:** two emails.
+3. Read the row: `select month, sent_at, error, cardinality(sent_to) from calendar_mailings`.
+   `sent_at` set and `error` null is a send that happened; `sent_at` null with an `error` is a
+   claim that failed and **stays claimed on purpose** — clearing it is a human act.
+
+### C11-6 · The recipients (paid in attention, not money)
+
+1. On staging, `NOTIFY_TEST_TO` must be set: the To is that address and the log line says who it
+   was really for. **Fail:** a fixture company's example.com address in the To field.
+2. The job's log line and the mailing row name every person at the company — a `profiles` row
+   with that `company_id`, whose address comes from `auth.users`.
+
 ## The Calendar, step 10b — Ask a question (boards 1 and 2)
 
 *Added 16 October 2026, staging only. `DECISIONS.md` §196. Every one of these costs a model call

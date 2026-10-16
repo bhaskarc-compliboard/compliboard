@@ -5,6 +5,7 @@
     { "path": "/api/jobs/scan-documents", "schedule": "*/5 * * * *" },
     { "path": "/api/jobs/audit-sections", "schedule": "*/5 * * * *" },
     { "path": "/api/jobs/handbook-queue", "schedule": "0 10 * * *" },
-    { "path": "/api/jobs/handbook-checks", "schedule": "*/5 * * * *" }
+    { "path": "/api/jobs/handbook-checks", "schedule": "*/5 * * * *" },
+    { "path": "/api/jobs/calendar-month", "schedule": "0 14 1 * *" }
   ]
 }

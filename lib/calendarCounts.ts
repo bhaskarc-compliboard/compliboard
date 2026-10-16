@@ -52,6 +52,24 @@ export const liveDates = (db: SupabaseClient, columns: string, head = false) =>
     .in('status', LIVE_STATUSES as unknown as string[])
     .is('replaced_by', null)
 
+/**
+ * ONE COMPANY'S LIVE DATES, NAMED HERE — Calendar step 11.
+ *
+ * Every reader until now was a signed-in person, where RLS decides the company and nothing names
+ * one. The monthly email has no session: it runs as the service role for every company in turn,
+ * so it must say which. The filter is `liveDates`'s, unchanged, with one `eq` on top.
+ *
+ * *** IT IS A FUNCTION RATHER THAN A `.eq()` AT THE CALL SITE, and `npm run check:schema` is why.
+ * *** `scripts/check-schema-contracts.js` attributes a chained `.eq('company_id', …)` to the
+ * nearest `.from(…)` it can see; written at the call site, after `liveDates(...)` had returned,
+ * it was attributed to whichever table that file read last — in the render script, `companies`,
+ * which has no `company_id`, and the check refused the file. The checker was right to: it cannot
+ * see through a function, and a column name in a string is exactly what it exists to catch. Here
+ * the `.from('calendar_v')` is two lines up and it reads correctly.
+ */
+export const liveDatesFor = (db: SupabaseClient, companyId: string, columns: string) =>
+  liveDates(db, columns).eq('company_id', companyId)
+
 export interface CalendarCounts {
   /** Live rows — the Calendar tab's count. */
   dates: number
