@@ -13869,3 +13869,102 @@ export reads `select('*')`, so `withdrawn_at` and `calendar_mailings.error` trav
 rows and any future column will too; `calendar_feed_tokens` is excluded on purpose (a credential,
 not the customer's data) and all three tables are in the delete list.
 
+## 199. CALENDAR STEP 13: THE MACHINERY ON OPUS 5.5 — 16 October 2026
+
+**Branch `calendar-v2`, staging only. The owner's one-off yes to run the Calendar's paid paths on
+the production model, NOT through the Haiku guard. Five calls, $0.9109 of a $2.00 budget. No code
+changed — `git status` was empty at the end of the run.**
+
+### Which model, and how it was proved
+
+`lib/ai.ts:151`: `calendar: () => process.env.AI_MODEL_CALENDAR || TASK_MODELS.prose()`.
+`AI_MODEL_CALENDAR` is **not** on Vercel (step 14 adds it), so production's Calendar answers run on
+the prose tier — `AI_MODEL_PROSE = claude-opus-5-5` (`RELEASE.md:123`) — and the summary on
+`AI_MODEL_SUMMARY = claude-opus-5-5` (`:126`). Effort on production is `medium` (`:133`); this
+laptop runs `low`, so the run set `AI_EFFORT=medium` to match.
+
+**Proved twice over**: `npm run haiku:check` REFUSED, naming all thirteen tiers as
+`claude-opus-5-5` (the guard's refusal is the evidence that this was not a Haiku run), and every
+ledger row written by the run carries `model = claude-opus-5-5`.
+
+**One thing production will do that this run could not:** `DEV_MAX_SEARCHES=2` caps searches
+outside production, and the Calendar's path has no cap on production
+(`searchLimit('AI_SEARCH_MAX_HR', null)`). Opus hit the cap of 2 on three of the four answers, so
+**a production answer may search more and cost more than anything measured here.**
+
+### What it cost, per call
+
+| | in | out | searches | cost |
+|---|---|---|---|---|
+| Extinguisher question (through the screen) | 45,369 | 3,561 | 2 | **$0.2727** |
+| Tier II question | 31,351 | 2,466 | 2 | **$0.1947** |
+| Follow-up in the same conversation | 32,126 | 2,587 | 2 | **$0.2002** |
+| Summarise that conversation | 4,294 | 3,457 | 0 | **$0.0863** |
+| Extinguisher again, stream captured for the narration measurement | 23,718 | 2,608 | 1 | **$0.1570** |
+
+Ledger: **54 calls / $2.1397 → 59 / $3.0507**, a difference of $0.9110 against the five rows'
+$0.9109 (a rounding cent).
+
+**The estimate was wrong in one direction and the reason matters.** I predicted $0.29 and the run
+cost $0.91, because I assumed Opus would answer the extinguisher question from the calendar as
+Haiku did, with no search. It searched twice. **An answer on the production model costs 21–37×
+what the same answer cost on Haiku** ($0.157–$0.273 against $0.0073), and almost all of that is
+search input: one search adds ~12,500 input tokens, which is $0.05 before a word is written.
+
+### Haiku against Opus, the same questions
+
+| | Haiku (step 10b) | Opus 5.5 (today) |
+|---|---|---|
+| Extinguisher: length | 1,235 and 1,336 chars | **3,162 and 3,780** |
+| Extinguisher: sources kept | **0** — it named the certificate in prose and cited nothing | **6 and 4**, including the calendar rows and the document's reading as cards |
+| Tier II: length | 1,309 chars | **2,787** |
+| Tier II: web sources official | **0 of 3** (encamp.com, cloudsds.com, sdsmanager.com) | **4 of 5** (oregon.gov, oregonlegislature.gov, sos.state.or.us, epa.gov; encamp.com last) |
+| Dropped by the check | 0 links, 0 quotes | 0 links, **1 quote** (Tier II) — the check working on a model that quotes more |
+| Said where every date came from | in prose | **by card**, each date's own line quoted and linked |
+| Banned words | none | see below |
+
+**What Opus added that is worth the money, in its own words:**
+
+- *"This date is on the calendar five times, under slightly different titles."* It named the
+  title drift (§189) to the customer, unprompted.
+- *"'Before November' most naturally means by 31 October, not 30 November. I'd book the work now."*
+  Haiku read the same line and repeated the calendar's 30 November.
+- *"L-1 is a CO2 unit. The federal OSHA six-year rule is written for stored pressure dry chemical
+  extinguishers … Ask Rose City exactly what work L-1 needs and when."* — decision 30, unasked.
+- *"Oregon OSHA's rulebook marks the federal extinguisher rule as REPEALED … I haven't read the
+  text of the Oregon rule, so check that its monthly and annual timing matches."* — §3.3 and
+  decision 30 together.
+- The follow-up opened **"I can't tell you yet."** and said exactly what was missing: no
+  inventory, and the only documents read are two extinguisher certificates.
+- The summary carried **7 things to do** against Haiku's 2, each with a cited source, and an
+  "asked and not answered" line carrying the real question back: *"During 2026, did any single
+  product, blend or raw material at the Portland site that comes with a safety data sheet sit on
+  site for a full day at 500 gallons, 500 pounds or more?"*
+
+**The one word that looks like a defect and is not.** A grep for the banned words finds `done`
+twice in Opus's extinguisher answers. Read in place, both are about the WORK — *"Was the annual
+service done around August 2026?"* and *"the contractor's certificate says to get it done before
+November"* — not about a date being ticked off, which is what decision 11 bans and what the
+prompt forbids. No date is called done or overdue anywhere. Reported rather than "fixed": the
+grep is the input, the reading is the finding.
+
+### The narration rule — measured, and closed
+
+The step 10a loss was 201 characters on Haiku, 90 after the prompt gained "search before you
+write". **Re-taken on Opus by capturing the NDJSON stream line by line: zero `reset` events and
+zero characters withdrawn, across three answers and five searches.** Opus searches before it
+writes. The owner's ruling at step 10b was to leave the rule, measure at 13 and reopen only if it
+persists; it did not persist, so **§7's row is closed and nothing shared was changed**.
+
+### What this says about the release
+
+Two things for step 14, neither of them a code change today:
+
+1. **An answer costs about $0.20.** At Haiku's price the Calendar's chat was a rounding error; at
+   production's it is the most expensive thing a person can press in this product outside a
+   document scan ($0.1200 a scan, for comparison, from the same ledger). Nothing here caps it:
+   `AI_SEARCH_MAX_HR` is unset, so the Calendar's answers inherit "no limit".
+2. **`AI_MODEL_CALENDAR` is still unset on Vercel**, which means the Calendar would release onto
+   the prose tier by accident rather than by decision. Setting it explicitly at step 14 — to
+   whatever the owner chooses — is how the choice becomes visible in `RELEASE.md`.
+

@@ -4020,6 +4020,27 @@ sites and three typed dates, which is the only way to see the site rules.
    leave it working. *(This one shipped wrong once and is why the issuer converges.)*
 3. After a company is deleted, its link must stop answering — the token row cascades with it.
 
+### C13 · What the production model does differently (paid — read before running)
+
+Measured 16 October 2026 on `claude-opus-5-5` at `AI_EFFORT=medium` (`DECISIONS.md` §199). Run
+these only with the owner's say-so; each answer costs about $0.20.
+
+1. **It searches where Haiku did not.** The extinguisher question — which Haiku answered from the
+   calendar alone, for $0.0073 — cost **$0.2727** because Opus searched twice. Expect 21–37× the
+   Haiku figure per answer, almost all of it search input (~12,500 input tokens a search).
+2. **Its sources are official.** 4 of 5 web sources on the Tier II question were agency pages
+   (oregon.gov, oregonlegislature.gov, sos.state.or.us, epa.gov) where Haiku kept none. If a paid
+   answer cites only vendors and blogs, something is wrong with the search, not with the model.
+3. **It says what it does not know.** A follow-up with no inventory on file must open with
+   something like "I can't tell you yet" and name what is missing. An answer that confidently
+   decides whether you must file, from nothing, is the failure to look for.
+4. **The narration rule takes nothing from it** — zero characters withdrawn across three answers
+   and five searches. If an answer on production ever starts mid-thought, that is the rule biting
+   and `HANDOFF-CODE.md` §7 should be reopened.
+5. **A search cap is not set.** `AI_SEARCH_MAX_HR` is unset, so production's answers are
+   uncapped; the isolated server caps at 2 (`DEV_MAX_SEARCHES`), so a staging measurement is a
+   FLOOR for what production will spend, never a ceiling.
+
 ## The Calendar, step 12 — the Dashboard, and the moves a person may make
 
 *Added 16 October 2026, staging only. `DECISIONS.md` §198. Both are free.*
