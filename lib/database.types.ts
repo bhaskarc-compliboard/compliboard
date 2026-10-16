@@ -755,23 +755,26 @@ export type Database = {
       calendar_mailings: {
         Row: {
           company_id: string
+          error: string | null
           id: string
           month: string
-          sent_at: string
+          sent_at: string | null
           sent_to: string[]
         }
         Insert: {
           company_id: string
+          error?: string | null
           id?: string
           month: string
-          sent_at?: string
+          sent_at?: string | null
           sent_to?: string[]
         }
         Update: {
           company_id?: string
+          error?: string | null
           id?: string
           month?: string
-          sent_at?: string
+          sent_at?: string | null
           sent_to?: string[]
         }
         Relationships: [

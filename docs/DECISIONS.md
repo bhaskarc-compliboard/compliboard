@@ -13743,3 +13743,32 @@ The checker cannot see through a function, and a column name in a string is exac
 to catch. The answer is `liveDatesFor(db, companyId, columns)` in `lib/calendarCounts.ts`, where
 the `.from('calendar_v')` is two lines above the `.eq`.
 
+### The GO: one real send, and the second run that sent nothing — 16 October 2026
+
+Migration 077 applied to staging (`supabase_migrations.schema_migrations` → `077
+a_mailing_is_claimed_before_it_is_sent`; `sent_at` reads back nullable with no default, `error`
+exists). `NOTIFY_TEST_TO` was printed and checked against the owner's address before anything ran.
+
+**The first run** — one company, one month, from the isolated server:
+
+```
+sent 1, skipped 0, failed 0 · Test Gamma Solvents · 5 dates · 1 recipient
+job_runs   d970b7c3 · calendar_month · ok=true · 19:03:05 → 19:03:06 · errors []
+mailing    2026-11 · sent_at 2026-10-16 19:03:05.975+00 · sent_to {testgamma@example.com} · error null
+log        calendar email: Test Gamma Solvents 2026-11 — 5 date(s) due,
+           for testgamma@example.com (sent to bhaskarc@compliboard.com instead)
+```
+
+The row records **who it was for** and the To was the override — the rule all four senders follow
+on staging, with the real recipient in the log where it can be read and not in the envelope where
+it would reach a fixture address.
+
+**The second run, same company, same month:** `sent 0, skipped 1`, the one result reading
+`already sent this month`, the row untouched at the same `sent_at`, and **one** `calendar email:`
+line in the whole server log — Resend was called exactly once. The claim did it: the insert was
+refused with 23505 before anything was rendered.
+
+**`?company=<id>` was added to the job for this**, and the cron never passes it. Without it a real
+send on staging would have claimed November for every company and put five emails in the test
+inbox; with it, one company's email can also be re-sent after a failure is fixed.
+

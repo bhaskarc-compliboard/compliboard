@@ -3,6 +3,9 @@
 //   POST /api/jobs/calendar-month     (by hand, x-cron-secret) — `lib/cronSecret.ts`
 //   ?dryRun=1   render and count, send nothing, claim nothing
 //   ?month=YYYY-MM   the month to render; the current month by default
+//   ?company=<id>    ONE company instead of all of them. The cron never passes it; it is how a
+//                    real send is tested without claiming the month for every other company on
+//                    staging, and how one company's email is re-sent after a failure is fixed.
 //
 // The night-job shape (`app/api/jobs/handbook-queue/route.ts`): the cron secret first — a 404
 // without it, writing nothing — then ONE `job_runs` row opened before the work, so a crash is
@@ -57,6 +60,7 @@ export async function POST(request: NextRequest) {
 
   const dryRun = request.nextUrl.searchParams.get('dryRun') === '1'
   const month = request.nextUrl.searchParams.get('month') ?? monthKeyOf(new Date())
+  const onlyCompany = request.nextUrl.searchParams.get('company')
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
   const override = (process.env.NOTIFY_TEST_TO ?? '').trim()
 
@@ -82,8 +86,9 @@ export async function POST(request: NextRequest) {
       byCompany.get(p.company_id)!.push({ id: p.id, full_name: p.full_name })
     }
 
+    const ids = [...byCompany.keys()].filter((id) => !onlyCompany || id === onlyCompany)
     const { data: companies, error: coError } = await supabaseAdmin
-      .from('companies').select('id, name').in('id', [...byCompany.keys()])
+      .from('companies').select('id, name').in('id', ids)
     if (coError) throw new Error(`companies: ${coError.message}`)
 
     for (const co of (companies ?? []) as Array<{ id: string; name: string }>) {
@@ -180,6 +185,7 @@ export async function POST(request: NextRequest) {
   const counts = {
     month,
     dry_run: dryRun,
+    ...(onlyCompany ? { one_company: onlyCompany } : {}),
     companies: results.length,
     sent: results.filter((r) => r.sent).length,
     skipped: results.filter((r) => r.skipped).length,
