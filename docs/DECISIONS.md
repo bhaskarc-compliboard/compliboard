@@ -13772,3 +13772,100 @@ refused with 23505 before anything was rendered.
 send on staging would have claimed November for every company and put five emails in the test
 inbox; with it, one company's email can also be re-sent after a failure is fixed.
 
+## 198. CALENDAR STEP 12: RETIRING THE OLD, AND THE MOVES A PERSON MAY MAKE — 16 October 2026
+
+**Branch `calendar-v2`, staging only. Migration 078 applied. Decision 31 is the owner's, option 1.
+Cost: $0.00 — the ledger recorded no model call.**
+
+### What went
+
+`app/api/extract-dates/route.ts` and `prompts/extract-dates.ts`, with **zero callers** since step
+7 — proved by grepping `app components lib scripts tests` for a `fetch`, an `href` or an import
+and finding none; every other mention was prose. With them: `OLD_PERIOD_WORDS` and the
+`is_recurring` / `recurrence_period` branch in `POST /api/calendar`, which the route's own header
+had marked for removal since step 5, and **`GET /api/calendar`**, whose last caller was the
+Dashboard.
+
+**`CLAUDE.md` §5.1's worked example stays** — the owner's instruction, and it is right: *"No
+compliance dates found in this file. Make sure it contains deadline or expiry dates."* is the
+sentence that taught this project what an honest empty state is. The route it came from is gone;
+the lesson is not a comment on a route.
+
+### The Dashboard reads what the Calendar reads
+
+It fetched the base table and decided for itself what was due, in the browser. Measured on
+staging before the change:
+
+- **It showed dates a person had removed.** Test Gamma: 7 rows where 5 are live, two of them
+  dismissed in step 9's own walk.
+- **It asserted days the Calendar refuses to compute.** Cascade: 4 where 1 is due; all three
+  extras were repeating dates whose period was never read, whose `next_due` is NULL by design
+  (decision 23) and whose raw anchor the Dashboard announced as "in 15 days".
+- **A DATE compared with the browser's clock** slips a day west of UTC.
+
+Now it reads `calendar_v` through `liveDates` — the one filter — and uses `next_due`,
+`days_until` and `has_passed` as the view computed them. An unconfirmed date is marked in the
+page's own words, each row opens the date, and a read that failed says so instead of drawing "No
+deadlines in the next 30 days" over dates that exist (§5.1).
+
+**And the screenshot caught a bug a test did not.** The first version selected
+`CALENDAR_COUNT_COLUMNS + ', title'` and filtered on `days_until`, which was not in that list:
+`undefined >= 0` is false, so every row was dropped and the page said there were none. Visible
+only by looking at it.
+
+### Migration 078 — a person may only make the moves the product offers
+
+`authenticated` held a column-blind UPDATE: the policy checked tenancy and nothing else, so a
+caller going straight to PostgREST could set `status = 'withdrawn'` (the date vanishes from every
+reader at once, while the product says only a READING withdraws a date), stamp or clear
+`withdrawn_at`, or **rewrite `source_line` — the sentence the product quotes as the document's own
+words**, which is the evidence chain every screen rests on.
+
+Two halves, one migration:
+
+- **A column grant.** A person may write `status, confirmed_by, confirmed_at, dismissed_by,
+  dismissed_at, dismissed_reason, period, withdrawn_at, replaced_by, description, entity_id` and
+  nothing else. `replaced_by` is in the list on purpose: `proposeDate` supersedes a moved date and
+  that call runs as the person.
+- **A trigger for what a grant cannot say.** `calendar_person_move_refusal(old_status, new_status,
+  old_withdrawn, new_withdrawn)` is a pure SQL function returning NULL or the sentence to refuse
+  with, so **the migration proves every case of it without a login**; the trigger is one line of
+  gate, `current_user = 'authenticated'`, and the service role is untouched. The rule: the seven
+  moves the routes make are allowed; nothing may move TO `withdrawn`; nothing may move FROM
+  `dismissed` (rule b, now in the database and not only in the route); the stamp may never be set
+  by a person and may be cleared **only alongside `confirmed` or `dismissed`** — which is exactly
+  what `confirmDate` and `dismissDate` do (the owner's ruling).
+
+**Rejected: moving the PATCH writes to the service role.** It works, and it would replace an
+RLS-enforced tenancy — a row of another company is simply absent, so the answer is 404 — with one
+written in code, in the place this product is strongest.
+
+**The gate is proved where it lives**, by seven `check:live` probes as a real signed-in person:
+`withdrawn` refused 23514, the stamp refused 23514, `source_line` refused 42501 with the stored
+line unchanged, proposed→confirmed and confirmed→dismissed still working, a dismissal final, and
+a reading still able to withdraw.
+
+### Decision 31 (the owner): an audit date on the same document and day attaches to it
+
+The key is the **document and the day, deliberately not the title** — the title is what drifts
+(§189), and on staging one obligation had five live rows on 30 November because an audit and a
+document scan described it differently. From now on the audit records its finding on the
+document's own row and returns `existing`.
+
+**Option 1, the owner's choice: the rule only, no reconciliation.** It runs after the
+audit-sibling lookup, so a re-run of an agency still matches its own earlier row and existing
+pairs are left exactly as they are; collapsing a row that is already on screen would change the
+identity of something conversations, emails and links already point at. It runs BEFORE the
+withdrawn-audit revival, or reviving would rebuild the very pair the rule prevents.
+
+### The small ones
+
+**A date from a rule now carries the same sentence the answer card shows** — *"This comes from
+encamp.com, not the agency itself…"* — from `lib/howTo.ts`'s own `labelFor`, `hostOf` and
+`OTHER_SOURCE_LINE`. A test asserts the drawer writes no second list of official hosts.
+
+**The account export and delete need no change, and that was read rather than assumed.** The
+export reads `select('*')`, so `withdrawn_at` and `calendar_mailings.error` travel with their
+rows and any future column will too; `calendar_feed_tokens` is excluded on purpose (a credential,
+not the customer's data) and all three tables are in the delete list.
+

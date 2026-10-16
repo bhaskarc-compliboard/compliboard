@@ -418,6 +418,72 @@ const CAL_TABLES = ['calendar_events', 'calendar_mailings', 'calendar_feed_token
     ok(`${'calendar_events'.padEnd(26)} authenticated can update its own row`,
       !updErr && upd?.status === 'dismissed', updErr ? `${updErr.code} ${updErr.message}` : '')
 
+    /**
+     * *** THE MOVES A PERSON MAY MAKE — migration 078, Calendar step 12. ***
+     *
+     * The migration proves the RULE (a pure function of the old and new status and stamp); it
+     * cannot prove the GATE, because becoming `authenticated` inside a migration would also have
+     * to satisfy `auth_company_id()`, which needs a real login. **This is that half**: a real
+     * signed-in person, against the real policy, trigger and column grants.
+     *
+     * Before 078 every one of these succeeded.
+     */
+    {
+      const { data: probe } = await admin.from('calendar_events')
+        .insert({ company_id: companyId, title: `078 probe ${stamp}`, due_date: '2027-07-07',
+                  source: 'document', status: 'proposed', source_line: 'The permittee shall submit the report by 7 July.' })
+        .select('id, status, source_line').maybeSingle()
+      if (!probe) {
+        ok(`${'calendar_events'.padEnd(26)} 078: a probe row could be written`, false, 'not written')
+      } else {
+        // 1. A PERSON CANNOT WITHDRAW A DATE. Only a reading does (decision 29).
+        const { error: wErr } = await asUser.from('calendar_events')
+          .update({ status: 'withdrawn' }).eq('id', probe.id)
+        ok(`${'calendar_events'.padEnd(26)} 078: a person cannot set status 'withdrawn'`,
+          !!wErr, wErr ? `${wErr.code} ${String(wErr.message).slice(0, 48)}` : 'ALLOWED')
+
+        // 2. NOR STAMP THE WITHDRAWAL.
+        const { error: sErr } = await asUser.from('calendar_events')
+          .update({ withdrawn_at: new Date().toISOString() }).eq('id', probe.id)
+        ok(`${'calendar_events'.padEnd(26)} 078: a person cannot stamp withdrawn_at`,
+          !!sErr, sErr ? `${sErr.code} ${String(sErr.message).slice(0, 48)}` : 'ALLOWED')
+
+        // 3. NOR REWRITE THE SENTENCE THE PRODUCT QUOTES. This is the column grant, not the
+        //    trigger: 42501, and the stored line is untouched.
+        const { error: lErr } = await asUser.from('calendar_events')
+          .update({ source_line: 'something the document never said' }).eq('id', probe.id)
+        const { data: after } = await admin.from('calendar_events').select('source_line').eq('id', probe.id).maybeSingle()
+        ok(`${'calendar_events'.padEnd(26)} 078: a person cannot rewrite source_line`,
+          !!lErr && after?.source_line === probe.source_line,
+          lErr ? `${lErr.code}` : 'ALLOWED')
+
+        // 4. AND THE ROUTES' OWN MOVES STILL WORK, which is the half that would fail silently in
+        //    production if the rule and the library ever disagreed.
+        const { error: cErr } = await asUser.from('calendar_events')
+          .update({ status: 'confirmed', confirmed_at: new Date().toISOString() }).eq('id', probe.id)
+        ok(`${'calendar_events'.padEnd(26)} 078: proposed → confirmed still works`,
+          !cErr, cErr ? `${cErr.code} ${String(cErr.message).slice(0, 48)}` : 'confirmed')
+        const { error: dErr } = await asUser.from('calendar_events')
+          .update({ status: 'dismissed', dismissed_reason: 'check:live probe' }).eq('id', probe.id)
+        ok(`${'calendar_events'.padEnd(26)} 078: confirmed → dismissed still works`,
+          !dErr, dErr ? `${dErr.code} ${String(dErr.message).slice(0, 48)}` : 'dismissed')
+
+        // 5. AND A DISMISSAL IS FINAL, in the database and not only in the route (rule b).
+        const { error: backErr } = await asUser.from('calendar_events')
+          .update({ status: 'confirmed' }).eq('id', probe.id)
+        ok(`${'calendar_events'.padEnd(26)} 078: a removed date cannot be confirmed back`,
+          !!backErr, backErr ? `${backErr.code}` : 'ALLOWED')
+
+        // 6. THE SERVICE ROLE IS UNTOUCHED: a reading can still withdraw.
+        const { error: svcErr } = await admin.from('calendar_events')
+          .update({ status: 'withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', probe.id)
+        ok(`${'calendar_events'.padEnd(26)} 078: a READING still withdraws (service role)`,
+          !svcErr, svcErr ? `${svcErr.code} ${svcErr.message}` : 'withdrawn')
+
+        await admin.from('calendar_events').delete().eq('id', probe.id)
+      }
+    }
+
     // DELETE IS GONE (decision 11): the grant was removed and the policy dropped by 073.
     const { error: delErr } = await asUser.from('calendar_events').delete().eq('id', ev.id)
     ok(`${'calendar_events'.padEnd(26)} authenticated REFUSED delete (42501)`, refused(delErr), delErr?.code ?? 'ALLOWED')

@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-16 19:01 UTC
-**Migrations applied:** 78 — `000` to `077`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-16 19:21 UTC
+**Migrations applied:** 79 — `000` to `078`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -557,7 +557,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — INSERT, SELECT, UPDATE
+- `authenticated` — INSERT, SELECT
 - `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
@@ -567,6 +567,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `calendar_events_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
 | `calendar_events_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `calendar_events_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Triggers:** `calendar_events_person_update` (BEFORE → `calendar_events_guard_person_update`)
 
 **Indexes:** `calendar_events_pkey`, `idx_calendar_events_company_document_title_due`, `idx_calendar_events_company_due`, `idx_calendar_events_company_handbook`, `idx_calendar_events_company_status`, `idx_calendar_events_entity`
 
@@ -608,7 +610,7 @@ The secret address for the subscription feed (decision 20). GET /api/calendar/fe
 
 One row per company per month, written by the monthly email job as a CLAIM before the send (Calendar step 11). UNIQUE (company_id, month) is what stops a second email about the same month: the second attempt is refused with 23505 and skips. sent_at null means the claim was taken and the send did not finish; `error` says why. Migrations 073 and 077.
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 2 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/calendar-month`, `script check-live`
 
@@ -2334,7 +2336,7 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 9 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
@@ -3133,6 +3135,16 @@ Strictly ascending test for a numeric array. Exists because a CHECK constraint m
 
 The company of the currently authenticated user, read from profiles with definer rights so that tenancy does not depend on the RLS policies of profiles itself. Every company-scoped policy in this database is expressed through this function. Returns null when there is no session or the user has no profile, and a null company_id never matches a row, so the failure direction is closed.
 
+### `calendar_events_guard_person_update()`
+
+**Returns** `trigger` · **security invoker**
+
+### `calendar_person_move_refusal(old_status text, new_status text, old_withdrawn timestamp with time zone, new_withdrawn timestamp with time zone)`
+
+**Returns** `text` · **security invoker**
+
+The moves a PERSON may make on a calendar date, as a pure function of the old and new status and withdrawal stamp: NULL when the move is one the product offers, else the sentence to refuse with. A function rather than a block inside the trigger so migration 078 can prove every case of it without a login. Calendar step 12.
+
 ### `close_and_replace_obligations(p_company_id uuid, p_obligations jsonb)`
 
 **Returns** `jsonb` · **security invoker**
@@ -3198,6 +3210,7 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | Table | Trigger | When | Function |
 |---|---|---|---|
 | `agencies` | `set_updated_at` | BEFORE | `set_updated_at` |
+| `calendar_events` | `calendar_events_person_update` | BEFORE | `calendar_events_guard_person_update` |
 | `companies` | `create_primary_site` | AFTER | `create_primary_site` |
 | `company_chemicals` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `company_switches` | `set_updated_at` | BEFORE | `set_updated_at` |
@@ -3297,4 +3310,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 075
 076
 077
+078
 ```

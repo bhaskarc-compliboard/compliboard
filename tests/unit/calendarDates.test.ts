@@ -367,14 +367,82 @@ describe('proposeDate — an AUDIT date is deduped in code, because no index can
     assert.equal(f.rows.length, 2)
   })
 
-  test("an audit date never matches a DOCUMENT row with the same title and day", async () => {
-    // Two different pieces of evidence for one obligation, and the drawer opens each differently:
-    // one shows the document's report, one shows the audit's.
-    const f = fake([{ id: 'doc-row', company_id: CO, source: 'document', document_id: DOC,
-                      title: 'Annual report', due_date: '2027-02-15', status: 'proposed' }])
-    const r = await proposeDate(f.db, { ...audit, auditFindingId: 'finding-1' })
-    assert.equal(r.outcome, 'created')
-    assert.equal(f.rows.length, 2)
+  /**
+   * *** DECISION 31 (the owner, 16 October 2026) REVERSED THIS TEST, AND ITS OLD NAME IS WHY IT
+   * IS REWRITTEN RATHER THAN DELETED. *** It read "an audit date never matches a DOCUMENT row
+   * with the same title and day", on the reasoning that the two are different evidence for one
+   * obligation. Measured on staging, that reasoning produced FIVE live rows on one day for one
+   * obligation: an audit of the agency and the document scan both read the same certificate and
+   * described it in different words. The owner's ruling: same document, same day, one date.
+   *
+   * The key is the DOCUMENT and the DAY, deliberately NOT the title — the title is the thing
+   * that drifts (§189).
+   */
+  describe('decision 31: an audit date on the same document and day ATTACHES to it', () => {
+    const docRow = { id: 'doc-row', company_id: CO, source: 'document', document_id: DOC,
+                     title: 'Annual report to the agency', due_date: '2027-02-15', status: 'proposed' }
+
+    test('it attaches, records the finding on the document\'s row, and adds nothing', async () => {
+      const f = fake([{ ...docRow }])
+      const r = await proposeDate(f.db, { ...audit, documentId: DOC, auditFindingId: 'finding-1' })
+      assert.deepEqual(r, { id: 'doc-row', outcome: 'existing' })
+      assert.equal(f.rows.length, 1, 'no second row for one obligation')
+      assert.equal(f.rows[0].audit_finding_id, 'finding-1', 'the audit that confirmed it is one click away')
+      assert.equal(f.rows[0].source, 'document', 'it stays the document\'s date, with the document\'s line')
+      assert.equal(f.rows[0].title, 'Annual report to the agency', 'and keeps its own title')
+    })
+
+    test('the TITLE is not part of the key — that is the whole point', async () => {
+      const f = fake([{ ...docRow, title: 'Six-year internal maintenance interval for unit W-3 (ABC dry chemical)' }])
+      const r = await proposeDate(f.db, { ...audit, title: 'Six-year internal maintenance for units W-3 and L-1',
+        documentId: DOC, auditFindingId: 'finding-1' })
+      assert.equal(r.outcome, 'existing')
+      assert.equal(f.rows.length, 1)
+    })
+
+    test('a DIFFERENT document, or a different day, is a different date', async () => {
+      const other = fake([{ ...docRow, document_id: 'another-doc' }])
+      assert.equal((await proposeDate(other.db, { ...audit, documentId: DOC, auditFindingId: 'f' })).outcome, 'created')
+      const day = fake([{ ...docRow, due_date: '2027-03-15' }])
+      assert.equal((await proposeDate(day.db, { ...audit, documentId: DOC, auditFindingId: 'f' })).outcome, 'created')
+    })
+
+    test('it never attaches to a row a person removed, or to history', async () => {
+      for (const dead of [{ status: 'dismissed' }, { status: 'proposed', replaced_by: 'newer' }]) {
+        const f = fake([{ ...docRow, ...dead }])
+        const r = await proposeDate(f.db, { ...audit, documentId: DOC, auditFindingId: 'finding-1' })
+        assert.equal(r.outcome, 'created', JSON.stringify(dead))
+        assert.equal(f.rows.length, 2)
+      }
+    })
+
+    test('an audit with no document named still behaves as it always did', async () => {
+      const f = fake([{ ...docRow }])
+      const r = await proposeDate(f.db, { ...audit, auditFindingId: 'finding-1' })
+      assert.equal(r.outcome, 'created', 'nothing to attach to without a document')
+      assert.equal(f.rows.length, 2)
+    })
+
+    /**
+     * OPTION 1, the owner's choice: the rule only, no reconciliation. An agency's own earlier
+     * row still wins, so a pair that already exists is left exactly as it is — changing the
+     * identity of a row that conversations, emails and links already point at is not something
+     * a re-read should do quietly.
+     */
+    test('an audit\'s OWN earlier row still matches first, so existing pairs are untouched', async () => {
+      const f = fake([{ ...live, document_id: DOC }, { ...docRow }])
+      const r = await proposeDate(f.db, { ...audit, documentId: DOC, auditFindingId: 'finding-2' })
+      assert.equal(r.id, 'old', 'the audit row, not the document row')
+      assert.equal(f.rows.length, 2, 'and the pair is left alone')
+    })
+
+    test('and it runs BEFORE a withdrawn audit row would be revived', async () => {
+      const f = fake([{ ...live, document_id: DOC, status: 'withdrawn' }, { ...docRow }])
+      const r = await proposeDate(f.db, { ...audit, documentId: DOC, auditFindingId: 'finding-2' })
+      assert.deepEqual(r, { id: 'doc-row', outcome: 'existing' },
+        'reviving the audit row would rebuild the pair this rule prevents')
+      assert.equal(f.rows.find((x) => x.id === 'old')!.status, 'withdrawn', 'and it stays withdrawn')
+    })
   })
 
   test('an audit date with NO finding id still dedupes, and writes nothing on a match', async () => {

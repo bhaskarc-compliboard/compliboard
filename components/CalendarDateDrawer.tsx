@@ -29,6 +29,7 @@ import { authHeaders } from '@/lib/supabase'
 import { Drawer, printDrawer } from '@/components/Drawer'
 import { RemoveDateSheet } from '@/components/RemoveDateSheet'
 import { statusWord, KIND_WORD } from '@/lib/documentStatus'
+import { labelFor, hostOf, OTHER_SOURCE_LINE } from '@/lib/howTo'
 import {
   type CalendarRow, longDay, longDayAndWeekday, repeatWords, whenWords, passedWords, siteWords,
   PERIOD_CHOICES, PERIOD_LABEL, NOT_CONFIRMED, PERIOD_NOT_READ, ALREADY_HANDLED, NEWER_VERSION,
@@ -348,12 +349,25 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
             {row.source_line && (
               <p className="mt-2 text-[12.5px] italic leading-relaxed text-gray-600">&ldquo;{row.source_line}&rdquo;</p>
             )}
-            {row.source_url && (
+            {row.source_url && (<>
               <a href={row.source_url} target="_blank" rel="noopener noreferrer"
                 className="mt-2 inline-block break-all text-[12px] text-[var(--green-ink)] underline">
                 {row.source_url}
               </a>
-            )}
+              {/*
+                *** THE SAME SENTENCE THE ANSWER CARD SHOWS, FROM THE SAME HELPER — step 12. ***
+                `labelFor` and `OTHER_SOURCE_LINE` are `lib/howTo.ts`'s, used by
+                `components/AnswerBody.tsx` and the workspace. Without this line a date added
+                from encamp.com looked exactly like one added from oregon.gov, in the one place
+                a person goes to decide whether to trust a date. There is deliberately NO second
+                list of official hosts here; a test holds that.
+              */}
+              {labelFor(row.source_url) === 'other' && (
+                <p className="mt-1.5 text-[12px] leading-snug text-gray-500">
+                  {OTHER_SOURCE_LINE(hostOf(row.source_url))}
+                </p>
+              )}
+            </>)}
           </div>
         ) : row.source === 'person' ? (
           <div className="rounded-lg border border-gray-200 p-3.5">

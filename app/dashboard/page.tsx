@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient, authHeaders } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import { isAmber, statusWord } from '@/lib/documentStatus'
+import { liveDates, CALENDAR_COUNT_COLUMNS } from '@/lib/calendarCounts'
+import { NOT_CONFIRMED } from '@/lib/calendarView'
 
 interface CompanyProfile {
   name: string
@@ -13,7 +15,31 @@ interface CompanyProfile {
   city?: string
 }
 
-interface CalEvent { id: string; title: string; due_date: string }
+/**
+ * *** THE DASHBOARD READS `calendar_v` THROUGH THE CALENDAR'S OWN FILTER — Calendar step 12. ***
+ *
+ * It used to `fetch('/api/calendar')`, the BASE table, and then decide for itself what was due:
+ * `new Date(e.due_date)` between today and +30 days, in the browser. Three things were wrong with
+ * that, and all three were measured on staging on 16 October 2026 before this was changed:
+ *
+ *   · **It showed dates a person had removed.** The route returns every row except `withdrawn`,
+ *     so `dismissed` and superseded rows came too: Test Gamma showed 7 where 5 are live, and two
+ *     of the extra were dates somebody had explicitly removed in the queue.
+ *   · **It asserted days the Calendar refuses to.** A repeating date whose period was never read
+ *     has no computable next date (decision 23) — `calendar_v.next_due` is NULL and the product
+ *     says "repeats, how often wasn't read". The Dashboard read the raw anchor and announced
+ *     "in 15 days". Cascade showed 4 where 1 is due; all three extras were that.
+ *   · **A DATE compared with the browser's clock** slips a day for anybody west of UTC
+ *     (`lib/calendarCounts.ts` carries the same reasoning for the info bar).
+ *
+ * Now: `liveDates` — the one filter the tab counts, the sidebar badge, the feed and the monthly
+ * email share — and `next_due`, `days_until` and `has_passed` as the VIEW computed them against
+ * the server's today. Nothing here does date arithmetic.
+ */
+interface CalEvent {
+  id: string; title: string; status: string
+  next_due: string | null; days_until: number | null; has_passed: boolean | null
+}
 
 /**
  * One line of the readings list. Every field is a column of `document_index_v` — the same view the
@@ -41,7 +67,7 @@ export default function Dashboard() {
   const supabase = createClient()
   const router = useRouter()
   const [profile, setProfile] = useState<CompanyProfile | null>(null)
-  const [events, setEvents] = useState<CalEvent[]>([])
+  const [events, setEvents] = useState<CalEvent[] | null>([])
   const [stats, setStats] = useState({ filesReviewed: 0, issuesIdentified: 0, questionsAnswered: 0, checklistsCreated: 0 })
   const [readings, setReadings] = useState<Reading[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,10 +87,22 @@ export default function Dashboard() {
         if (company) setProfile(company)
 
         try {
-          const cRes = await fetch('/api/calendar', { headers: await authHeaders() })
-          const cJson = await cRes.json()
-          setEvents(cJson.data || [])
-        } catch { setEvents([]) }
+          // The caller's own client: `calendar_v` is security_invoker, so RLS decides what comes
+          // back and this page names no company.
+          // `title` and `days_until` on top of the counts' own columns: the counts need neither,
+          // and this list is the whole of what a dashboard row shows. **`days_until` was missing
+          // from the first version of this line**, and because `undefined >= 0` is false the
+          // filter below dropped every row — the page drew "No deadlines in the next 30 days"
+          // over a company with one. Found in the step's own screenshot, not by a test.
+          const { data: cal, error: calError } = await liveDates(supabase, `${CALENDAR_COUNT_COLUMNS}, title, days_until`)
+          if (calError) throw new Error(calError.message)
+          setEvents((cal ?? []) as unknown as CalEvent[])
+        } catch (e) {
+          // §5.1: a read that failed is not an empty calendar. The list says so rather than
+          // drawing "No deadlines in the next 30 days" over dates that exist.
+          console.error('dashboard: the calendar could not be read', e)
+          setEvents(null)
+        }
 
         // *** THE READINGS AND THE COUNTS BOTH COME FROM `document_index_v` — 28 September 2026. ***
         //
@@ -106,17 +144,14 @@ export default function Dashboard() {
     load()
   }, [])
 
-  // Upcoming deadlines in the next 30 days
-  const now = new Date()
-  const in30 = new Date(); in30.setDate(now.getDate() + 30)
-  const upcoming = events
-    .filter(e => { const d = new Date(e.due_date); return d >= new Date(now.toDateString()) && d <= in30 })
-    .sort((a, b) => a.due_date.localeCompare(b.due_date))
-
-  function daysUntil(dateStr: string) {
-    const d = new Date(dateStr)
-    return Math.ceil((d.getTime() - new Date(now.toDateString()).getTime()) / (1000 * 60 * 60 * 24))
-  }
+  /**
+   * The next 30 days, from the view's own numbers: a date with no day computable is not a
+   * deadline (`next_due` null), and one that has passed belongs to the Calendar's list, not to
+   * "upcoming". `days_until` is the server's count, so nothing here reads a clock.
+   */
+  const upcoming = (events ?? [])
+    .filter((e) => e.next_due && !e.has_passed && e.days_until !== null && e.days_until >= 0 && e.days_until <= 30)
+    .sort((a, b) => (a.next_due ?? '').localeCompare(b.next_due ?? ''))
 
   if (loading) {
     return (
@@ -207,22 +242,39 @@ export default function Dashboard() {
         {/* Upcoming deadlines */}
         <h2 className="text-lg font-semibold text-orange-600 mb-3">Upcoming — next 30 days</h2>
         <div className="bg-white rounded-xl">
-          {upcoming.length === 0 ? (
+          {events === null ? (
+            <div className="px-6 py-8 text-center">
+              <p className="text-sm text-amber-800">
+                We could not load your dates just now. Nothing has changed — open the Calendar to see them.
+              </p>
+            </div>
+          ) : upcoming.length === 0 ? (
             <div className="px-6 py-8 text-center">
               <p className="text-sm text-gray-400">No deadlines in the next 30 days.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
               {upcoming.map(e => {
-                const d = daysUntil(e.due_date)
+                const d = e.days_until as number
                 const urgent = d <= 7
                 return (
-                  <div key={e.id} className="px-6 py-3 flex items-center justify-between">
-                    <span className="text-sm text-gray-800">{e.title}</span>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-md ${urgent ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}`}>
+                  // Every row opens the date itself, where everything about it is (step 8a's
+                  // drawer). A dashboard that names a deadline and cannot show it is a dead end.
+                  <a key={e.id} href={`/calendar?tab=calendar&date=${e.id}`}
+                    className="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
+                    <span className="min-w-0 text-sm text-gray-800">
+                      <span className="truncate">{e.title}</span>
+                      {/* Decision 8: an unconfirmed date shows everywhere, marked, in the page's
+                          own words — lower case, because it is the normal condition of a date a
+                          reading found yesterday, not an alarm. */}
+                      {e.status === 'proposed' && (
+                        <span className="ml-2 text-xs text-gray-400">{NOT_CONFIRMED}</span>
+                      )}
+                    </span>
+                    <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-md ${urgent ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}`}>
                       {d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : `in ${d} days`}
                     </span>
-                  </div>
+                  </a>
                 )
               })}
             </div>

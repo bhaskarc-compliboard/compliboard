@@ -25,19 +25,14 @@ import { requireCompany } from '@/lib/auth'
 import { proposeDate, confirmDate, dismissDate, setPeriod, confirmMany } from '@/lib/calendarDates'
 
 /**
- * THE OLD PAGE'S RECURRENCE WORDS, MAPPED — and ITS CALLER IS NOW GONE (Calendar step 7).
- * The old page offered monthly/quarterly/annually (:405–407 before step 7 replaced that file);
- * migration 073's `period` holds month/quarter/6 months/year/2 years. The same three-way mapping
- * the migration's backfill used (073 §2). Anything else becomes null, which means "repeats, how
- * often not known yet" (decision 23).
- *
- * *** IT IS KEPT, NOT DELETED, AND THE REASON IS NOT SENTIMENT. *** This route's whole body is
- * step 8's work — the new page's Add-a-date sheet is what will call POST — and narrowing a route's
- * accepted body is a change to its contract, not a tidy-up. `is_recurring` / `recurrence_period`
- * are still accepted; nothing on a screen sends them any more. Step 8 decides what POST takes and
- * this map goes then.
+ * *** THE OLD PAGE'S RECURRENCE WORDS ARE GONE — Calendar step 12. ***
+ * This file carried `OLD_PERIOD_WORDS` (monthly/quarterly/annually → month/quarter/year) and
+ * accepted `is_recurring`, because the 601-line page sent them. Its own comment said the map
+ * would go when a step settled what POST takes; step 8b settled it and step 12 removes it.
+ * **Nothing sends the old words**: `components/AddDateSheet.tsx` and `components/CalendarAsk.tsx`
+ * send `recurs` and `period`, and they are the only two callers. `git show 48107ea` has the page
+ * that sent them.
  */
-const OLD_PERIOD_WORDS: Record<string, string> = { monthly: 'month', quarterly: 'quarter', annually: 'year' }
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,8 +43,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null)
     const title = typeof body?.title === 'string' ? body.title.trim() : ''
     const dueDate = typeof body?.due_date === 'string' && body.due_date ? body.due_date : null
-    // `recurs` is the column's name; `is_recurring` is what the old page still sends.
-    const recurs = body?.recurs === true || body?.is_recurring === true
+    const recurs = body?.recurs === true
     if (!title) return NextResponse.json({ error: 'Please give the date a name.' }, { status: 400 })
     // Migration 073's `calendar_events_date_or_recurs`, answered in words here rather than as a
     // constraint error: a one-off needs a day, a repeating date does not (decision 12).
@@ -103,9 +97,7 @@ export async function POST(request: NextRequest) {
 
     // `period` is not part of `proposeDate`'s contract — a document scan cannot say how often a date
     // repeats (decision 23), so the period is always a person's answer and is set on its own.
-    const given = typeof body?.period === 'string' ? body.period
-      : typeof body?.recurrence_period === 'string' ? (OLD_PERIOD_WORDS[body.recurrence_period] ?? null)
-      : null
+    const given = typeof body?.period === 'string' ? body.period : null
     if (recurs && given) {
       const p = await setPeriod(db, id, given)
       if (p.status !== 200) return NextResponse.json(p.json, { status: p.status })
@@ -120,42 +112,19 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// A compliance calendar is a COMPANY asset — everyone at the company sees the same deadlines. The
-// user_id parameter is gone along with company_id: it let any caller read any person's calendar, and
-// it also meant two people at one company saw different deadlines, which is not what a compliance
-// calendar is for.
-//
-// It still returns dismissed and superseded rows, because this is the raw table and the Dashboard
-// and the old page both read it. The CALENDAR's own reads move to `calendar_v` with
-// `status <> 'dismissed'` and `replaced_by is null` at steps 8 and 12 (§2.6).
-//
-// *** WITHDRAWN ROWS ARE THE ONE EXCEPTION, AND THEY ARE EXCLUDED HERE — step 6b, decision 29. ***
-// Not for tidiness: a withdrawn row is a date the newest reading of the document, or the newest
-// audit of the agency, no longer says. Showing it would be the product asserting something no
-// reading currently supports, which is §6's named anti-pattern. `calendar_v` drops them in the
-// view itself, so the Calendar and the Dashboard inherit the rule at steps 8 and 12; this route
-// reads the base table and has to say it. Both readers of this route — `app/dashboard/page.tsx:64`
-// and the old page's own read (:112, before step 7) — are fixed by this one line. After step 7 the
-// Dashboard is the only reader of this GET: the new page reads `calendar_v` directly.
-export async function GET(request: NextRequest) {
-  try {
-    const authed = await requireCompany(request)
-    if (!authed.ok) return authed.response
-    const { companyId, db } = authed.auth
-
-    const { data, error } = await db
-      .from('calendar_events')
-      .select('*')
-      .eq('company_id', companyId)
-      .neq('status', 'withdrawn')
-      .order('due_date', { ascending: true })
-
-    if (error) throw error
-    return NextResponse.json({ data })
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed' }, { status: 500 })
-  }
-}
+/**
+ * *** GET IS GONE — Calendar step 12. ***
+ *
+ * It returned the BASE table, every row except withdrawn, and its last caller was the Dashboard.
+ * The Dashboard now reads `calendar_v` through `liveDates` like every other reader
+ * (`lib/calendarCounts.ts`), which is what stopped it showing dates a person had removed and
+ * announcing days the view refuses to compute (`app/dashboard/page.tsx` has the measurement).
+ * Nothing calls a GET here now — proved by grepping `app`, `components`, `lib` and `scripts` for
+ * `/api/calendar'` and finding four callers, all of them POST or PATCH.
+ *
+ * A GET that nothing reads is not free: it is a second shape of the same question, one that
+ * returned dismissed and superseded rows to anybody who asked. `git show 6ea71d3` has it.
+ */
 
 /**
  * WHAT A PERSON DOES TO A DATE: confirm it, remove it (a reason is optional since step 8a), or say

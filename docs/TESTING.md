@@ -4020,6 +4020,30 @@ sites and three typed dates, which is the only way to see the site rules.
    leave it working. *(This one shipped wrong once and is why the issuer converges.)*
 3. After a company is deleted, its link must stop answering — the token row cascades with it.
 
+## The Calendar, step 12 — the Dashboard, and the moves a person may make
+
+*Added 16 October 2026, staging only. `DECISIONS.md` §198. Both are free.*
+
+### C12-1 · The Dashboard says what the Calendar says (free)
+
+1. Open the Dashboard as a company with dates. **Pass:** "Upcoming — next 30 days" lists only
+   dates that are live and have a day the Calendar itself shows; an unconfirmed one is marked
+   **not confirmed**; each row opens that date.
+2. **Fail, and these were all real on 16 October:** a date somebody removed in the queue; a
+   repeating date whose period was never read, shown with a day ("in 15 days"); a day that
+   differs by one from the Calendar tab's.
+3. Remove a date in the queue, reload the Dashboard: it is gone from both.
+
+### C12-2 · A person cannot make a move the product does not offer (free)
+
+1. `npm run check:live -- --only calendar` (or the whole run): seven `078:` probes.
+2. By hand, as a signed-in person against PostgREST: setting `status` to `withdrawn` → 23514 with
+   the product's sentence; stamping `withdrawn_at` → 23514; writing `source_line` → 42501 and the
+   stored line unchanged. Confirming and removing still work from the screens.
+3. **The one that matters most:** `source_line` is what the drawer, the queue, the chat's source
+   cards and the email all quote. If it ever becomes writable again, every quotation in the
+   product is only as trustworthy as the browser that last touched it.
+
 ## The Calendar, step 11 — the monthly email (board 10)
 
 *Added 16 October 2026, staging only. `DECISIONS.md` §197. Every one of these is free: the email

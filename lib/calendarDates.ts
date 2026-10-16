@@ -272,6 +272,51 @@ export async function proposeDate(db: Db, input: ProposeInput): Promise<ProposeR
       }
       return { id: live.id, outcome: 'existing' }
     }
+    /**
+     * *** DECISION 31 (the owner, 16 October 2026): AN AUDIT DATE THAT IS THE SAME DATE AS A
+     * DOCUMENT'S ATTACHES TO IT RATHER THAN ADDING A SECOND ROW. ***
+     *
+     * The key is the DOCUMENT and the DAY, deliberately not the title. An audit of an agency
+     * reads the same permit the document scan read, and the two describe the obligation in
+     * different words — "Six-year internal maintenance for units W-3 and L-1" beside "Six-year
+     * internal maintenance interval for unit W-3 (ABC dry chemical, 20 lb, manufactured 2020)".
+     * Those are one date on a calendar and were two rows on it. The title is what drifts (§189);
+     * the document and the day are what the two readings agree on.
+     *
+     * The row stays what it is — a document date, with the document's own line in the drawer —
+     * and gains `audit_finding_id`, so the audit that confirmed it is one click away. The
+     * outcome is `existing`, which is the truth: this date was already on the calendar.
+     *
+     * *** OPTION 1, THE OWNER'S CHOICE: THE RULE ONLY, NO RECONCILIATION. *** This runs AFTER
+     * the audit-sibling lookup above, so a re-run of an agency still matches its own earlier
+     * audit row and existing pairs are left exactly as they are. Collapsing a pair that is
+     * already on screen would change the identity of a row that conversations, emails and links
+     * already point at. New pairs are not created from here on; the ones on staging stay until
+     * somebody removes one.
+     *
+     * It runs BEFORE the withdrawn-audit revival below, and that order is the decision: if an
+     * earlier run's audit row was withdrawn and the document's own row is live, reviving the
+     * audit row would rebuild the pair this rule exists to prevent.
+     */
+    if (input.documentId && input.dueOn) {
+      const { data, error } = await db.from('calendar_events')
+        .select(SIBLING_COLUMNS)
+        .eq('company_id', input.companyId).eq('source', 'document')
+        .eq('document_id', input.documentId).eq('due_date', input.dueOn)
+      if (error) throw new Error(`calendar_events: ${error.message}`)
+      // A LIVE row only: a dismissed one is a person's decision (rule b) and a superseded one is
+      // history — attaching to either would quietly bring it back into every live reader.
+      const onDocument = ((data ?? []) as Sibling[]).find(isLive)
+      if (onDocument) {
+        if (input.auditFindingId) {
+          const { error: writeError } = await db.from('calendar_events')
+            .update({ audit_finding_id: input.auditFindingId }).eq('id', onDocument.id)
+          if (writeError) throw new Error(`calendar_events: ${writeError.message}`)
+        }
+        return { id: onDocument.id, outcome: 'existing' }
+      }
+    }
+
     // A WITHDRAWN AUDIT DATE COMES BACK WHEN A LATER RUN SAYS IT AGAIN — step 6b. The last run of
     // this agency did not match it, so it was withdrawn; this one found it, which is the audit's
     // own `revived`. The finding moves to the newest one with it, as it would for a live row.

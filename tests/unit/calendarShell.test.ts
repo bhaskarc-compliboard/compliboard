@@ -13,7 +13,8 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
+import { labelFor, hostOf, OTHER_SOURCE_LINE } from '../../lib/howTo.ts'
 import {
   liveDates, countsFrom, countDatesToConfirm, dayAndMonth, infoBarParts, stillAhead,
   LIVE_STATUSES, CALENDAR_COUNT_COLUMNS, type CountRow,
@@ -434,5 +435,167 @@ describe('the sidebar badge is the same component and the same position', () => 
   test('one read, on a pathname change — still not polling', () => {
     assert.ok(!/setInterval/.test(LAYOUT), 'the badge must not poll')
     assert.match(LAYOUT, /useEffect\(\(\) => \{ loadCount\(\) \}, \[pathname, loadCount\]\)/)
+  })
+})
+// =================================================================================================
+// STEP 12 — WHAT WAS RETIRED, WHAT THE DASHBOARD READS, AND THE MOVES A PERSON MAY MAKE
+// =================================================================================================
+
+describe('the old date importer is gone', () => {
+  test('neither the route nor its prompt is on disk, and nothing imports them', () => {
+    assert.equal(existsSync('app/api/extract-dates/route.ts'), false)
+    assert.equal(existsSync('prompts/extract-dates.ts'), false)
+    // Prose about it is allowed — `CLAUDE.md` §5.1's worked example is history and stays. A
+    // CALL is not: the check is for an import or a fetch, in code, with comments stripped.
+    for (const f of ['app/calendar/page.tsx', 'app/dashboard/page.tsx', 'lib/documentContent.ts', 'lib/ai.ts']) {
+      const code = readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+      assert.ok(!/extract-dates/.test(code), `${f} still calls it`)
+    }
+  })
+
+  test('POST no longer accepts the old page\'s recurrence words', () => {
+    const route = readFileSync('app/api/calendar/route.ts', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    for (const gone of ['OLD_PERIOD_WORDS', 'is_recurring', 'recurrence_period']) {
+      assert.ok(!route.includes(gone), `${gone} must be gone from the route`)
+    }
+    assert.match(route, /const recurs = body\?\.recurs === true/)
+  })
+
+  /**
+   * GET returned the BASE table — every row except withdrawn, so dismissed and superseded ones
+   * too — and its last caller was the Dashboard. A second shape of the same question, answered
+   * differently from every other reader, is the thing this step exists to remove.
+   */
+  test('GET is gone, and nothing asks for one', () => {
+    const route = readFileSync('app/api/calendar/route.ts', 'utf8')
+    assert.ok(!/export async function GET/.test(route))
+    assert.match(route, /export async function POST/)
+    assert.match(route, /export async function PATCH/)
+  })
+})
+
+describe('the Dashboard reads what the Calendar reads', () => {
+  const DASH = readFileSync('app/dashboard/page.tsx', 'utf8')
+  const code = DASH.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+  test('through the one shared filter, not a query of its own and not the route', () => {
+    assert.match(code, /liveDates\(supabase, `\$\{CALENDAR_COUNT_COLUMNS\}, title, days_until`\)/)
+    // `days_until` is in that list because the filter below reads it, and it was missing once:
+    // `undefined >= 0` is false, so every row was dropped and the page said there were none.
+    const filter = code.slice(code.indexOf('const upcoming'))
+    assert.match(filter, /e\.days_until/)
+    assert.ok(!code.includes("fetch('/api/calendar'"), 'the route is gone')
+    assert.ok(!/\.from\('calendar_events'\)/.test(code), 'never the base table')
+  })
+
+  /**
+   * Measured on staging before this change: Test Gamma showed 7 rows where 5 are live — two were
+   * dates a person had REMOVED — and Cascade showed 4 where 1 is due, the three extras being
+   * repeating dates whose period was never read, whose day the Calendar refuses to compute and
+   * the Dashboard announced as "in 15 days".
+   */
+  test('a date with no computable day is not a deadline, and a passed one is not upcoming', () => {
+    assert.match(code, /e\.next_due && !e\.has_passed/)
+    assert.match(code, /e\.days_until !== null && e\.days_until >= 0 && e\.days_until <= 30/)
+    assert.ok(!/new Date\(e\.due_date\)/.test(code), 'no browser clock decides what is due')
+    assert.ok(!code.includes('function daysUntil'), 'the view counts the days')
+  })
+
+  test('an unconfirmed date is marked, in the page\'s own words, and every row opens the date', () => {
+    assert.match(code, /e\.status === 'proposed'/)
+    assert.match(code, /\{NOT_CONFIRMED\}/)
+    assert.match(code, /href=\{`\/calendar\?tab=calendar&date=\$\{e\.id\}`\}/)
+  })
+
+  test('a read that failed is not an empty calendar (§5.1)', () => {
+    assert.match(code, /setEvents\(null\)/)
+    assert.match(DASH, /We could not load your dates just now/)
+    // And the empty state is only reached when the read answered.
+    assert.ok(code.indexOf('events === null') < code.indexOf('upcoming.length === 0'))
+  })
+})
+
+describe('a person may only make the moves the product offers (migration 078)', () => {
+  const sql = readFileSync('supabase/migrations/078_a_person_may_only_make_the_moves_the_product_offers.sql', 'utf8')
+  const lib = readFileSync('lib/calendarDates.ts', 'utf8')
+
+  test('the rule is a function, so the migration can prove it without a login', () => {
+    assert.match(sql, /create or replace function public\.calendar_person_move_refusal/)
+    assert.match(sql, /language sql\s+immutable/)
+    assert.match(sql, /create trigger calendar_events_person_update\s+before update on public\.calendar_events/)
+    assert.match(sql, /if current_user <> 'authenticated' then return new; end if;/)
+  })
+
+  /**
+   * *** THE TWO HALVES MUST AGREE, AND THIS IS THE TEST THAT THEY DO. *** Every status the
+   * library writes must be one the database will accept from a person, or a route that works
+   * today starts failing in production with a check violation.
+   */
+  test('every status the library writes to is one the rule allows', () => {
+    const written = [...lib.matchAll(/status: '([a-z]+)'/g)].map((m) => m[1])
+    assert.ok(written.length > 0, 'the library must write a status somewhere')
+    for (const s of new Set(written)) {
+      if (s === 'withdrawn' || s === 'proposed') continue   // the service role's, and the insert's
+      assert.ok(['confirmed', 'dismissed'].includes(s), `the library writes status '${s}', which a person may not set`)
+    }
+  })
+
+  test('and the two writes that clear the stamp also set a status the rule allows with it', () => {
+    // `confirmDate` and `dismissDate` both clear `withdrawn_at` — the rule permits that only
+    // alongside 'confirmed' or 'dismissed', which is exactly what they set.
+    for (const fn of ['confirmDate', 'dismissDate']) {
+      const at = lib.indexOf(`export async function ${fn}`)
+      const body = lib.slice(at, lib.indexOf('\nexport ', at + 10))
+      if (!body.includes('withdrawn_at: null')) continue
+      assert.match(body, /status: '(confirmed|dismissed)'/, `${fn} clears the stamp without setting a status`)
+    }
+  })
+
+  test('the grant names what a person may write, and the evidence columns are not in it', () => {
+    assert.match(sql, /revoke update on table public\.calendar_events from authenticated/)
+    const granted = /grant update \(([\s\S]*?)\) on table public\.calendar_events to authenticated/.exec(sql)![1]
+    for (const col of ['status', 'confirmed_by', 'dismissed_reason', 'period', 'withdrawn_at', 'replaced_by']) {
+      assert.ok(granted.includes(col), `a route writes ${col}`)
+    }
+    for (const col of ['title', 'source_line', 'source_url', 'document_id', 'company_id', 'added_by']) {
+      assert.ok(!granted.includes(col), `${col} must not be writable by a person`)
+    }
+  })
+})
+
+describe('a date from a rule says where it came from, with the shared sentence', () => {
+  const drawer = readFileSync('components/CalendarDateDrawer.tsx', 'utf8')
+  test('the helper is imported, and no second list of hosts is written', () => {
+    assert.match(drawer, /import \{ labelFor, hostOf, OTHER_SOURCE_LINE \} from '@\/lib\/howTo'/)
+    assert.match(drawer, /labelFor\(row\.source_url\) === 'other'/)
+    assert.match(drawer, /OTHER_SOURCE_LINE\(hostOf\(row\.source_url\)\)/)
+    assert.ok(!/\.gov|OFFICIAL_HOSTS|official\b.*\[/.test(drawer.replace(/\/\*[\s\S]*?\*\//g, '')),
+      'the drawer must not decide for itself what is official')
+  })
+  test('an official source gets no such line', () => {
+    assert.equal(labelFor('https://www.oregon.gov/deq/thing'), 'official')
+    assert.equal(labelFor('https://encamp.com/tier-ii'), 'other')
+    assert.match(OTHER_SOURCE_LINE(hostOf('https://encamp.com/x')), /^This comes from encamp\.com, not the agency itself/)
+  })
+})
+
+describe('the account export and delete carry the whole calendar', () => {
+  const exportRoute = readFileSync('app/api/account/export/route.ts', 'utf8')
+  const deleteRoute = readFileSync('app/api/account/route.ts', 'utf8')
+  test('every column comes with the row, so a new one needs no change here', () => {
+    assert.match(exportRoute, /\.from\(table\)\.select\('\*'\)/)
+    for (const t of ['calendar_events', 'calendar_mailings']) {
+      assert.ok(exportRoute.includes(`byCompany('${t}')`), `${t} must be exported`)
+    }
+  })
+  test('the credential is deliberately NOT exported, and the reason is in the file', () => {
+    assert.ok(!exportRoute.includes("byCompany('calendar_feed_tokens')"))
+    assert.match(exportRoute, /calendar_feed_tokens` IS DELIBERATELY NOT HERE/)
+  })
+  test('and all three tables are deleted with the company', () => {
+    for (const t of ['calendar_events', 'calendar_mailings', 'calendar_feed_tokens']) {
+      assert.ok(deleteRoute.includes(`'${t}',`), `${t} must be in the delete list`)
+    }
   })
 })
