@@ -13204,3 +13204,145 @@ that script in two steps; each one printed something that looked like an answer.
   date isn't on the calendar any more."*
 - One typed date was seeded through `POST /api/calendar` for the typed-date drawer, and removed
   again by the Remove walk. It is `dismissed` on staging, which is the state that walk proves.
+
+---
+
+## 193. CALENDAR STEP 8b: THE REPORT TAB, ADD A DATE, AND THE SUBSCRIPTION FEED — 16 October 2026
+
+**Branch `calendar-v2`, staging only. `docs/CALENDAR-PLAN.md` step 8b; boards 6, 9 and 11 in
+`docs/calendar-boards.html`. Parts 1, 2 and 4 in commit `8b7d4fb`; part 3 after the owner's GO on
+STOP 1. Cost: $0.2931, all on Haiku, and none of it intended — see the last section.**
+
+### Part 1 — the second tab is the real report
+
+`components/DocumentReport.tsx` and `components/AuditReport.tsx` each render their **own**
+`Drawer`, so showing one "inside" the date drawer would be a drawer in a drawer. The report's
+drawer is mounted **over** the date's, which goes `hidden` — the shape `app/audits/page.tsx:792`
+has had since Run 4a — and the two tabs travel with it in the `Drawer`'s `topLine` slot, so "The
+date" is one click away in the place it already was. The report is therefore byte-for-byte what
+Documents and Audits show, with every action live: measured, its footer reads *Open the file ·
+Read it again · Download · Delete this file*, and "Open the file" was pressed and answered.
+
+**One shared file changed, additively:** `AuditReport` gained an optional `topLine`, which
+`DocumentReport` has had since Audits Run 4a. Without it an audit date's report tab is a dead end,
+because Close is not Back. Audits passes none; its tests and a walked path prove it unchanged.
+
+A typed or rule-sourced date has no report, so the tab is **hidden, not greyed** — a greyed tab
+promises something that is coming.
+
+**Board 6's "what the document asks before this date" cannot name a dated CONDITION.**
+`document_conditions` carries `title`, `condition_ref`, `evidence_expected` and `ordinal`;
+`document_gaps` carries `locator`, `quote` and `fix`; **neither has a date**, so nothing can be
+ordered against the date on screen. What is built is the honest version from the only dated thing
+a document produces: the same document's other live dates that fall earlier, each a link that
+swaps the drawer. A dated condition needs a column on `document_conditions` written by the scan —
+a Documents change, named in §7 beside the `same_as_deadline_id` work open from §189.
+
+### Part 2 — Add a date
+
+Board 9, over `POST /api/calendar` as it stands, so `proposeDate` decides the status and the sheet
+names neither status nor source. Two refusals, as sentences **in the sheet** and never a browser
+alert (§5.1; the old page's `alert()` is the named anti-pattern of §27): no title, and a one-off
+with no day. **A repeating date with no day saves** — migration 060's rule, carried into 073's
+`calendar_events_date_or_recurs` — and lands in the strip above the grid, which is decision 23's
+honest state rather than an invented day.
+
+### Part 3 — the subscription feed (the owner's GO on STOP 1)
+
+**One generator, two readers.** `lib/calendarIcs.ts` is pure and browser-safe, so the feed route
+and the sheet's one-time download produce the same file from the same rules. A second copy would
+be a second answer to "what is on my calendar".
+
+- `UID` is the row's id, which is the whole point: a re-fetch **updates** the event the customer
+  already has rather than adding a second, and a row that has gone stops being sent.
+- A repeating date becomes one event **at its anchor** with an `RRULE` — not at its next
+  occurrence, which would shift the whole series.
+- **A date we cannot place is left out and counted, never guessed at**: a repeating date with no
+  day, or no period, has no honest occurrence (decisions 12 and 23). The sheet says how many.
+- A **passed** date is still an event: a date has passed, it is not deleted (decision 11).
+- **The person's own note is never in the link or the file** (the owner, 16 October). The link is a
+  secret address with no sign-in behind it, and a note is the one field somebody writes "key in the
+  safe, ask Priya" into. The generator does not even *select* the column, so it cannot arrive by a
+  widened query later. One line in the sheet says so, under board 11's password warning.
+
+**The route's security shape**, as approved: `GET /api/calendar/feed?t=<token>`, no session (Google
+and Outlook fetch from their own servers carrying nothing of the person, which is why the address
+*is* the credential); service role for **two named reads and no write**; **the company comes from
+the token row, never from the query string** (§3.6's rule with the token standing in for the
+session, and the route reads exactly one parameter); **404 with an empty body for every refusal** —
+missing, malformed, unknown, revoked, or a deleted company, all identical, and the `catch` answers
+404 too, because a 500 would tell a prober the token was good; the token is never logged; GET only;
+`private, no-store`. **No rate limiter, deliberately**: a 256-bit token is not enumerable, and a
+limiter on an unauthenticated route is a lever for denying the customer their own calendar.
+
+The token is `randomBytes(32).toString('base64url')` — 256 bits of CSPRNG, 43 URL-safe characters —
+issued only by `POST /api/calendar/feed-token` behind `requireCompany()`. It stays out of the
+account export and is deleted with the company, both already true since 073.
+
+> #### AND THE FIRST VERSION OF THAT ISSUER MINTED TWO LIVE CREDENTIALS FOR ONE SHEET OPEN.
+> Read-then-insert. React Strict Mode double-invokes an effect in development, so the sheet sent
+> the POST twice: both reads found nothing and both inserted. Found by reading
+> `calendar_feed_tokens` after the walk — **183 microseconds apart**, which is what identified the
+> cause. It is not a development-only fault: two tabs, or two people, race identically, and the
+> result is a live credential nobody knows about that revoking "the" link would not revoke. The
+> route now converges — the oldest live token wins, every other is revoked — and the fix was proved
+> on the very rows that showed it: two simultaneous POSTs returned the same token and staging went
+> from two live tokens to one. **The durable fix is a partial unique index**, `unique (company_id)
+> where revoked_at is null`, which belongs in the next migration; §7 carries it.
+
+### Part 4, and one thing it found about every page in the product
+
+The site filter (only with more than one site) narrows the month, the list and the info bar's own
+numbers. **The tab counts and the sidebar badge deliberately do not follow it**: they are the
+section's totals, the badge is read on every page where no filter exists, and a badge that followed
+a filter would disagree with the page the moment a site was picked — the 29 September failure
+`components/AppLayout.tsx` carries in full.
+
+Printing goes through the shared frame, and **the month prints as the list**: a month grid on paper
+is six boxes of truncated titles.
+
+> #### THE NAVIGATION SIDEBAR WAS PRINTING ON EVERY PAGE IN THE PRODUCT.
+> The header has carried `no-print` since Workspace Stage 2; the nav never did. HR's conversation,
+> both report drawers and the Calendar all printed the whole sidebar down the left edge, with the
+> page's own column squeezed beside it. One class, inside `@media print`, so nothing on screen
+> changes. **Found by emulating print media for a screenshot** — which the measuring script could
+> not do until this step added `--print`. Nobody had looked at a printed page as a picture.
+
+### The instrument, again
+
+Three more blind spots in `scripts/measure-layout.mjs`, after step 8a's two: it could not emulate
+print media (`--print`), and it measured the **first** `aside.print-drawer` rather than the visible
+one, so with a report over a date it reported `0–0 (0)` and the wrong footer. That is five in three
+steps, and each one printed something that looked like an answer.
+
+### What was checked
+
+- **`npm run check`: 1184 tests, 0 failures** (1133 before 8b). `check:schema` ok, **292 files**.
+- **`check:live`, both ways, as the brief asked.** On **3999**: `! calendar feed SKIPPED — no server
+  at http://localhost:3999. The one route with no session was NOT tested.` On the isolated Haiku
+  server at **3998**: all six green — a live token answers 200 `text/calendar`; the body carries
+  this company's date; it does **not** carry the other company's; unknown / missing / revoked are
+  **404 / 404 / 404**; POST is **405**; `Cache-Control` is `private, no-store, max-age=0,
+  must-revalidate`. The probe rows were removed; `calendar_feed_tokens` holds none.
+- **The walk:** the sheet opened, the link copied, and `curl` fetched it **with no cookie, no token
+  and no origin** → 200, `text/calendar`, 7 events of 11 rows with 4 counted as unplaceable, the
+  RRULE at its anchor, folded lines, escaped text, and **no note**. A wrong token and no token both
+  404 with a zero-byte body.
+- The eight-page gate all 200, zero server errors; HR's, Documents' and Audits' tests (282) green.
+
+### The money, which was not meant to be spent
+
+**$0.2931, 10 calls, all `claude-haiku-4-5`** — the ledger went 28 calls / $1.6169 → 38 / $1.9100.
+Within the step's $0.50 budget, and entirely accidental.
+
+The cause: `npm run check:live --only calendar_feed`. **npm swallowed `--only` as its own flag**, so
+the script never saw it, `only` was null, and the whole suite ran against a live server — driving
+the paid chat, document and audit flows. The correct form is `npm run check:live -- --only
+<block>`, with the second `--`. This is §3c's 4 October trap in a new costume ($0.2981 then, by
+pointing `check:live` at a live port): the thing that kept it to $0.29 instead of Opus money is
+that the server was the guarded Haiku copy.
+
+And a second fault made it worse: the six feed probes were first written **inside the template
+flow's block**, which is paid — so the only way to reach them was to spend, and `--only
+calendar_feed` would have skipped them entirely. They are free and they now sit at the top level,
+runnable on their own.

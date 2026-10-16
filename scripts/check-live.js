@@ -1687,6 +1687,94 @@ if (want('template')) {
     if (storagePath) await admin.storage.from('company-documents').remove([storagePath])
     await admin.from('company_labels').delete().eq('company_id', companyId).eq('label', PROBE_AGENCY)
   }
+
+}
+
+// ===========================================================================================
+// THE SUBSCRIPTION FEED — Calendar step 8b part 3 (decision 20, `DECISIONS.md` §193).
+//
+// *** THE ONE ROUTE IN THE PRODUCT WITH NO SESSION, SO IT IS THE ONE THAT MOST NEEDS A LIVE
+// CHECK. *** Six probes, all free: no model call, and the two rows written are removed at the
+// end. Every refusal must be the SAME refusal — 404 with no body — or the route is an oracle
+// telling a stranger which tokens exist.
+//
+// *** IT IS AT THE TOP LEVEL, AND THAT IS A CORRECTION. *** It was first written INSIDE the
+// template flow's block, which is paid — so these six free probes could only run by spending
+// money, and `--only calendar_feed` would have skipped them entirely. They are free, they test the
+// one route with no session, and they must be runnable on their own.
+//
+// On port 3999 nothing listens and the block says so rather than passing silently: an HTTP check
+// with no server is not a check. The real run is against a server — `--base`, or the isolated
+// Haiku copy on 3998 that `docs/HOW-WE-BUILD.md` §3c describes.
+// ===========================================================================================
+if (want('calendar_feed')) {
+  // `ok()` is a local of each table-probe section and is not in scope out here — found by running
+  // this block, which threw `ReferenceError: ok is not defined` on its first line. Same shape,
+  // declared where it is used.
+  const say = (label, good, detail = '') => {
+    console.log(`  ${good ? '✓' : '✗'} ${'calendar feed'.padEnd(26)} ${label}${detail ? ` — ${detail}` : ''}`)
+    if (!good) failures++
+  }
+  // The same liveness probe the audit and template flows use (:1377): this block sits at the top
+  // level, not inside the /api/chat branch, so it has to ask for itself.
+  const alive = await fetch(`${BASE}/api/industries`).then((r) => r.ok).catch(() => false)
+  if (!alive) {
+    console.log(`\n  ! calendar feed SKIPPED — no server at ${BASE}. The one route with no session was NOT tested.\n`)
+  } else {
+  const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+  const stamp = Date.now()
+  const good = `probe${stamp}${'x'.repeat(30)}`
+  const revoked = `revoked${stamp}${'y'.repeat(30)}`
+  let mineId = null, theirCompany = null, theirDateId = null
+  try {
+    // This company's date, and another company's, so "does not leak" is proved against a row
+    // that is actually there — a feed that returned nothing would pass a weaker check.
+    const { data: mine } = await admin.from('calendar_events')
+      .insert({ company_id: companyId, title: `feed probe ${stamp}`, due_date: '2027-05-04', source: 'person', status: 'confirmed' })
+      .select('id').maybeSingle()
+    mineId = mine?.id ?? null
+    const { data: other } = await admin.from('companies').insert({ name: `check:live feed probe ${stamp}` }).select('id').maybeSingle()
+    theirCompany = other?.id ?? null
+    if (theirCompany) {
+      const { data: theirs } = await admin.from('calendar_events')
+        .insert({ company_id: theirCompany, title: `feed probe ${stamp} theirs`, due_date: '2027-05-05', source: 'person', status: 'confirmed' })
+        .select('id').maybeSingle()
+      theirDateId = theirs?.id ?? null
+    }
+    await admin.from('calendar_feed_tokens').insert({ company_id: companyId, token: good })
+    await admin.from('calendar_feed_tokens').insert({ company_id: companyId, token: revoked, revoked_at: new Date().toISOString() })
+
+    // 1. a good token answers, as a calendar, with no session at all
+    const res = await fetch(`${BASE}/api/calendar/feed?t=${encodeURIComponent(good)}`)
+    const body = res.ok ? await res.text() : ''
+    say(`a live token answers 200 text/calendar`,
+      res.status === 200 && (res.headers.get('content-type') || '').includes('text/calendar'),
+      `${res.status} ${res.headers.get('content-type')}`)
+    // 2. it contains THIS company's date …
+    say(`and carries this company's date`,
+      !!mineId && body.includes(`UID:${mineId}@`), mineId ? 'UID present' : 'no probe row')
+    // 3. … and not the other company's
+    say(`and NOT the other company's`,
+      !!theirDateId && !body.includes(theirDateId), 'cross-tenant row absent')
+    // 4. every refusal is the same refusal
+    const wrong = await fetch(`${BASE}/api/calendar/feed?t=${'z'.repeat(43)}`)
+    const none = await fetch(`${BASE}/api/calendar/feed`)
+    const gone = await fetch(`${BASE}/api/calendar/feed?t=${encodeURIComponent(revoked)}`)
+    say(`unknown / missing / revoked token all 404`,
+      wrong.status === 404 && none.status === 404 && gone.status === 404,
+      `${wrong.status} / ${none.status} / ${gone.status}`)
+    // 5. GET only
+    const posted = await fetch(`${BASE}/api/calendar/feed?t=${encodeURIComponent(good)}`, { method: 'POST' })
+    say(`POST refused (405)`, posted.status === 405, String(posted.status))
+    // 6. nothing shared may store it
+    say(`Cache-Control forbids a shared cache`,
+      (res.headers.get('cache-control') || '').includes('no-store'), res.headers.get('cache-control'))
+  } finally {
+    await admin.from('calendar_feed_tokens').delete().in('token', [good, revoked])
+    if (mineId) await admin.from('calendar_events').delete().eq('id', mineId)
+    if (theirCompany) await admin.from('companies').delete().eq('id', theirCompany)
+  }
+  }
 }
 
 console.log()

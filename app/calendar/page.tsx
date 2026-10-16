@@ -62,6 +62,7 @@ import {
 } from '@/lib/calendarView'
 import { CalendarDateDrawer, type DocumentFacts, type FindingFacts } from '@/components/CalendarDateDrawer'
 import { AddDateSheet } from '@/components/AddDateSheet'
+import { SendCalendarSheet } from '@/components/SendCalendarSheet'
 import DocumentReport from '@/components/DocumentReport'
 import AuditReport from '@/components/AuditReport'
 import { authHeaders } from '@/lib/supabase'
@@ -166,6 +167,8 @@ function Calendar() {
   const [view, setView] = useState<'month' | 'list'>('month')
   /** Board 4's site filter. 'all' is off, and with one site it is never drawn (decision 24). */
   const [siteFilter, setSiteFilter] = useState('all')
+  /** Board 11, opened from the info bar. */
+  const [sending, setSending] = useState(false)
   const [month, setMonth] = useState<string | null>(null)
   /**
    * *** WHICH DATE IS OPEN IS THE ADDRESS, NOT A PIECE OF STATE. ***
@@ -590,6 +593,10 @@ function Calendar() {
                     </select>
                   </>)}
                   <span aria-hidden="true" className="text-gray-300">·</span>
+                  {/* Board 4's own link, opening board 11. */}
+                  <button onClick={() => setSending(true)}
+                    className="text-gray-500 underline hover:text-gray-900">Send to your calendar</button>
+                  <span aria-hidden="true" className="text-gray-300">·</span>
                   {/* The shared print frame, as HR prints a conversation (`app/hr/HrWorkspace.tsx:744`). */}
                   <button onClick={() => printWithFrame({ company: companyName ?? '', type: 'Calendar' })}
                     className="text-gray-500 underline hover:text-gray-900">Print</button>
@@ -750,6 +757,11 @@ function Calendar() {
           />
         )
       )}
+
+      {/* SEND TO YOUR CALENDAR — board 11. It is handed `rows`, not `shownRows`: a subscription is
+          the whole calendar, and a feed that quietly followed whichever site filter happened to be
+          on when the link was made would be a calendar missing dates nobody could account for. */}
+      {sending && <SendCalendarSheet rows={rows} onClose={() => setSending(false)} />}
 
       {/* ADD A DATE — board 9. Only on the two date tabs; "+ New conversation" writes the same
           `?new=1` on the other two and step 10 answers it there. */}

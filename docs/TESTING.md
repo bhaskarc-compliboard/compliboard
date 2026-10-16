@@ -3992,3 +3992,30 @@ sites and three typed dates, which is the only way to see the site rules.
    until step 8b.)*
 3. Check one other printed page while you are there — HR's conversation, or a report drawer — and
    confirm the sidebar is gone from those too.
+
+### C8b-6 · Send to your calendar (free)
+
+1. On the Calendar tab, press **Send to your calendar**. The sheet is board 11: Google, Outlook,
+   Copy the link, Download a copy — under a warning that **anyone with the link can read your
+   dates**, and a second line saying **your own notes are never in it**.
+2. **Copy the link** and open it in a browser where you are *not* signed in, or fetch it with
+   `curl`. **Pass:** a `text/calendar` file arrives with no sign-in. That is the design — the
+   address is the credential — and it is why the warning is there.
+3. Change one character of the token. **Pass:** `404`, with an **empty body**. Try no token at all,
+   and a token you have had revoked: all three must answer **identically**. **Fail:** a 403, a
+   message, or a different status for any of them — each tells a stranger which tokens exist.
+4. Open the file in a text editor. **Pass:** one `VEVENT` per dated row; a repeating date carries an
+   `RRULE` and starts at its **anchor**; the description names the document and quotes the line;
+   **no note of yours is anywhere in it**; no cost and no mention of AI. **Fail:** any of those.
+5. If some dates could not be placed, the sheet says how many. Count them against the
+   "Repeating, day not read yet" strip — they are the same dates.
+6. **Download a copy (.ics)** and open that too: it must say the same things as the link's file.
+
+### C8b-7 · The feed is one company's, and one link (free)
+
+1. Fetch a company's feed and search it for a date you know belongs to **another** company. It must
+   not be there. `check:live --only calendar_feed` proves this against a real cross-tenant row.
+2. Open the sheet **twice, in two tabs**. **Pass:** the same link both times. **Fail:** two
+   different links — that is a live credential nobody knows about, and revoking "the" link would
+   leave it working. *(This one shipped wrong once and is why the issuer converges.)*
+3. After a company is deleted, its link must stop answering — the token row cascades with it.
