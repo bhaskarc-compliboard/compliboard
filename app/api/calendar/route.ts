@@ -14,7 +14,8 @@
 // vocabulary against a column with no CHECK (map B1), which is what one shared function ends.
 //
 // *** DELETE IS GONE, AND THAT IS THE POINT (decision 11). ***
-// A date is never deleted: it is dismissed, with a reason, by a named person, and it stays. Migration
+// A date is never deleted: it is dismissed by a named person, with an optional reason, and it stays.
+// (The reason was required until step 8a; the owner made it optional — `lib/calendarDates.ts` says why.) Migration
 // 073 took DELETE off `authenticated` and dropped the DELETE policy, so there is nothing for a DELETE
 // handler to do but fail. The old page's × button therefore fails on staging until step 7 replaces
 // the page; that is recorded in `docs/HANDOFF-CODE.md` §7 as expected rather than left to be found.
@@ -138,7 +139,8 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * WHAT A PERSON DOES TO A DATE: confirm it, remove it with a reason, or say how often it repeats.
+ * WHAT A PERSON DOES TO A DATE: confirm it, remove it (a reason is optional since step 8a), or say
+ * how often it repeats — which is refused on a date that happens once.
  *
  * `{ id, action: 'confirm' | 'dismiss' | 'period', reason?, period? }`. There is no `completed` any
  * more — decision 11: a date has passed, it is never done. The old page's tick sends the old body

@@ -35,6 +35,30 @@ export const STATUS_GROUP_LABEL: Record<string, string> = {
   on_file: 'On file',
 }
 
+/**
+ * WHAT KIND OF DOCUMENT IT IS, IN WORDS — added here at Calendar step 8a for the reason the file
+ * already exists: a display map with more than one copy is more than one answer.
+ *
+ * *** THERE ARE THREE OTHER COPIES OF THIS MAP, AND TWO OF THEM DISAGREE. ***
+ * `components/DocumentReport.tsx:92` and `app/dashboard/page.tsx:37` say "Supplier document";
+ * `components/AuditReport.tsx:41` says "Supplier's document". Calendar's date drawer needed the
+ * same words and a FOURTH copy would have made it worse, so it imports these. The three were left
+ * exactly as they are: repointing them changes what Documents, the Dashboard and Audits print, and
+ * those are sections this step's plan did not name. Recorded in `docs/HANDOFF-CODE.md` §7.
+ *
+ * The spelling here is Documents' and the Dashboard's, because Documents is the section that owns
+ * the reading these words describe.
+ */
+export const KIND_WORD: Record<string, string> = {
+  permit: 'Permit',
+  certificate: 'Certificate',
+  program: 'Program',
+  policy: 'Policy',
+  record: 'Record',
+  supplier_document: 'Supplier document',
+  other: 'Other',
+}
+
 const AMBER_STATUSES = new Set(['needs_work', 'expiring', 'expired', 'could_not_read'])
 
 /**

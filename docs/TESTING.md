@@ -3848,3 +3848,85 @@ The old `/calendar` had an add form, a month grid, a list, an import-a-file form
 All six are gone. **Pass:** none of them is anywhere on the new page, and nothing else in the
 product links to them. **Fail:** any survivor — in particular an upload control, which would be a
 second way into Company Documents' job.
+
+---
+
+## Calendar — step 8a, the month, the list and the date drawer (16 October 2026)
+
+**On staging only.** `docs/CALENDAR-PLAN.md` step 8a; boards 4, 5, 6 and 8 in
+`docs/calendar-boards.html`; `DECISIONS.md` §192. **Every check here is free.** Use **Test Gamma
+Solvents** (dates, one site) and **Test Alpha Chemical** (no dates, two sites).
+
+### C8a-1 · The month, beside board 4 — the perfect case
+
+1. Open `/calendar`, Calendar tab. It opens on **Month**, on the month holding the soonest date
+   still ahead — not necessarily this month.
+2. **Pass:** seven equal columns Mon–Sun; **every day box the same height**, including the busy
+   one; a day with more than two dates ends in "+N more"; today's number is in a green circle; a
+   confirmed date has a filled dot and an unconfirmed one a hollow ring; a passed date is grey.
+   **Fail:** the grid changes height when you press ‹ or ›, or a box grows to fit its contents.
+3. `npm run measure -- "/calendar?tab=calendar" --as testgamma@example.com --width 1280 --height 1180`
+   and compare the column with `/hr`: **column content 326–1178** on both.
+
+### C8a-2 · The dates that cannot sit on a square — the edge case, and the one that matters
+
+A repeating date with no day, or one whose period was never read, has no square to sit on
+(decisions 12 and 23).
+
+1. In **Month**, look above the grid: **"Repeating, day not read yet (N)"**, with every one of them
+   listed and clickable.
+2. In **List**, they are the last group: **"Repeats — how often or when wasn't read yet"**, each
+   row saying "how often wasn't read" or "every year", and "no day yet" on the right.
+3. Open one, press **Set how often**, choose a period.
+4. **Pass:** the date leaves that group and appears on the grid, on the next occurrence counted from
+   its anchor. **Fail:** it stays in the group, or lands on the anchor date in the past.
+5. **The one that matters:** a date in neither place. Count the strip plus the grid plus the list
+   against the tab's own count. They must agree, because they are one read.
+
+### C8a-3 · One date, opened (free)
+
+1. Click any date, in either view.
+2. **Pass:** the drawer is 720 wide with two tabs — "The date" and a greyed "The report" with
+   "Arrives with step 8b" — and the first tab says **when** (with the weekday and how far away),
+   whether it **repeats** and from when, the **site** (only if the company has more than one),
+   its **state**, **where it came from** with the exact line in quotes, the **other live dates the
+   same document sets** (each swapping the drawer), the **history**, and decision 27's line *"If
+   you have already handled this, add the proof in Company Documents and it will show here."*
+3. **An audit's date must name the AUDIT, not the document.** A date found by an audit carries both
+   ids; "Where it came from" must read the agency and the finding, with the document below it as
+   "About …". **Fail:** the document is shown as the source. *(That is the defect step 8a found.)*
+4. A typed date shows "Added by ‹name›" and has no Open the file or Download.
+
+### C8a-4 · The three things a person does to a date (free)
+
+1. **Confirm** an unconfirmed date. **Pass:** the drawer's state line changes, the dot fills, and
+   the "Dates to confirm" tab AND the sidebar badge both drop by one.
+2. **Set how often** on a repeating date; then, on a date that happens **once**, check there is no
+   such control. A direct `PATCH {action:'period'}` on a one-off must answer **400 — "That date
+   happens once, so it has no 'how often'. Say that it repeats first."**
+3. **Remove** a date and **type nothing**. **Pass:** it is removed anyway; the drawer and the sheet
+   close; the date leaves both views and both counts. **Fail:** a 400 asking for a reason — the
+   reason is optional (the owner, step 8a).
+4. **Cancel must hold the focus.** Open the Remove sheet and press Enter: nothing is removed.
+5. A **passed** date stays in both views after all of this. It is never "done" and never "overdue".
+
+### C8a-5 · Arriving from somewhere else (free)
+
+1. From **Company Documents**, open a document's report and click a date's "On your calendar" line.
+2. From **Audits**, open a run's report and click the same kind of line.
+3. **Pass:** both land on `/calendar` **on the Calendar tab** with the date's drawer open.
+4. Now take the id of a date that was **removed** or that the newest reading **withdrew**, and open
+   `/calendar?date=<that id>`. **Pass:** one grey line — *"That date isn't on the calendar any more.
+   If it should be, add it with + Add a date."* **Fail:** a blank page, an error, or silence.
+5. Paste another company's date id. It must say exactly the same thing — never "not yours".
+
+### C8a-6 · The empty calendar, and the one-site rule (free)
+
+1. As **Test Alpha** (no dates, two sites): the Calendar tab shows **"No dates yet"**, no counts,
+   no badge, no grid.
+2. As **Test Gamma** (one site): **no row anywhere mentions a site**, and the drawer has no Site
+   line. With two or more sites each row names its site, "Every site" for a company-wide date, and
+   "Site removed — choose where it applies" for one whose site was deleted (decision 24).
+3. **If a read fails**, the tab must say *"We could not load your dates just now. Nothing has
+   changed — please try again."* and **never "No dates yet"** — an empty calendar is a claim about
+   the customer's compliance. *(This one shipped wrong once during step 8a's own screenshots.)*

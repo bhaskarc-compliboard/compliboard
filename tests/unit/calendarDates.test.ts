@@ -412,14 +412,33 @@ describe('confirmDate', () => {
 
 describe('dismissDate', () => {
   const row = { id: 'd1', company_id: CO, status: 'proposed', title: 'x', due_date: '2027-01-01' }
-  test('a reason is required — the thing that stops the next reading proposing it again', async () => {
-    const f = fake([{ ...row }])
+  /**
+   * *** THE REASON WAS REQUIRED UNTIL CALENDAR STEP 8a, AND THIS TEST HELD THAT. ***
+   * The owner relaxed it (board 8: "the reason is OPTIONAL: Remove works with nothing typed").
+   * The test is not deleted, it is turned over: what it now holds is that nothing typed REMOVES
+   * THE DATE ANYWAY, and that an empty reason is stored as NULL rather than as ''. The old
+   * reasoning — the reason is what stops the next reading proposing it again — was Documents'
+   * rule for a GAP and was never true here: `dismissed_by` is what `proposeDate` rule (b) and
+   * step 6b's withdrawal both honour, and neither of them reads the sentence.
+   */
+  test('NOTHING TYPED STILL REMOVES IT — the reason is optional (the owner, step 8a)', async () => {
     for (const reason of ['', '   ']) {
+      const f = fake([{ ...row }])
       const r = await dismissDate(f.db, 'd1', 'user-9', reason)
-      assert.equal(r.status, 400)
-      assert.match(String(r.json.error), /why this date is not right/)
+      assert.equal(r.status, 200)
+      assert.equal(f.rows[0].status, 'dismissed')
+      assert.equal(f.rows[0].dismissed_by, 'user-9')
+      assert.ok(f.rows[0].dismissed_at, 'when it happened is still recorded')
+      assert.equal(f.rows[0].dismissed_reason, null, 'an empty reason is NULL, never the empty string')
     }
-    assert.equal(f.rows[0].status, 'proposed', 'nothing was written')
+  })
+  test('what stops the next reading bringing it back is dismissed_by, not the sentence', async () => {
+    // The invariant behind the relaxation, stated where it can fail: a row a person removed with
+    // no reason is still `dismissed`, which is the only thing rule (b) and the withdrawal look at.
+    const f = fake([{ ...row }])
+    await dismissDate(f.db, 'd1', 'user-9', '')
+    assert.equal(f.rows[0].status, 'dismissed')
+    assert.equal(f.rows[0].dismissed_by, 'user-9')
   })
   test('with a reason: dismissed, with who, when and the reason, trimmed and capped', async () => {
     const f = fake([{ ...row }])
@@ -467,6 +486,40 @@ describe('setPeriod', () => {
   test('an unknown id is 404; no id is 400', async () => {
     assert.equal((await setPeriod(fake().db, 'nope', 'year')).status, 404)
     assert.equal((await setPeriod(fake().db, '', 'year')).status, 400)
+  })
+
+  /**
+   * *** A ONE-OFF HAS NO "HOW OFTEN" — Calendar step 8a. ***
+   * Nothing in the database refuses this: `period`'s CHECK is on its WORDS, and
+   * `calendar_events_date_or_recurs` is about the day. A period on `recurs = false` stored fine
+   * and meant nothing, because `calendar_v` only reaches for `step_months` when `recurs` is true —
+   * so the drawer would read "every year" on a date that happens once, and `next_due` would not
+   * move. A value stored that no reader honours reads back as a fact.
+   */
+  describe('a period on a date that happens once', () => {
+    const once = { id: 'd2', company_id: CO, status: 'proposed', recurs: false, title: 'x', due_date: '2027-01-01' }
+    test('is refused in plain words, and nothing is written', async () => {
+      for (const p of PERIODS) {
+        const f = fake([{ ...once }])
+        const r = await setPeriod(f.db, 'd2', p)
+        assert.equal(r.status, 400, p)
+        assert.match(String(r.json.error), /happens once, so it has no "how often"/)
+        assert.equal(f.rows[0].period, undefined, 'nothing was written')
+      }
+    })
+    test('but CLEARING it is still allowed — that is how a row written before this guard is tidied', async () => {
+      for (const p of [null, '']) {
+        const f = fake([{ ...once, period: 'year' }])
+        const r = await setPeriod(f.db, 'd2', p)
+        assert.equal(r.status, 200)
+        assert.equal(f.rows[0].period, null)
+      }
+    })
+    test('the refusal is about `recurs`, not about having a day: a repeating date still takes one', async () => {
+      const f = fake([{ ...once, recurs: true, due_date: null }])
+      assert.equal((await setPeriod(f.db, 'd2', 'month')).status, 200)
+      assert.equal(f.rows[0].period, 'month')
+    })
   })
 })
 

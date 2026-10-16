@@ -248,7 +248,6 @@ describe('every word on the page is the owner\'s', () => {
     'Add your permits, certificates and reports in Company Documents. The dates they set show up here, with the line they came from.',
     'Nothing waiting',
     'When a reading finds a date, it lands here for you to confirm or set right.',
-    'The month and list views arrive with step 8.',
     'This view arrives with step 9.',
     'New conversation',
     'Add a date',
@@ -271,9 +270,19 @@ describe('every word on the page is the owner\'s', () => {
       assert.ok(!PAGE.includes(q), `the page must not hold a second copy of: ${q}`)
     }
   })
+  /**
+   * *** CHANGED BY STEP 8a, AND THE OLD VERSION IS WHY THIS TEST EXISTS. *** In step 7 both
+   * parameters were read only so the page could say, in one line, that opening a single date was
+   * not built yet. Step 8a built it: they now open the drawer, and the line is kept for the case
+   * the link cannot be honoured — removed, withdrawn, or another company's. The rule the test
+   * holds is unchanged: a link that lands here is never met with silence.
+   */
   test('A LINK TO ONE DATE IS ANSWERED, NOT SWALLOWED — decision 30', () => {
-    assert.match(PAGE, /params\.get\('date'\) \|\| params\.get\('finding'\)/)
-    assert.match(PAGE, /Opening a single date arrives with step 8/)
+    assert.match(PAGE, /params\.get\('date'\)/)
+    assert.match(PAGE, /params\.get\('finding'\)/)
+    assert.match(PAGE, /resolveLink\(rows, linkedDate, linkedFinding\)/)
+    assert.ok(PAGE.includes('NOT_ON_CALENDAR'), 'and when it resolves to nothing, it says so')
+    assert.ok(!PAGE.includes('arrives with step 8;'), "step 7's placeholder is gone")
   })
   test('the forbidden words are absent', () => {
     // The product never says these (`docs/CALENDAR-PLAN.md` §2.1): never "AI", never "compliant",
@@ -291,21 +300,35 @@ describe('NOTHING OF THE OLD PAGE CAME ACROSS, and the new one writes nothing', 
       assert.ok(!CODE.includes(gone), `${gone} must not survive into the new page`)
     }
   })
-  test('it calls no route and makes no write', () => {
-    assert.ok(!/\bfetch\(/.test(CODE), 'the shell calls no route')
+  /**
+   * *** WIDENED BY STEP 8a. *** In step 7 the page made no query at all. It now reads four more
+   * relations for the drawer — `entities` (counted, for decision 24), `profiles` (the names behind
+   * "confirmed by…"), `document_index_v` and `audit_findings`. What has not changed, and is the
+   * thing worth holding, is that the page READS and never writes: every change to a date goes
+   * through `PATCH /api/calendar` from the drawer, over `lib/calendarDates.ts`, the one writer.
+   */
+  test('it makes no write, and no reader of it writes a row itself', () => {
     // *** NOT A SEARCH FOR `.delete(`, AND THAT IS A FINDING OF ITS OWN. *** Written that way
     // first, this test failed on `p.delete(k)` — `URLSearchParams`, which is how the tab leaves the
     // address when it is the default one. A substring is not a call site (`CLAUDE.md` §9a), so the
     // check is made against what a write would actually need: a query builder, or a method on a
-    // request. The page has neither; both reads go through the two shared functions.
-    assert.ok(!/supabase\s*\n?\s*\.from\(|\bsupabase\.from\(/.test(CODE), 'the page builds no query of its own')
-    for (const w of ["method: 'POST'", "method: 'PATCH'", "method: 'DELETE'", "method: 'PUT'", 'authHeaders']) {
+    // request.
+    for (const w of ["method: 'POST'", "method: 'PATCH'", "method: 'DELETE'", "method: 'PUT'",
+      '.insert(', '.upsert(', '.update(']) {
       assert.ok(!CODE.includes(w), `${w} must not be on a page that only reads`)
     }
+    assert.ok(!/\bfetch\(/.test(CODE), 'the page calls no route; the drawer does')
+  })
+  test('every relation the page reads is named here, so a fifth is a deliberate act', () => {
+    const named = [...CODE.matchAll(/supabase\s*\.from\('([a-z_]+)'\)/g)].map((m) => m[1]).sort()
+    assert.deepEqual([...new Set(named)],
+      ['audit_findings', 'companies', 'document_index_v', 'entities', 'profiles'])
   })
   test('it reads calendar_v through the shared filter, not with a query of its own', () => {
     assert.ok(!CODE.includes('calendar_v'), 'the page must not name the view: lib/calendarCounts.ts does')
+    assert.ok(!CODE.includes('calendar_events'), 'nor the table')
     assert.match(PAGE, /readCalendarCounts\(supabase\)/)
+    assert.match(PAGE, /readCalendarRows\(supabase\)/)
     assert.match(PAGE, /readTopicList\(supabase, 'calendar'\)/)
   })
 })

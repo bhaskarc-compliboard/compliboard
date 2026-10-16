@@ -370,17 +370,26 @@ export async function confirmDate(db: Db, id: string, userId: string): Promise<A
 
 export async function dismissDate(db: Db, id: string, userId: string, reason: string): Promise<ActResult> {
   if (!id) return { status: 400, json: { error: 'No date given.' } }
-  // A REASON IS REQUIRED, as it is for dismissing a gap (`app/api/document-actions/route.ts:84–86`)
-  // and for the same reason: the reason is what stops a later reading proposing it again, and
-  // "doesn't apply" with no sentence is how a real date gets buried.
-  if (!reason || !String(reason).trim()) {
-    return { status: 400, json: { error: 'Please say why this date is not right.' } }
-  }
+  /**
+   * *** THE REASON IS OPTIONAL — the owner, Calendar step 8a (board 8). ***
+   *
+   * It was required, and refused with 400 "Please say why this date is not right." The reasoning
+   * was Documents': a dismissed GAP needs a sentence, because the reason is what stops a later
+   * reading proposing it again. **That is not how a calendar date works.** What stops the same
+   * document proposing this date again is that a PERSON removed it — `dismissed_by` set, which
+   * `proposeDate`'s rule (b) and step 6b's withdrawal both honour whatever any later reading says.
+   * The sentence was never load-bearing here; it was a toll on the one irreversible action in the
+   * section, and a toll on removing a date is how a wrong date stays on a calendar.
+   *
+   * So: nothing typed is accepted, `dismissed_reason` is left NULL rather than stored as '', and
+   * who and when are recorded exactly as before. A reason given still shows in the history.
+   */
+  const given = String(reason ?? '').trim()
   const row = await load(db, id)
   if (!row) return NOT_FOUND
   const { data, error } = await db.from('calendar_events')
     .update({ status: 'dismissed', dismissed_by: userId, dismissed_at: new Date().toISOString(),
-              dismissed_reason: String(reason).trim().slice(0, 2000), withdrawn_at: null })
+              dismissed_reason: given ? given.slice(0, 2000) : null, withdrawn_at: null })
     .eq('id', id).select(ROW_COLUMNS).maybeSingle()
   if (error) throw new Error(`calendar_events: ${error.message}`)
   if (!data) return NOT_FOUND
@@ -397,6 +406,25 @@ export async function setPeriod(db: Db, id: string, period: string | null): Prom
   }
   const row = await load(db, id)
   if (!row) return NOT_FOUND
+  /**
+   * *** A ONE-OFF DATE HAS NO "HOW OFTEN", AND SAYING SO IS THIS ROUTE'S JOB — step 8a. ***
+   *
+   * Nothing in the database refuses it: `period` is a plain nullable column with a CHECK on its
+   * WORDS only, and `calendar_events_date_or_recurs` is about the day, not the period. So a period
+   * written onto a row with `recurs = false` stored perfectly well and meant nothing — `calendar_v`
+   * only reaches for `step_months` when `recurs` is true, so `next_due` would not move and the
+   * drawer would show "every year" on a date that happens once. A value stored that no reader
+   * honours is worse than a refusal: it reads back as a fact.
+   *
+   * Clearing it is always allowed, including on a one-off — that is how a row written before this
+   * guard gets tidied, and null already means "nothing is claimed".
+   */
+  if (value !== null && !row.recurs) {
+    return {
+      status: 400,
+      json: { error: 'That date happens once, so it has no "how often". Say that it repeats first.' },
+    }
+  }
   const { data, error } = await db.from('calendar_events')
     .update({ period: value }).eq('id', id).select(ROW_COLUMNS).maybeSingle()
   if (error) throw new Error(`calendar_events: ${error.message}`)

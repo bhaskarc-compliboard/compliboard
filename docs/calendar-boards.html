@@ -1,0 +1,600 @@
+<title>Calendar Workspace boards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Canvas chrome: a quiet grey desk the boards sit on. The boards themselves use the app's own tokens
+   (copied from the HR Workspace boards, template/tokens.css) and keep the app's one light look. */
+:root {
+  --desk: #E9EBEE; --desk-fg: #14171A; --desk-muted: #6B7280; --desk-faint: #9CA3AF; --desk-line: #D6D9DE; --desk-surface: #FFFFFF;
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  /* App tokens — the HR boards' values, unchanged */
+  --ink: #14171A; --heading: #111827; --text-strong: #1F2937; --text: #4B5563; --text-nav: #5B6470; --text-muted: #6B7280; --text-faint: #9CA3AF;
+  --group-heading: #374151; --dot: #D1D5DB; --line: #E5E7EB; --line-faint: #F0F1F3; --page: #F7F8FA; --surface: #FFFFFF; --panel: #F9FAFB; --bubble: #E5E7EB; --scrim: rgba(20,23,26,0.4);
+  --brand: #2F7D52; --brand-strong: #256541; --brand-tint: #EAF3ED; --warning: #B7791F; --danger: #B42318; --orange: #F94300;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #1E2124; --desk-fg: #E6E8EB; --desk-muted: #A3A9B1; --desk-faint: #7C838C; --desk-line: #33373C; --desk-surface: #26292D; color-scheme: dark; } }
+:root[data-theme="dark"] { --desk: #1E2124; --desk-fg: #E6E8EB; --desk-muted: #A3A9B1; --desk-faint: #7C838C; --desk-line: #33373C; --desk-surface: #26292D; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: var(--font-ui); }
+.cv-top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; gap: 12px; height: 52px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--desk-surface); border-bottom: 1px solid var(--desk-line); }
+.cv-top h1 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cv-top .sp { flex: 1; }
+.cv-top select, .cv-top button { font-family: inherit; font-size: 13px; height: 30px; padding: 0 10px; border: 1px solid var(--desk-line); border-radius: 6px; background: var(--desk-surface); color: var(--desk-fg); cursor: pointer; }
+.cv-top button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-strong); }
+.cv-hint { font-size: 12px; color: var(--desk-faint); white-space: nowrap; }
+@media (max-width: 720px) { .cv-hint, .cv-top h1 { display: none; } }
+.cv-intro { max-width: 900px; padding-block: 28px 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cv-intro h2 { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; line-height: 1.2; text-wrap: balance; }
+.cv-intro p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--desk-muted); max-width: 70ch; }
+.cv-band { padding-block: 28px 4px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.cv-frame { padding-block: 12px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cv-label { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; font-size: 13px; color: var(--desk-muted); }
+.cv-label .t { font-weight: 500; color: var(--desk-fg); min-width: 0; }
+.cv-label .s { font-size: 11px; color: var(--desk-faint); white-space: nowrap; }
+.cv-note { margin: 0 0 8px; font-size: 13px; line-height: 20px; color: var(--desk-muted); max-width: 80ch; }
+.scaler { position: relative; width: 100%; overflow: hidden; }
+.board { position: relative; width: 1280px; transform-origin: 0 0; background: var(--page); color: var(--ink); font-family: var(--font-ui); box-shadow: 0 1px 3px rgba(20,23,26,0.12), 0 8px 24px rgba(20,23,26,0.06); overflow: hidden; }
+.board.narrow { width: 720px; }
+.board.mail { width: 720px; background: #EDEFF2; }
+.board a { color: var(--brand-strong); }
+.board button { font-family: inherit; }
+
+/* ---------- The app frame (HR template, verbatim) ---------- */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { height: 57px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .name { font-size: 14px; font-weight: 600; }
+.topbar .org { font-size: 13px; color: var(--text-nav); }
+.bodyrow { display: flex; flex: 1; min-height: 0; }
+.sidebar { width: 224px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; background: var(--surface); border-right: 1px solid var(--line); }
+.nav { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 8px; font-size: 14px; color: var(--text-nav); text-decoration: none; }
+.nav.active { font-weight: 500; color: var(--brand-strong); background: var(--brand-tint); }
+.nav .badge { font-size: 12px; color: var(--brand-strong); }
+.main { flex: 1; display: flex; justify-content: center; padding: 24px 24px 64px; min-width: 0; }
+.column { width: 852px; max-width: 100%; display: flex; flex-direction: column; }
+.page-title { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; }
+.lede { margin: 6px 0 0; font-size: 14px; color: var(--text-muted); }
+.tabs { display: flex; align-items: center; gap: 24px; margin: 20px 0; border-bottom: 1px solid var(--line); }
+.tab { padding: 8px 0 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--brand-strong); border-bottom-color: var(--brand); }
+.tabs .spacer { flex: 1; }
+.tabs .side-link { padding: 8px 0 12px; font-size: 14px; color: var(--text-muted); text-decoration: none; }
+.btn-primary { font-size: 14px; font-weight: 500; padding: 8px 16px; color: #fff; background: var(--brand); border: 0; border-radius: 6px; }
+.btn-outline { font-size: 14px; font-weight: 500; padding: 5px 11px; color: var(--brand); background: transparent; border: 1px solid var(--brand); border-radius: 6px; }
+.btn-danger { font-size: 14px; font-weight: 500; padding: 5px 11px; color: var(--danger); background: transparent; border: 1px solid var(--danger); border-radius: 6px; }
+.btn-text { font-size: 14px; padding: 0; color: var(--text); background: transparent; border: 0; }
+.btn-text.strong { font-weight: 500; color: var(--brand-strong); }
+.btn-text.muted { color: var(--text-faint); }
+.btn-text.small { font-size: 12px; color: var(--brand-strong); }
+.push-right { margin-left: auto; }
+.attach { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0; background: none; border: 0; font-size: 12px; color: var(--text-muted); }
+.attach span { text-decoration: underline; }
+.icon-btn { padding: 6px; background: none; border: 0; color: var(--text-faint); }
+.send { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--brand); border: 0; border-radius: 8px; color: #fff; }
+.infobar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.infobar p { margin: 0; font-size: 13px; color: var(--text-muted); }
+.infobar .right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; font-size: 12px; color: var(--text-muted); }
+.infobar .right .on { color: var(--ink); font-weight: 500; }
+.search { display: flex; align-items: center; gap: 6px; flex-shrink: 0; width: 220px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 13px; color: var(--text-faint); }
+.empty { margin-top: 20px; padding: 48px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: center; }
+.empty .title { font-size: 15px; font-weight: 500; color: var(--heading); }
+.empty .body { margin-top: 4px; font-size: 13px; color: var(--text-muted); }
+.group-heading { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 0 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.group-heading.quiet { color: var(--text-faint); }
+.group-heading .act { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 12px; color: var(--brand-strong); }
+.rows { border-bottom: 1px solid var(--line); }
+.row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); }
+.row .text { flex: 1; min-width: 0; }
+.row .title { display: block; font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .title.passed { color: var(--text-muted); }
+.row .when { flex-shrink: 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.row .acts { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.meta { margin-top: 2px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.meta .dot { color: var(--dot); }
+.meta .warn { color: var(--warning); }
+.meta q { quotes: "“" "”"; }
+.askbox { min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.askbox .inner { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.askbox .example { margin: 0; font-size: 14px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.askbox-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 10px; }
+.thread { display: flex; flex-direction: column; gap: 20px; margin-bottom: 28px; }
+.bubble-row { display: flex; justify-content: flex-end; }
+.bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; background: var(--bubble); font-size: 16px; line-height: 24px; }
+.answer { display: flex; flex-direction: column; gap: 14px; }
+.answer h3 { margin: 8px 0 0; font-family: var(--font-reading); font-size: 19px; font-weight: 600; }
+.answer p { margin: 0; font-family: var(--font-reading); font-size: 17px; line-height: 28px; }
+.answer .note { font-family: var(--font-ui); font-size: 12px; line-height: 18px; color: var(--text-muted); }
+.answer .offer { font-family: var(--font-ui); font-size: 14px; color: var(--brand-strong); text-decoration: underline; }
+.cite { margin: 0 2px; padding: 0 4px; border-radius: 4px; background: var(--brand-tint); font-family: var(--font-ui); font-size: 10px; font-weight: 600; color: var(--brand); vertical-align: super; }
+.sources { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sources .label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.source { display: flex; gap: 8px; font-size: 13px; line-height: 18px; }
+.source .n, .source .origin { color: var(--text-faint); }
+.source .quote { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.composer { display: flex; flex-direction: column; padding: 14px 16px 10px; min-height: 104px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.composer .ph { flex: 1; font-size: 16px; line-height: 24px; color: var(--text-faint); }
+.composer .bar { display: flex; justify-content: flex-end; }
+.actions { display: flex; align-items: center; gap: 20px; margin-top: 12px; }
+.hint { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+/* month grid: hairlines only, no boxes */
+.monthbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 10px; }
+.monthbar .m { font-size: 14px; font-weight: 500; color: var(--ink); }
+.monthbar .nv { display: flex; gap: 14px; font-size: 13px; color: var(--text-muted); }
+.monthbar .nv .today { color: var(--brand-strong); }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: 28px; grid-auto-rows: 84px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.grid > * { min-width: 0; overflow: hidden; }
+.grid .dh { height: 28px; padding: 6px 8px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.grid .d { height: 84px; padding: 6px 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.grid .d.out { background: var(--surface); }
+.grid .d .n { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.grid .d.out .n { color: var(--dot); }
+.grid .d.today .n { display: inline-block; min-width: 20px; padding: 1px 5px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 500; }
+.grid .ev { margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grid .ev.unc { color: var(--text-muted); }
+.grid .ev.unc::before { content: "○ "; color: var(--text-faint); }
+.grid .ev.conf::before { content: "● "; color: var(--brand); }
+.grid .ev.past { color: var(--text-faint); }
+.grid .ev.past::before { content: "● "; color: var(--dot); }
+.legend { display: flex; gap: 20px; padding-top: 10px; font-size: 12px; color: var(--text-muted); }
+
+/* drawer & sheet, positioned inside the board */
+.layer { position: absolute; inset: 0; background: var(--scrim); display: flex; }
+.layer.drawer-layer { justify-content: flex-end; }
+.layer.sheet-layer { align-items: center; justify-content: center; padding: 16px; }
+.drawer { width: 720px; max-width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line); }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 24px 0; }
+.drawer-head h2 { margin: 0; font-size: 18px; font-weight: 500; line-height: 25px; color: var(--heading); }
+.drawer-head .sub { margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
+.drawer-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 16px 24px 24px; }
+.drawer-foot { display: flex; align-items: center; gap: 16px; padding: 12px 24px; border-top: 1px solid var(--line); }
+.notebox { padding: 10px 12px; background: var(--panel); border-radius: 8px; font-size: 12.5px; line-height: 19px; color: var(--text); }
+.fineprint { font-size: 12px; line-height: 18px; color: var(--text-muted); }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 0 6px; }
+.section-head span { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.para { font-size: 15px; line-height: 23px; color: var(--text-strong); }
+.item { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; border-top: 1px solid var(--line-faint); }
+.item .t { font-size: 15px; font-weight: 500; }
+.item .b { font-size: 14px; line-height: 21px; color: var(--text); }
+.item .ref { font-size: 12px; line-height: 18px; color: var(--text); }
+.item .ref q { color: var(--text-muted); quotes: "“" "”"; }
+.items { border-bottom: 1px solid var(--line-faint); }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+.fact .k { font-size: 12px; color: var(--text-muted); }
+.fact .v { font-size: 14px; line-height: 21px; color: var(--ink); }
+.linkrow { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink); text-decoration: none; }
+.linkrow span:last-child { color: var(--brand-strong); }
+.sheet { width: 448px; max-width: 100%; padding: 20px; background: var(--surface); border-radius: 16px; }
+.sheet h3 { margin: 0; font-size: 16px; font-weight: 500; color: var(--heading); }
+.sheet .intro { margin: 4px 0 12px; font-size: 13px; line-height: 20px; color: var(--text); }
+.sheet-actions { display: flex; align-items: center; gap: 16px; margin-top: 18px; }
+.choice { display: block; width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: left; }
+.choice + .choice { margin-top: 8px; }
+.choice .t { display: block; font-size: 14px; font-weight: 500; color: var(--heading); }
+.choice .d { display: block; margin-top: 2px; font-size: 13px; color: var(--text); }
+.field { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.field label { font-size: 12px; color: var(--text-muted); }
+.field .in { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; color: var(--ink); min-height: 36px; }
+.field .in.ph { color: var(--text-faint); }
+.field .in.ta { min-height: 64px; }
+.field .seg { display: flex; gap: 8px; }
+.field .seg span { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; color: var(--text); }
+.field .seg span.on { border-color: var(--brand); color: var(--brand-strong); }
+
+/* email */
+.mail-wrap { padding: 32px 0 40px; }
+.mail-card { width: 600px; margin: 0 auto; background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; }
+.mail-head { padding: 22px 32px 18px; border-bottom: 1px solid #E5E7EB; }
+.wordmark { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.wordmark .g { color: var(--brand); } .wordmark .o { color: var(--orange); }
+.mail-body { padding: 24px 32px 28px; }
+.mail-body h1 { margin: 0; font-family: var(--font-reading); font-size: 24px; font-weight: 400; line-height: 30px; color: #14171A; }
+.mail-body .lede { margin-top: 6px; }
+.mail-body .gh { padding: 22px 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #374151; }
+.mail-row { display: flex; gap: 14px; padding: 9px 0; border-top: 1px solid #E5E7EB; font-size: 14px; line-height: 20px; }
+.mail-row .dt { flex-shrink: 0; width: 64px; color: #6B7280; font-variant-numeric: tabular-nums; }
+.mail-row .what { flex: 1; min-width: 0; color: #14171A; }
+.mail-row .what .sub { display: block; font-size: 12px; color: #6B7280; }
+.mail-row .st { flex-shrink: 0; font-size: 12px; color: #6B7280; }
+.mail-rows { border-bottom: 1px solid #E5E7EB; }
+.mail-btn { display: inline-block; margin-top: 24px; padding: 10px 18px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 500; border-radius: 6px; text-decoration: none; }
+.mail-foot { padding: 16px 32px 20px; border-top: 1px solid #E5E7EB; font-size: 12px; line-height: 18px; color: #9CA3AF; }
+.mail-meta { width: 600px; margin: 0 auto 10px; font-size: 12px; color: #6B7280; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="cv-top">
+  <h1>CompliBoard Calendar Workspace — the feature boards</h1>
+  <span class="sp"></span>
+  <span class="cv-hint">Scroll down the boards · zoom with the buttons</span>
+  <select id="goto" aria-label="Go to a board"><option value="">Go to a board…</option></select>
+  <button type="button" id="z-fit" aria-pressed="true">Fit</button>
+  <button type="button" id="z-75" aria-pressed="false">75%</button>
+  <button type="button" id="z-100" aria-pressed="false">100%</button>
+</div>
+
+<div class="cv-intro">
+  <h2>The Calendar, drawn in the HR frame</h2>
+  <p>Eleven boards for a desktop window 1280 wide, in the HR Workspace's own shell, type and words. The sample company is HR's: Willamette Vinegar Works, with a Portland plant and a Vancouver warehouse. Today is 15 October 2026 on every board. The Conversations tab, the summary drawer, the delete-a-conversation sheet and the printed page are the HR boards 9 to 12 as they stand, so they are not redrawn here.</p>
+</div>
+
+<div class="cv-band">Asking: the expert down the hall</div>
+
+<!-- ===================== BOARD 1 ===================== -->
+<section class="cv-frame" id="b1">
+  <div class="cv-label"><span class="t">1 · Ask a question, first visit</span><span class="s">1280 × 700</span></div>
+  <p class="cv-note">HR board 5 with the calendar's words. "Add a document" sits under the box where HR puts "Add a handbook": a file given here goes to Company Documents and its dates arrive on their own. The stats line counts dates, not handbooks.</p>
+  <div class="scaler"><div class="board" style="height:700px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#"><span>Company information</span><span class="badge">3</span></a><a class="nav active" href="#"><span>Calendar</span><span class="badge">14</span></a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Calendar</h1>
+          <p class="lede">Every date your documents set, in one place. Ask when something is due, and we say where the date came from.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Ask a question</div><div class="tab">Conversations</div><div class="tab">Calendar (23)</div><div class="tab">Dates to confirm (14)</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div>
+          <div class="askbox"><div class="inner">
+            <p class="example">e.g. When is our Tier II report due, and does it cover both sites?</p>
+            <p class="example">e.g. What expires in the next 90 days?</p>
+            <p class="example">e.g. Is the fire inspection for the Vancouver warehouse on the calendar?</p>
+          </div></div>
+          <div class="askbox-bar"><button class="attach"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span>Add a document</span></button><button class="btn-primary">Ask</button></div>
+          <div class="infobar" style="margin-top:24px"><p>23 dates on your calendar · 14 waiting for your confirmation · 3 conversations · next date 28 October</p></div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 2 ===================== -->
+<section class="cv-frame" id="b2">
+  <div class="cv-label"><span class="t">2 · The answer</span><span class="s">1280 × 1240</span></div>
+  <p class="cv-note">HR board 7's shape. A calendar row is a source like a handbook passage is: it gets a card that says where the date was read from and whether it is confirmed. A date the calendar lacks ends with an offer, underlined: one click puts it on the calendar as confirmed, with the person's name on it, the same as typing it in. The grey line under the answer is the day-1 line's cousin.</p>
+  <div class="scaler"><div class="board" style="height:1240px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#"><span>Company information</span><span class="badge">3</span></a><a class="nav active" href="#"><span>Calendar</span><span class="badge">14</span></a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Calendar</h1>
+          <p class="lede">Every date your documents set, in one place. Ask when something is due, and we say where the date came from.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Ask a question</div><div class="tab">Conversations</div><div class="tab">Calendar (23)</div><div class="tab">Dates to confirm (14)</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div>
+          <div class="thread">
+            <div class="bubble-row"><div class="bubble">When is our Tier II report due, and does it cover both sites?</div></div>
+            <div class="answer">
+              <h3>1 March 2027, and it is on the calendar for Portland only.</h3>
+              <p>Your Tier II report is due every year by 1 March.<span class="cite">1</span> The date on your calendar was read from the conditions of your Portland air permit, and nobody has confirmed it yet.<span class="cite">1</span> It covers the chemicals you held above the reporting amounts during 2026.<span class="cite">2</span></p>
+              <p>The Vancouver warehouse has the same deadline under Washington's rule, and there is no Vancouver entry on your calendar.<span class="cite">3</span> If the warehouse holds any reported chemical above its amount, it needs its own report by the same date.</p>
+              <p><span class="offer">Add "Tier II annual report — Vancouver warehouse, 1 March 2027" to your calendar</span></p>
+              <p class="note">The Portland date has not been confirmed. Open it on the calendar to confirm it or say what is wrong.</p>
+              <div class="sources">
+                <div class="label">Sources</div>
+                <div class="source"><span class="n">1.</span><span><a href="#">Tier II annual report — Portland plant, 1 March every year</a> <span class="origin">your calendar · not confirmed</span><span class="quote">Read from Air Contaminant Discharge Permit 26-2841, condition 14, page 6: “The permittee shall submit the annual Tier II inventory by March 1.”</span></span></div>
+                <div class="source"><span class="n">2.</span><span><a href="#">EPCRA Section 312 Tier II reporting</a> <span class="origin">epa.gov · official source</span></span></div>
+                <div class="source"><span class="n">3.</span><span><a href="#">Tier Two reporting in Washington</a> <span class="origin">ecology.wa.gov · official source</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="composer"><div class="ph">Ask about a date, or what is due…</div><div class="bar"><span class="send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></div>
+          <div class="actions"><button class="attach"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span>Add a document</span></button><button class="btn-text strong">Summarise this conversation</button><button class="btn-text">Download</button></div>
+          <div class="hint">One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.</div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">The calendar: list, month, and the drawer behind every date</div>
+
+<!-- ===================== BOARD 3 ===================== -->
+<section class="cv-frame" id="b3">
+  <div class="cv-label"><span class="t">3 · Calendar tab, nothing yet</span><span class="s">1280 × 640</span></div>
+  <p class="cv-note">HR board 1. The side link changes with the tab: "+ Add a date" here, "+ New conversation" on Ask. The month view is the default; List sits beside it. The empty state is a claim and has to be true: no dates were found and none were typed.</p>
+  <div class="scaler"><div class="board" style="height:640px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#"><span>Company information</span><span class="badge">3</span></a><a class="nav active" href="#">Calendar</a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Calendar</h1>
+          <p class="lede">Every date your documents set, in one place. Ask when something is due, and we say where the date came from.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab">Conversations</div><div class="tab" aria-selected="true">Calendar</div><div class="tab">Dates to confirm</div><span class="spacer"></span><a class="side-link" href="#">+ Add a date</a></div>
+          <div class="infobar"><p>Dates arrive here from your documents, audits and handbooks. Each one says where it was read from.</p><div class="right"><span class="on">Month</span><span>List</span></div></div>
+          <div class="empty"><div class="title">No dates yet</div><div class="body">Add your permits, certificates and reports in Company Documents. The dates they set show up here, with the line they came from.</div></div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 4 (month) ===================== -->
+<section class="cv-frame" id="b4">
+  <div class="cv-label"><span class="t">4 · Calendar tab, the month (the default view)</span><span class="s">1280 × 900</span></div>
+  <p class="cv-note">The rows laid on days; this is what the Calendar tab opens on. Every day box is the same size; a day with more dates than fit shows "+2 more" and the drawer lists them. Hairlines only, no boxes. A filled dot is confirmed, a ring is not; a passed date goes faint. "Send to your calendar" on the right opens board 11. Clicking a date opens the same drawer as the list.</p>
+  <div class="scaler"><div class="board" style="height:900px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#"><span>Company information</span><span class="badge">3</span></a><a class="nav active" href="#"><span>Calendar</span><span class="badge">14</span></a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Calendar</h1>
+          <p class="lede">Every date your documents set, in one place. Ask when something is due, and we say where the date came from.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab">Conversations</div><div class="tab" aria-selected="true">Calendar (23)</div><div class="tab">Dates to confirm (14)</div><span class="spacer"></span><a class="side-link" href="#">+ Add a date</a></div>
+          <div class="infobar"><p>23 dates, 14 not confirmed yet. Click a date to see where it came from.</p><div class="right"><span class="on">Month</span><span>List</span><span>·</span><span>Every site</span><span>·</span><span style="text-decoration:underline">Send to your calendar</span></div></div>
+          <div class="monthbar"><div class="m">November 2026</div><div class="nv"><span>‹ October</span><span class="today">Today</span><span>December ›</span></div></div>
+          <div class="grid">
+            <div class="dh">Mon</div><div class="dh">Tue</div><div class="dh">Wed</div><div class="dh">Thu</div><div class="dh">Fri</div><div class="dh">Sat</div><div class="dh">Sun</div>
+            <div class="d out"><div class="n">26</div></div><div class="d out"><div class="n">27</div></div><div class="d out"><div class="n">28</div><div class="ev past">Fire extinguisher inspection</div></div><div class="d out"><div class="n">29</div></div><div class="d out"><div class="n">30</div></div><div class="d out"><div class="n">31</div></div><div class="d"><div class="n">1</div></div>
+            <div class="d"><div class="n">2</div></div><div class="d"><div class="n">3</div></div><div class="d"><div class="n">4</div></div><div class="d"><div class="n">5</div></div><div class="d"><div class="n">6</div></div><div class="d"><div class="n">7</div></div><div class="d"><div class="n">8</div></div>
+            <div class="d"><div class="n">9</div></div><div class="d"><div class="n">10</div></div><div class="d"><div class="n">11</div></div><div class="d"><div class="n">12</div></div><div class="d"><div class="n">13</div></div><div class="d"><div class="n">14</div></div><div class="d"><div class="n">15</div><div class="ev unc">ACDP 26-2841 expires</div><div class="ev unc">Stormwater report Q2</div></div>
+            <div class="d"><div class="n">16</div></div><div class="d"><div class="n">17</div></div><div class="d"><div class="n">18</div></div><div class="d"><div class="n">19</div></div><div class="d"><div class="n">20</div></div><div class="d"><div class="n">21</div></div><div class="d"><div class="n">22</div></div>
+            <div class="d"><div class="n">23</div></div><div class="d"><div class="n">24</div></div><div class="d"><div class="n">25</div></div><div class="d"><div class="n">26</div></div><div class="d"><div class="n">27</div></div><div class="d"><div class="n">28</div></div><div class="d"><div class="n">29</div></div>
+            <div class="d"><div class="n">30</div><div class="ev conf">WA business licence renewal</div></div><div class="d out"><div class="n">1</div></div><div class="d out"><div class="n">2</div></div><div class="d out"><div class="n">3</div></div><div class="d out"><div class="n">4</div></div><div class="d out"><div class="n">5</div></div><div class="d out"><div class="n">6</div></div>
+          </div>
+          <div class="legend"><span>● confirmed</span><span>○ not confirmed</span><span>1 date repeats with no day yet — see the list</span></div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 5 (list) ===================== -->
+<section class="cv-frame" id="b5">
+  <div class="cv-label"><span class="t">5 · Calendar tab, the list</span><span class="s">1280 × 1180</span></div>
+  <p class="cv-note">HR board 3's rows, grouped by month. The meta line: the date, the site, where it was read from, and its state. "Not confirmed" is grey: it is the normal condition of a date read yesterday. "Passed" is amber, because a passed date wants a look. A recurring date with no day sits in its own group at the foot. The right column says how far away it is.</p>
+  <div class="scaler"><div class="board" style="height:1180px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#"><span>Company information</span><span class="badge">3</span></a><a class="nav active" href="#"><span>Calendar</span><span class="badge">14</span></a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Calendar</h1>
+          <p class="lede">Every date your documents set, in one place. Ask when something is due, and we say where the date came from.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab">Conversations</div><div class="tab" aria-selected="true">Calendar (23)</div><div class="tab">Dates to confirm (14)</div><span class="spacer"></span><a class="side-link" href="#">+ Add a date</a></div>
+          <div class="infobar"><p>23 dates, 14 not confirmed yet. Click a date to see where it came from.</p><div class="right"><span>Month</span><span class="on">List</span><span>·</span><span>Every site</span><span>·</span><span style="text-decoration:underline">Send to your calendar</span></div></div>
+
+          <div class="group-heading">October 2026</div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title passed">Forklift operator evaluations due</span><div class="meta">3 October 2026 <span class="dot">·</span> Vancouver warehouse <span class="dot">·</span> Forklift training records <span class="dot">·</span> <span class="warn">Passed 12 days ago</span></div></div><span class="when">12 days ago</span></div>
+            <div class="row"><div class="text"><span class="title">Fire extinguisher annual inspection</span><div class="meta">28 October 2026 <span class="dot">·</span> Portland plant <span class="dot">·</span> Fire extinguisher inspection certificate <span class="dot">·</span> Confirmed</div></div><span class="when">in 13 days</span></div>
+          </div>
+
+          <div class="group-heading">November 2026</div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Air Contaminant Discharge Permit 26-2841 expires</span><div class="meta">15 November 2026 <span class="dot">·</span> Portland plant <span class="dot">·</span> Air Contaminant Discharge Permit 26-2841 <span class="dot">·</span> Not confirmed</div></div><span class="when">in 31 days</span></div>
+            <div class="row"><div class="text"><span class="title">Stormwater monitoring report, second quarter</span><div class="meta">15 November 2026 <span class="dot">·</span> Portland plant <span class="dot">·</span> 1200-Z stormwater permit <span class="dot">·</span> Not confirmed</div></div><span class="when">in 31 days</span></div>
+            <div class="row"><div class="text"><span class="title">Washington business licence renewal</span><div class="meta">30 November 2026 <span class="dot">·</span> Vancouver warehouse <span class="dot">·</span> Added by Priya Nair <span class="dot">·</span> Confirmed</div></div><span class="when">in 46 days</span></div>
+          </div>
+
+          <div class="group-heading">December 2026</div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Hazardous waste training refresher</span><div class="meta">12 December 2026 <span class="dot">·</span> Every site <span class="dot">·</span> Audit: Oregon DEQ, 9 October <span class="dot">·</span> Not confirmed</div></div><span class="when">in 58 days</span></div>
+          </div>
+
+          <div class="group-heading">March 2027</div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Tier II annual report</span><div class="meta">1 March 2027 <span class="dot">·</span> every year <span class="dot">·</span> Portland plant <span class="dot">·</span> Air Contaminant Discharge Permit 26-2841 <span class="dot">·</span> Not confirmed</div></div><span class="when">in 137 days</span></div>
+            <div class="row"><div class="text"><span class="title">Hazardous waste biennial report</span><div class="meta">1 March 2027 <span class="dot">·</span> every 2 years <span class="dot">·</span> Portland plant <span class="dot">·</span> Hazardous waste generator report 2025 <span class="dot">·</span> Confirmed</div></div><span class="when">in 137 days</span></div>
+          </div>
+
+          <div class="group-heading quiet">Repeats, day not known yet</div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Respirator fit testing</span><div class="meta">every year <span class="dot">·</span> Every site <span class="dot">·</span> Respiratory protection program <span class="dot">·</span> Not confirmed</div></div><span class="when">no day yet</span></div>
+          </div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 6 ===================== -->
+<section class="cv-frame" id="b6">
+  <div class="cv-label"><span class="t">6 · A date, opened</span><span class="s">720 × 1120</span></div>
+  <p class="cv-note">The drawer, HR board 4b's frame, with two tabs under its title. "The date" is everything about the date: whether it repeats, where it was read from with the exact line, the document's own state, the other dates that document sets, the history. "The report" shows the Documents report for that document exactly as Documents shows it, no change, with every action on it live (a date from an audit shows the audit's report; a typed date has no second tab). The footer: Confirm (outline) while it is not confirmed, then Open the file, Send to my calendar (board 11), Download, and Remove at the far right in grey. A confirmed date's footer starts with "Not right" instead. The same drawer opens from a chat answer's source card, from the monthly email's link and from the Dashboard's upcoming list.</p>
+  <div class="scaler"><div class="board narrow" style="height:1180px">
+    <div class="drawer" style="position:absolute;inset:0">
+      <div class="drawer-head">
+        <div style="min-width:0"><h2>Air Contaminant Discharge Permit 26-2841 expires</h2><div class="sub">Portland plant · 15 November 2026 · in 31 days · not confirmed</div></div>
+        <span class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+      </div>
+      <div class="tabs" style="margin:14px 24px 0"><div class="tab" aria-selected="true">The date</div><div class="tab">The report</div></div>
+      <div class="drawer-body" style="padding-top:14px">
+        <div class="notebox">We read this date from a document. Nobody has confirmed it yet. If it is right, press Confirm; if not, say what is wrong and we will not propose it again from the same document.</div>
+        <div class="section-head"><span>The date</span></div>
+        <div class="facts">
+          <div class="fact"><div class="k">When</div><div class="v">15 November 2026 (Sunday)</div></div>
+          <div class="fact"><div class="k">Repeats</div><div class="v">No</div></div>
+          <div class="fact"><div class="k">Site</div><div class="v">Portland plant</div></div>
+          <div class="fact"><div class="k">What kind of date</div><div class="v">Expiry</div></div>
+        </div>
+        <div class="section-head"><span>Where it came from</span></div>
+        <div class="items">
+          <div class="item"><div class="t"><a href="#">Air Contaminant Discharge Permit 26-2841</a></div><div class="b">Permit · Oregon DEQ · Portland plant · Expiring, 31 days left · ACDP-26-2841-2021.pdf</div><div class="ref">Page 1 · <q>This permit expires on November 15, 2026, unless a timely renewal application has been submitted.</q></div></div>
+        </div>
+        <div class="section-head"><span>What the document asks before this date</span></div>
+        <div class="items">
+          <div class="item"><div class="t">Renewal application at least 60 days before expiry</div><div class="b">Condition 19 asks for the renewal application by 16 September 2026. That date has passed. There is no renewal application on file.</div><div class="ref">Page 7, condition 19</div></div>
+        </div>
+        <div class="section-head"><span>Other dates this document sets · 2</span></div>
+        <div class="items">
+          <div class="item"><div class="t">Tier II annual report</div><div class="b">1 March, every year · not confirmed</div></div>
+          <div class="item"><div class="t">Annual emissions report</div><div class="b">15 February 2027 · confirmed by Priya Nair on 12 October</div></div>
+        </div>
+        <div class="section-head"><span>History</span></div>
+        <div class="para" style="font-size:14px;line-height:21px">Read from the document on 12 October 2026. Not confirmed yet. If you have already handled this, add the proof in Company Documents and it will show here.</div>
+        <div class="fineprint" style="margin-top:22px">Quotes are word for word from the document. Not legal advice; when in doubt, ask the agency.</div>
+      </div>
+      <div class="drawer-foot"><button class="btn-outline">Confirm</button><button class="btn-text">Open the file</button><button class="btn-text">Send to my calendar</button><button class="btn-text">Download</button><button class="btn-text muted push-right">Remove</button></div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">Dates to confirm: the work queue</div>
+
+<!-- ===================== BOARD 7 ===================== -->
+<section class="cv-frame" id="b7">
+  <div class="cv-label"><span class="t">7 · Dates to confirm</span><span class="s">1280 × 1060</span></div>
+  <p class="cv-note">Grouped by the document each date was read from, so a first scan's flood is a few clicks: "Confirm all" on the group heading, or Confirm and Not right on a row. Every row is also on the Calendar tab already; this tab only shortens the work. An audit's dates get their own group. Dates added from the chat or typed in are confirmed already, so they never appear here.</p>
+  <div class="scaler"><div class="board" style="height:1060px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#"><span>Company information</span><span class="badge">3</span></a><a class="nav active" href="#"><span>Calendar</span><span class="badge">14</span></a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Calendar</h1>
+          <p class="lede">Every date your documents set, in one place. Ask when something is due, and we say where the date came from.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab">Conversations</div><div class="tab">Calendar (23)</div><div class="tab" aria-selected="true">Dates to confirm (14)</div><span class="spacer"></span><a class="side-link" href="#">+ Add a date</a></div>
+          <div class="infobar"><p>These dates are already on your calendar. Confirm the ones that are right; tell us when one is not.</p><label class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Search</span></label></div>
+
+          <div class="group-heading"><span>Air Contaminant Discharge Permit 26-2841 · Portland plant · 3 dates</span><span class="act">Confirm all 3</span></div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Air Contaminant Discharge Permit 26-2841 expires</span><div class="meta">15 November 2026 <span class="dot">·</span> page 1 <span class="dot">·</span> <q>This permit expires on November 15, 2026, unless a timely renewal application has been submitted.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+            <div class="row"><div class="text"><span class="title">Tier II annual report</span><div class="meta">1 March, every year <span class="dot">·</span> page 6, condition 14 <span class="dot">·</span> <q>The permittee shall submit the annual Tier II inventory by March 1.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+            <div class="row"><div class="text"><span class="title">Semi-annual monitoring report</span><div class="meta">31 January 2027, every 6 months <span class="dot">·</span> page 8, condition 22 <span class="dot">·</span> <q>Monitoring reports are due by January 31 and July 31.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+          </div>
+
+          <div class="group-heading"><span>1200-Z stormwater permit · Portland plant · 4 dates</span><span class="act">Confirm all 4</span></div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Stormwater monitoring report, second quarter</span><div class="meta">15 November 2026 <span class="dot">·</span> page 12 <span class="dot">·</span> <q>Submit monitoring results within 45 days of the end of each quarter.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+            <div class="row"><div class="text"><span class="title">Annual stormwater report</span><div class="meta">15 January 2027, every year <span class="dot">·</span> page 12</div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+            <div class="row"><div class="text"><span class="title">Permit renewal application</span><div class="meta">1 April 2027 <span class="dot">·</span> page 2</div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+            <div class="row"><div class="text"><span class="title">Visual monitoring, every month</span><div class="meta">every month, day not known yet <span class="dot">·</span> page 10 <span class="dot">·</span> <q>Conduct visual monitoring of discharges monthly.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+          </div>
+
+          <div class="group-heading"><span>Audit: Oregon DEQ, 9 October · Every site · 1 date</span><span class="act">Confirm all 1</span></div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Hazardous waste training refresher</span><div class="meta">12 December 2026 <span class="dot">·</span> from the audit's finding on training records <span class="dot">·</span> <q>Annual refresher training was last completed 12 December 2025.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+          </div>
+
+          <div class="group-heading"><span>Respiratory protection program · Every site · 1 date</span><span class="act">Confirm all 1</span></div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Respirator fit testing</span><div class="meta">every year, day not known yet <span class="dot">·</span> page 9 <span class="dot">·</span> <q>Fit testing shall be repeated at least annually.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
+          </div>
+          <div class="fineprint" style="margin-top:16px">5 more dates from 3 documents below.</div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 8 ===================== -->
+<section class="cv-frame" id="b8">
+  <div class="cv-label"><span class="t">8 · Not right, and Remove</span><span class="s">720 × 460</span></div>
+  <p class="cv-note">One sheet, two titles. "Not right" on an unconfirmed date and "Remove" on any date both offer a one-line reason, optional: Remove works with nothing typed. What stops the same document proposing the date again is that a person removed it, recorded with who and when; the reason, if given, shows in the history. Cancel has the focus, so Enter never removes.</p>
+  <div class="scaler"><div class="board narrow" style="height:460px">
+    <div class="layer sheet-layer"><div class="sheet" style="padding:22px">
+      <h3>Remove this date?</h3>
+      <p class="intro" style="font-size:14px;line-height:21px;margin:10px 0 0">It leaves your calendar and the monthly email. It stays on file with your reason, so we do not put it back from the same document.</p>
+      <div class="field"><label>Why? Optional, one line.</label><div class="in ta ph">For example: the permit was renewed, or the date in the document is wrong.</div></div>
+      <div class="sheet-actions"><span class="btn-danger">Remove</span><span class="btn-text push-right">Cancel</span></div>
+    </div></div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 9 ===================== -->
+<section class="cv-frame" id="b9">
+  <div class="cv-label"><span class="t">9 · Add a date</span><span class="s">720 × 560</span></div>
+  <p class="cv-note">HR board 2's sheet. A date a person types is confirmed the moment it is saved; its source reads "Added by ‹name›". Repeats takes the same choices the list shows. Site offers Every site and each site, as HR's does.</p>
+  <div class="scaler"><div class="board narrow" style="height:560px">
+    <div class="layer sheet-layer"><div class="sheet">
+      <h3>Add a date</h3>
+      <p class="intro">It goes on the calendar now, as confirmed, with your name on it.</p>
+      <div class="field"><label>What is it?</label><div class="in ph">For example: Washington business licence renewal</div></div>
+      <div class="field"><label>When</label><div class="in">30 November 2026</div></div>
+      <div class="field"><label>Repeats</label><div class="seg"><span class="on">No</span><span>Every month</span><span>Every 3 months</span><span>Every year</span><span>Every 2 years</span></div></div>
+      <div class="field"><label>Site</label><div class="seg"><span>Every site</span><span>Portland plant</span><span class="on">Vancouver warehouse</span></div></div>
+      <div class="field"><label>A note, if you want one</label><div class="in ph">Where to file it, who handles it, anything the next person should know.</div></div>
+      <div class="sheet-actions"><span class="btn-primary">Save</span><span class="btn-text push-right">Cancel</span></div>
+    </div></div>
+  </div></div>
+</section>
+
+<div class="cv-band">The first of the month</div>
+
+<!-- ===================== BOARD 10 ===================== -->
+<section class="cv-frame" id="b10">
+  <div class="cv-label"><span class="t">10 · The monthly email</span><span class="s">720 × 960</span></div>
+  <p class="cv-note">The one email template: the wordmark, a title, rows, one green button, a footer. Sent on the 1st to every person at the company, one per company. No confirmed or not-confirmed marks: every date is on the calendar and is said plainly. Then what passed last month, politely. The footer says what to do with a date that is not right.</p>
+  <div class="scaler"><div class="board mail" style="height:960px">
+    <div class="mail-wrap">
+      <div class="mail-meta">From: CompliBoard · To: priya@willamettevinegar.com · Subject: Due this month at Willamette Vinegar Works — November 2026</div>
+      <div class="mail-card">
+        <div class="mail-head"><div class="wordmark"><span class="g">Compli</span><span class="o">Board</span></div></div>
+        <div class="mail-body">
+          <h1>Due this month at Willamette Vinegar Works</h1>
+          <p class="lede">November 2026 · 4 dates</p>
+          <div class="gh">Portland plant</div>
+          <div class="mail-rows">
+            <div class="mail-row"><div class="dt">15 Nov</div><div class="what">Air Contaminant Discharge Permit 26-2841 expires<span class="sub">From the permit, page 1</span></div></div>
+            <div class="mail-row"><div class="dt">15 Nov</div><div class="what">Stormwater monitoring report, second quarter<span class="sub">From the 1200-Z stormwater permit, page 12</span></div></div>
+          </div>
+          <div class="gh">Vancouver warehouse</div>
+          <div class="mail-rows">
+            <div class="mail-row"><div class="dt">30 Nov</div><div class="what">Washington business licence renewal<span class="sub">Added by Priya Nair</span></div></div>
+          </div>
+          <div class="gh">Every site</div>
+          <div class="mail-rows">
+            <div class="mail-row"><div class="dt">Monthly</div><div class="what">Visual stormwater monitoring<span class="sub">Repeats every month, day not known yet · from the 1200-Z stormwater permit, page 10</span></div></div>
+          </div>
+          <div class="gh">Still on your calendar from October, passed</div>
+          <div class="mail-rows">
+            <div class="mail-row"><div class="dt">3 Oct</div><div class="what">Forklift operator evaluations due<span class="sub">Vancouver warehouse · from Forklift training records</span></div></div>
+            <div class="mail-row"><div class="dt">28 Oct</div><div class="what">Fire extinguisher annual inspection<span class="sub">Portland plant · from the inspection certificate</span></div></div>
+          </div>
+          <a class="mail-btn" href="#">Open your calendar</a>
+        </div>
+        <div class="mail-foot">You get this on the first of each month because you are a member of Willamette Vinegar Works on CompliBoard. If a date here is not right, open it in CompliBoard and remove it; it will not come back from the same document. This is not legal advice; when in doubt, ask the agency.</div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">Google and Outlook: their calendar, kept in step</div>
+
+<!-- ===================== BOARD 11 ===================== -->
+<section class="cv-frame" id="b11">
+  <div class="cv-label"><span class="t">11 · Send to your calendar</span><span class="s">720 × 620</span></div>
+  <p class="cv-note">HR board 2's choice sheet. From the Calendar tab's "Send to your calendar" it offers the whole calendar as a subscription: Google or Outlook follows a link and stays in step as dates are added, confirmed or removed. From a date's drawer the same sheet says "Send this date" and the two choices open Google's or Outlook's add-an-event page with the date filled in, as the old page did. The link is a secret address for this company; My Account can replace it.</p>
+  <div class="scaler"><div class="board narrow" style="height:620px">
+    <div class="layer sheet-layer"><div class="sheet">
+      <h3>Keep this calendar in Google or Outlook</h3>
+      <p class="intro">Your calendar app follows a link and stays in step: a date we add, confirm or remove shows there within a day. Anyone with the link can read your dates, so treat it like a password.</p>
+      <div class="choice"><span class="t">Google Calendar</span><span class="d">Opens Google Calendar with the link ready to add as a subscribed calendar.</span></div>
+      <div class="choice"><span class="t">Outlook</span><span class="d">Opens Outlook with the link ready to add as a subscribed calendar.</span></div>
+      <div class="choice"><span class="t">Copy the link</span><span class="d">For Apple Calendar or any other app that can follow a calendar link.</span></div>
+      <div class="choice"><span class="t">Download a copy (.ics)</span><span class="d">Every date as of today, as a file. It will not update.</span></div>
+      <div class="dismiss" style="text-align:center;font-size:13px;color:var(--text-muted);padding:8px 0;margin-top:12px">Not now</div>
+    </div></div>
+  </div></div>
+</section>
+
+<script>
+(function () {
+  var frames = Array.prototype.slice.call(document.querySelectorAll('.cv-frame'));
+  var sel = document.getElementById('goto');
+  frames.forEach(function (f) {
+    var o = document.createElement('option'); o.value = f.id; o.textContent = f.querySelector('.cv-label .t').textContent; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { var f = document.getElementById(sel.value); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); sel.value = ''; });
+  var mode = 'fit';
+  function layout() {
+    document.querySelectorAll('.scaler').forEach(function (s) {
+      var b = s.firstElementChild; var w = b.offsetWidth; var h = parseFloat(b.style.height) || b.offsetHeight;
+      var avail = s.clientWidth; var scale = mode === 'fit' ? Math.min(1, avail / w) : mode === '75' ? Math.min(0.75, avail / w) : 1;
+      b.style.transform = 'scale(' + scale + ')';
+      s.style.height = Math.ceil(h * scale) + 'px';
+      s.style.overflowX = (scale === 1 && avail < w) ? 'auto' : 'hidden';
+    });
+  }
+  ['fit', '75', '100'].forEach(function (m) {
+    document.getElementById('z-' + m).addEventListener('click', function () {
+      mode = m; ['fit', '75', '100'].forEach(function (x) { document.getElementById('z-' + x).setAttribute('aria-pressed', x === m ? 'true' : 'false'); }); layout();
+    });
+  });
+  window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  layout();
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href="#"]'); if (a) e.preventDefault(); });
+})();
+</script>

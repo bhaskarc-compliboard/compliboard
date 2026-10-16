@@ -2,7 +2,7 @@
 //
 //   npm run measure -- /compliance
 //   npm run measure -- /compliance --as testgamma@example.com --click Conversations --click "What did I"
-//   npm run measure -- /audits --width 1440 --shot /tmp/audits.png
+//   npm run measure -- /audits --width 1440 --height 1180 --shot /tmp/audits.png
 //
 // *** MEASURE RATHER THAN LOOK. *** `DESIGN.md` §6 item 10. Two edges that differ by 24px look the
 // same in a screenshot and are not the same; this prints the numbers. Written after Task 1 found
@@ -12,7 +12,7 @@
 // cookie `@supabase/ssr` reads) and the same Chrome handling (DevTools protocol, closed over the
 // protocol, its port swept afterwards). Differences, each on purpose:
 //
-//   · 1280×900 by default, `--width <px>` to change it. The window AND the device metrics are set,
+//   · 1280×900 by default, `--width <px>` and `--height <px>` to change it. The window AND the device metrics are set,
 //     because a headless window without the override reports its own default size.
 //   · A FRESH PROFILE EVERY RUN, deleted afterwards, and the cache off and cleared. That is the hard
 //     reload: a stale bundle makes the markup new and the handlers old (TESTING.md, the layout pass).
@@ -63,12 +63,18 @@ import { createClient } from '@supabase/supabase-js'
 const argv = process.argv.slice(2)
 let fileChooser = false
 let path = '/compliance', email = 'testcascade@example.com', width = 1280, shot = null, waitMs = 2500
+// *** THE WINDOW'S HEIGHT, Calendar step 8a. *** It was a fixed 900, and `Page.captureScreenshot`
+// photographs the viewport — so a shot of anything taller than 900 was silently cut off at the
+// fold. `docs/calendar-boards.html` draws board 4 at 900 and board 5 at 1180, and a month grid
+// whose last week is missing from the picture cannot be compared with the board it copies.
+let height = 900
 let base = 'http://localhost:3000', allow = null, logFilter = null
 const clicks = [], scrolls = []
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i]
   if (a === '--as') email = argv[++i]
   else if (a === '--width') width = Number(argv[++i])
+  else if (a === '--height') height = Number(argv[++i])
   else if (a === '--shot') shot = argv[++i]
   else if (a === '--click') clicks.push(argv[++i])
   else if (a === '--wait') waitMs = Number(argv[++i])
@@ -81,7 +87,8 @@ for (let i = 0; i < argv.length; i++) {
   else { console.error(`unknown argument: ${a}`); process.exit(2) }
 }
 if (!Number.isFinite(width) || width < 320) { console.error('--width must be a number of pixels'); process.exit(2) }
-const HEIGHT = 900
+if (!Number.isFinite(height) || height < 400) { console.error('--height must be a number of pixels'); process.exit(2) }
+const HEIGHT = height
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const PORT = 9446

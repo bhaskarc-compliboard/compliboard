@@ -13065,3 +13065,142 @@ HR's counts line reads **"0 handbooks · 0 conversations"** for a company with n
 info bar leaves a zero fragment out entirely, on the owner's rule for this step, and draws no bar at
 all when every number is zero. The two pages therefore differ in one line. HR is untouched here;
 whether HR adopts the same rule is HR's call, not a Calendar step's.
+
+---
+
+## 192. CALENDAR STEP 8a: THE MONTH, THE LIST AND THE DATE DRAWER — 16 October 2026
+
+**Branch `calendar-v2`, staging only. `docs/CALENDAR-PLAN.md` step 8a; boards 4, 5, 6's first tab
+and 8 in `docs/calendar-boards.html`, committed with this step. Cost: $0.00 — the ledger reads 28
+calls and $1.6169 before and after.**
+
+The Calendar tab was a shell saying "the month and list views arrive with step 8". It now holds the
+month grid (the default view), the list, and one date opened in the shared 720 drawer with its
+Remove sheet. `?date=` and `?finding=` — the links both report drawers have sent since §187 — open
+it. **Nothing on the page writes:** every change goes through `PATCH /api/calendar` over
+`lib/calendarDates.ts`, the one writer (decision 6).
+
+### Three decisions this step asked for
+
+**1. A period on a date that happens once is refused, in words.** Nothing in the database refused
+it: `period`'s CHECK is on its WORDS, and `calendar_events_date_or_recurs` is about the day. So a
+period written onto a row with `recurs = false` stored perfectly well and meant **nothing** —
+`calendar_v` only reaches for `step_months` when `recurs` is true, so `next_due` would not move and
+the drawer would read "every year" on a date that happens once. A value stored that no reader
+honours reads back as a fact. `setPeriod` now answers **400 — "That date happens once, so it has no
+'how often'. Say that it repeats first."** Clearing it is still allowed on any row, which is how a
+row written before this guard gets tidied. Measured against the live route: 400 for all five
+periods on a one-off, 200 for clearing it, 200 for a period on a repeating date.
+
+**2. Removing a date needs no reason.** It required one, and refused with 400 "Please say why this
+date is not right." The reasoning was borrowed from Documents, where a dismissed GAP needs a
+sentence because the reason is what stops a later reading proposing it again. **That is not how a
+calendar date works.** What stops the same document proposing this date again is that a PERSON
+removed it — `dismissed_by` set, which `proposeDate`'s rule (b) and step 6b's withdrawal both honour
+whatever any later reading says. The sentence was never load-bearing; it was a toll on the one
+irreversible action in the section, and a toll on removing a date is how a wrong date stays on a
+calendar. Nothing typed is now accepted, `dismissed_reason` stays NULL rather than being stored as
+'', and who and when are recorded exactly as before. The test that held the old rule was turned
+over rather than deleted.
+
+**3. A date with no day gets a strip of its own above the grid.** Decisions 12 and 23 allow a
+repeating date with no day and a repeating date whose period was never read; neither can sit on a
+calendar square. Leaving them out of the month view silently would be the calendar dropping dates it
+holds, so a quiet strip above the grid says **"Repeating, day not read yet (N)"** and lists them,
+each opening the same drawer. *Board 4 puts that count in the legend instead; the brief asked for the
+strip and the strip is what was built, because a count you cannot click is a count you cannot act
+on.* In the list they are the last group, **"Repeats — how often or when wasn't read yet"**. The
+drawer's picker closes the loop: setting "every year" on one of them moved it onto the grid in the
+same breath — measured, `period = year` and `next_due` computed to 2027-08-20 from the 2026-08-20
+anchor.
+
+### What the build found, by looking
+
+**An audit's date showed the DOCUMENT as where it came from.** `lib/auditRun.ts` files a date
+finding with the document it is about **as well as** the finding, so an audit row carries
+`document_id` and `audit_finding_id` both. The drawer branched `doc ? … : finding ? …` and therefore
+always drew the document. Found by opening one and reading it. The branch is now on `source` — the
+column migration 073 added precisely to say what found a date — and the document appears as context
+("About …"), which is what it is.
+
+**"No dates yet" was drawn over a company with ten dates.** Once, during this step's own
+screenshots, beside tabs reading "Calendar (10)". `readCalendarRows` was written the way every
+read on the page is written — `const { data } = await …; return data ?? []` — so a read that failed
+and a company with nothing looked identical. **That is `CLAUDE.md` §5.1's worked example exactly**:
+"no dates found" and "we could not read it" returning the same empty array, which is the bug §27
+was written about. The function now throws, and the page says *"We could not load your dates just
+now. Nothing has changed — please try again."* with a Try again. The underlying read has not failed
+again in some fifty runs since; **what is fixed is the sentence, not the flake**, and the flake is
+now visible if it returns.
+
+**A fourth copy of the document-kind map was nearly written.** `components/DocumentReport.tsx:92`,
+`app/dashboard/page.tsx:37` and `components/AuditReport.tsx:41` each carry one, and two of them
+disagree — "Supplier document" against "Supplier's document". The map moved into
+`lib/documentStatus.ts` as `KIND_WORD`, which exists for exactly this reason, and the Calendar
+imports it. **The three existing copies were left alone**: repointing them changes what Documents,
+the Dashboard and Audits print, and those are sections this step's plan did not name. Recorded in
+`docs/HANDOFF-CODE.md` §7.
+
+**The confirmed mark is drawn, not typed.** Board 4 writes it ● and ○. Those are font-dependent
+glyphs — a different size and weight on a Mac and on Windows, the reason `components/AppLayout.tsx`
+banned emoji from the nav — and they land in the button's text, so a row's accessible name became
+"○Six-year internal maintenance…". It is a 7px circle, filled or hollow, in both the grid and the
+legend.
+
+**A link to one date landed on the Ask tab.** The drawer is mounted outside the tab bodies, so it
+opened over the chat box, and closing it left the person somewhere they never asked to be. Neither
+report drawer sends `?tab=`, and asking Documents and Audits to add one would put the Calendar's
+layout into two other sections' links — so the Calendar defaults the tab to `calendar` whenever
+`?date=` or `?finding=` is present.
+
+### Where the brief and the boards differ, and which won
+
+The brief is the authority; each difference is deliberate.
+
+| | Board | Built |
+|---|---|---|
+| Dates with no day, in the month view | a count in the legend | a strip above the grid, listing them, each clickable (and the legend keeps the count) |
+| The list's last group | "Repeats, day not known yet" | "Repeats — how often or when wasn't read yet" (the brief's words: the period may be the missing part, not the day) |
+| A confirmed row in the list | "· Confirmed" | nothing — the meta line is for what still needs doing, and `not confirmed` is the only state it names |
+| The site on every row | always shown | only when the company has more than one site (decision 24, and the rule HR and Documents already use) |
+| "not confirmed" | capitalised in board 5, lower case in board 6 | lower case everywhere, as the brief settles it |
+| Board 6's "What the document asks before this date" | a section of its own | **not built** — it needs the document's other conditions, which is the report's material and therefore step 8b's |
+| The info bar's right side | Month · List · Every site · Send to your calendar | Month · List only; the site filter and the whole-calendar feed are step 8b's and step 11's, and neither is faked |
+
+### The one decision-30 line that was left out, and why
+
+A date read from a month with no day — *"The certificate gives the month, not the day. We've placed
+it on 30 November; pick the day if you know it"* — **cannot be said, because nothing records it.**
+`document_deadlines` carries `due_on`, `recurs` and `source_line` and no precision flag; neither
+does `calendar_events` nor `calendar_v`. The view cannot tell an inferred day from a read one, so
+the line is left out rather than shown on every date or guessed at. **Making it sayable is a
+Documents change** — a column on `document_deadlines` written by the scan — and it belongs with the
+`same_as_deadline_id` prompt work already open from §189.
+
+### What the measuring instrument could not do
+
+`npm run measure` photographs the viewport at a fixed 900 pixels high, and
+`docs/calendar-boards.html` draws board 5 at 1180. Every shot of anything taller was **silently cut
+off at the fold** — the month grid's last week and the legend were simply not in the picture, and
+nothing said so. `--height <px>` was added beside `--width`. This is the fourth blind spot found in
+that script in two steps; each one printed something that looked like an answer.
+
+### What was checked
+
+- **`npm run check`: 1133 tests, 0 failures** (1077 before; +52 in `tests/unit/calendarView.test.ts`,
+  +4 in `calendarDates.test.ts`, step 7's suite updated to step 8a's truth). `check:schema` ok,
+  **286 files**, 58 relations. Build compiled.
+- **`check:live` on 3999: ok.** No relation was added, so no probe is owed; `calendar_v`'s grants and
+  its `security_invoker` behaviour are already proved there.
+- **HR's 16 test files: 213 tests, 0 failures.** The eight-page gate: all eight 200, zero server
+  errors, every request 200.
+- **The walk, on the isolated Haiku server, as Test Gamma:** Month → List → Month; a date opened
+  from the grid; **Confirm** — the row read back `confirmed` with who and when, and the tab went
+  "Dates to confirm (10)" → "(9)" in the same render; **Set how often** — `period = year` and the
+  view computed `next_due = 2027-08-20`; the period refusal measured against the live route;
+  **Remove with nothing typed** — `dismissed`, who and when recorded, `dismissed_reason` NULL, the
+  sheet and the drawer closed and the date gone from both views; the Documents drawer's link and the
+  Audits drawer's link each opening the drawer; and a **withdrawn** row's `?date=` showing *"That
+  date isn't on the calendar any more."*
+- One typed date was seeded through `POST /api/calendar` for the typed-date drawer, and removed
+  again by the Remove walk. It is `dismissed` on staging, which is the state that walk proves.
