@@ -19,7 +19,24 @@ describe('the tabs and the Ask tab (owner, Step 11a)', () => {
   test('the paperclip is gone from the Ask tab; "Add a handbook" stays, and the attach control always has a handler', () => {
     assert.ok(!page.includes('Attach a file and ask about it'))
     assert.match(page, /<AttachControl label="Add a handbook" onClick=\{\(\) => addHandbook\('handbooks'\)\}/)
-    assert.match(page, /function AttachControl\(\{ label, onClick, disabled \}: \{ label: string; onClick: \(\) => void; disabled\?: boolean \}\)/)
+    /**
+     * *** THE CONTROL MOVED AT CALENDAR STEP 7; ITS RULE DID NOT. ***
+     * It was defined in `app/hr/HrWorkspace.tsx` and this line pinned that definition, with a
+     * REQUIRED `onClick`, so that HR could never draw an attach line that does nothing. The
+     * Calendar's ask box needs the same piece, so it is now `components/AttachControl.tsx` and HR
+     * imports it — and the rule is held where the component lives, in the shape it now has: one of
+     * the two handlers, never neither. `tests/unit/calendarShell.test.ts` holds that HR's markup
+     * came across character for character.
+     */
+    const control = readFileSync('components/AttachControl.tsx', 'utf8')
+    assert.match(page, /import \{ AttachControl \} from '@\/components\/AttachControl'/)
+    assert.match(control, /\{ label, onClick, href, disabled \}:\s*\{ label: string; onClick\?: \(\) => void; href\?: string; disabled\?: boolean \}/)
+    // Neither handler draws nothing: `href` branches to a link, otherwise it is a button with onClick.
+    assert.match(control, /if \(href\) \{/)
+    assert.match(control, /<button type="button" onClick=\{onClick\} disabled=\{disabled\}/)
+    // And HR's three call sites all pass a handler, so HR cannot have a dead one.
+    assert.equal((page.match(/<AttachControl label="Add a handbook" onClick=/g) ?? []).length, 3)
+    assert.ok(!page.includes('<AttachControl label="Add a handbook" href='), 'HR\'s slot is a button, not a link')
   })
 })
 

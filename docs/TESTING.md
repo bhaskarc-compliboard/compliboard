@@ -3781,3 +3781,70 @@ What follows is what a person has to look at.
    claims a date is waiting for confirmation.
 4. **The one that matters:** run a **different** agency and check that the first agency's dates are
    **untouched**. A DEQ audit says nothing about an OSHA obligation.
+
+---
+
+## Calendar — step 7, the page shell (16 October 2026)
+
+**On staging only.** `docs/CALENDAR-PLAN.md` step 7, `DECISIONS.md` §191. **Every check here is
+free: the page calls no route and reaches no model.** The two fixture companies to use are **Test
+Gamma Solvents** (10 live dates, 0 conversations) and **Test Alpha Chemical** (nothing at all) —
+the second is the only way to see the empty states this step is about.
+
+### C7-1 · The frame, beside HR — the perfect case
+
+1. Open `/hr`, then `/calendar`, in two tabs at the same width.
+2. **Pass:** the title, the lede, the tab row, the box, the examples, the attach line and the
+   footer sit in the same places; only the words differ. **Fail:** anything moves — and
+   "it looks the same" is not the check. Run
+   `npm run measure -- /calendar --as testgamma@example.com --width 1280` and the same for `/hr`,
+   and compare the numbers: **column content 326–1178**, composer top y=223, attach line x=326
+   y=355 on both. Two edges that differ by 24px look identical in a screenshot.
+3. Four tabs, in this order: **Ask a question · Conversations · Calendar (N) · Dates to confirm
+   (N)**, with the side link reading **"+ New conversation"** on the first two and **"+ Add a
+   date"** on the last two.
+
+### C7-2 · The numbers are the same number everywhere — the edge case
+
+1. As Test Gamma, look at the **sidebar badge** beside Calendar, the **Dates to confirm (N)** tab,
+   and the info bar's "N waiting for your confirmation".
+2. **Pass:** all three are the same number. **Fail:** any two disagree — that is the 29 September
+   badge failure again, and it is why all three read through one filter in
+   `lib/calendarCounts.ts`.
+3. **Then make it change:** confirm or remove a date (from a report drawer, until step 9 exists),
+   reload, and check all three moved together.
+4. As **Test Alpha**: the badge is **absent**, both tab counts are **absent**, and the Ask tab shows
+   **no info bar at all** — not a line reading "0 dates".
+
+### C7-3 · Every tab says what it cannot do yet (free)
+
+1. As Test Gamma, open each tab in turn.
+2. **Pass:** Ask shows the box, three greyed examples, "Add a document", a **green Ask button that
+   cannot be pressed**, and under it "Asking a question arrives with step 10."; Calendar shows
+   "10 dates. The month and list views arrive with step 8."; Dates to confirm shows "10 dates
+   waiting. This view arrives with step 9."; Conversations shows "No conversations yet".
+3. As **Test Alpha**, the same tabs show the real empty states: **"No dates yet"**, **"Nothing
+   waiting"**, **"No conversations yet"**, each with its sentence.
+4. **Fail:** a control that looks live and does nothing, or an empty state on a company that has
+   dates.
+
+### C7-4 · The address, and the links that arrive from elsewhere (free)
+
+1. Click each tab and watch the address: `?tab=conversations`, `?tab=calendar`, `?tab=dates`, and
+   **no parameter at all** back on Ask a question. Paste one of those addresses into a new tab — it
+   must open that tab directly.
+2. Click the side link: the address gains `&new=1` and **nothing else happens**. That is correct
+   until steps 8 to 10.
+3. Open a document's report in **Company Documents**, find a date reading "On your calendar —
+   waiting for your confirmation", and click it. Do the same in an **audit's** report.
+4. **Pass:** both land on `/calendar` with `?date=…` or `?finding=…`, the page renders, and one grey
+   line says *"That link points at one date. Opening a single date arrives with step 8; the dates
+   themselves are all here."* **Fail:** an error, a blank page, or **silence** — a link that lands
+   somewhere and explains nothing is the thing decision 30 forbids.
+
+### C7-5 · What the old page took with it (free, and worth one look)
+
+The old `/calendar` had an add form, a month grid, a list, an import-a-file form, a tick and a ×.
+All six are gone. **Pass:** none of them is anywhere on the new page, and nothing else in the
+product links to them. **Fail:** any survivor — in particular an upload control, which would be a
+second way into Company Documents' job.

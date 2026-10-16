@@ -59,3 +59,23 @@ export const HR_EXAMPLE_QUESTIONS: ExampleQuestion[] = [
     question: "Does our overtime policy match our state's rules?",
   },
 ]
+
+/**
+ * THE CALENDAR'S EXAMPLES — the same shape and the same rules as the two above (Calendar step 7,
+ * the owner's words). Shown in the Calendar page's empty box, each prefixed "e.g." by the page; not
+ * clickable, not a prompt, and nothing here reaches a model until step 10 builds the answer.
+ */
+export const CALENDAR_EXAMPLE_QUESTIONS: ExampleQuestion[] = [
+  {
+    label: 'Tier II, and both sites',
+    question: 'When is our Tier II report due, and does it cover both sites?',
+  },
+  {
+    label: 'The next ninety days',
+    question: 'What expires in the next 90 days?',
+  },
+  {
+    label: 'The Vancouver fire inspection',
+    question: 'Is the fire inspection for the Vancouver warehouse on the calendar?',
+  },
+]

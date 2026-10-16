@@ -6,7 +6,8 @@
  * That is decision 6, and the reason is the one the read-only map found: before this, two writers
  * each built their own `calendar_events` row with their own vocabulary — `category: 'document'` in
  * one (`app/api/document-actions/route.ts:143`) and `category: 'compliance'` in the other
- * (`app/calendar/page.tsx:210`), against a column with no CHECK (map B1). A second writer is a
+ * (the old `/calendar` page, :210 as it stood before step 7 replaced that file), against a column
+ * with no CHECK (map B1). A second writer is a
  * second set of rules nobody is comparing.
  *
  * *** NO NEXT-DATE LOGIC LIVES HERE. *** `next_due` is computed by `calendar_v` at read time, which

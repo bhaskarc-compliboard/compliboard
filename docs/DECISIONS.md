@@ -12927,3 +12927,141 @@ half — a verified row and a guess must not look the same.
 Step 6b's two new wordings are written to it — **"Not in the latest reading of this file"** and
 **"Not in the latest audit of this agency"** — each a statement with **no link**, because
 `calendar_v` does not return a withdrawn row and a link would open a page that cannot find it.
+
+---
+
+## 191. CALENDAR STEP 7: THE PAGE SHELL — 16 October 2026
+
+**Branch `calendar-v2`, staging only. `docs/CALENDAR-PLAN.md` step 7; boards 1, 3 and 7 as empty
+states. The owner's brief of 16 October. Cost: $0.00, measured — the ledger reads 28 calls and
+$1.6169 before and after.**
+
+`/calendar` was the last page of the old product still standing: 601 lines holding an add form, a
+month grid, a list, an import-a-file form over `/api/extract-dates`, a tick that wrote `completed`
+and a × that sent DELETE. Migration 073 abolished the first two columns and took DELETE off
+`authenticated`, so both controls had been answering 400 and 405 on staging since 15 October,
+recorded in `HANDOFF-CODE.md` §7 as expected until this step. **The file is replaced whole; nothing
+of it was kept.**
+
+### What the page is
+
+The HR Workspace's frame with the Calendar's words: the serif title, the lede, four tabs — Ask a
+question · Conversations · Calendar (N) · Dates to confirm (N) — a side link that is "+ New
+conversation" on the two conversation tabs and "+ Add a date" on the two date tabs, the ask box with
+three greyed examples, the attach slot, and the info bar under the box. **Nothing can be asked,
+opened, added or confirmed**: every tab that cannot do its work says which step brings it.
+
+### Three things decided while building it, each recorded because the next step inherits it
+
+**1. The counts are ONE filter, and the sidebar badge shares it.** `lib/calendarCounts.ts` holds
+`liveDates()` — `calendar_v`, `status in (proposed, confirmed)`, `replaced_by is null` — and
+everything reads through it: the Calendar tab's count, the Dates-to-confirm count, the info bar, and
+`AppLayout`'s new badge, which adds `status = 'proposed'` and asks for a count rather than rows.
+That is the lesson `AppLayout` already carries in full from 29 September, when its badge read 12
+beside a page showing the queue empty: **both numbers were right for the moment each was fetched**,
+and the fix was one definition used at both ends. The alternative — a `calendar_dates` number added
+to `GET /api/to-confirm` — was rejected: that route is the FACTS queue, one row per question over
+`fact_proposals`, and a calendar number inside it would be two queues in one response while the page
+still read its own count from somewhere else.
+
+**2. The tab is in the address, and the pattern is AUDITS', not HR's.** The brief said to reflect the
+tab in `?tab=` "the way HR does it". **HR does not do it** — it keeps `tab` in `useState` and reads
+only `?handbook=` (`app/hr/HrWorkspace.tsx:195`). The one page in the product that puts a tab in the
+URL is Audits (`app/audits/page.tsx:208`, `:421–425`), so that is what was copied: `useSearchParams`
+inside a `Suspense` boundary, `router.replace` with `scroll: false`, and the default tab carrying no
+parameter at all. The Calendar needs it because steps 8 and 9 are linked to from both report drawers
+and, at step 11, from the monthly email.
+
+**3. A link this page cannot honour yet is ANSWERED, not swallowed — decision 30's first
+application.** Both report drawers already send `/calendar?date=<id>` and `/calendar?finding=<id>`
+(§187). The brief asked only that the page not break on them. Decision 30 asks for more: a person
+who clicked "waiting for your confirmation" and landed on a page that behaved as though they had
+clicked nothing has been told nothing. So either parameter draws one grey line — *"That link points
+at one date. Opening a single date arrives with step 8; the dates themselves are all here."* —
+**measured on both drawers' real links**, one from the Documents report and one from an audit.
+
+### What the measurement says
+
+`npm run measure` against an isolated Haiku server on 3998, at 1280 wide, as Test Gamma, with every
+paid route and every write blocked (it reported `BLOCKED (0): nothing` on every run — the evidence
+that the shots cost nothing and changed nothing):
+
+| | `/calendar` | `/hr` |
+|---|---|---|
+| title x | 326 | 326 |
+| column box | 302–1202 (900) | 302–1202 (900) |
+| **column content** | **326–1178 (852)** | **326–1178 (852)** |
+| tab row | 326–1178 | 326–1178 |
+| composer box | 326–1178 (852), top y=223, bottom y=345 | 326–1178 (852), top y=223, bottom y=345 |
+| first typed glyph | x=347, top y=244, 16px | x=347, top y=244, 16px |
+| the three examples | x=347 (Δ0.0), tops 244 / 274.7 / 305.3, 14px | x=347 (Δ0.0), tops 244 / 274.7 / 305.3, 14px |
+| attach line | x=326 y=355, 12px `lab(47.7841 -0.393182 -10.0268)`, pin 13px at x=326, gap 6px | identical |
+| footer content | 326–1178, text starts x=326 | 326–1178, text starts x=326 |
+
+**"The 852 column" in the brief is the 900 column's content width** — `max-w-[900px] px-4 sm:px-6`,
+which is what every page in the product already uses. There is no 852 anywhere in the repository and
+none was introduced; the number is what the frame measures, and it now measures the same on both
+pages.
+
+### And the measuring instrument was blind in three places, all fixed
+
+`scripts/measure-layout.mjs` is how this product knows two layouts are the same, and it could not
+see three of the things this step had to compare. None of the three was noticed when it broke,
+because **a measurement that cannot see the thing prints exactly what it prints when the thing is
+missing** (`CLAUDE.md` §9a):
+
+- **The attach line was found by the word "Attach"** — the workspace's wording. HR Step 11a replaced
+  it with "Add a handbook" on 7 October, and from that day this line printed `none` for HR. It is
+  now found by its shape: a button **or a link** carrying the paperclip.
+- **The counts line was found by the words `conversations · `.** That found HR's only while HR had
+  conversations to count, and would never have found the Calendar's, which leads with dates and
+  leaves out any fragment whose number is zero. It is now found by its box — the one 13px grey
+  paragraph in the bordered strip under the ask box — which all three sections draw.
+- **The tab row listed `button`s only**, so the Calendar's side link, an `<a>`, was absent from the
+  row it is part of.
+
+`disabled` is now printed beside each action, because a filled green button that cannot be pressed
+is the one thing a screenshot cannot tell you — and this page's single action is deliberately off.
+
+### The attach slot moved, and an HR test moved with it
+
+`AttachControl` and its paperclip were defined inside `app/hr/HrWorkspace.tsx`. The Calendar's ask
+box needs the same piece, and the brief's rule is to copy nothing that can be imported, so both were
+lifted into `components/AttachControl.tsx` **character for character** — the same path `Tabs` and
+`Empty` took at HR Step 3a — with one addition: `href`, because the Calendar's slot is a LINK to
+Company Documents, where the uploader is, and a button with a push cannot be opened in a new tab.
+HR's three call sites are unchanged and still pass `onClick`.
+
+`tests/unit/hrPolish.test.ts` **failed on this, correctly**: it pinned the definition's location and
+its required `onClick`, to hold that HR can never draw an attach line that does nothing. The
+assertion was moved to the component, in the shape it now has — one of the two handlers, never
+neither — and `tests/unit/calendarShell.test.ts` holds that HR's markup came across unchanged.
+
+### What was checked
+
+- **`npm run check`: 1077 tests, 0 failures** (1030 before; +47 in `tests/unit/calendarShell.test.ts`).
+  `check:schema` ok, **283 files**, 58 relations. Build compiled.
+- **`check:live` on 3999: ok.** No probe was added and none is owed: this step creates no relation,
+  and `calendar_v`'s own grants, its `security_invoker` behaviour and the cross-tenant case are
+  already proved there by step 5's and step 6b's probes — which is the whole of the page's new read
+  path.
+- **HR's 16 test files: 213 tests, 0 failures.**
+- **The eight-page gate, as Test Gamma on the isolated server: all eight 200, zero server errors,
+  every API call 200.** `/calendar` made **no call to `/api/calendar`** — it reads `calendar_v`
+  directly as the signed-in person, which is the step-8 read arriving early for the counts.
+- **The walk:** the four tabs clicked in turn (`?tab=dates` written on a click, cleared again on
+  "Ask a question"); the side link writing `?tab=calendar&new=1` and staying put; the Documents
+  drawer's "On your calendar — waiting for your confirmation" landing on
+  `/calendar?date=df1dfd50-…`; the same from an audit run's drawer landing on `/calendar?finding=…`.
+  Both show the decision-30 line.
+- **Shots in `shots/`:** `calendar-07-ask.png`, `-conversations`, `-calendar`, `-dates` (Test Gamma,
+  10 dates), `calendar-07-empty-ask/-conversations/-calendar/-dates.png` (Test Alpha, 0 dates — the
+  only way to photograph the empty states this step is about), `calendar-07-linked-date.png`, and
+  `hr-07-reference.png` beside them.
+
+### One observation about HR, named and not changed
+
+HR's counts line reads **"0 handbooks · 0 conversations"** for a company with neither. The Calendar's
+info bar leaves a zero fragment out entirely, on the owner's rule for this step, and draws no bar at
+all when every number is zero. The two pages therefore differ in one line. HR is untouched here;
+whether HR adopts the same rule is HR's call, not a Calendar step's.

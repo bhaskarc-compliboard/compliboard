@@ -26,6 +26,8 @@ import { Empty } from '@/components/Empty'
 import { Sheet } from '@/components/Sheet'
 import { Drawer, printDrawer, printDate } from '@/components/Drawer'
 import { ConversationList } from '@/components/ConversationList'
+// MOVED OUT AT CALENDAR STEP 7, character for character: the Calendar's ask box has the same slot.
+import { AttachControl } from '@/components/AttachControl'
 import { PRIMARY, TEXT_ACTION, OUTLINE } from '@/components/buttonStyles'
 import { HR_EXAMPLE_QUESTIONS } from '@/config/examples'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
@@ -100,22 +102,6 @@ const OLDER_NOT_REPLACED = 'The newer version was saved, but we could not mark t
 const DELETE_FAILED = 'That could not be deleted. Nothing was changed. Please try again.'
 /** For a "Read it again" the server never started — Claude Code's sentence, accepted by the owner as written (7 October). */
 const READ_FAILED = 'That reading could not be started. Nothing was changed. Please try again.'
-
-/** The paperclip the workspace's attach line draws, at 13px in the line's own colour. */
-const Pin = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="shrink-0" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
-)
-
-/** The workspace's attach control: a quiet 12px grey underlined line with the pin. */
-function AttachControl({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
-  return (
-    <button type="button" onClick={onClick} disabled={disabled}
-      className="inline-flex cursor-pointer items-center gap-1.5 text-left hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-300">
-      <Pin />
-      <span className="underline">{label}</span>
-    </button>
-  )
-}
 
 /**
  * ONE HR ANSWER, DRAWN — the Ask tab's own markup, lifted so a handbook check's parts are drawn exactly as answers

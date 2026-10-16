@@ -39,7 +39,10 @@ const NAV_ITEMS = [
   // QUESTION LINES, which is the number of decisions waiting, not the number of readings behind
   // them. `/to-confirm` 308s here.
   { label: 'Company information', href: '/company-information', badge: 'toConfirm' as const },
-  { label: 'Calendar', href: '/calendar' },
+  // THE SAME BADGE, THE SECOND NUMBER — Calendar step 7. "Calendar 10" is the queue of dates a
+  // reading has found and nobody has confirmed, which is the one thing on this entry that asks for a
+  // minute rather than offering a place to go. Same component, same position rule, same nothing-at-zero.
+  { label: 'Calendar', href: '/calendar', badge: 'calendarDates' as const },
   { label: 'My Account', href: '/account', soon: false },
 ]
 
@@ -58,6 +61,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   const [companyName, setCompanyName] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const [toConfirm, setToConfirm] = useState<number | null>(null)
+  const [calendarDates, setCalendarDates] = useState<number | null>(null)
 
   // Read once per page load, AND ONCE MORE WHENEVER THE PAGE SAYS THE ANSWER CHANGED.
   //
@@ -71,6 +75,20 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   // it the worse kind of wrong — nothing looked broken, the nav just quietly disagreed with the page
   // in front of it.
   const loadCount = useCallback(async () => {
+    /**
+     * *** THE CALENDAR'S NUMBER IS READ BESIDE THIS ONE, THROUGH THE CALENDAR'S OWN FILTER ***
+     * — Calendar step 7. `countDatesToConfirm` is the same filter the Dates-to-confirm tab counts
+     * with (`lib/calendarCounts.ts`): live rows, still `proposed`. One definition at both ends is
+     * the whole lesson of the paragraph above, and it is why this is not a second query written
+     * here. It is a HEAD request for a count, so no rows cross the wire for a badge.
+     *
+     * Its own try/catch: a calendar that cannot be counted must not take the facts badge down with
+     * it, and neither must stop the nav rendering.
+     */
+    try {
+      const { countDatesToConfirm } = await import('@/lib/calendarCounts')
+      setCalendarDates(await countDatesToConfirm(supabase))
+    } catch { /* the nav must render whether or not this answers */ }
     try {
       const { authHeaders } = await import('@/lib/supabase')
       const res = await fetch('/api/to-confirm', { headers: await authHeaders() })
@@ -82,7 +100,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
       // the two cannot drift. `count` is kept as an alias for the same number.
       setToConfirm(j.question_lines ?? j.count ?? 0)
     } catch { /* the nav must render whether or not this answers */ }
-  }, [])
+  }, [supabase])
 
   useEffect(() => { loadCount() }, [pathname, loadCount])
 
@@ -198,6 +216,9 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
                   at zero — an empty queue should not ask for attention. */}
               {item.badge === 'toConfirm' && !!toConfirm && (
                 <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{toConfirm}</span>
+              )}
+              {item.badge === 'calendarDates' && !!calendarDates && (
+                <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{calendarDates}</span>
               )}
               {item.soon && (
                 <span className="text-xs px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-400">

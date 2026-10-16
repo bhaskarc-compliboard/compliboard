@@ -1065,7 +1065,8 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
                 * *** AUDITS STOPS ASKING — Calendar step 6, decision 7. ***
                 *
                 * There was an "Add to calendar" link here carrying the title and the day in the
-                * address, which `app/calendar/page.tsx:78–88` turned into a prefilled form for a
+                * address, which the old `/calendar` page (:78–88, before step 7 replaced that
+                * file) turned into a prefilled form for a
                 * person to save. Two things were wrong with it: the product had already found the
                 * date and was asking to be allowed to keep it, and the link could name no finding,
                 * so the calendar row it made could never say which audit it came from

@@ -48,7 +48,9 @@ export const toTopicRow = (r: TopicListRow): TopicRow => ({
 /**
  * Which list a conversation belongs to — `topics.section` (migration 066, widened by 073).
  * `readTopicList` below is the ONE place a section is filtered on, so a third section is this word
- * plus the migration and nothing else. Nothing passes 'calendar' yet — Calendar step 10 is the caller.
+ * plus the migration and nothing else. **`app/calendar/page.tsx` passes 'calendar' since step 7** —
+ * for the Conversations tab and the info bar's count. Nothing WRITES one yet: step 10 is the first,
+ * so the read is honest and the answer is zero.
  */
 export type TopicSection = 'workspace' | 'hr' | 'calendar'
 

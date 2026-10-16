@@ -1,39 +1,87 @@
 'use client'
-
-import { Suspense, useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { createClient, authHeaders } from '@/lib/supabase'
+/**
+ * /calendar — THE CALENDAR, IN THE HR WORKSPACE'S FRAME. Calendar step 7 (`docs/CALENDAR-PLAN.md`
+ * §2.4; boards 1, 3 and 7 as empty states).
+ *
+ * *** THIS IS A SHELL, AND IT SAYS SO ON EVERY TAB. *** Four tabs stand, the counts are real and
+ * read live, and nothing can be asked, opened, added or confirmed yet. Each tab that cannot do its
+ * work yet says which step brings it (steps 8, 9 and 10) rather than offering a control that does
+ * nothing — decision 30, and `CLAUDE.md` §5.1: an empty state is a message, and "nothing here" is a
+ * claim that has to be true. Those three sentences are STAGING PLACEHOLDERS and are listed in
+ * `docs/HANDOFF-CODE.md` §7 as expected rather than left to be found.
+ *
+ * *** THE FRAME IS HR'S, AND IT IS IMPORTED, NOT COPIED. *** `AppLayout`, `Tabs`, `Empty`,
+ * `AttachControl` and the button strings are the same files the HR page renders; the 900 column, the
+ * serif title, the lede, the box and the counts line are HR's own classes copied character for
+ * character from `app/hr/HrWorkspace.tsx` (the column :629, the title :631, the box and the counts
+ * line :770–818), which is how `npm run measure` can compare the two and find them equal.
+ *
+ * WHAT IT READS, AND NOTHING ELSE: `calendar_v` for the two counts and the next date
+ * (`lib/calendarCounts.ts`, the one filter the sidebar badge shares), and `topic_list_v` through
+ * `readTopicList(supabase, 'calendar')` for the conversations — the first caller to pass that word
+ * (migration 073 widened `topics_section_is_known`; step 10 is the first to WRITE one). Both read as
+ * the signed-in person: `calendar_v` is `security_invoker`, so RLS decides what comes back and this
+ * page never names a company. **It writes nothing, calls no route and reaches no model.**
+ *
+ * WHAT WENT WITH THE OLD PAGE (601 lines, replaced whole — "keep NOTHING of it"): the add form and
+ * its `?add=`/`?on=` prefill, the month grid, the list, the import-a-file form over
+ * `/api/extract-dates`, the tick (`completed`, which decision 11 abolished) and the × (DELETE,
+ * which migration 073 took off `authenticated`) — the two controls `docs/HANDOFF-CODE.md` §7 has
+ * carried as expected-broken since step 5. Nothing imported from that file: checked by grepping the
+ * repository for `app/calendar` — the only matches were four comments naming its line numbers, and
+ * those comments are corrected in this commit. `POST /api/calendar` stays and now has no screen
+ * caller; `/api/extract-dates` stays with no caller at all, and step 12 retires both it and its
+ * prompt.
+ *
+ * `?date=` and `?finding=` are step 8's, and both report drawers already link here with them. They
+ * are not ignored in silence: a dead link is the product saying nothing when it knows perfectly well
+ * what was asked for (decision 30), so the page says in one line that opening one date arrives with
+ * step 8.
+ *
+ * Every word on this page is the owner's (the step 7 brief).
+ */
+import { Suspense, useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import { Tabs } from '@/components/Tabs'
+import { Empty } from '@/components/Empty'
+import { AttachControl } from '@/components/AttachControl'
+import { PRIMARY } from '@/components/buttonStyles'
+import { CALENDAR_EXAMPLE_QUESTIONS } from '@/config/examples'
+import { readTopicList, type TopicRow } from '@/lib/topicList'
+import { readCalendarCounts, infoBarParts, type CalendarCounts } from '@/lib/calendarCounts'
 
-interface CalendarEvent {
-  id: string
-  title: string
-  description: string | null
-  due_date: string
-  category: string | null
-  is_recurring: boolean
-  recurrence_period: string | null
-  completed: boolean
-  completed_at: string | null
-}
+type Tab = 'ask' | 'conversations' | 'calendar' | 'dates'
 
-const CATEGORIES = [
-  'OSHA', 'EPA', 'DOT', 'FDA', 'State License', 'Permit Renewal',
-  'Training', 'Inspection', 'Report', 'Other'
-]
+/** The four tabs, in the owner's order. The key is also the `?tab=` word. */
+const TAB_KEYS: readonly Tab[] = ['ask', 'conversations', 'calendar', 'dates'] as const
+const asTab = (v: string | null): Tab =>
+  (TAB_KEYS as readonly string[]).includes(v ?? '') ? (v as Tab) : 'ask'
 
-const MONTHS = ['January','February','March','April','May','June',
-  'July','August','September','October','November','December']
-
-const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate()
-}
-
-function getFirstDayOfMonth(year: number, month: number) {
-  return new Date(year, month, 1).getDay()
-}
+/** The owner's words, step 7. */
+const LEDE = 'Every date your documents set, in one place. Ask when something is due, and we say '
+  + 'where the date came from.'
+/**
+ * THE THREE STAGING PLACEHOLDERS. Each names the step that replaces it, and each is listed in
+ * `docs/HANDOFF-CODE.md` §7. They are not polish-later wording: they are the honest answer to "why
+ * is there nothing here", which is that this part is not built yet.
+ */
+const ASK_ARRIVES = 'Asking a question arrives with step 10.'
+const CALENDAR_ARRIVES = (n: number) =>
+  `${n} ${n === 1 ? 'date' : 'dates'}. The month and list views arrive with step 8.`
+const DATES_ARRIVES = (n: number) =>
+  `${n} ${n === 1 ? 'date' : 'dates'} waiting. This view arrives with step 9.`
+/**
+ * AND A FOURTH, FOR A LINK THAT CANNOT BE HONOURED YET — decision 30. Both report drawers send
+ * `/calendar?date=<id>` and `/calendar?finding=<id>`; step 8 opens the drawer on it. Until then the
+ * page says so, politely, rather than opening and looking as though the link had done nothing.
+ */
+const ONE_DATE_ARRIVES = 'That link points at one date. Opening a single date arrives with step 8; '
+  + 'the dates themselves are all here.'
+/** The conversations tab's own line for the case the owner's brief could not have: a row exists. */
+const CONVERSATIONS_ARRIVE = (n: number) =>
+  `${n} ${n === 1 ? 'conversation' : 'conversations'}. This view arrives with step 10.`
 
 export default function CalendarPage() {
   return (
@@ -45,556 +93,199 @@ export default function CalendarPage() {
 
 function Calendar() {
   const supabase = createClient()
-  const today = new Date()
+  const router = useRouter()
+  const params = useSearchParams()
+  const tab = asTab(params.get('tab'))
+  /** Step 8's parameters. Read here only to say that they are not read yet. */
+  const linkedToOne = !!(params.get('date') || params.get('finding'))
 
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [companyId, setCompanyId] = useState<string | null>(null)
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
-  const [currentYear, setCurrentYear] = useState(today.getFullYear())
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [view, setView] = useState<'calendar' | 'list'>('calendar')
+  const [box, setBox] = useState('')
+  const composerRef = useRef<HTMLTextAreaElement>(null)
+  const [topics, setTopics] = useState<TopicRow[]>([])
+  const [counts, setCounts] = useState<CalendarCounts>({ dates: 0, toConfirm: 0, nextDate: null })
+  /**
+   * *** NOTHING IS CLAIMED BEFORE THE READ ANSWERS. *** "No dates yet" drawn while the query is in
+   * flight is a sentence that is false for a second on every visit, and false for longer on a slow
+   * connection — and for a company whose dates ARE there it is the worst kind of wrong, because it
+   * reads as data loss. Until this is true the tabs show no counts and the bodies show one grey line.
+   */
+  const [loaded, setLoaded] = useState(false)
 
-  const [newTitle, setNewTitle] = useState('')
-  const [newDate, setNewDate] = useState('')
-  const [newCategory, setNewCategory] = useState('')
-  const [newDescription, setNewDescription] = useState('')
-  const [newRecurring, setNewRecurring] = useState(false)
-  const [newRecurrencePeriod, setNewRecurrencePeriod] = useState('annually')
-  const [saving, setSaving] = useState(false)
+  // The composer grows with its text, exactly as HR's does (`app/hr/HrWorkspace.tsx`).
+  useLayoutEffect(() => {
+    const el = composerRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [box])
+
+  useEffect(() => {
+    let live = true
+    ;(async () => {
+      // Both reads as the caller, in parallel, and both are reads: this page writes nothing.
+      const [c, t] = await Promise.all([
+        readCalendarCounts(supabase),
+        readTopicList(supabase, 'calendar'),
+      ])
+      if (!live) return
+      setCounts(c)
+      setTopics(t)
+      setLoaded(true)
+    })()
+    return () => { live = false }
+  }, [supabase])
 
   /**
-   * *** THE ADD FORM PREFILLS FROM THE ADDRESS — Audits Run 3b, item 5. ***
-   *
-   * The audit report's "Add to calendar" sent `?add=<title>&on=<date>` and **this page read no
-   * parameter at all** — it opened the calendar and nothing else, so the link looked like an action
-   * and was a navigation. Checked by grepping this file for `useSearchParams`: no match.
-   *
-   * It is the smallest thing that makes the link true: the form opens with the title and the date
-   * already in it, and the person presses Save. Nothing is written without them.
+   * THE TAB IS IN THE ADDRESS, so a link can open one — `app/audits/page.tsx:421–425`, copied. It is
+   * Audits' pattern and not HR's for a measured reason: HR keeps its tab in `useState` and reads only
+   * `?handbook=`, so there is nothing of HR's to copy here, and the Calendar needs the address
+   * because steps 8 and 9 are linked to from the report drawers and from the monthly email.
+   * `replace`, not `push`: four tabs on one page are not four places a Back button should walk.
    */
-  const params = useSearchParams()
-  useEffect(() => {
-    const add = params.get('add')
-    if (!add) return
-    setNewTitle(add.slice(0, 200))
-    const on = params.get('on')
-    // Only a date we can actually put in a date input; anything else is left blank rather than
-    // guessed at, and the person picks it.
-    if (on && /^\d{4}-\d{2}-\d{2}$/.test(on)) { setNewDate(on); setSelectedDate(on) }
-    setShowAddForm(true)
-  }, [params])
-  const [saveError, setSaveError] = useState('')
-  const [importFile, setImportFile] = useState<File | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [showImport, setShowImport] = useState(false)
-  const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
-  const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
-  const [addingToCalendar, setAddingToCalendar] = useState(false)
-  const [calendarSuccess, setCalendarSuccess] = useState('')
-
-  useEffect(() => {
-    async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      setUserId(user.id)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-      if (profile?.company_id) setCompanyId(profile.company_id)
-      // A compliance calendar is a company asset — read by company_id so all
-      // users at a company see the same deadlines (matches the dashboard).
-      if (profile?.company_id) {
-        const res = await fetch('/api/calendar', { headers: await authHeaders() })
-        const json = await res.json()
-        if (json.data) setEvents(json.data)
-      }
-      setLoading(false)
-    }
-    loadData()
-  }, [])
-
-  async function handleAddEvent() {
-    if (!newTitle || !newDate || !userId || !companyId) {
-      setSaveError('Please fill in title and date')
-      return
-    }
-    setSaving(true)
-    setSaveError('')
-    try {
-      const res = await fetch('/api/calendar', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          title: newTitle,
-          description: newDescription || null,
-          due_date: newDate,
-          category: newCategory || null,
-          is_recurring: newRecurring,
-          recurrence_period: newRecurring ? newRecurrencePeriod : null,
-        }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setEvents(prev => [...prev, json.data].sort((a, b) => a.due_date.localeCompare(b.due_date)))
-      setNewTitle('')
-      setNewDate('')
-      setNewCategory('')
-      setNewDescription('')
-      setNewRecurring(false)
-      setShowAddForm(false)
-      setSelectedDate(null)
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save')
-    } finally {
-      setSaving(false)
-    }
+  const setParam = (k: string, v: string | null) => {
+    const p = new URLSearchParams(params.toString())
+    if (v === null) p.delete(k); else p.set(k, v)
+    router.replace(`/calendar${p.toString() ? `?${p}` : ''}`, { scroll: false })
   }
+  const selectTab = (k: Tab) => setParam('tab', k === 'ask' ? null : k)
 
-  async function handleImport() {
-    if (!importFile || !userId || !companyId) return
-    setImporting(true)
-    try {
-      const fd = new FormData()
-      fd.append('file', importFile)
-      fd.append('file_name', importFile.name)
-      // *** THE HEADER IS REQUIRED SINCE 28 September 2026. ***
-      // `/api/extract-dates` gained `requireCompany`, so a call without a token now gets 401 — and
-      // this was the last fetch in the app sending none. It is a FormData POST, so only the
-      // Authorization header is added; setting Content-Type by hand would break the multipart
-      // boundary the browser writes for us.
-      const res = await fetch('/api/extract-dates', {
-        method: 'POST', body: fd, headers: await authHeaders(),
-      })
-      const json = await res.json()
-      if (json.dates_found && json.dates_found.length > 0) {
-        setPendingDates(json.dates_found)
-        setSelectedDates(new Set(json.dates_found.map((_: any, i: number) => i)))
-        setShowImport(false)
-        setImportFile(null)
-      } else if (json.extraction_failed) {
-        // The document was never read, so nothing may be asserted about what is in it.
-        // Until 11 Sep this branch did not exist and an unreadable file produced "No
-        // compliance dates found in this file. Make sure it contains deadline or expiry
-        // dates." — a claim about contents nobody had looked at, plus a suggestion that
-        // the user check their own file. CLAUDE.md §5.1.
-        alert(json.extraction_failed.message)
-      } else {
-        // Genuinely read, genuinely empty. The suggestion is fair here.
-        alert('No compliance dates found in this file. Make sure it contains deadline or expiry dates.')
-      }
-    } catch (err) {
-      console.error('Import error:', err)
-    } finally {
-      setImporting(false)
-    }
-  }
+  /**
+   * THE SIDE LINK, HR'S CONTROL AS AN `<a href>` — "+ New conversation" on the two conversation tabs,
+   * "+ Add a date" on the two date tabs. Both only change the address (`?tab=…&new=1`); steps 8 to 10
+   * give them behaviour, and an href is what lets that happen with no handler to write twice.
+   */
+  const newHref = (() => {
+    const p = new URLSearchParams(params.toString())
+    p.set('tab', tab)
+    p.set('new', '1')
+    return `/calendar?${p}`
+  })()
+  const sideLabel = tab === 'calendar' || tab === 'dates' ? 'Add a date' : 'New conversation'
 
-  async function handleAddToCalendar() {
-    if (!companyId || !userId) return
-    setAddingToCalendar(true)
-    try {
-      const toAdd = pendingDates.filter((_, i) => selectedDates.has(i))
-      for (const d of toAdd) {
-        const res = await fetch('/api/calendar', {
-          method: 'POST',
-          headers: await authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({
-            title: d.title,
-            description: d.description,
-            due_date: d.date,
-            category: 'compliance',
-            is_recurring: d.is_recurring,
-            recurrence_period: d.recurrence_period,
-          }),
-        })
-        const json = await res.json()
-        if (json.data) setEvents(prev => [...prev, json.data].sort((a, b) => a.due_date.localeCompare(b.due_date)))
-      }
-      setCalendarSuccess(`Added ${toAdd.length} date${toAdd.length !== 1 ? 's' : ''} to your calendar.`)
-      setTimeout(() => {
-        setPendingDates([])
-        setSelectedDates(new Set())
-        setCalendarSuccess('')
-      }, 3000)
-    } catch (err) {
-      console.error('Calendar error:', err)
-    } finally {
-      setAddingToCalendar(false)
-    }
-  }
-
-  async function toggleComplete(event: CalendarEvent) {
-    const newCompleted = !event.completed
-    setEvents(prev => prev.map(e => e.id === event.id ? { ...e, completed: newCompleted } : e))
-    await fetch('/api/calendar', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: event.id, completed: newCompleted }),
-    })
-  }
-
-  async function deleteEvent(id: string) {
-    if (!confirm('Delete this deadline?')) return
-    setEvents(prev => prev.filter(e => e.id !== id))
-    await fetch(`/api/calendar?id=${id}`, { method: 'DELETE', headers: await authHeaders() })
-  }
-
-  function exportToGoogleCalendar(event: CalendarEvent) {
-    const date = event.due_date.replace(/-/g, '')
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${date}/${date}&details=${encodeURIComponent(event.description || '')}`
-    window.open(url, '_blank')
-  }
-
-  function exportToOutlook(event: CalendarEvent) {
-    const url = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(event.title)}&startdt=${event.due_date}&enddt=${event.due_date}&body=${encodeURIComponent(event.description || '')}`
-    window.open(url, '_blank')
-  }
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth)
-  const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
-
-  const eventsThisMonth = events.filter(e => {
-    const d = new Date(e.due_date)
-    return d.getFullYear() === currentYear && d.getMonth() === currentMonth
-  })
-
-  function getEventsForDay(day: number) {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    return events.filter(e => e.due_date === dateStr)
-  }
-
-  const upcomingEvents = events.filter(e => {
-    const due = new Date(e.due_date)
-    const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    return diff >= 0 && diff <= 30 && !e.completed
-  })
-
-  const overdueEvents = events.filter(e => {
-    const due = new Date(e.due_date)
-    return due < today && !e.completed
-  })
+  const bar = infoBarParts(counts, topics.length)
+  /** A grey line while the read is in flight, in the Suspense fallback's words. */
+  const waiting = <p className="pt-4 text-[14px] text-gray-400">Loading…</p>
 
   return (
-    <AppLayout title="Compliance Calendar" didYouKnow={{ icon: '📅', text: 'Upload your permits, licenses, and inspection reports in Company Files, click Extract dates, and CompliBoard will find all renewal and expiry dates and add them to your calendar automatically. You never miss a deadline again.' }}>
-      <div className="max-w-6xl mx-auto px-6 py-8">
-
-        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Calendar</h1>
-            <p className="text-sm text-gray-400">Track all your compliance deadlines and recurring dates</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setShowImport(!showImport); setShowAddForm(false) }}
-              className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors">
-              {showImport ? '× Cancel' : '📂 Import from file'}
-            </button>
-            <button onClick={() => { setShowAddForm(!showAddForm); setShowImport(false); setSelectedDate(null) }}
-              className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-              {showAddForm ? '× Cancel' : '+ Add deadline'}
-            </button>
-          </div>
+    <AppLayout>
+      {/* The 900 column, the same as /hr and /compliance (`app/hr/HrWorkspace.tsx:629`). */}
+      <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
+        <div className="no-print pt-6">
+          <h1 className="font-serif text-[28px] font-normal text-gray-900">Calendar</h1>
+          <p className="mt-1 text-[14px] text-gray-500">{LEDE}</p>
         </div>
 
-        <div className="flex items-center gap-6 mb-4 border-b border-gray-200">
-          <button onClick={() => setView('calendar')}
-            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${view === 'calendar' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-            Calendar
-          </button>
-          <button onClick={() => setView('list')}
-            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${view === 'list' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-            List
-          </button>
-        </div>
+        <Tabs active={tab} onSelect={selectTab}
+          tabs={[
+            { key: 'ask', label: 'Ask a question' },
+            { key: 'conversations', label: 'Conversations' },
+            // A count of 0 is hidden, and so is a count nobody has read yet (the owner's rule for
+            // zero, and `loaded` for the second half of it).
+            { key: 'calendar', label: `Calendar${loaded && counts.dates > 0 ? ` (${counts.dates})` : ''}` },
+            { key: 'dates', label: `Dates to confirm${loaded && counts.toConfirm > 0 ? ` (${counts.toConfirm})` : ''}` },
+          ]}
+          right={
+            <a href={newHref}
+              className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              <span className="hidden sm:inline">{sideLabel}</span>
+            </a>
+          } />
 
-        {(overdueEvents.length > 0 || upcomingEvents.length > 0) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-            {overdueEvents.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                <p className="text-xs font-semibold text-red-700 mb-1">⚠️ Overdue</p>
-                <p className="text-sm text-red-600">{overdueEvents.length} deadline{overdueEvents.length !== 1 ? 's' : ''} past due</p>
-              </div>
-            )}
-            {upcomingEvents.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                <p className="text-xs font-semibold text-amber-700 mb-1">📅 Due in 30 days</p>
-                <p className="text-sm text-amber-600">{upcomingEvents.length} deadline{upcomingEvents.length !== 1 ? 's' : ''} coming up</p>
-              </div>
-            )}
+        {/* A link to one date, which step 8 answers. HR's notice slot, in grey: this is not a failure. */}
+        {linkedToOne && (
+          <div className="no-print mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-[13px] text-gray-600">
+            {ONE_DATE_ARRIVES}
           </div>
         )}
 
-        {showImport && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-1">Import compliance deadlines</h2>
-            <p className="text-xs text-gray-400 mb-4">Upload your existing deadline spreadsheet or document. CompliBoard will find all dates and let you choose which ones to add.</p>
-            <label htmlFor="import-file"
-              className={`flex items-center gap-3 w-full border border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors mb-4 ${importFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-green-500 hover:bg-green-50'}`}>
-              <span className="text-2xl">{importFile ? '📊' : '📎'}</span>
-              <div>
-                <p className="text-sm font-medium text-gray-700">{importFile ? importFile.name : 'Click to select file'}</p>
-                <p className="text-xs text-gray-400">Excel, CSV, PDF, Word, or PowerPoint</p>
-              </div>
-              <input id="import-file" type="file" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.pptx,.ppt" className="hidden"
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
-            </label>
-            <button onClick={handleImport} disabled={!importFile || importing}
-              className="bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {importing ? 'Extracting dates...' : 'Extract dates →'}
-            </button>
-          </div>
-        )}
-
-        {showAddForm && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Title <span className="text-red-400">*</span></label>
-                <input type="text"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="e.g. Annual OSHA inspection"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Due date <span className="text-red-400">*</span></label>
-                <input type="date"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  value={newDate || selectedDate || ''}
-                  onChange={(e) => setNewDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
-                <select
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}>
-                  <option value="">Select category</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                <input type="text"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="Optional notes"
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div onClick={() => setNewRecurring(!newRecurring)}
-                  className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${newRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                  <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-all ${newRecurring ? 'left-4' : 'left-0.5'}`} />
+        {/* ================= ASK A QUESTION (board 1; the answer is step 10) ================= */}
+        {tab === 'ask' && (
+          <div className="no-print">
+            <div>
+              <div className="relative rounded-xl border border-gray-200 bg-white focus-within:border-[var(--green)]">
+                <div className="flex items-end gap-2 p-3.5">
+                  <textarea
+                    ref={composerRef}
+                    value={box}
+                    onChange={(e) => setBox(e.target.value)}
+                    rows={1}
+                    className="max-h-36 min-h-[92px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
+                  />
                 </div>
-                <span className="text-sm text-gray-600">Recurring</span>
-              </label>
-              {newRecurring && (
-                <select
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none bg-gray-50"
-                  value={newRecurrencePeriod}
-                  onChange={(e) => setNewRecurrencePeriod(e.target.value)}>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="annually">Annually</option>
-                </select>
+                {/* The examples, as HR and the workspace show them: an overlay, gone the moment
+                    anything is typed; not clickable, not a prompt, nothing reaches a model. */}
+                {!box && (
+                  <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-5">
+                    {CALENDAR_EXAMPLE_QUESTIONS.map((e) => (
+                      <p key={e.label} className="truncate text-[14px] text-gray-400">e.g. {e.question}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* One line under the box, HR's: the attach slot left, one action right. The slot is a
+                  LINK to Company Documents, where the uploader is — the Calendar has none of its own
+                  and will not invent a second one. */}
+              <div className="mt-[10px] flex items-start justify-between gap-4">
+                <p className="min-w-0 text-[12px] text-gray-500">
+                  <AttachControl label="Add a document" href="/documents" />
+                </p>
+                <div className="flex shrink-0 items-center gap-3">
+                  <button className={PRIMARY} disabled>Ask</button>
+                </div>
+              </div>
+              <p className="mt-2 text-[12px] text-gray-500">{ASK_ARRIVES}</p>
+
+              {/* THE INFO BAR, HR's counts line and its rule for zero: a fragment whose number is 0
+                  is left out, "next date" is left out when nothing is ahead, and all four zero draws
+                  no bar at all (`lib/calendarCounts.ts`, where that rule is tested). */}
+              {loaded && bar.length > 0 && (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                  <p className="text-[13px] text-gray-500">{bar.join(' · ')}</p>
+                </div>
               )}
             </div>
-            {saveError && <p className="text-sm text-red-600 mt-3">{saveError}</p>}
-            <button onClick={handleAddEvent} disabled={saving}
-              className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save deadline →'}
-            </button>
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <p className="text-sm text-gray-400">Loading your calendar...</p>
-          </div>
-        ) : view === 'calendar' ? (
-          <div className="bg-white rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <button onClick={() => {
-                if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
-                else setCurrentMonth(m => m - 1)
-              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">←</button>
-              <h2 className="text-sm font-semibold text-gray-900">{MONTHS[currentMonth]} {currentYear}</h2>
-              <button onClick={() => {
-                if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1) }
-                else setCurrentMonth(m => m + 1)
-              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">→</button>
-            </div>
-            <div className="grid grid-cols-7 border-b border-gray-100">
-              {DAYS.map(d => (
-                <div key={d} className="py-2 text-center text-xs font-medium text-gray-400">{d}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7">
-              {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-20 border-b border-r border-gray-50" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                const dayEvents = getEventsForDay(day)
-                const isToday = today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear
-                const isSelected = selectedDate === dateStr
-                return (
-                  <div key={day}
-                    onClick={() => { setSelectedDate(dateStr); setNewDate(dateStr); setShowAddForm(true) }}
-                    className={`h-20 border-b border-r border-gray-50 p-1.5 cursor-pointer hover:bg-gray-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}>
-                    <p className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-green-700 text-white' : 'text-gray-700'}`}>
-                      {day}
-                    </p>
-                    <div className="space-y-0.5">
-                      {dayEvents.slice(0, 2).map(e => (
-                        <p key={e.id} className={`text-xs px-1 rounded truncate ${e.completed ? 'line-through text-gray-300 bg-gray-50' : 'text-green-800 bg-green-100'}`}>
-                          {e.title}
-                        </p>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <p className="text-xs text-gray-400 px-1">+{dayEvents.length - 2} more</p>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {eventsThisMonth.length > 0 && (
-              <div className="px-5 py-4 border-t border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">This month</p>
-                <div className="space-y-2">
-                  {eventsThisMonth.map(e => (
-                    <div key={e.id} className="flex items-center gap-3">
-                      <div onClick={() => toggleComplete(e)}
-                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all ${e.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
-                        {e.completed && <span className="text-white text-xs">✓</span>}
-                      </div>
-                      <p className={`text-sm flex-1 ${e.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>{e.title}</p>
-                      <span className="text-xs text-gray-400">{new Date(e.due_date + 'T00:00:00').toLocaleDateString()}</span>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => exportToGoogleCalendar(e)} title="Add to Google Calendar"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">G</button>
-                        <button onClick={() => exportToOutlook(e)} title="Add to Outlook"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">O</button>
-                        <button onClick={() => deleteEvent(e.id)}
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl overflow-hidden">
-            {events.length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-4xl mb-4">📅</p>
-                <p className="text-base font-medium text-gray-700 mb-1">No deadlines yet</p>
-                <p className="text-sm text-gray-400 mb-4">Upload compliance documents in Company Files and click Extract dates to populate your calendar automatically.</p>
-                <button onClick={() => setShowAddForm(true)}
-                  className="inline-flex items-center gap-2 bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-                  Add a deadline manually
-                </button>
-              </div>
+        {/* ================= CONVERSATIONS (HR's board 9; the list is step 10) ================= */}
+        {tab === 'conversations' && (
+          <div className="pt-1">
+            {!loaded ? waiting : topics.length === 0 ? (
+              <Empty title="No conversations yet"
+                note="Ask a question and the answer is kept here, with the dates and documents it drew on." />
             ) : (
-              <div className="divide-y divide-gray-50">
-                {events.map(e => {
-                  const due = new Date(e.due_date + 'T00:00:00')
-                  const diff = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-                  const isOverdue = diff < 0 && !e.completed
-                  const isDueSoon = diff >= 0 && diff <= 7 && !e.completed
-                  return (
-                    <div key={e.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                      <div onClick={() => toggleComplete(e)}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all ${e.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
-                        {e.completed && <span className="text-white text-xs">✓</span>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${e.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>{e.title}</p>
-                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                          {e.category && <span className="text-xs text-gray-400">{e.category}</span>}
-                          <span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : isDueSoon ? 'text-amber-600' : 'text-gray-400'}`}>
-                            {isOverdue ? `${Math.abs(diff)} days overdue` : e.completed ? 'Done' : diff === 0 ? 'Due today' : `Due in ${diff} days`}
-                          </span>
-                          {e.is_recurring && <span className="text-xs text-green-600">🔄 {e.recurrence_period}</span>}
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-400 flex-shrink-0">{new Date(e.due_date + 'T00:00:00').toLocaleDateString()}</span>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => exportToGoogleCalendar(e)} title="Add to Google Calendar"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">G</button>
-                        <button onClick={() => exportToOutlook(e)} title="Add to Outlook"
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">O</button>
-                        <button onClick={() => deleteEvent(e.id)}
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              // Unreachable until step 10 writes the first `topics.section = 'calendar'` row — and
+              // here anyway, because an empty state drawn over rows that exist is a false statement.
+              <p className="text-[13px] text-gray-500">{CONVERSATIONS_ARRIVE(topics.length)}</p>
             )}
           </div>
         )}
 
-
-        {pendingDates.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-lg z-50 px-4">
-            <div className="bg-white rounded-2xl border border-green-200 shadow-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">📅 Dates found in your file</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Select which dates to add to your calendar</p>
-                </div>
-                <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
-              </div>
-              <div className="space-y-2 mb-4">
-                {pendingDates.map((d, i) => (
-                  <div key={i} onClick={() => {
-                    const next = new Set(selectedDates)
-                    if (next.has(i)) next.delete(i)
-                    else next.add(i)
-                    setSelectedDates(next)
-                  }} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedDates.has(i) ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                    <div className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center ${selectedDates.has(i) ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
-                      {selectedDates.has(i) && <span className="text-white text-xs">✓</span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">{d.title}</p>
-                      <p className="text-xs text-green-700 font-medium">{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{d.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {calendarSuccess ? (
-                <p className="text-sm text-green-700 font-medium text-center py-2">✅ {calendarSuccess}</p>
-              ) : (
-                <div className="flex gap-2">
-                  <button onClick={handleAddToCalendar} disabled={selectedDates.size === 0 || addingToCalendar}
-                    className="flex-1 bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                    {addingToCalendar ? 'Adding...' : `Add ${selectedDates.size} date${selectedDates.size !== 1 ? 's' : ''} to calendar →`}
-                  </button>
-                  <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }}
-                    className="px-4 py-2.5 rounded-xl text-sm text-gray-500 border border-gray-200 hover:border-gray-300 transition-colors">
-                    Skip
-                  </button>
-                </div>
-              )}
-            </div>
+        {/* ================= CALENDAR (boards 3 to 6; the views are step 8) ================= */}
+        {tab === 'calendar' && (
+          <div className="pt-1">
+            {!loaded ? waiting : counts.dates === 0 ? (
+              <Empty title="No dates yet"
+                note="Add your permits, certificates and reports in Company Documents. The dates they set show up here, with the line they came from." />
+            ) : (
+              <p className="text-[13px] text-gray-500">{CALENDAR_ARRIVES(counts.dates)}</p>
+            )}
           </div>
         )}
 
+        {/* ================= DATES TO CONFIRM (board 7; the queue is step 9) ================= */}
+        {tab === 'dates' && (
+          <div className="pt-1">
+            {!loaded ? waiting : counts.toConfirm === 0 ? (
+              <Empty title="Nothing waiting"
+                note="When a reading finds a date, it lands here for you to confirm or set right." />
+            ) : (
+              <p className="text-[13px] text-gray-500">{DATES_ARRIVES(counts.toConfirm)}</p>
+            )}
+          </div>
+        )}
       </div>
     </AppLayout>
   )

@@ -24,11 +24,17 @@ import { requireCompany } from '@/lib/auth'
 import { proposeDate, confirmDate, dismissDate, setPeriod } from '@/lib/calendarDates'
 
 /**
- * THE OLD PAGE'S RECURRENCE WORDS, MAPPED — and this map DIES WITH THAT PAGE at step 7.
- * `app/calendar/page.tsx:405–407` offers monthly/quarterly/annually; migration 073's `period` holds
- * month/quarter/6 months/year/2 years. The same three-way mapping the migration's backfill used
- * (073 §2), here so the old form keeps saving a recurring date while the page is still the old one.
- * Anything else becomes null, which means "repeats, how often not known yet" (decision 23).
+ * THE OLD PAGE'S RECURRENCE WORDS, MAPPED — and ITS CALLER IS NOW GONE (Calendar step 7).
+ * The old page offered monthly/quarterly/annually (:405–407 before step 7 replaced that file);
+ * migration 073's `period` holds month/quarter/6 months/year/2 years. The same three-way mapping
+ * the migration's backfill used (073 §2). Anything else becomes null, which means "repeats, how
+ * often not known yet" (decision 23).
+ *
+ * *** IT IS KEPT, NOT DELETED, AND THE REASON IS NOT SENTIMENT. *** This route's whole body is
+ * step 8's work — the new page's Add-a-date sheet is what will call POST — and narrowing a route's
+ * accepted body is a change to its contract, not a tidy-up. `is_recurring` / `recurrence_period`
+ * are still accepted; nothing on a screen sends them any more. Step 8 decides what POST takes and
+ * this map goes then.
  */
 const OLD_PERIOD_WORDS: Record<string, string> = { monthly: 'month', quarterly: 'quarter', annually: 'year' }
 
@@ -109,7 +115,8 @@ export async function POST(request: NextRequest) {
 // reading currently supports, which is §6's named anti-pattern. `calendar_v` drops them in the
 // view itself, so the Calendar and the Dashboard inherit the rule at steps 8 and 12; this route
 // reads the base table and has to say it. Both readers of this route — `app/dashboard/page.tsx:64`
-// and `app/calendar/page.tsx:112` — are fixed by this one line.
+// and the old page's own read (:112, before step 7) — are fixed by this one line. After step 7 the
+// Dashboard is the only reader of this GET: the new page reads `calendar_v` directly.
 export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)

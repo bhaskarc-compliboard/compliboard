@@ -272,11 +272,28 @@ try {
         return { text: p.textContent, glyphX: +g.left.toFixed(1), lineTop: +pb.top.toFixed(1), lineCentre: +(pb.top + plh / 2).toFixed(1),
           size: getComputedStyle(p).fontSize, truncated: p.scrollWidth > p.clientWidth }
       }) : []
-      const attach = [...col.querySelectorAll('button')].find((b) => b.textContent.trim().startsWith('Attach'))
+      // *** THE ATTACH LINE IS FOUND BY ITS PIN, NOT BY THE WORD "Attach" — Calendar step 7. ***
+      // This read startsWith('Attach'), which was the workspace's wording. HR Step 11a replaced it
+      // with "Add a handbook", so from that day THIS LINE PRINTED "none" FOR HR and nobody noticed:
+      // a measurement that cannot see the thing looks exactly like a measurement that found it
+      // missing (CLAUDE.md §9a). The mark is now the control's own shape — a button or a link
+      // carrying the paperclip — so it finds the workspace's, HR's, and the Calendar's, which is an
+      // anchor to Company Documents. (No backticks in here: this whole block is inside a template
+      // literal sent to the browser, and one backtick ends it — which is how this comment was
+      // written the first time, and the script would not parse.)
+      const attach = [...col.querySelectorAll('button, a')]
+        .find((b) => b.querySelector('svg') && /^(Attach|Add )/.test(b.textContent.trim()))
       const pin = attach ? attach.querySelector('svg') : null
       const line = attach ? attach.closest('.flex.items-start') : null
       const actions = line ? [...line.querySelectorAll('button')].filter((b) => b !== attach) : []
-      const counts = [...col.querySelectorAll('p')].find((p) => /conversations? · /.test(p.textContent))
+      // AND THE COUNTS LINE BY ITS BOX, NOT BY ITS WORDS. Matching text found HR's line only while
+      // HR had conversations to count, and found the Calendar's only while it had none: three
+      // sections, three wordings, and the Calendar leaves out any fragment whose number is 0. All
+      // three draw the same thing — one 13px grey paragraph inside the bordered strip under the box
+      // — so that is what is looked for.
+      const strip = [...col.querySelectorAll('div')]
+        .find((d) => /border-b/.test(d.className) && /pb-3/.test(d.className) && d.querySelector('p'))
+      const counts = strip ? strip.querySelector('p') : null
       composer = {
         box: box ? edges(box) : null, boxTop: box ? Math.round(box.getBoundingClientRect().top) : null, boxBottom: box ? Math.round(box.getBoundingClientRect().bottom) : null,
         placeholder: ta.getAttribute('placeholder'), typedSize: tcs.fontSize,
@@ -286,7 +303,9 @@ try {
           pin: pin ? { w: pin.getAttribute('width'), x: Math.round(pin.getBoundingClientRect().left) } : null,
           gap: getComputedStyle(attach).columnGap, left: Math.round(attach.getBoundingClientRect().left),
           top: Math.round(attach.getBoundingClientRect().top) } : null,
-        actions: actions.map((b) => ({ text: b.textContent.trim(), ...edges(b), filled: getComputedStyle(b).backgroundColor !== 'rgba(0, 0, 0, 0)' })),
+        // "disabled" is printed too (Calendar step 7): the shell's one action is deliberately off, and
+        // a filled green button that cannot be pressed is the thing a screenshot cannot tell you.
+        actions: actions.map((b) => ({ text: b.textContent.trim(), ...edges(b), disabled: b.disabled === true, filled: getComputedStyle(b).backgroundColor !== 'rgba(0, 0, 0, 0)' })),
         counts: counts ? counts.textContent.trim() : null,
       }
     }
@@ -296,7 +315,9 @@ try {
       scrollbar: innerWidth - document.documentElement.clientWidth,
       title: h1 ? { text: h1.textContent, x: Math.round(h1.getBoundingClientRect().left) } : null,
       column: col ? { box: edges(col), content: inner(col) } : null,
-      tabRow: row ? { ...edges(row), tabs: [...row.querySelectorAll('button')].map((b) => b.textContent.trim()) } : null,
+      // Buttons AND links: the Calendar's side control is an anchor (it only changes the address
+      // until steps 8 to 10 give it behaviour), so a buttons-only read printed the row without it.
+      tabRow: row ? { ...edges(row), tabs: [...row.querySelectorAll('button, a')].map((b) => b.textContent.trim()) } : null,
       footer: footerBox ? { box: edges(footerBox), content: inner(footerBox), textStartsAt: footerText ? Math.round(footerText.getBoundingClientRect().left) : null } : null,
       drawer,
     }
@@ -315,7 +336,7 @@ try {
     console.log(`  typed text       starts x=${c.typedStart.x}, first line top y=${c.typedStart.lineTop}, centre y=${c.typedStart.lineCentre}, ${c.typedSize}`)
     for (const l of c.overlay) console.log(`    overlay        x=${l.glyphX} (Δ${(l.glyphX - c.typedStart.x).toFixed(1)})  top y=${l.lineTop}  centre y=${l.lineCentre}  ${l.size}${l.truncated ? ' …cut' : ''}  "${l.text}"`)
     if (c.attach) console.log(`  attach line      x=${c.attach.left} y=${c.attach.top}  ${c.attach.size} ${c.attach.color}  pin ${c.attach.pin ? `${c.attach.pin.w}px at x=${c.attach.pin.x}` : 'none'}  gap ${c.attach.gap}  "${c.attach.text}"`)
-    for (const b of c.actions) console.log(`    action         ${b.left}–${b.right}  ${b.filled ? 'filled' : 'outlined'}  "${b.text}"`)
+    for (const b of c.actions) console.log(`    action         ${b.left}–${b.right}  ${b.filled ? 'filled' : 'outlined'}${b.disabled ? ', disabled' : ''}  "${b.text}"`)
     console.log(`  counts line      ${c.counts ? `"${c.counts}"` : 'none'}`)
   }
   if (o.drawer) {
