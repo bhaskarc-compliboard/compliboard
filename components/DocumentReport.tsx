@@ -844,8 +844,23 @@ export default function DocumentReport({
                     * yet starts working the moment it does — a button would need its handler
                     * written twice. `docs/HANDOFF-CODE.md` §7 records it as expected on staging.
                     */}
+                  {/* *** AND A FOURTH WORDING, WITH NO LINK — Calendar step 6b, decision 29. ***
+                    * This drawer lists EVERY reading's deadline rows, not just the newest
+                    * (`app/api/documents/report/route.ts` filters on `document_id` alone), so an
+                    * older reading's date whose row the newest reading withdrew lands here. The
+                    * three wordings below would have called it "On your calendar — waiting for
+                    * your confirmation", which is the product asserting a date no reading of this
+                    * file currently says.
+                    *
+                    * NO LINK, and that is not an omission: `calendar_v` does not return a
+                    * withdrawn row (migration 075), so `/calendar?date=<id>` would open a page
+                    * that cannot find it. A sentence with nowhere to go is better than a link to
+                    * nothing. Decision 30: when the product does not know something it says so.
+                    */}
                   {d.calendar_events
-                    ? <p className="mt-0.5 text-[12px] text-gray-400">
+                    ? d.calendar_events.status === 'withdrawn'
+                    ? <p className="mt-0.5 text-[12px] text-gray-400">Not in the latest reading of this file</p>
+                    : <p className="mt-0.5 text-[12px] text-gray-400">
                         <a href={`/calendar?date=${d.calendar_events.id}`} className="underline hover:text-gray-600">
                           {d.calendar_events.status === 'confirmed' ? 'On your calendar'
                             : d.calendar_events.status === 'dismissed' ? 'Removed from your calendar'

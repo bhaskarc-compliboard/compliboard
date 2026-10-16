@@ -483,7 +483,7 @@ const CAL_TABLES = ['calendar_events', 'calendar_mailings', 'calendar_feed_token
   // Importing `lib/calendarDates.ts` here is safe: it is the one file in the chain with no Next.js
   // and no model in it, which is why it takes a client as an argument.
   {
-    const { proposeDate } = await import('../lib/calendarDates.ts')
+    const { proposeDate, withdrawUnseenDocumentDates } = await import('../lib/calendarDates.ts')
     const stamp2 = Date.now()
     const doc = await seedRow(admin, 'documents', {
       company_id: companyId, name: `check-live-cal-${stamp2}.pdf`, file_url: `probe/cal-${stamp2}`,
@@ -535,12 +535,61 @@ const CAL_TABLES = ['calendar_events', 'calendar_mailings', 'calendar_feed_token
       && vrow?.source_title === 'check:live calendar probe permit',
       `next_due ${vrow?.next_due}, source_title "${vrow?.source_title}"`)
 
+    // 4. *** THE CURRENT READING WINS — Calendar step 6b, decision 29. ***
+    //    A second date is filed, and then a reading that says only the FIRST one withdraws it.
+    //    `proposeDate`'s own return value is the keep list, exactly as `lib/documentScan.ts`
+    //    builds it.
+    const dl2 = await seedRow(admin, 'document_deadlines', {
+      scan_id: scan.id, document_id: doc.id, company_id: companyId,
+      title: 'Annual fee (calendar probe)', due_on: '2027-10-15', recurs: false,
+      source_line: 'Condition 4.4',
+    }, 'id')
+    const other = await proposeDate(admin, {
+      companyId, source: 'document', documentId: doc.id, deadlineId: dl2.id,
+      title: 'Annual fee (calendar probe)', dueOn: '2027-10-15', recurs: false,
+      sourceLine: 'Condition 4.4',
+    })
+    const withdrawn = await withdrawUnseenDocumentDates(admin, companyId, doc.id, [first.id])
+    const { data: wrow } = await admin.from('calendar_events')
+      .select('id, status, withdrawn_at, dismissed_by').eq('id', other.id).maybeSingle()
+    ok(`${'calendar_events'.padEnd(26)} a date this reading no longer says is withdrawn, and stamped`,
+      withdrawn.length === 1 && withdrawn[0] === other.id && wrow?.status === 'withdrawn'
+      && !!wrow?.withdrawn_at && wrow?.dismissed_by === null,
+      `withdrew ${withdrawn.length}, status ${wrow?.status}, stamp ${wrow?.withdrawn_at}, `
+      + `dismissed_by ${wrow?.dismissed_by}`)
+
+    // ...AND THE PRESENCE BEFORE THE ABSENCE (§9a). A view that returned nothing at all would look
+    // exactly like a view that correctly hid one row, so the kept date is proved VISIBLE to the
+    // same caller in the same query before the withdrawn one is reported missing.
+    const { data: vboth } = await asUser.from('calendar_v')
+      .select('id, status').in('id', [first.id, other.id])
+    const seen = (vboth ?? []).map((r) => r.id)
+    ok(`${'calendar_v'.padEnd(26)} hides the withdrawn row and still returns the kept one`,
+      seen.includes(first.id) && !seen.includes(other.id) && seen.length === 1,
+      `of 2 rows the view returns ${seen.length}: ${seen.join(', ') || 'none'}`)
+
+    // 5. and a later reading that says it AGAIN brings it back — the `revived` outcome, which is
+    //    why a withdrawn row has to be a different word from a person's dismissal.
+    const again = await proposeDate(admin, {
+      companyId, source: 'document', documentId: doc.id, deadlineId: dl2.id,
+      title: 'Annual fee (calendar probe)', dueOn: '2027-10-15', recurs: false,
+      sourceLine: 'Condition 4.4',
+    })
+    const { data: back } = await admin.from('calendar_events')
+      .select('id, status, withdrawn_at, replaced_by').eq('id', other.id).maybeSingle()
+    const { data: vback } = await asUser.from('calendar_v').select('id').eq('id', other.id).maybeSingle()
+    ok(`${'calendar_events'.padEnd(26)} a matching later reading revives it, and the view has it back`,
+      again.outcome === 'revived' && again.id === other.id && back?.status === 'proposed'
+      && back?.withdrawn_at === null && back?.replaced_by === null && vback?.id === other.id,
+      `outcome ${again.outcome}, same row ${again.id === other.id}, status ${back?.status}, `
+      + `stamp ${back?.withdrawn_at}, in the view ${vback?.id === other.id}`)
+
     // The document goes, and the deadline and the calendar row go with it — document_id is ON
-    // DELETE SET NULL on calendar_events, so the row is removed by id rather than left orphaned.
-    await admin.from('calendar_events').delete().eq('id', first.id)
+    // DELETE SET NULL on calendar_events, so the rows are removed by id rather than left orphaned.
+    await admin.from('calendar_events').delete().in('id', [first.id, other.id])
     await admin.from('documents').delete().eq('id', doc.id)
     const { count: leftOver } = await admin.from('calendar_events')
-      .select('id', { count: 'exact', head: true }).eq('id', first.id)
+      .select('id', { count: 'exact', head: true }).in('id', [first.id, other.id])
     ok(`${'calendar_events'.padEnd(26)} the probe rows removed`, leftOver === 0, `${leftOver} left`)
   }
 
@@ -1653,4 +1702,4 @@ console.log(`  check:live: ok — ${CASES.length} tenant table(s): ${writable} w
   + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon; `
   + `and HR's ${HR_TABLES.length} tables (066), each allowing and refusing exactly its grant; `
   + `and the Calendar's ${CAL_TABLES.length} relations (073) — insert and update as the person, `
-  + `DELETE refused, a cross-tenant row proven present and unread, and calendar_v computing next_due.\n`)
+  + `DELETE refused, a cross-tenant row proven present and unread, calendar_v computing next_due, and step 6b's withdrawal: a date the newest reading no longer says is hidden by the view while the kept one is still returned, and a matching later reading revives it.\n`)

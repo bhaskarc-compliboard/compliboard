@@ -99,9 +99,17 @@ export async function POST(request: NextRequest) {
 // it also meant two people at one company saw different deadlines, which is not what a compliance
 // calendar is for.
 //
-// It still returns every row, dismissed and superseded ones included, because this is the raw table
-// and the Dashboard and the old page both read it. The CALENDAR's own reads move to `calendar_v`
-// with `status <> 'dismissed'` and `replaced_by is null` at steps 8 and 12 (§2.6).
+// It still returns dismissed and superseded rows, because this is the raw table and the Dashboard
+// and the old page both read it. The CALENDAR's own reads move to `calendar_v` with
+// `status <> 'dismissed'` and `replaced_by is null` at steps 8 and 12 (§2.6).
+//
+// *** WITHDRAWN ROWS ARE THE ONE EXCEPTION, AND THEY ARE EXCLUDED HERE — step 6b, decision 29. ***
+// Not for tidiness: a withdrawn row is a date the newest reading of the document, or the newest
+// audit of the agency, no longer says. Showing it would be the product asserting something no
+// reading currently supports, which is §6's named anti-pattern. `calendar_v` drops them in the
+// view itself, so the Calendar and the Dashboard inherit the rule at steps 8 and 12; this route
+// reads the base table and has to say it. Both readers of this route — `app/dashboard/page.tsx:64`
+// and `app/calendar/page.tsx:112` — are fixed by this one line.
 export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
@@ -112,6 +120,7 @@ export async function GET(request: NextRequest) {
       .from('calendar_events')
       .select('*')
       .eq('company_id', companyId)
+      .neq('status', 'withdrawn')
       .order('due_date', { ascending: true })
 
     if (error) throw error

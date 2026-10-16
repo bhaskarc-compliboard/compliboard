@@ -20,7 +20,7 @@
 import { createHash } from 'node:crypto'
 // The ONE writer for every date in the product (Calendar step 5, decision 6). An audit's date
 // findings are filed through it; Audits keeps no calendar logic of its own.
-import { proposeDate } from './calendarDates.ts'
+import { proposeDate, withdrawAuditDatesNotMatchedBy } from './calendarDates.ts'
 
 import { askAIWithCitations, extractJsonText, modelForTask } from './ai.ts'
 import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
@@ -76,6 +76,14 @@ export interface RunSummary {
    */
   calendar_filed?: Record<string, number>
   calendar_failed?: Array<{ finding: string; title: string; error: string }>
+  /**
+   * How many proposed dates of this agency's EARLIER runs this run did not match, and so withdrew
+   * (Calendar step 6b, decision 29). A count rather than a list, because the rows are still there
+   * and queryable by `status = 'withdrawn'`; the list a person needs is the dates that ARE current,
+   * which is the calendar itself. Written by `finishRunIfDone` after the claim, never per section
+   * — a run withdraws once, when it is finished.
+   */
+  calendar_withdrawn?: number
   /** The ledger row the checklist extraction wrote, on a template run. Run 6a, item 3. */
   extraction_ai_call_id?: string | null
   /** How many findings two sections both raised and were collapsed into one. Run 7b, item 5. */
@@ -1086,7 +1094,10 @@ export async function finishRunIfDone(db: Db, runId: string):
    * read the running total each section added.
    */
   const summary = await summariseRun(db, runId)
-  const { data: runNow } = await db.from('audit_runs').select('summary').eq('id', runId).maybeSingle()
+  // `company_id, kind, created_at` are step 6b's, read off the select this function already made
+  // rather than in a query of their own.
+  const { data: runNow } = await db.from('audit_runs')
+    .select('summary, company_id, kind, created_at').eq('id', runId).maybeSingle()
   const collapsed = Number(((runNow?.summary ?? {}) as Record<string, unknown>)
     .collapsed_duplicates) || 0
 
@@ -1111,7 +1122,51 @@ export async function finishRunIfDone(db: Db, runId: string):
   if (cErr) throw new Error(`finishRunIfDone: claiming done: ${cErr.message}`)
   if (!claimed?.length) return { finished: false, summary: null }
 
-  return { finished: true, summary: { ...summary, collapsed_duplicates: collapsed } }
+  // -------------------------------------------------------------------------------------------
+  // *** A FINISHED RUN OF AN AGENCY WITHDRAWS THAT AGENCY'S EARLIER PROPOSED DATES THAT IT DID
+  // NOT MATCH — Calendar step 6b, decision 29. ***
+  //
+  // AFTER THE CLAIM, and that is the point of putting it here: `.neq('status','done')` above is a
+  // compare-and-set, so exactly one run reaches this line however many sections land in the same
+  // second. The rule itself is in `lib/calendarDates.ts`; Audits keeps no calendar logic of its
+  // own (decision 6).
+  //
+  // ONLY THE SECTIONS THAT ARE `done` SUPPLY AGENCY NAMES. A section that could not complete read
+  // nothing, and silence from a reading that never happened is not a withdrawal — the audit twin
+  // of the `could_not_read` guard in `lib/documentScan.ts`. `audit_sections.title` IS the agency.
+  //
+  // WRAPPED, and `kind === 'agency'` first: a template run's sections are checklist sections, not
+  // agencies, so a template whose section happens to be titled "Oregon DEQ" must withdraw nothing.
+  // A failure here leaves the earlier dates LIVE and the run finished — a person sees one date too
+  // many rather than losing a finished audit over a calendar write.
+  // -------------------------------------------------------------------------------------------
+  let withdrawn = 0
+  if (runNow?.kind === 'agency' && runNow?.company_id && runNow?.created_at) {
+    try {
+      const ids = await withdrawAuditDatesNotMatchedBy(db, {
+        companyId: runNow.company_id as string,
+        agencies: done.map((x: { title: string }) => x.title).filter(Boolean),
+        runId,
+        runCreatedAt: runNow.created_at as string,
+      })
+      withdrawn = ids.length
+      if (withdrawn) {
+        // A second, small update: the count cannot be in the claim above, because the claim is what
+        // earns the right to withdraw. `summariseRun` names the key, or finishing would drop it.
+        await db.from('audit_runs')
+          .update({ summary: { ...summary, collapsed_duplicates: collapsed, calendar_withdrawn: withdrawn } })
+          .eq('id', runId)
+        console.log(`audit run ${runId}: calendar — ${withdrawn} date(s) withdrawn from earlier runs `
+          + `of ${done.length} agency section(s) this run did not match: ${ids.join(', ')}`)
+      }
+    } catch (err) {
+      console.error(`audit run ${runId}: the earlier dates this run did not match were not `
+        + `withdrawn; the run is finished and saved. `
+        + (err instanceof Error ? err.message : String(err)))
+    }
+  }
+
+  return { finished: true, summary: { ...summary, collapsed_duplicates: collapsed, calendar_withdrawn: withdrawn } }
 }
 
 /** Every document any section of this run recorded as read, deduplicated. */
@@ -1336,6 +1391,11 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
       ?? {}) as Record<string, number>,
     calendar_failed: (((run?.summary ?? {}) as Record<string, unknown>).calendar_failed
       ?? []) as Array<{ finding: string; title: string; error: string }>,
+    // And step 6b's count, carried the same way. `finishRunIfDone` writes it AFTER the claim —
+    // only the run that wins the race may withdraw — so a later re-summarise would drop it
+    // otherwise. That is the trap this block of the summary exists for.
+    calendar_withdrawn: Number(((run?.summary ?? {}) as Record<string, unknown>)
+      .calendar_withdrawn) || 0,
     // A note put on the run before it ran — "this checklist names somebody else" — is carried
     // forward rather than overwritten when the run is summarised at the end.
     note: (((run?.summary ?? {}) as Record<string, unknown>).note as string | null) ?? null,

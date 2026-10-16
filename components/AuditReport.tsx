@@ -1075,13 +1075,26 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
                 * An HREF, not a button: `?finding=` is read at step 8, and a link starts working
                 * the moment it is (`docs/HANDOFF-CODE.md` §7).
                 */}
+              {/* *** A FOURTH WORDING, WITH NO LINK — Calendar step 6b, decision 29. ***
+                * A finished run of an agency withdraws that agency's earlier proposed dates it did
+                * not match, and an earlier run's report page stays openable — so this is where a
+                * withdrawn row is actually read. Saying "waiting for your confirmation" about a
+                * date the newest audit of this agency did not find again is the omniscient status
+                * tracker pointing the other way (§6).
+                *
+                * NOT A LINK: `calendar_v` does not return a withdrawn row (migration 075), so
+                * `?finding=` would open a page that cannot find it at step 8. */}
               {f.calendar_event_id && (
-                <a href={`/calendar?finding=${f.id}`}
-                  className="no-print shrink-0 text-[12px] text-gray-400 underline hover:text-gray-600">
-                  {f.calendar_status === 'confirmed' ? 'On your calendar'
-                    : f.calendar_status === 'dismissed' ? 'Removed from your calendar'
-                    : 'On your calendar — waiting for your confirmation'}
-                </a>
+                f.calendar_status === 'withdrawn'
+                  ? <span className="no-print shrink-0 text-[12px] text-gray-400">
+                      Not in the latest audit of this agency
+                    </span>
+                  : <a href={`/calendar?finding=${f.id}`}
+                      className="no-print shrink-0 text-[12px] text-gray-400 underline hover:text-gray-600">
+                      {f.calendar_status === 'confirmed' ? 'On your calendar'
+                        : f.calendar_status === 'dismissed' ? 'Removed from your calendar'
+                        : 'On your calendar — waiting for your confirmation'}
+                    </a>
               )}
             </div>
             )

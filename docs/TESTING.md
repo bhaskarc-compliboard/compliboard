@@ -3725,3 +3725,59 @@ the scan's own filing function. **C6-1 and C6-2 cost one model call each; C6-3 a
 2. **Pass:** `/calendar` opens and shows the month as usual. The parameter is ignored because step 8
    has not built it. **Fail:** an error, a blank page, or a notice about something being missing.
    `HANDOFF-CODE.md` §7 records this as expected until step 8.
+
+## Calendar — step 6b, the current reading wins (16 October 2026)
+
+**On staging only.** Migration 075 is not on production. `docs/CALENDAR-PLAN.md` decision 29,
+`DECISIONS.md` §189. **None of these costs a model call except C6b-1, which costs one scan.**
+
+The automated half already runs: `tests/unit/calendarDates.test.ts` (28 of its cases are step 6b's
+— the withdrawal, both guards, revival, the audit agency filter and the view's filter read out of
+the newest migration that defines it) and three new `check:live` probes, which prove the withdrawal,
+the view hiding the row **while still returning the kept one**, and the revival as a signed-in user.
+What follows is what a person has to look at.
+
+### C6b-1 · The same file read twice (one scan)
+
+1. Note what `/calendar` shows for a document with dates on it.
+2. Scan the same document again — `npm run haiku -- npm run scan -- --document <id> --quiet`, or the
+   Read-it-again button.
+3. **Pass:** the calendar shows exactly what the newest reading says. A date the new reading worded
+   differently appears **once**, not twice, and the server log reads
+   `calendar — created n, …, withdrawn m, failed 0`. **Fail:** two rows for one obligation — that is
+   the defect step 6b exists to close.
+4. Open the document's report drawer. **Pass:** the older reading's deadline rows now read **"Not in
+   the latest reading of this file"**, as plain grey text with **no link**. **Fail:** they still say
+   "On your calendar — waiting for your confirmation", which would be the product standing behind a
+   date no reading of that file currently makes.
+
+### C6b-2 · The edge case: a date you confirmed, and a date you removed (free)
+
+1. Confirm one proposed date in the drawer or on `/calendar`. Remove another with a reason.
+2. Scan the document again.
+3. **Pass:** the confirmed date is **still there and still confirmed**, whatever the new reading
+   says, and the removed one is **still removed with your reason on it** — it is not re-proposed and
+   it is not relabelled as withdrawn. **Fail:** either one changes. A person's decision outranks a
+   re-read, in both directions, and this is the test of it.
+
+### C6b-3 · A reading the product could not make withdraws nothing (free)
+
+1. Upload a file the scan cannot read (an empty or corrupt PDF) **as a new version of a document
+   that already has dates**, or re-scan a document whose stored file has been removed.
+2. **Pass:** the document's existing dates are **untouched** — the log shows
+   `withdrawn 0` — and the page says the product could not read the file. **Fail:** the dates
+   disappear. Silence from a reading that never happened is not a retraction (`CLAUDE.md` §5.1:
+   never assert anything about a document the product did not read). The same guard now covers the
+   **facts** queue, which it did not before step 6b.
+
+### C6b-4 · The audit half: the same agency, twice (free if two runs already exist)
+
+1. Open a finished agency run's report, note its **Dates**.
+2. Run the same agency again and let it finish.
+3. **Pass:** `/calendar` shows **one** row per obligation, pointing at the newest run; the earlier
+   run's unmatched dates are gone from the calendar, and the run's summary records
+   `calendar_withdrawn: n`. Open the **earlier** run's report: its withdrawn dates read **"Not in the
+   latest audit of this agency"**, unlinked. **Fail:** the calendar grows, or an earlier run's page
+   claims a date is waiting for confirmation.
+4. **The one that matters:** run a **different** agency and check that the first agency's dates are
+   **untouched**. A DEQ audit says nothing about an OSHA obligation.

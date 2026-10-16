@@ -29,7 +29,7 @@ import { buildCompanyContext } from './companyContext.ts'
 import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts/document-scan.ts'
 // The ONE writer for every date in the product (Calendar step 5, decision 6). The scan files its
 // deadlines through it rather than keeping calendar logic of its own.
-import { proposeDate } from './calendarDates.ts'
+import { proposeDate, withdrawUnseenDocumentDates } from './calendarDates.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -893,6 +893,19 @@ export async function saveScan(
     })))
     if (e) throw new Error(`document_conditions: ${e.message}`)
   }
+  // *** THESE THREE LIVE OUTSIDE THE BLOCK, AND THAT IS THE WHOLE OF STEP 6b's PLUMBING. ***
+  // A reading that found NO dates is precisely the case the withdrawal rule exists for — the
+  // document no longer says anything is due — so a keep list declared inside
+  // `if (scan.deadlines.length)` would never run for it. `failed` is out here for the same reason:
+  // the guard below reads it.
+  const filed: Record<string, number> = { created: 0, existing: 0, replaced: 0, revived: 0 }
+  const failed: Array<{ deadline: string; title: string; error: string }> = []
+  // *** HOW "DID NOT PROPOSE AGAIN" IS DECIDED, AND IT NEEDS NO NEW BOOKKEEPING. ***
+  // `proposeDate` returns `{ id, outcome }` on all four outcomes, so the row each date of THIS
+  // reading landed on is already in hand. Everything else proposed for this document is a sentence
+  // this reading stopped saying.
+  const touchedDateIds: string[] = []
+  let withdrawnDates: string[] = []
   if (scan.deadlines.length) {
     // `.select()` now, because the calendar needs each row's id: `calendar_events.deadline_id`
     // records which reading a date was last read from (migration 073).
@@ -928,8 +941,6 @@ export async function saveScan(
     // through `calendar_v`, never copied, so a corrected site in Documents reaches the calendar
     // with no code here.
     // ---------------------------------------------------------------------------------------
-    const filed: Record<string, number> = { created: 0, existing: 0, replaced: 0, revived: 0 }
-    const failed: Array<{ deadline: string; title: string; error: string }> = []
     for (const row of (written ?? []) as Array<{ id: string; title: string; due_on: string | null
       recurs: boolean; source_line: string | null }>) {
       try {
@@ -938,6 +949,7 @@ export async function saveScan(
           title: row.title, dueOn: row.due_on, recurs: row.recurs, sourceLine: row.source_line,
         })
         filed[outcome] = (filed[outcome] ?? 0) + 1
+        touchedDateIds.push(eventId)
         // The stamp is what the report drawer reads to show "On your calendar". A failure here is
         // the same class as a failure above: counted, logged, and never thrown.
         const { error: stampErr } = await db.from('document_deadlines')
@@ -948,16 +960,52 @@ export async function saveScan(
           error: err instanceof Error ? err.message : String(err) })
       }
     }
-    // Said out loud whichever way it went, because a rule that fires silently is a rule nobody can
-    // tell is firing — the reason `reshaped_to_dates` is reported in `lib/auditRun.ts`.
-    console.log(`document scan ${documentId}: calendar — `
-      + Object.entries(filed).map(([k, v]) => `${k} ${v}`).join(', ')
-      + `, failed ${failed.length}`)
-    if (failed.length) {
-      console.error(`document scan ${documentId}: ${failed.length} date(s) were read but not filed; `
-        + `the reading is saved and complete. `
-        + failed.map((f) => `[deadline ${f.deadline} "${f.title}": ${f.error}]`).join(' '))
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // *** AND THE DATES THIS READING NO LONGER SAYS — Calendar step 6b, decision 29. ***
+  //
+  // The rule and its reasoning are in `lib/calendarDates.ts` and migration 075's header. It runs
+  // HERE: after the filing loop, outside the `scan.deadlines.length` guard, before the facts rule,
+  // and in no transaction — PostgREST has none, and neither has the facts rule below.
+  //
+  // *** TWO GUARDS, BOTH FAILING IN THE DIRECTION THAT KEEPS A DATE VISIBLE. ***
+  //   · `could_not_read` — `saveScan` is reached on the failure paths too (`failedScan` from
+  //     `app/api/document-scan/route.ts`, and `refusedScan` through `runDocumentScan`). Without
+  //     this, a model refusal or a missing file would withdraw every date of a document the
+  //     product could not even open. §5.1: never assert anything about a document nobody read.
+  //   · `failed.length === 0` — if any `proposeDate` call threw we cannot say what this reading
+  //     proposed, so nothing is withdrawn. Without it one transient insert failure would withdraw
+  //     the very date the reading had just found.
+  //
+  // WRAPPED, like the filing above and for the same reason: the reading is the paid work and is
+  // already billed by the time this line runs. A withdrawal that fails is logged and counted, and
+  // `saveScan` returns exactly what it returned before.
+  // ---------------------------------------------------------------------------------------
+  if (scan.status !== 'could_not_read' && failed.length === 0) {
+    try {
+      withdrawnDates = await withdrawUnseenDocumentDates(db, companyId, documentId, touchedDateIds)
+    } catch (err) {
+      console.error(`document scan ${documentId}: the dates this reading no longer says were not `
+        + `withdrawn; the reading is saved and complete. `
+        + (err instanceof Error ? err.message : String(err)))
     }
+  }
+
+  // Said out loud whichever way it went, because a rule that fires silently is a rule nobody can
+  // tell is firing — the reason `reshaped_to_dates` is reported in `lib/auditRun.ts`. Out here
+  // rather than in the block above, so a reading that found no dates still says what it withdrew.
+  console.log(`document scan ${documentId}: calendar — `
+    + Object.entries(filed).map(([k, v]) => `${k} ${v}`).join(', ')
+    + `, withdrawn ${withdrawnDates.length}, failed ${failed.length}`)
+  if (failed.length) {
+    console.error(`document scan ${documentId}: ${failed.length} date(s) were read but not filed; `
+      + `the reading is saved and complete. `
+      + failed.map((f) => `[deadline ${f.deadline} "${f.title}": ${f.error}]`).join(' '))
+  }
+  if (withdrawnDates.length) {
+    console.log(`document scan ${documentId}: ${withdrawnDates.length} date(s) withdrawn — this `
+      + `reading did not propose them again: ${withdrawnDates.join(', ')}`)
   }
   // *** READING A DOCUMENT AGAIN WITHDRAWS EVERY PENDING PROPOSAL FROM ITS EARLIER READINGS. ***
   //
@@ -990,7 +1038,16 @@ export async function saveScan(
   // outranks a re-read, and the accepted row is the history a corrected fact points back to (§056).
   //
   // It runs BEFORE the insert, so the new reading's own rows are never caught by it.
-  {
+  //
+  // *** AND NOT AT ALL FOR A READING THAT FAILED — added by Calendar step 6b, the owner's yes. ***
+  // This was unguarded, and the defect was found while writing the same rule for dates rather than
+  // by any test: `saveScan` has no early return for `could_not_read` and is reached on the failure
+  // paths (`failedScan` at `app/api/document-scan/route.ts:95` and `:148`, and `refusedScan`
+  // through `runDocumentScan`), so a model refusal or a file we could not open withdrew every
+  // pending fact proposal the last GOOD reading had made. The gaps rule escaped it by accident —
+  // its `not_seen_at` loop sits inside `if (scan.gaps.length)`. One line, the same condition the
+  // dates rule above uses: silence from a reading that never happened is not a retraction.
+  if (scan.status !== 'could_not_read') {
     const { error: wErr } = await db.from('fact_proposals')
       .update({ status: 'withdrawn' })
       .eq('document_id', documentId).eq('status', 'proposed')

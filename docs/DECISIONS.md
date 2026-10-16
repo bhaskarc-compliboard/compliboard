@@ -12715,3 +12715,215 @@ Testgamma now holds the fire-extinguisher document with three readings, **seven 
 two dates**, and four audit runs. **Not cleaned up**: those rows are the evidence for the finding
 above, and the owner will want to look at them on `/calendar` at step 7. Named here so nobody
 mistakes them for drift.
+
+---
+
+## 188. ONE CHAT FOR THE WHOLE APP — 15 October 2026
+
+**The owner's decision, taken during Calendar step 6b and recorded here before any of it is built.**
+The plan's decision 28 (`docs/CALENDAR-PLAN.md` §2.3).
+
+The ask box, the attach slot, the answer card, the conversations list and **the answer engine behind
+them** — prompt, context, model call, link and quote check, topic storage, cost — become **one
+shared piece**. A section calls it with a brief: the attach slot's words, the context it packs, a
+few prompt sentences, the actions an answer may offer, and an optional extra step such as HR's
+agency check.
+
+**Lifted from HR's working code, not written fresh.** HR's chat is the one that has been measured,
+walked and paid for; a second implementation written from the design would be a second set of bugs
+in the part of the product a person talks to.
+
+**Calendar is its first customer, at step 10**, and **HR's own chat is untouched until Calendar is
+released.** Then each live section in turn — HR, Audits, the Workspace — gets the engine beside its
+old chat behind a **staging-only switch**, the same questions go down both paths and are compared on
+**words, links, stored rows and cost**, the switch flips, that section's tests and one walked path
+prove it, and the old route goes.
+
+**Why a switch and a comparison rather than a swap.** The thing being replaced works. A swap that
+is wrong is discovered by a customer; a switch that is wrong is discovered by the comparison, on
+staging, with both answers side by side. It is the same shape as §136's rule about two lists: the
+only way to know two things agree is to read both.
+
+**Effect:** step 10 builds the engine. The HR, Audits and Workspace switch-overs are follow-ups
+after the Calendar release, one per section, each with its own report.
+
+---
+
+## 189. CALENDAR STEP 6b: THE CURRENT READING WINS — 16 October 2026
+
+§189 — migration **075 on STAGING ONLY** (staging is on 073, 074 and 075; production is on 072).
+Code: `lib/calendarDates.ts`, `lib/documentScan.ts`, `lib/auditRun.ts`,
+`app/api/calendar/route.ts`, `components/DocumentReport.tsx`, `components/AuditReport.tsx`,
+`scripts/check-live.js`, `tests/unit/calendarDates.test.ts`. **1030 tests** (was 1002).
+**Cost: $0.0713, 3 Haiku calls**, against a $1.00 budget; the ledger read **$1.5456 / 25 calls**
+before and **$1.6169 / 28 calls** after.
+
+### The decision, and the measurement that produced it
+
+**A date's identity cannot rest on the model repeating its own words.** The owner's premise going
+into the step 6 safety check was that the wording drift seen in step 5 was a cheap model's fault —
+Haiku words the same date differently on every read, and the production model should not. **The
+check refuted it.** Three Opus 5.5 readings of one fire-extinguisher certificate, uploaded as a new
+document so nothing could dedupe against the Haiku rows, produced:
+
+- **nine live calendar rows for three obligations**, and `created 3, existing 0, replaced 0,
+  revived 0` — three times out of three, so not one unlucky run;
+- **a moved day**: "schedule before November 2026" read as `2026-11-01` once and `2026-10-31`
+  twice, where Haiku's days had been stable.
+
+The production model read **better** — it found a monthly visual-inspection obligation Haiku missed
+every time — and no more **steadily**. So the fix cannot be a better model, and it cannot be
+agreement between readings.
+
+**And nothing in `proposeDate` is wrong.** A document date's identity is its TITLE (decision 13),
+the title is prose, and `prompts/document-scan.ts` is shown the company's labels, the fact keys in
+use, the corrections made and the **open gaps with their ids** — so a new reading can say
+`same_as_gap_id` — but **never the dates already on file**, and there is no `same_as_deadline_id`.
+The model cannot match wording nobody tells it about. **The prompt is the long-term fix and is a
+separate measured change in Documents** (decision 23 holds: the scan's prompt is not changed here).
+
+### The rule
+
+> **READING A DOCUMENT AGAIN WITHDRAWS EVERY PROPOSED DATE FROM ITS EARLIER READINGS THAT THE NEW
+> READING DID NOT PROPOSE AGAIN.** A finished run of an agency does the same for that agency's
+> earlier runs.
+
+It is the rule Documents has run for **facts** since 29 September (`lib/documentScan.ts`), with that
+rule's own reasoning: *only two different DOCUMENTS can disagree. A document does not disagree with
+itself; its latest reading is what it says.* Gaps have the same protection under another name
+(`document_gaps.not_seen_at`). Dates were the one of the three that kept every paraphrase.
+
+**A person's decision outranks a re-read, in both directions.** A confirmed date is never touched. A
+date a person dismissed stays dismissed and is never re-proposed (rule b, §186). The whole filter is
+`status = 'proposed'`.
+
+### Why a fourth status word, and the shape that was rejected on a fact
+
+A withdrawn row has to be told apart from a person-dismissed one **in the data**, because the two
+behave differently: a withdrawn date **comes back** if a later reading proposes it again (the
+`revived` outcome), and a dismissed one never does.
+
+The shape that needed **no migration at all** was `status = 'dismissed'` with `dismissed_by` null —
+"dismissed by nobody". **It was rejected on a fact read out of the catalog:**
+`calendar_events_dismissed_by_fkey` is **`ON DELETE SET NULL`**. Delete the person who dismissed a
+date and their decision becomes an absence: the row turns into a withdrawn one and the next reading
+quietly revives a date somebody removed on purpose. **A rule that depends on a nullable column
+staying non-null is a rule with an expiry date.** A second boolean was rejected too — `status` and
+the boolean could disagree.
+
+So migration 075 is three small things: the status CHECK gains `'withdrawn'`, one nullable
+`withdrawn_at timestamptz` records when, and `calendar_v` gains `where e.status <> 'withdrawn'`.
+Nothing is backfilled — deciding that a reading no longer says a date is the reading's job, not a
+migration's. **The partial unique index is deliberately unchanged**, and that is what makes revival
+work rather than duplication: it covers every `source = 'document'` row whatever its status, so a
+withdrawn row keeps its slot in the key and a later reading proposing the identical title and day
+**meets** it instead of inserting beside it.
+
+**And the same argument moved rule (b) itself.** The live test in `lib/calendarDates.ts` was
+`dismissed_by is null`; it is `status` now, everywhere, for exactly the FK reason above.
+`confirmed_by`, `dismissed_by` and `withdrawn_at` are the record of WHO and WHEN; `status` is the
+test for WHETHER.
+
+### Where it runs, and the guards that cost nothing until they are needed
+
+**Documents** — after the filing loop, **outside** `if (scan.deadlines.length)`, because *a reading
+that found no dates at all* is precisely the case the rule exists for. Two guards, both failing in
+the direction that leaves a date **visible**: `scan.status !== 'could_not_read'` and
+`failed.length === 0`.
+
+**Audits** — in `finishRunIfDone`, **after the compare-and-set claim**, so exactly one run withdraws
+however many sections land in the same second. Only the sections that are `done` supply agency
+names, and only earlier runs with `kind = 'agency'` are touched: a **template** run's sections are
+checklist sections, not agencies, so one titled "Oregon DEQ" must withdraw nothing. That guard came
+from reading `createRun`, not from the data — staging holds only agency runs, so no measurement
+would have caught it.
+
+**"Did not propose again" needs no new bookkeeping.** `proposeDate` returns `{ id, outcome }` on all
+four outcomes, so the row each date of this reading landed on is already in hand; everything else
+proposed for this document is a sentence this reading stopped saying. For audits there is no
+in-memory set that can span a run, and none is needed: `proposeDate` **re-points**
+`audit_finding_id` to the newest finding whenever it matches, so a live audit row still pointing at
+a finding from an **earlier** run of an agency this run just finished is precisely a row this run
+did not match. The resolution walks from the calendar **outwards**, so the work scales with the
+calendar rather than with the audit history.
+
+**There is no transaction, and that is a trade rather than an oversight.** PostgREST gives one
+statement per request; the facts rule has none either, nor have `siblingsOf` + `supersede`, which
+have shipped that way since §186. A failure between the filing loop and the withdrawal leaves the
+old rows **live** — a person sees one date too many rather than one too few, which is the direction
+a compliance calendar should fail in. The `.eq('status', 'proposed')` is **restated on the UPDATE**
+so somebody pressing Confirm between the select and the write keeps their confirmation; a unit test
+reads the query that is built rather than trusting the comment.
+
+### What it is worth, measured on the rows that showed the problem
+
+| | before | after |
+|---|---|---|
+| The Opus-check document, after 3 Opus readings | **9** live rows for 3 obligations | — |
+| ...one more reading, on Haiku | | `created 2, withdrawn 9` → **2** live |
+| ...and one more again | | `created 2, withdrawn 2` → **2** live |
+| The base table | 9 rows | **13** rows — nothing is deleted |
+| The agency whose two runs wrote "Annual maintenance **for all** portable fire extinguishers" and "...**of all**..." | **2** live rows for one obligation | **1** — `existing 2, calendar_withdrawn 1` |
+
+Five readings of one certificate, and the calendar shows what the fifth one says. **The growth
+stopped**: 2 → 7 → 9 before, and the latest reading's own count after.
+
+**The honest cost of the rule, said out loud.** The two Haiku readings each found **two** of the
+three obligations the Opus readings found, so the monthly visual inspection is withdrawn and is not
+on the calendar. That is the rule doing exactly what it says — the live calendar is what the newest
+reading says, no more and no less — and it is why the prompt fix matters and why **a confirmed date
+is never withdrawn**: a person who says yes to a date keeps it whatever a later reading forgets.
+
+### A pre-existing defect found by writing the same rule beside it
+
+`lib/documentScan.ts`'s **facts** withdrawal had **no `could_not_read` guard**, and `saveScan` has
+no early return for a failed reading — it is reached from the failure paths with `failedScan(...)`
+(`app/api/document-scan/route.ts`) and through `refusedScan`. So **a model refusal, or a file the
+product could not open, withdrew every pending fact proposal the last good reading had made.** The
+gaps rule escaped it by accident: its `not_seen_at` loop sits inside `if (scan.gaps.length)`. Found
+by reading, not by any test; raised at STOP 1 and fixed on the owner's yes, one line, the same
+condition the dates rule uses. **Silence from a reading that never happened is not a retraction.**
+
+### Two smaller things, named rather than left implicit
+
+- **The test double's `.in()` ignored its column name** and filtered on `id` whatever it was given
+  (`tests/unit/calendarDates.test.ts`). Invisible while every caller passed `'id'`; step 6b's audit
+  rule calls `.in('audit_finding_id', …)`, so the old double would have matched the wrong rows and
+  reported a passing test. A hole in the instrument, found while planning its first use. The double
+  is table-aware now too, because the audit rule reads four tables.
+- **`authenticated` holds column-blind UPDATE on `calendar_events`**, so a caller going straight to
+  PostgREST could set `status` to any legal word, `'withdrawn'` included. Pre-existing and equally
+  true of `'dismissed'` today; step 12 is where the route becomes the only path. Named, not changed.
+
+### Would it be reversed?
+
+If the prompt change lands and a reading can say `same_as_deadline_id`, the **titles** stop drifting
+and the withdrawal will fire far less often — but it does not become wrong. A reading that genuinely
+stops saying a date (the condition was removed from the renewed permit) still has to take that date
+off the calendar, and only this rule does that. What would reverse it is the opposite finding: that
+people rely on seeing dates an older reading found. The row is still there, with `withdrawn_at` on
+it, so that is a question step 9 can answer from the data rather than a decision that has to be
+re-taken blind.
+
+---
+
+## 190. WHEN UNSURE, ASK PLAINLY AND POLITELY — 15 October 2026
+
+**The owner's decision, taken during Calendar step 6b.** The plan's decision 30.
+
+**Wherever the product does not know something, it says so in one clear sentence and asks.** Named
+cases: a date read from a month with no day — *"The certificate gives the month, not the day. We've
+placed it on 30 November; pick the day if you know it"* — a repeating date whose period was not
+read, a removed site, a document with a newer version, and a date the chat could not find.
+
+> **Never a silent guess shown as read.**
+
+It applies to **every screen, the monthly email and the chat's prompt**, and it is the same rule
+§27 and §5.1 already hold for failures, turned on **uncertainty**: a product that shows an invented
+day beside a real quote has told the customer something the document does not say. §6 is the other
+half — a verified row and a guess must not look the same.
+
+**Effect:** a wording rule for steps 7 to 11, and a standing line in every instruction from step 7.
+Step 6b's two new wordings are written to it — **"Not in the latest reading of this file"** and
+**"Not in the latest audit of this agency"** — each a statement with **no link**, because
+`calendar_v` does not return a withdrawn row and a link would open a page that cannot find it.

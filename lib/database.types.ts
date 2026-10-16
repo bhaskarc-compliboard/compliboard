@@ -596,6 +596,7 @@ export type Database = {
           source_url: string | null
           status: string
           title: string
+          withdrawn_at: string | null
         }
         Insert: {
           added_by?: string | null
@@ -623,6 +624,7 @@ export type Database = {
           source_url?: string | null
           status?: string
           title: string
+          withdrawn_at?: string | null
         }
         Update: {
           added_by?: string | null
@@ -650,6 +652,7 @@ export type Database = {
           source_url?: string | null
           status?: string
           title?: string
+          withdrawn_at?: string | null
         }
         Relationships: [
           {
