@@ -14329,6 +14329,34 @@ answered one.
 own §5 is what will catch it there, including the has_passed equivalence check, which runs against
 production's own rows rather than against a probe.
 
+### AND THE CLOSE-OUT WAS OUT OF DATE BEFORE IT WAS COMMITTED — migration 079 is on production
+
+Every file above was written saying **079 is applied on staging and pending on production**, from
+`npm run preflight` read earlier the same day. **The owner applied it while they were being written.** Found by
+re-reading the catalog rather than by being told: a production read for a different question
+(`has_column_privilege('authenticated', …, 'due_date', 'UPDATE')`) came back **true** when 078's grant list says it
+must be false, which is only possible if 079 has run. `preflight` then read **`PENDING COUNT: 0`** and
+`schema_migrations` held `079`.
+
+**What it did, read back from production with `RELEASE.md` step 3a's own query:**
+
+| | before | after |
+|---|---|---|
+| live rows | 74 | 74 — **it writes no row** |
+| with a day the calendar places | 47 | **67** |
+| needing a day | 27 | **7** |
+| reading "passed" | 19, all one-offs | 20 — the one extra is a moved row whose day is behind us |
+
+**The predicted figures and the measured ones are the same to the row.** Every file written in this step was
+corrected: `HANDOFF-FROM-CALENDAR.md` (§2, the migrations table, §7 item 2, and its header, which now says it was
+corrected within the hour), `TEST-AT-FINISH-LINE.md` (A, C, H, J), `STATUS.md` (the row and the migration box),
+`CALENDAR-PLAN.md`'s step 14 row, `HANDOFF-CODE.md` §7's row, and `RELEASE.md` step 3a, which keeps the step and
+records the result under it.
+
+**§201 is left exactly as written.** Its "NOT proved: 079 has not run on production" was true when it was written,
+and `DECISIONS.md` is append-only — a record that is edited whenever the world moves is not a record. This is the
+entry that says what happened next.
+
 ### Effects on other sections, by file
 
 - **`app/dashboard/page.tsx:153`** — no code change, and the behaviour moves: a repeating date with
@@ -14345,3 +14373,54 @@ production's own rows rather than against a probe.
 - **`scripts/measure-layout.mjs`** — `--date`, available to every section's walks.
 - **Documents, Audits, HR:** nothing. No file of theirs is touched, and `proposeDate` — the one
   writer — is unchanged.
+
+---
+
+## 202. THE CALENDAR'S CLOSE-OUT — 19 October 2026 (Calendar step 15)
+
+**No code was changed and no model was called.** This section is the record of what the Calendar leaves behind, so
+that a chat which never saw it built can pick it up from the files.
+
+### What was written
+
+| File | What |
+|---|---|
+| `docs/HANDOFF-FROM-CALENDAR.md` | **New**, 410 lines, in the shape of `docs/HANDOFF-FROM-HR.md`. §0 in one paragraph · §1 what to read, in order · §2 where it stands, with the production and staging figures and the cost · §3 what it is, as the owner described it · §4 how it works end to end (the one table and the one writer; `calendar_v` and the one filter; what it reads; the shared engine and the Brief; the monthly email and its gate; the feed; models and the ledger) · §5 the code map · §6 **what it changed outside the Calendar, and why, file by file** · §7 what is owed, in order · §8 known defects and limits · §9 held for the finish line · §10 the test data · §11 how the chat worked · §12 for the next section's chat |
+| `docs/TEST-AT-FINISH-LINE.md` | The Calendar's part, blocks A–J, beside HR's and in the same shape. Its **D is eleven real scenarios with a written key each**, at the owner's instruction |
+| `docs/calendar-boards.html` | Boards 4, 5 and 7 brought in line with the build, and **board 6b added**. Words and structure only; no CSS touched |
+| `docs/CALENDAR-PLAN.md` | Version 20. Step 14 marked **done** (the owner ran the routine), 14b and 15 done. The plan is complete |
+| `docs/README.md` | Version 16: the new handoff indexed, and `TEST-AT-FINISH-LINE.md`'s row noting the Calendar's part |
+| `STATUS.md` | Version 36. The Calendar row **rewritten** as a released section: what it is, what it reads, the migrations with 079 pending, the decisions, the models, the cost, and the eight things owed |
+
+### Two things the close-out had to correct rather than copy
+
+- **The steps table said step 14 was "prepared… nothing is on production".** It is released: `npm run preflight`
+  read `PENDING COUNT: 1`, which can only be true if `073`–`078` are applied there. The row now says so, and keeps
+  what was prepared on 16 October as the sentence it was.
+- **`§6`'s list of what the Calendar changed outside itself was not written from memory.** It is
+  `git diff --name-only 54ec6ae..da7d2f0` with the diff of each file read — which is how `components/AttachControl.tsx`
+  (moved out of HR character for character) and `app/documents/page.tsx`'s `?return=` got into the list at all.
+
+### The eleven scenarios, and why they are scenarios rather than questions
+
+Every defect this section found came from **a shape of row**, not from a question: the same obligation worded three
+ways across three readings (nine live rows, §187); a date a person removed coming back; a day thrown away because
+the period was unknown (§201). So the yardstick sets the row up first and then looks — a document scanned twice
+with the same date worded differently; a repeating date with no day; one with a day and no period; a removed date
+the scanner finds again; an audit finding a date the scan already filed; two sites; the monthly email on a month
+with nothing due; a question about a date the calendar does not hold, and the offer; the feed in Google Calendar; a
+person setting a day; and **the one case the product cannot yet say** — "the certificate gives the month, not the
+day", where nothing records that a document gave only a month, so the key is that the product says nothing false.
+
+### What the close-out could NOT do, said plainly
+
+**The morning-after and 1 November checks of step 15 are not done, and cannot be today.** The first monthly email
+is due on 1 November at 14:00 UTC, and it **will not be sent at all** unless the sending-domain DNS is cleared
+first — the guard will write the refusal on its `job_runs` row instead. That is the guard working; the way to tell
+the two apart is to read the row, which is what `TEST-AT-FINISH-LINE` I says to do.
+
+### Effects on other sections, by file
+
+**None.** No file under `app`, `lib`, `components`, `prompts`, `config`, `scripts`, `supabase` or `tests` was
+touched by this step: `git status` shows only `STATUS.md` and six files under `docs/`. `npm run check` was re-run
+anyway and is unchanged at **1377 tests, 0 failures**.

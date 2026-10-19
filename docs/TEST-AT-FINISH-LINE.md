@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 4 · **Updated:** 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 5 · **Updated:** 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -286,6 +286,172 @@ the first two after HR's yardstick makes it stale:
 - `vercel.json` (the cron entries).
 
 **So at the finish line, HR's yardstick runs after the workspace's last prompt change.**
+
+---
+
+<!-- Other sections: add your part below, in the same shape (A to J). -->
+
+## The Calendar
+
+*Written 19 October 2026 by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15). Same shape as
+HR's part above; the Calendar does not edit HR's.*
+
+### A. Where the Calendar stands (19 October 2026)
+
+- **Built through step 14b and RELEASED.** `main` at `da7d2f0`; production serves `/calendar`.
+- **Migrations `073`–`079` are on production** (`npm run preflight`: `PENDING COUNT: 0`; the owner applied 079 on
+  19 October). Read back afterwards: **67 live rows placed, 7 needing a day**, the 20 that moved being exactly the
+  class 079 was written for.
+- **The record:** `docs/CALENDAR-PLAN.md` (v19), `DECISIONS.md` §185–§202, the manual sets C7–C14b in
+  `docs/TESTING.md`, and `docs/HANDOFF-FROM-CALENDAR.md`.
+- **The go-live happened before the finish line**, as HR's did and for the same reason: holding it would leave the
+  old 601-line `/calendar` page on production, whose Add and × buttons have been broken since step 5.
+- **One gate is still shut and it is deliberate:** the Resend sending domain. While the `from:` is
+  `onboarding@resend.dev`, the monthly job refuses to send on production — claims nothing, sends nothing, writes
+  the reason on its `job_runs` row, answers 503. **So the first monthly email is not a finish-line item; it is
+  waiting on DNS.**
+- **Held for the finish line:** the yardstick (D, E), the manual sets (F) and both switches (G).
+
+### B. Settings for every Opus run
+
+Always on an **isolated server copy** (port 3998, `HOW-WE-BUILD.md` §3c). `.env.local` is never changed for this.
+
+| Setting | Value for the finish line | Why |
+|---|---|---|
+| `AI_MODEL_CALENDAR`, every `AI_MODEL_*` | `claude-opus-5-5` | As production |
+| `AI_EFFORT` | `medium` | Production's |
+| `DEV_MAX_SEARCHES` | `0` in the server's own environment | The laptop sets `2`; `0` reads as no limit, as on production |
+| `RESEARCH_PROVENANCE`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST` | `true` | Production's; the Calendar's prompt is built from the shared one |
+| `NOTIFY_TEST_TO` | the test inbox | **Every email in these runs must land there.** It is absent on production by design and must stay absent |
+| `VERCEL_ENV` | unset | Set it to `production` only for the one guard probe in C |
+| `CRON_SECRET` | as staging | The monthly job answers 404 without it |
+
+**Prove the settings held:** the ledger shows `claude-opus-5-5` at effort medium for task `calendar`; the server log
+names no search limit; `npm run haiku:check` **refuses** — its refusal is the proof the run is not on Haiku.
+
+**Cost:** `npm run cost` before and after. Step 13 measured an Opus answer at **$0.157–$0.273**; budget the
+yardstick from that, not from Haiku's $0.0073.
+
+### C. The machinery on Opus (one run per paid path) — DONE 16 October 2026 (`DECISIONS.md` §199)
+
+Five real calls on `claude-opus-5-5` at `AI_EFFORT=medium`: two answers, a follow-up, a summary, and one capture to
+measure the narration rule. **$0.9109 of a $2.00 budget.** Nothing broke. **The monthly email calls no model**, so
+it had nothing to run here — its paid path does not exist.
+
+**What it found, and these are the finish line's starting facts:** an answer costs **21–37× what Haiku's did**,
+because Opus searches where Haiku did not; 4 of 5 web sources were official where Haiku had 0 of 3; it named the
+title drift to the customer and said "I can't tell you yet" where it did not know. **The narration rule withdrew
+zero characters on Opus** (`HANDOFF-CODE.md` §7's row closed on that measurement).
+
+**Still to run on Opus:** nothing paid changed at step 14b, but the chat's brief now states a day where it said
+"no day read yet" for 20 production rows, so **D's first answer case is worth re-asking once** on a company that
+has one.
+
+### D. The yardstick: the real scenarios, each with a written key
+
+**The lesson from the build.** Every defect this section found came from a *shape of row*, not from a question:
+the same obligation worded three ways, a day with no period, a period with no day, a date somebody removed. So the
+Calendar's yardstick is **scenarios first, questions second** — set the row up, then look.
+
+Each is run on **at least two models** (Opus 5.5 and one cheaper, as the owner chooses), three times each, and the
+key is written **before** any run. Where it lives: `tests/golden/calendar/` — scenarios and keys only, never a real
+customer document.
+
+| # | The scenario | The key: what must be true |
+|---|---|---|
+| 1 | **A document scanned twice, with the same date worded differently** ("Annual maintenance of all portable fire extinguishers", then "Next annual maintenance due for all units") | **One live date, not two.** The second reading either meets the first (`existing`) or supersedes it (`replaced`); the earlier wording is withdrawn, not dismissed, and the drawer's history says what happened. **This is the one the build could not fix** — three Opus readings of one certificate made nine rows (§187, §189) — so the key is what decision 29 guarantees, not what the model says |
+| 2 | **A repeating date with no day** ("Fit testing shall be repeated at least annually", no date) | Filed, `recurs = true`, `due_date` null, `next_due` null. **On neither the grid nor the list.** In *Dates to confirm* under **"Needs a day or how often (N)"**, and counted in the one line at the foot of both views. Not in the `.ics`. The email's line names it |
+| 3 | **A repeating date with a day and no period** ("next annual maintenance due 20 August 2026") | **On the grid and in the list on that day**, like any other date (migration 079). If the day is behind us it reads **"passed N days ago"** in amber and is faint — and is **not** offered as the next date in the info bar. In the `.ics` as **one non-repeating event**. The drawer offers "Set how often" and **not** "Set the day" |
+| 4 | **A date a person removed, that the scanner finds again** | It stays removed (rule b). `proposeDate` returns `existing`, nothing is revived, the drawer shows who removed it and when, and the report drawer says the date is not on the calendar. **A dismissal is final in the database too** — a person cannot confirm it back (23514) |
+| 5 | **An audit that finds a date the scan already filed** (same document, same day, a different title) | **One row, the document's**, which gains `audit_finding_id`; the outcome is `existing` (decision 31). The drawer shows the audit as context, not as the source. **The source card is decided by `source`, never by which id is set** |
+| 6 | **A company with two sites** | Every row says which site; a company-wide date says "Every site"; the site filter appears. **With one site nothing about sites shows anywhere** (decision 24). The monthly email groups by site only with more than one. A document moved to another site moves its dates with it, with no write to the calendar |
+| 7 | **The monthly email on a month with nothing due** | It is still sent, and it says **"Nothing is due in ‹Month›."** It never says "no dates" when the read failed, and it carries **no confirmed or not-confirmed marks** (decision 18). The claim row is written **before** the render, so a second run the same month sends nothing |
+| 8 | **A question about a date that is NOT on the calendar**, where the rule says one exists | The answer says plainly that the date is not on the calendar, cites the rule with its page, and **ends with the offer**: "Add ‹title› — due ‹day›, ‹how often› — to your calendar". One click files it as **confirmed with the presser's name** (decision 17). The grey line under the answer names any cited date nobody has confirmed |
+| 9 | **The feed in Google Calendar** | Subscribe with the link; the dates appear; a date confirmed, added or removed in CompliBoard shows in Google **within a day**. A repeating date with a period carries its RRULE; one without is a single event. **The person's own note is in neither the feed nor the download.** Rotating the token in the sheet kills the old link |
+| 10 | **A person sets a day** (scenario 2's row) | "Set the day" in the drawer; one PATCH; the date lands on the grid under its new month and leaves the section, with the foot line's count one lower. **Then it cannot be changed**: the control is gone, and a direct write is refused by the database (23514), not only by the screen |
+| 11 | **"The certificate gives the month, not the day"** — the case the product **cannot yet say** | Decision 30's own worked example, and the one line of it that is **not built**: nothing records that a document gave only a month (`document_deadlines` has `due_on`, `recurs`, `source_line` and no precision flag). **The key is that the product says nothing false** — it shows the day it was given and does not claim the document named it. Judge whether that is good enough, or whether the flag (§7 item 7 of `docs/HANDOFF-FROM-CALENDAR.md`) is worth building |
+
+### E. The yardstick: what to judge
+
+**Answers (the Ask tab):**
+- the right answer against the key, with the date's own source named — the document, its page and the line;
+- **a date the calendar holds is cited as a date, with a link that opens its drawer** — not described in prose;
+- the grey line appears when, and only when, the answer leaned on dates nobody has confirmed;
+- **an offer is never hedged** (the owner's addition to step 10a's prompt) and names exactly what would be written;
+- **no internal ids** anywhere in the prose (step 10a's first defect);
+- official sources first, counted official against other, as HR's part counts them;
+- the answer stays on the question asked.
+
+**The rows themselves:** after every scenario, read the table, not the screen —
+`select title, status, recurs, period, due_date, replaced_by, withdrawn_at from calendar_events …`. Four of the
+eleven scenarios are about *which rows exist*, and a screen that looks right over a wrong row is the failure this
+section exists to prevent.
+
+**The monthly email:** what it says, on a real month, for a company with two sites; every link opens the right
+drawer; the footer; **and one on a month with nothing due**.
+
+**Cost and time** per answer and summary: searches, tokens, seconds. Decides whether a search limit is set.
+
+### F. The manual sets in `docs/TESTING.md` (the owner, on Opus)
+
+C7 (the page shell), C8a and C8b (the two views, the drawer, Add a date, the feed), C9 (the queue), C10 (the chat
+and the offer), C11 (the email), C12 (the Dashboard and the moves a person may make), C13 (Opus), C14-1 to C14-3
+(the release and the sandbox guard), **C14b-1 to C14b-3 (a clean calendar)**.
+
+### G. The switches, each measured against the baseline (after it)
+
+The Calendar has **two**, and both are other sections' work:
+
+1. **`same_as_deadline_id` in the document-scan prompt** — the long-term fix for scenario 1. Decision 29 works
+   around the drift in the data; this stops it happening. A Documents prompt change, so it is measured against
+   Documents' golden set as well as scenario 1.
+2. **A month-only precision flag on `document_deadlines`** — scenario 11. A Documents schema and prompt change.
+
+**And one question for the owner, not a switch:** `AI_MODEL_CALENDAR` is Opus 5.5 today. Step 13 measured what that
+buys. Sonnet 5.5 against Opus 5.5 for this tier is worth one measured comparison at the finish line.
+
+### H. The release (CALENDAR-PLAN step 14) — DONE by the owner, 16–19 October 2026
+
+`docs/RELEASE.md`'s calendar routine, step 0 to step 9, run by the owner. Production is on `000`–`078`.
+**Step 3a is done too:** migration 079 went to production on 19 October and was read back (67 placed, 7 needing a
+day). **Still open from it:** step 0 — the DNS gate and the four `from:` lines — and the one paid check, one
+calendar answer as the owner's own company, $0.20.
+
+### I. The morning after, and 1 November
+
+- **The morning after a push:** `job_runs` for `calendar_month` — there will be none until the 1st — and the free
+  checks in the routine's step 6.
+- **1 November, 14:00 UTC, the first monthly email.** Read `job_runs` and `calendar_mailings` the same morning:
+  one row per company, `sent_at` stamped, `sent_to` holding the real addresses. **If the DNS gate is still shut,
+  the row will instead carry the refusal and nothing will have been sent** — that is the guard working, not a
+  failure, and it is the only way to tell the two apart from the database.
+- Then the Calendar's part of this file is scored, and `STATUS.md`'s row updated.
+
+### J. Open items, and the shared files the Calendar depends on
+
+**Open items that touch testing** (`HANDOFF-CODE.md` §7, and §7 of `docs/HANDOFF-FROM-CALENDAR.md`):
+- the sending domain's DNS, and the three older emails that still send from the sandbox address;
+- whether the three older emails have ever reached anybody but the owner — only the Resend dashboard can say;
+- Company information's literal `'FACTS_CHANGED'`;
+- `check:live` cannot be pointed at production, so the production checks are unauthenticated probes.
+
+**Staging test data to clean before the yardstick:** the build-test conversations on all three companies, and the
+probe dates left by the step walks.
+
+**Shared files the Calendar depends on.** A change to any of these before the finish line re-runs the Calendar's
+free checks; a change to the first two after its yardstick makes it stale:
+- `lib/ask/*` and `prompts/ask.ts`: **the Calendar's answers are built from them**, and three more sections are
+  about to move onto the same engine (decision 28) — so the Calendar's yardstick runs **after** the last engine
+  change, not before;
+- `lib/email.ts`: the one template, which the three older emails are about to move onto;
+- `lib/topicList.ts`, `lib/topicClaim.ts`, `lib/listWords.ts`, `lib/conversation.ts`, `lib/summaryReport.ts`,
+  `lib/howTo.ts`, `lib/documentStatus.ts`, `lib/printFrame.ts`, `lib/pipelineConfig.ts`, `lib/ai.ts`;
+- `components/Drawer.tsx`, `Sheet.tsx`, `Tabs.tsx`, `Empty.tsx`, `AnswerBody.tsx`, `ReportView.tsx`,
+  `ConversationList.tsx`, `AttachControl.tsx`, `buttonStyles.ts`, and **`DocumentReport.tsx` and `AuditReport.tsx`,
+  which the drawer's second tab renders whole**;
+- `lib/documentScan.ts` and `lib/auditRun.ts`: **they are where dates come from.** A change to either is a change
+  to the Calendar's input;
+- `vercel.json` (the cron entry).
 
 ---
 

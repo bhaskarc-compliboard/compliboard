@@ -2,7 +2,7 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
-*Updated 19 October 2026, Calendar step 14b (`DECISIONS.md` §201): **migration 079 is pending on production** — step 3a below says what it does to the rows already there. It writes no row; it changes what `calendar_v` computes, so 20 live rows appear on the grid, the list, the Dashboard and the monthly email that are on none of them today, and several of those days are in the past and will show as passed.*
+*Updated 19 October 2026, Calendar step 14b (`DECISIONS.md` §201) and step 15 (§202): **migration 079 — applied by the owner the same day, and read back under step 3a below.** It writes no row; it changes what `calendar_v` computes, so 20 live rows appear on the grid, the list, the Dashboard and the monthly email that are on none of them today, and several of those days are in the past and will show as passed.*
 
 *Updated 16 October 2026, Calendar step 14 (`DECISIONS.md` §200): **the Calendar's release routine** below, the monthly-email cron row, and the sending-domain gate. Two corrections while writing it: this file has **never** carried a backup step (one is written below, and it is new, not quoted), and **`check:live` cannot be pointed at production** — it signs in as a staging fixture and writes rows. The free production checks are unauthenticated HTTP probes, listed in the routine.*
 
@@ -256,6 +256,11 @@ npx supabase db query --project-ref "$SUPABASE_PROD_REF" --linked --agent no -o 
 
 **Expect `on_the_calendar` 67 and `needs_a_day` 7** (47 + 20). If the first number does not move,
 079 did not run, whatever the command printed.
+
+> **DONE 19 October 2026.** The owner applied it, and the query above came back **`on_the_calendar` 67,
+> `needs_a_day` 7** — the expected numbers to the row. 20 dates moved onto the grid; one of them has a day behind
+> it and now reads "passed", the other 19 passed rows being one-offs as before. Kept here as the routine's step
+> because the same reasoning applies to any later migration that changes what `calendar_v` computes.
 
 **Step 4 — the variables, BEFORE the push.** A variable change is itself a redeploy, so doing them
 first means the deployment that first serves the Calendar already has them. Vercel → Settings →

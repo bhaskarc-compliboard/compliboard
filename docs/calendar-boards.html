@@ -216,7 +216,8 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
 
 <div class="cv-intro">
   <h2>The Calendar, drawn in the HR frame</h2>
-  <p>Eleven boards for a desktop window 1280 wide, in the HR Workspace's own shell, type and words. The sample company is HR's: Willamette Vinegar Works, with a Portland plant and a Vancouver warehouse. Today is 15 October 2026 on every board. The Conversations tab, the summary drawer, the delete-a-conversation sheet and the printed page are the HR boards 9 to 12 as they stand, so they are not redrawn here.</p>
+  <p><strong>Updated 19 October 2026 (Calendar step 14b, decision 32):</strong> the month and the list show dates and nothing else — the "Repeating, day not read yet" strip and the list's last group are gone, each view ends on one quiet line, <em>Dates to confirm</em> gains "Needs a day or how often", and the drawer gains "Set the day" (board 6b, new). Words and structure only; no CSS changed.</p>
+  <p>Twelve boards for a desktop window 1280 wide, in the HR Workspace's own shell, type and words. The sample company is HR's: Willamette Vinegar Works, with a Portland plant and a Vancouver warehouse. Today is 15 October 2026 on every board. The Conversations tab, the summary drawer, the delete-a-conversation sheet and the printed page are the HR boards 9 to 12 as they stand, so they are not redrawn here.</p>
 </div>
 
 <div class="cv-band">Asking: the expert down the hall</div>
@@ -311,7 +312,7 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
 <!-- ===================== BOARD 4 (month) ===================== -->
 <section class="cv-frame" id="b4">
   <div class="cv-label"><span class="t">4 · Calendar tab, the month (the default view)</span><span class="s">1280 × 900</span></div>
-  <p class="cv-note">The rows laid on days; this is what the Calendar tab opens on. Every day box is the same size; a day with more dates than fit shows "+2 more" and the drawer lists them. Hairlines only, no boxes. A filled dot is confirmed, a ring is not; a passed date goes faint. "Send to your calendar" on the right opens board 11. Clicking a date opens the same drawer as the list.</p>
+  <p class="cv-note"><strong>Step 14b:</strong> the grid holds dates and nothing else. A repeating date whose day WAS read sits on that day like any other (migration 079); a date with no day at all is a question, and it lives in the drawer and in <em>Dates to confirm</em> — the one quiet line under the grid says how many are waiting and links to them. The strip that used to sit above the grid, "Repeating, day not read yet (N)", is gone. The rows laid on days; this is what the Calendar tab opens on. Every day box is the same size; a day with more dates than fit shows "+2 more" and the drawer lists them. Hairlines only, no boxes. A filled dot is confirmed, a ring is not; a passed date goes faint. "Send to your calendar" on the right opens board 11. Clicking a date opens the same drawer as the list.</p>
   <div class="scaler"><div class="board" style="height:900px">
     <div class="app">
       <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
@@ -332,7 +333,8 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
             <div class="d"><div class="n">23</div></div><div class="d"><div class="n">24</div></div><div class="d"><div class="n">25</div></div><div class="d"><div class="n">26</div></div><div class="d"><div class="n">27</div></div><div class="d"><div class="n">28</div></div><div class="d"><div class="n">29</div></div>
             <div class="d"><div class="n">30</div><div class="ev conf">WA business licence renewal</div></div><div class="d out"><div class="n">1</div></div><div class="d out"><div class="n">2</div></div><div class="d out"><div class="n">3</div></div><div class="d out"><div class="n">4</div></div><div class="d out"><div class="n">5</div></div><div class="d out"><div class="n">6</div></div>
           </div>
-          <div class="legend"><span>● confirmed</span><span>○ not confirmed</span><span>1 date repeats with no day yet — see the list</span></div>
+          <div class="legend"><span>● confirmed</span><span>○ not confirmed</span></div>
+          <p class="quiet-line" style="margin-top:14px;font-size:12px;color:var(--text-muted)">1 repeating date needs a day or how often — <a href="#b7" style="text-decoration:underline">see Dates to confirm</a></p>
         </div></main>
       </div>
     </div>
@@ -341,9 +343,9 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
 
 <!-- ===================== BOARD 5 (list) ===================== -->
 <section class="cv-frame" id="b5">
-  <div class="cv-label"><span class="t">5 · Calendar tab, the list</span><span class="s">1280 × 1180</span></div>
-  <p class="cv-note">HR board 3's rows, grouped by month. The meta line: the date, the site, where it was read from, and its state. "Not confirmed" is grey: it is the normal condition of a date read yesterday. "Passed" is amber, because a passed date wants a look. A recurring date with no day sits in its own group at the foot. The right column says how far away it is.</p>
-  <div class="scaler"><div class="board" style="height:1180px">
+  <div class="cv-label"><span class="t">5 · Calendar tab, the list</span><span class="s">1280 × 1240</span></div>
+  <p class="cv-note">HR board 3's rows, grouped by month. The meta line: the date, the site, where it was read from, and its state. "Not confirmed" is grey: it is the normal condition of a date read yesterday. "Passed" is amber, because a passed date wants a look. The right column says how far away it is. <strong>Step 14b:</strong> the last group, "Repeats — how often or when wasn't read yet", is gone. A repeating date with a day is in its own month like any other; one with no day at all is counted in the quiet line at the foot and shown on <em>Dates to confirm</em>.</p>
+  <div class="scaler"><div class="board" style="height:1240px">
     <div class="app">
       <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
       <div class="bodyrow">
@@ -378,10 +380,12 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
             <div class="row"><div class="text"><span class="title">Hazardous waste biennial report</span><div class="meta">1 March 2027 <span class="dot">·</span> every 2 years <span class="dot">·</span> Portland plant <span class="dot">·</span> Hazardous waste generator report 2025 <span class="dot">·</span> Confirmed</div></div><span class="when">in 137 days</span></div>
           </div>
 
-          <div class="group-heading quiet">Repeats, day not known yet</div>
+          <div class="group-heading">August 2027</div>
           <div class="rows">
-            <div class="row"><div class="text"><span class="title">Respirator fit testing</span><div class="meta">every year <span class="dot">·</span> Every site <span class="dot">·</span> Respiratory protection program <span class="dot">·</span> Not confirmed</div></div><span class="when">no day yet</span></div>
+            <div class="row"><div class="text"><span class="title">Next annual maintenance for all units</span><div class="meta">20 August 2027 <span class="dot">·</span> Portland plant <span class="dot">·</span> Certificate of annual maintenance <span class="dot">·</span> Not confirmed</div></div><span class="when">in 309 days</span></div>
           </div>
+
+          <p class="quiet-line" style="margin-top:18px;font-size:12px;color:var(--text-muted)">1 repeating date needs a day or how often — <a href="#b7" style="text-decoration:underline">see Dates to confirm</a></p>
         </div></main>
       </div>
     </div>
@@ -391,7 +395,7 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
 <!-- ===================== BOARD 6 ===================== -->
 <section class="cv-frame" id="b6">
   <div class="cv-label"><span class="t">6 · A date, opened</span><span class="s">720 × 1120</span></div>
-  <p class="cv-note">The drawer, HR board 4b's frame, with two tabs under its title. "The date" is everything about the date: whether it repeats, where it was read from with the exact line, the document's own state, the other dates that document sets, the history. "The report" shows the Documents report for that document exactly as Documents shows it, no change, with every action on it live (a date from an audit shows the audit's report; a typed date has no second tab). The footer: Confirm (outline) while it is not confirmed, then Open the file, Send to my calendar (board 11), Download, and Remove at the far right in grey. A confirmed date's footer starts with "Not right" instead. The same drawer opens from a chat answer's source card, from the monthly email's link and from the Dashboard's upcoming list.</p>
+  <p class="cv-note">The drawer, HR board 4b's frame, with two tabs under its title. "The date" is everything about the date: whether it repeats, where it was read from with the exact line, the document's own state, the other dates that document sets, the history. "The report" shows the Documents report for that document exactly as Documents shows it, no change, with every action on it live (a date from an audit shows the audit's report; a typed date has no second tab). The footer: Confirm (outline) while it is not confirmed, then Open the file, Send to my calendar (board 11), Download, and Remove at the far right in grey. A confirmed date's footer starts with "Not right" instead. The same drawer opens from a chat answer's source card, from the monthly email's link and from the Dashboard's upcoming list. <strong>Step 14b:</strong> this date has a day, so its footer does not offer "Set the day" — a day the document gave is evidence and is never edited here. Board 6b is the drawer for a date that has none.</p>
   <div class="scaler"><div class="board narrow" style="height:1180px">
     <div class="drawer" style="position:absolute;inset:0">
       <div class="drawer-head">
@@ -430,13 +434,50 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
   </div></div>
 </section>
 
+<!-- ===================== BOARD 6b (step 14b) ===================== -->
+<section class="cv-frame" id="b6b">
+  <div class="cv-label"><span class="t">6b · A date with no day, opened</span><span class="s">720 × 760</span></div>
+  <p class="cv-note"><strong>New at step 14b (decision 32).</strong> The same drawer, for the other kind of row: it repeats, and nothing in the reading said when. "When" says <em>No day yet</em>, the grey note asks, and the footer offers <strong>"Set the day"</strong> beside "Set how often" — a date field under "Which day is it?", one panel at a time. <strong>The control is offered only where there is no day</strong>, and that is the affordance, not the rule: a day that has been set cannot be changed from here, and the database refuses the write as well as the screen. Once a day is set the date lands on the grid, "Set the day" goes, and "Send to my calendar" arrives.</p>
+  <div class="scaler"><div class="board narrow" style="height:760px">
+    <div class="drawer" style="position:absolute;inset:0">
+      <div class="drawer-head">
+        <div style="min-width:0"><h2>Respirator fit testing</h2><div class="sub">Every site · every year · not confirmed</div></div>
+        <span class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+      </div>
+      <div class="tabs" style="margin:14px 24px 0"><div class="tab" aria-selected="true">The date</div><div class="tab">The report</div></div>
+      <div class="drawer-body" style="padding-top:14px">
+        <div class="notebox">This date repeats, but the day wasn't read. Set the day if you know it, and we'll put it on the calendar.</div>
+        <div class="section-head"><span>The date</span></div>
+        <div class="facts">
+          <div class="fact"><div class="k">When</div><div class="v">No day yet</div></div>
+          <div class="fact"><div class="k">Repeats</div><div class="v">every year</div></div>
+          <div class="fact"><div class="k">Site</div><div class="v">Every site</div></div>
+          <div class="fact"><div class="k">State</div><div class="v">Not confirmed</div></div>
+        </div>
+        <div class="notebox" style="margin-top:16px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Which day is it?</div>
+          <span style="display:inline-block;border:1px solid var(--line);background:var(--page);border-radius:6px;padding:5px 10px;font-size:13px;margin-right:8px">20 / 08 / 2027</span>
+          <span class="btn-outline">Set the day</span>
+        </div>
+        <div class="section-head"><span>Where it came from</span></div>
+        <div class="items">
+          <div class="item"><div class="t"><a href="#">Respiratory protection program</a></div><div class="b">Programme · Every site · Read 12 October 2026</div><div class="ref">Page 9 · <q>Fit testing shall be repeated at least annually.</q></div></div>
+        </div>
+        <div class="section-head"><span>History</span></div>
+        <div class="para" style="font-size:14px;line-height:21px">Read from the document on 12 October 2026. Not confirmed yet. If you have already handled this, add the proof in Company Documents and it will show here.</div>
+      </div>
+      <div class="drawer-foot"><button class="btn-outline">Confirm</button><button class="btn-text">Set the day</button><button class="btn-text">Set how often</button><button class="btn-text">Open the file</button><button class="btn-text muted push-right">Remove</button></div>
+    </div>
+  </div></div>
+</section>
+
 <div class="cv-band">Dates to confirm: the work queue</div>
 
 <!-- ===================== BOARD 7 ===================== -->
 <section class="cv-frame" id="b7">
-  <div class="cv-label"><span class="t">7 · Dates to confirm</span><span class="s">1280 × 1060</span></div>
-  <p class="cv-note">Grouped by the document each date was read from, so a first scan's flood is a few clicks: "Confirm all" on the group heading, or Confirm and Not right on a row. Every row is also on the Calendar tab already; this tab only shortens the work. An audit's dates get their own group. Dates added from the chat or typed in are confirmed already, so they never appear here.</p>
-  <div class="scaler"><div class="board" style="height:1060px">
+  <div class="cv-label"><span class="t">7 · Dates to confirm</span><span class="s">1280 × 1300</span></div>
+  <p class="cv-note"><strong>Step 14b:</strong> a second section sits under the queue — <strong>"Needs a day or how often (N)"</strong>, every live date with no day at all, grouped the same way, each row opening the drawer. It has no Confirm and no picker: the question there is WHEN. <strong>A date can be in both</strong>, and that is deliberate — the queue asks "is this right?", the section asks "when?", and both are open about the two rows below. <strong>The tab's count stays the queue's</strong> (14 here); the section carries its own. Grouped by the document each date was read from, so a first scan's flood is a few clicks: "Confirm all" on the group heading, or Confirm and Not right on a row. Every row is also on the Calendar tab already; this tab only shortens the work. An audit's dates get their own group. Dates added from the chat or typed in are confirmed already, so they never appear here.</p>
+  <div class="scaler"><div class="board" style="height:1300px">
     <div class="app">
       <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
       <div class="bodyrow">
@@ -472,6 +513,23 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
             <div class="row"><div class="text"><span class="title">Respirator fit testing</span><div class="meta">every year, day not known yet <span class="dot">·</span> page 9 <span class="dot">·</span> <q>Fit testing shall be repeated at least annually.</q></div></div><div class="acts"><span class="btn-outline">Confirm</span><span class="btn-text">Not right</span></div></div>
           </div>
           <div class="fineprint" style="margin-top:16px">5 more dates from 3 documents below.</div>
+
+          <!-- Step 14b, decision 32: the second section. Grouped like the queue, no Confirm and no
+               picker on a row — the question here is WHEN, and it is answered in the drawer. -->
+          <div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--line)">
+            <div class="group-heading"><span>Needs a day or how often (2)</span></div>
+            <p class="lede" style="margin:2px 0 0;font-size:13px">These repeat, and nothing in the reading said when. Open one to set the day, or how often it repeats.</p>
+
+            <div class="group-heading" style="margin-top:16px"><span>1200-Z stormwater permit · Portland plant · 1 date</span></div>
+            <div class="rows">
+              <div class="row"><div class="text"><span class="title">Visual monitoring, every month</span><div class="meta">repeats, no day yet <span class="dot">·</span> page 10 <span class="dot">·</span> <q>Conduct visual monitoring of discharges monthly.</q></div></div></div>
+            </div>
+
+            <div class="group-heading" style="margin-top:12px"><span>Respiratory protection program · Every site · 1 date</span></div>
+            <div class="rows">
+              <div class="row"><div class="text"><span class="title">Respirator fit testing</span><div class="meta">repeats, no day yet <span class="dot">·</span> page 9 <span class="dot">·</span> <q>Fit testing shall be repeated at least annually.</q></div></div></div>
+            </div>
+          </div>
         </div></main>
       </div>
     </div>
