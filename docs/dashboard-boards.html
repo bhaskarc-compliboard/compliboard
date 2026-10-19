@@ -1,0 +1,282 @@
+<title>Dashboard boards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Canvas chrome: a quiet grey desk the boards sit on. The boards use the app's own tokens
+   (the HR Workspace boards, template/tokens.css), the same file the Calendar boards used. */
+:root {
+  --desk: #E9EBEE; --desk-fg: #14171A; --desk-muted: #6B7280; --desk-faint: #9CA3AF; --desk-line: #D6D9DE; --desk-surface: #FFFFFF;
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  --ink: #14171A; --heading: #111827; --text-strong: #1F2937; --text: #4B5563; --text-nav: #5B6470; --text-muted: #6B7280; --text-faint: #9CA3AF;
+  --group-heading: #374151; --dot: #D1D5DB; --line: #E5E7EB; --line-faint: #F0F1F3; --page: #F7F8FA; --surface: #FFFFFF; --panel: #F9FAFB; --bubble: #E5E7EB; --scrim: rgba(20,23,26,0.4);
+  --brand: #2F7D52; --brand-strong: #256541; --brand-tint: #EAF3ED; --warning: #B7791F; --danger: #B42318; --orange: #F94300;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #1E2124; --desk-fg: #E6E8EB; --desk-muted: #A3A9B1; --desk-faint: #7C838C; --desk-line: #33373C; --desk-surface: #26292D; color-scheme: dark; } }
+:root[data-theme="dark"] { --desk: #1E2124; --desk-fg: #E6E8EB; --desk-muted: #A3A9B1; --desk-faint: #7C838C; --desk-line: #33373C; --desk-surface: #26292D; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: var(--font-ui); }
+.cv-top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; gap: 12px; height: 52px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--desk-surface); border-bottom: 1px solid var(--desk-line); }
+.cv-top h1 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cv-top .sp { flex: 1; }
+.cv-top select, .cv-top button { font-family: inherit; font-size: 13px; height: 30px; padding: 0 10px; border: 1px solid var(--desk-line); border-radius: 6px; background: var(--desk-surface); color: var(--desk-fg); cursor: pointer; }
+.cv-top button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-strong); }
+.cv-hint { font-size: 12px; color: var(--desk-faint); white-space: nowrap; }
+@media (max-width: 720px) { .cv-hint, .cv-top h1 { display: none; } }
+.cv-intro { max-width: 900px; padding-block: 28px 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cv-intro h2 { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; line-height: 1.2; text-wrap: balance; }
+.cv-intro p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--desk-muted); max-width: 70ch; }
+.cv-band { padding-block: 28px 4px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.cv-frame { padding-block: 12px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cv-label { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; font-size: 13px; color: var(--desk-muted); }
+.cv-label .t { font-weight: 500; color: var(--desk-fg); min-width: 0; }
+.cv-label .s { font-size: 11px; color: var(--desk-faint); white-space: nowrap; }
+.cv-note { margin: 0 0 8px; font-size: 13px; line-height: 20px; color: var(--desk-muted); max-width: 80ch; }
+.scaler { position: relative; width: 100%; overflow: hidden; }
+.board { position: relative; width: 1280px; transform-origin: 0 0; background: var(--page); color: var(--ink); font-family: var(--font-ui); box-shadow: 0 1px 3px rgba(20,23,26,0.12), 0 8px 24px rgba(20,23,26,0.06); overflow: hidden; }
+.board.narrow { width: 720px; }
+.board a { color: var(--brand-strong); }
+.board button { font-family: inherit; }
+
+/* ---------- The app frame (HR template, verbatim) ---------- */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { height: 57px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .name { font-size: 14px; font-weight: 600; }
+.topbar .org { font-size: 13px; color: var(--text-nav); }
+.bodyrow { display: flex; flex: 1; min-height: 0; }
+.sidebar { width: 224px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; background: var(--surface); border-right: 1px solid var(--line); }
+.nav { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 8px; font-size: 14px; color: var(--text-nav); text-decoration: none; }
+.nav.active { font-weight: 500; color: var(--brand-strong); background: var(--brand-tint); }
+.nav .badge { font-size: 12px; color: var(--brand-strong); }
+.main { flex: 1; display: flex; justify-content: center; padding: 24px 24px 64px; min-width: 0; }
+.column { width: 852px; max-width: 100%; display: flex; flex-direction: column; }
+.page-title { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; }
+.lede { margin: 6px 0 0; font-size: 14px; color: var(--text-muted); }
+.btn-primary { font-size: 14px; font-weight: 500; padding: 8px 16px; color: #fff; background: var(--brand); border: 0; border-radius: 6px; }
+.btn-outline { font-size: 14px; font-weight: 500; padding: 5px 11px; color: var(--brand); background: transparent; border: 1px solid var(--brand); border-radius: 6px; }
+.btn-text { font-size: 14px; padding: 0; color: var(--text); background: transparent; border: 0; }
+.btn-text.strong { font-weight: 500; color: var(--brand-strong); }
+.btn-text.muted { color: var(--text-faint); }
+.group-heading { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 0 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.group-heading .act { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 12px; color: var(--brand-strong); }
+.rows { border-bottom: 1px solid var(--line); }
+.row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); }
+.row .text { flex: 1; min-width: 0; }
+.row .title { display: block; font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .when { flex-shrink: 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.row .when.soon { color: var(--danger); }
+.row .open { flex-shrink: 0; font-size: 12px; color: var(--brand-strong); white-space: nowrap; }
+.meta { margin-top: 2px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.meta .dot { color: var(--dot); }
+.meta .warn { color: var(--warning); }
+.empty-line { padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 13px; color: var(--text-muted); }
+.empty-line a { margin-left: 8px; font-size: 12px; }
+
+/* ---------- Dashboard pieces, new ---------- */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.tile { padding: 18px 20px 18px 0; }
+.tile + .tile { padding-left: 20px; border-left: 1px solid var(--line); }
+.tile .k { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.tile .v { margin-top: 6px; font-family: var(--font-reading); font-size: 34px; line-height: 40px; font-weight: 400; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tile .v.dash { color: var(--dot); }
+.tile .s { margin-top: 2px; font-size: 12px; color: var(--text-faint); }
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+.twocol > * { min-width: 0; }
+
+.sect { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 36px 0 8px; }
+.sect h2 { margin: 0; font-family: var(--font-reading); font-size: 20px; font-weight: 400; color: var(--heading); }
+.sect .act { font-size: 13px; color: var(--brand-strong); text-decoration: none; white-space: nowrap; }
+.sect .quiet { font-size: 12px; color: var(--text-faint); white-space: nowrap; }
+.more { padding: 10px 0; font-size: 12px; color: var(--text-muted); }
+.more a { margin-left: 6px; font-size: 12px; }
+.qblock { margin-top: 0; }
+.qcard { padding: 20px 24px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.qcard .n { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.qcard .q { margin: 6px 0 0; font-family: var(--font-reading); font-size: 19px; line-height: 27px; color: var(--heading); text-wrap: balance; }
+.qcard .why { margin: 4px 0 0; font-size: 13px; line-height: 19px; color: var(--text-muted); }
+.qcard .choices { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.choice-btn { font-size: 14px; font-weight: 500; padding: 7px 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.choice-btn.on { border-color: var(--brand); color: var(--brand-strong); background: var(--brand-tint); }
+.qcard .skip { margin-left: auto; font-size: 13px; color: var(--text-muted); text-decoration: underline; }
+.qcard .numin { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.qcard .numin .in { width: 120px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; color: var(--ink); background: var(--surface); font-variant-numeric: tabular-nums; }
+.qcard .numin .in.ph { color: var(--text-faint); }
+.qcard.done { background: var(--panel); border-style: dashed; }
+.qcard.done .q { font-size: 16px; line-height: 24px; font-family: var(--font-ui); font-weight: 500; }
+.qfoot { margin-top: 8px; font-size: 12px; color: var(--text-faint); }
+.stack { display: flex; flex-direction: column; gap: 20px; padding: 32px; }
+.stack .cap { font-size: 12px; color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="cv-top">
+  <h1>CompliBoard Dashboard — the feature boards</h1>
+  <span class="sp"></span>
+  <span class="cv-hint">Scroll down the boards · zoom with the buttons</span>
+  <select id="goto" aria-label="Go to a board"><option value="">Go to a board…</option></select>
+  <button type="button" id="z-fit" aria-pressed="true">Fit</button>
+  <button type="button" id="z-75" aria-pressed="false">75%</button>
+  <button type="button" id="z-100" aria-pressed="false">100%</button>
+</div>
+
+<div class="cv-intro">
+  <h2>The Dashboard, drawn in the HR frame</h2>
+  <p>Four boards for a desktop window 1280 wide, in the shared shell every rebuilt section wears. The sample company is Willamette Vinegar Works, with a Portland plant and a Vancouver warehouse; today is 19 October 2026. One column, in the owner's order: a welcome, the four numbers, one question at a time, what is coming, and the recent audits where "Recently read" stood.</p>
+</div>
+
+<div class="cv-band">The landing page</div>
+
+<!-- ===================== BOARD 1 ===================== -->
+<section class="cv-frame" id="b1">
+  <div class="cv-label"><span class="t">1 · The Dashboard, a company with history</span><span class="s">1280 × 1240</span></div>
+  <p class="cv-note">One column, the owner's order. The welcome is the page title: "Welcome back, Maria" for anyone who has opened the Dashboard before, the person's first name from their profile, or plain "Welcome back" when there is none. The numbers are hairline cells, not cards, so the page has one surface. One question at a time, right under the numbers, so the one thing we want from the person is above the fold. Upcoming and Recent audits follow as their own sections, each with a serif heading and its way out on the right. Upcoming shows up to six dates in the window and says how many more there are; Recent audits shows the last three. A date row opens the Calendar's drawer; an audit row opens that report on the Audits page.</p>
+  <div class="scaler"><div class="board" style="height:1300px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav active" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#"><span>Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span>Calendar</span><span class="badge">7</span></a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Welcome back, Maria</h1>
+          <p class="lede">What has been done, what is coming up, and a few quick questions.</p>
+          <div class="tiles">
+            <div class="tile"><div class="k">Files read</div><div class="v">27</div></div>
+            <div class="tile"><div class="k">Questions answered</div><div class="v">31</div></div>
+            <div class="tile"><div class="k">Audits done</div><div class="v">4</div></div>
+            <div class="tile"><div class="k">Checklists created</div><div class="v">5</div></div>
+          </div>
+          <div class="qblock">
+            <div class="sect"><h2>Three quick questions</h2><span class="quiet">Your answers are kept in Company information</span></div>
+            <div class="qcard">
+              <div class="n">1 of 3</div>
+              <p class="q">Do you have employees?</p>
+              <p class="why">Anyone on payroll, full or part time. Owners who only draw a share do not count.</p>
+              <div class="choices"><button class="choice-btn">Yes</button><button class="choice-btn">No</button><a class="skip" href="#">I don't know yet</a></div>
+            </div>
+          </div>
+          <div class="sect"><h2>Upcoming in the next 30 days</h2><a class="act" href="#">Open the Calendar →</a></div>
+          <div class="rows">
+            <a class="row" href="#"><div class="text"><span class="title">Fire extinguisher annual inspection</span><div class="meta"><span>Portland plant</span><span class="dot">·</span><span>from the fire marshal's report</span></div></div><span class="when soon">in 9 days</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">Air Contaminant Discharge Permit 26-2841 — annual report</span><div class="meta"><span>Portland plant</span><span class="dot">·</span><span class="warn">not confirmed</span></div></div><span class="when">in 13 days</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">Forklift operator evaluation, three-year</span><div class="meta"><span>Vancouver warehouse</span><span class="dot">·</span><span>from the training record</span></div></div><span class="when">in 24 days</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">Hazardous waste generator report</span><div class="meta"><span>Every site</span><span class="dot">·</span><span>typed by Maria</span></div></div><span class="when">in 29 days</span></a>
+          </div>
+          <div class="more">2 more in the next 30 days.<a href="#">See them on the Calendar</a></div>
+          <div class="sect"><h2>Recent audits</h2><a class="act" href="#">All audits →</a></div>
+          <div class="rows">
+            <a class="row" href="#"><div class="text"><span class="title">Oregon OSHA — workplace safety</span><div class="meta"><span>Portland plant</span><span class="dot">·</span><span>12 October 2026</span></div></div><span class="open">Open the report</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">DEQ — air permit conditions</span><div class="meta"><span>Portland plant</span><span class="dot">·</span><span>3 October 2026</span></div></div><span class="open">Open the report</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">Washington L&amp;I — warehouse safety</span><div class="meta"><span>Vancouver warehouse</span><span class="dot">·</span><span>26 September 2026</span></div></div><span class="open">Open the report</span></a>
+          </div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">The three questions</div>
+
+<!-- ===================== BOARD 2 ===================== -->
+<section class="cv-frame" id="b2">
+  <div class="cv-label"><span class="t">2 · The question card, four states</span><span class="s">720 × 760</span></div>
+  <p class="cv-note">One card, one question at a time, 1 of 3 to 3 of 3. The question's words and the grey line under it come from the switch itself, so the Company information page and the Dashboard ask in the same words. A yes-or-no switch gets two buttons; a number gets a box and Save; a choice gets one button per option. "I don't know yet" moves to the next question and leaves the switch unanswered. After the third answer the card goes quiet until another day. Nothing says what the answer switched on.</p>
+  <div class="scaler"><div class="board narrow" style="height:760px">
+    <div class="stack">
+      <div><div class="cap">a · yes or no</div>
+      <div class="qcard" style="margin-top:6px">
+        <div class="n">1 of 3</div>
+        <p class="q">Do you have employees?</p>
+        <p class="why">Anyone on payroll, full or part time. Owners who only draw a share do not count.</p>
+        <div class="choices"><button class="choice-btn on">Yes</button><button class="choice-btn">No</button><a class="skip" href="#">I don't know yet</a></div>
+      </div></div>
+      <div><div class="cap">b · a number</div>
+      <div class="qcard" style="margin-top:6px">
+        <div class="n">2 of 3</div>
+        <p class="q">How many employees do you have, counting every site?</p>
+        <p class="why">A rough number is fine. You can change it later in Company information.</p>
+        <div class="numin"><span class="in">38</span><button class="btn-primary">Save</button><a class="skip" href="#" style="margin-left:auto">I don't know yet</a></div>
+      </div></div>
+      <div><div class="cap">c · a choice</div>
+      <div class="qcard" style="margin-top:6px">
+        <div class="n">3 of 3</div>
+        <p class="q">Do you ship hazardous materials in amounts that need placards on the truck?</p>
+        <p class="why">Placards are the diamond signs on a trailer. If a carrier does the shipping for you, answer for what leaves your site.</p>
+        <div class="choices"><button class="choice-btn">Yes</button><button class="choice-btn">No</button><button class="choice-btn">Only through a carrier</button><a class="skip" href="#">I don't know yet</a></div>
+      </div></div>
+      <div><div class="cap">d · after the third answer, and for the rest of the day</div>
+      <div class="qcard done" style="margin-top:6px">
+        <p class="q" style="margin:0">Thanks — that's all for today. We'll ask a few more another day.</p>
+        <p class="why">Your answers are in Company information if you want to change one.</p>
+      </div></div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">Day one</div>
+
+<!-- ===================== BOARD 3 ===================== -->
+<section class="cv-frame" id="b3">
+  <div class="cv-label"><span class="t">3 · The first visit, nothing in the app yet</span><span class="s">1280 × 960</span></div>
+  <p class="cv-note">"Welcome, Maria" the first time this person opens the Dashboard, "Welcome back" every time after; one timestamp on the person's profile, set on the first view, decides which. Four dashes, no zeros and no coaching line. Upcoming and Recent audits each say what will appear there, with the way to make it happen. The questions are the one block that works on day one, so this is where they earn their place: a company that has uploaded nothing can still answer three questions.</p>
+  <div class="scaler"><div class="board" style="height:960px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav active" href="#">Dashboard</a><a class="nav" href="#">Audits</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#">Company Documents</a><a class="nav" href="#">Company information</a><a class="nav" href="#">Calendar</a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Welcome, Maria</h1>
+          <p class="lede">This page will show what has been done and what is coming up. Three quick questions below get things started.</p>
+          <div class="tiles">
+            <div class="tile"><div class="k">Files read</div><div class="v dash">—</div></div>
+            <div class="tile"><div class="k">Questions answered</div><div class="v dash">—</div></div>
+            <div class="tile"><div class="k">Audits done</div><div class="v dash">—</div></div>
+            <div class="tile"><div class="k">Checklists created</div><div class="v dash">—</div></div>
+          </div>
+          <div class="qblock">
+            <div class="sect"><h2>Three quick questions</h2><span class="quiet">Your answers are kept in Company information</span></div>
+            <div class="qcard">
+              <div class="n">1 of 3</div>
+              <p class="q">Do you have employees?</p>
+              <p class="why">Anyone on payroll, full or part time. Owners who only draw a share do not count.</p>
+              <div class="choices"><button class="choice-btn">Yes</button><button class="choice-btn">No</button><a class="skip" href="#">I don't know yet</a></div>
+            </div>
+          </div>
+          <div class="sect"><h2>Upcoming in the next 30 days</h2><a class="act" href="#">Open the Calendar →</a></div>
+          <div class="empty-line">Deadlines from your documents will be displayed here. <a href="#">Add a document</a></div>
+          <div class="sect"><h2>Recent audits</h2><a class="act" href="#">All audits →</a></div>
+          <div class="empty-line">Your recent audits will show here. <a href="#">Run your first audit</a></div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<script>
+(function () {
+  var frames = Array.prototype.slice.call(document.querySelectorAll('.cv-frame'));
+  var sel = document.getElementById('goto');
+  frames.forEach(function (f) {
+    var o = document.createElement('option'); o.value = f.id; o.textContent = f.querySelector('.cv-label .t').textContent; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { var f = document.getElementById(sel.value); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); sel.value = ''; });
+  var mode = 'fit';
+  function layout() {
+    document.querySelectorAll('.scaler').forEach(function (s) {
+      var b = s.firstElementChild; var w = b.offsetWidth; var h = parseFloat(b.style.height) || b.offsetHeight;
+      var avail = s.clientWidth; var scale = mode === 'fit' ? Math.min(1, avail / w) : mode === '75' ? Math.min(0.75, avail / w) : 1;
+      b.style.transform = 'scale(' + scale + ')';
+      s.style.height = Math.ceil(h * scale) + 'px';
+      s.style.overflowX = (scale === 1 && avail < w) ? 'auto' : 'hidden';
+    });
+  }
+  ['fit', '75', '100'].forEach(function (m) {
+    document.getElementById('z-' + m).addEventListener('click', function () {
+      mode = m; ['fit', '75', '100'].forEach(function (x) { document.getElementById('z-' + x).setAttribute('aria-pressed', x === m ? 'true' : 'false'); }); layout();
+    });
+  });
+  window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  layout();
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href="#"]'); if (a) e.preventDefault(); });
+})();
+</script>
