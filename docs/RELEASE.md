@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 19 October 2026, Calendar step 14b (`DECISIONS.md` §201): **migration 079 is pending on production** — step 3a below says what it does to the rows already there. It writes no row; it changes what `calendar_v` computes, so 20 live rows appear on the grid, the list, the Dashboard and the monthly email that are on none of them today, and several of those days are in the past and will show as passed.*
+
 *Updated 16 October 2026, Calendar step 14 (`DECISIONS.md` §200): **the Calendar's release routine** below, the monthly-email cron row, and the sending-domain gate. Two corrections while writing it: this file has **never** carried a backup step (one is written below, and it is new, not quoted), and **`check:live` cannot be pointed at production** — it signs in as a staging fixture and writes rows. The free production checks are unauthenticated HTTP probes, listed in the routine.*
 
 *Updated 8 October 2026, §183: the cron table, the morning-after paragraph and the free checks describe HR live.*
@@ -227,6 +229,33 @@ surprise:**
 | 074 then files | **27 rows and 27 stamps** — 27 document deadlines on a current scan, all eligible, all fileable, **0 undated one-offs skipped**, 27 distinct keys. All 27 belong to **one** company, which has **0 calendar rows today**, so its *Dates to confirm* badge goes from 0 to 27 and 7 of those repeat with no day yet |
 | `calendar_events` after | **74 rows** |
 | nothing already exists | `calendar_mailings`, `calendar_feed_tokens`, `calendar_v`, both new indexes, both 078 functions, `calendar_events.status/source/replaced_by` and `audit_findings`'s `unique (company_id, id)` — **all eleven absent**, checked with controls that proved the probe could see what *is* there |
+
+**Step 3a — apply 079, and read what it moves first** *(added 19 October 2026, Calendar step 14b;
+`DECISIONS.md` §201)*. The same command and the same typed `PRODUCTION`. **It writes no row** —
+everything it changes is arithmetic inside `calendar_v` — but it changes what production *shows*,
+and these are production's own figures, read with one SELECT before the file was written:
+
+| | |
+|---|---|
+| live rows on production | **74** |
+| had a day the calendar could place | **47** |
+| **repeating, with a DAY and no how often** | **20 — these appear on the grid and in the list for the first time**, and in the Dashboard's "Upcoming — next 30 days" and the monthly email's due section with them |
+| of those, a day already behind us | they will read **"passed N days ago"**, correctly: there is no next occurrence to count to, so the day the product shows is the day that has gone |
+| repeating with no day at all | **7**, which stay off both views and are listed on *Dates to confirm* under **"Needs a day or how often (7)"** |
+| the monthly email's undated line | falls from **27 dates** to **7**, and now points at that section |
+
+Read it back the way the rest of this file does — from the database, not from the exit code:
+
+```bash
+npx supabase db query --project-ref "$SUPABASE_PROD_REF" --linked --agent no -o json \
+  "select count(*) filter (where next_due is not null) as on_the_calendar,
+          count(*) filter (where next_due is null)     as needs_a_day
+     from public.calendar_v
+    where status in ('proposed','confirmed') and replaced_by is null;"
+```
+
+**Expect `on_the_calendar` 67 and `needs_a_day` 7** (47 + 20). If the first number does not move,
+079 did not run, whatever the command printed.
 
 **Step 4 — the variables, BEFORE the push.** A variable change is itself a redeploy, so doing them
 first means the deployment that first serves the Calendar already has them. Vercel → Settings →

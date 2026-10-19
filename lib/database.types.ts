@@ -4415,6 +4415,10 @@ export type Database = {
     Functions: {
       array_is_ascending: { Args: { a: number[] }; Returns: boolean }
       auth_company_id: { Args: never; Returns: string }
+      calendar_person_day_refusal: {
+        Args: { new_day: string; old_day: string }
+        Returns: string
+      }
       calendar_person_move_refusal: {
         Args: {
           new_status: string

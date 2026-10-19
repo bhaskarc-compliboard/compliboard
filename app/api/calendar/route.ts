@@ -22,7 +22,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
-import { proposeDate, confirmDate, dismissDate, setPeriod, confirmMany } from '@/lib/calendarDates'
+import { proposeDate, confirmDate, dismissDate, setPeriod, setDay, confirmMany } from '@/lib/calendarDates'
 
 /**
  * *** THE OLD PAGE'S RECURRENCE WORDS ARE GONE — Calendar step 12. ***
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
  * WHAT A PERSON DOES TO A DATE: confirm it, remove it (a reason is optional since step 8a), or say
  * how often it repeats — which is refused on a date that happens once.
  *
- * `{ id, action: 'confirm' | 'dismiss' | 'period', reason?, period? }`. There is no `completed` any
+ * `{ id, action: 'confirm' | 'dismiss' | 'period' | 'day', reason?, period?, day? }`. There is no `completed` any
  * more — decision 11: a date has passed, it is never done. The old page's tick sends the old body
  * and gets a 400 naming the actions, which is honest; step 7 replaces that page.
  *
@@ -148,7 +148,15 @@ export async function POST(request: NextRequest) {
  * `lib/calendarDates.ts` loads the row through `db` — the caller's own client under RLS — so another
  * company's row is simply absent and the answer is 404, never 403, so ids cannot be probed (§3.6).
  */
-const ACTIONS = ['confirm', 'dismiss', 'period', 'confirm_many'] as const
+/**
+ * *** STEP 14b ADDS ONE MORE, AND IT IS THE FIRST TIME A PERSON WRITES `due_date` (decision 32).
+ * *** `{ action: 'day', day: 'YYYY-MM-DD' }` — the drawer's "Set the day" on a repeating date
+ * whose day was never read. It writes ONLY onto a row that has none: `lib/calendarDates.ts`
+ * `setDay` answers 409 in a sentence, and migration 078's trigger refuses it in the database
+ * through `calendar_person_day_refusal`, so the rule holds for a caller who never comes through
+ * this route. The day a document gave is evidence, quoted beside the date; it is not edited here.
+ */
+const ACTIONS = ['confirm', 'dismiss', 'period', 'day', 'confirm_many'] as const
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -178,6 +186,7 @@ export async function PATCH(request: NextRequest) {
       ? await confirmDate(db, id, userId,
           'period' in (body ?? {}) ? (body.period === null ? null : String(body.period)) : undefined)
       : action === 'dismiss' ? await dismissDate(db, id, userId, String(body?.reason ?? ''))
+      : action === 'day' ? await setDay(db, id, String(body?.day ?? ''))
       : await setPeriod(db, id, body?.period === null || body?.period === undefined ? null : String(body.period))
     return NextResponse.json(result.json, { status: result.status })
   } catch (error) {

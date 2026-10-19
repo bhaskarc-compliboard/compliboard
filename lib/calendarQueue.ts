@@ -17,7 +17,7 @@
  * counts and the sidebar badge share (`lib/calendarCounts.ts`), and `next_due` is the view's.
  */
 import {
-  type CalendarRow, longDay, dayAndShortMonth, dayOf, siteWords, PERIOD_LABEL,
+  type CalendarRow, longDay, dayOf, hasNoDay, siteWords, PERIOD_LABEL,
 } from './calendarView.ts'
 import { KIND_WORD } from './documentStatus.ts'
 
@@ -55,9 +55,30 @@ export const QUEUE_EMPTY_NOTE =
  * would go, because there is no date to put there: `calendar_v` cannot compute `next_due` without a
  * period, so the row genuinely has no day to show, and the picker beside Confirm is the way out.
  */
-export const PERIOD_UNREAD = "repeats — how often wasn't read"
+export const HOW_OFTEN_UNREAD = "how often wasn't read"
+export const PERIOD_UNREAD = `repeats — ${HOW_OFTEN_UNREAD}`
 /** Repeating, how often known, no anchor to count from — decision 12's honest state. */
 export const NO_DAY_YET = 'repeats, no day yet'
+
+/**
+ * *** THE SECOND SECTION — "Needs a day or how often" (decision 32, Calendar step 14b). ***
+ *
+ * The month grid and the list show dates and nothing else; a row with no day at all is not a date
+ * yet, it is a question, and this is where the product asks it. Grouped by source exactly as the
+ * queue above is, because the work arrives the same way: one reading of one permit leaves five
+ * dates needing a day.
+ *
+ * *** ITS ROWS ARE NOT THE QUEUE'S ROWS, AND THE OVERLAP IS DELIBERATE (the owner, 19 October). ***
+ * The queue is the `proposed` rows and asks "is this right?"; this section is every LIVE row with
+ * no day — proposed OR confirmed — and asks "when?". A proposed row with no day is in both,
+ * because both questions are open about it. The TAB'S COUNT stays the queue's; this section
+ * carries its own, so neither number can be read as the other.
+ */
+export const NEEDS_WHEN_HEADING = (n: number) => `Needs a day or how often (${n})`
+export const NEEDS_WHEN_NOTE =
+  'These repeat, and nothing in the reading said when. Open one to set the day, or how often it repeats.'
+/** The anchor the month and the list's foot line points at. */
+export const NEEDS_WHEN_ID = 'needs-a-day'
 
 /** The row's two actions, board 7. "Not right" opens board 8's sheet; neither word is negotiable. */
 export const CONFIRM = 'Confirm'
@@ -99,8 +120,12 @@ export const GROUP_FAILED = 'We could not confirm those dates just now. Nothing 
 export function queueWhen(row: CalendarRow): string {
   if (!row.recurs) return longDay(row.next_due ?? row.due_date)
   if (!row.period) {
-    const from = dayAndShortMonth(row.due_date)
-    return from ? `${PERIOD_UNREAD}, from ${from}` : PERIOD_UNREAD
+    // *** THE DAY FIRST, SINCE STEP 14b (the owner). *** It read "repeats — how often wasn't read,
+    // from 20 Aug": true, and it buried the one thing this row now has. Migration 079 puts that
+    // date on the grid, so the queue says the day the grid shows and then what is still unknown.
+    // With no day at all there is nothing to lead with, and the old sentence is the whole answer.
+    const day = longDay(row.next_due ?? row.due_date)
+    return day ? `${day}, ${HOW_OFTEN_UNREAD}` : PERIOD_UNREAD
   }
   const day = longDay(row.next_due)
   const how = PERIOD_LABEL[row.period] ?? ''
@@ -202,8 +227,29 @@ export const groupCount = (n: number): string => `${n} ${n === 1 ? 'date' : 'dat
 export function queueGroups(
   rows: CalendarRow[], heads: Record<string, DocumentHead> = {},
 ): QueueGroup[] {
+  return groupRows(waitingRows(rows), heads)
+}
+
+/**
+ * *** THE ROWS THE SECOND SECTION SHOWS: every LIVE row with no day at all. ***
+ * `hasNoDay` is `lib/calendarView.ts`'s, imported rather than restated, so the rows this section
+ * shows are exactly the rows the two views leave out and the foot line counts — one definition,
+ * three readers. After migration 079 that means a REPEATING row whose day was never read; a
+ * one-off cannot be here at all (073's `calendar_events_date_or_recurs`).
+ */
+export const needsWhenRows = (rows: CalendarRow[]): CalendarRow[] => rows.filter(hasNoDay)
+
+/** The same grouping, the same order, over that set. */
+export function needsWhenGroups(
+  rows: CalendarRow[], heads: Record<string, DocumentHead> = {},
+): QueueGroup[] {
+  return groupRows(needsWhenRows(rows), heads)
+}
+
+/** The grouping itself, over whichever set of rows is being shown. */
+function groupRows(list: CalendarRow[], heads: Record<string, DocumentHead>): QueueGroup[] {
   const by = new Map<string, CalendarRow[]>()
-  for (const r of waitingRows(rows)) {
+  for (const r of list) {
     const k = groupKeyOf(r)
     if (!by.has(k)) by.set(k, [])
     by.get(k)!.push(r)

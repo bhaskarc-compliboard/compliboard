@@ -51,6 +51,12 @@
 // `--scroll "<text>"` scrolls the first visible element whose text starts with <text> to the top of
 // its scrolling box, after the clicks, before the screenshot.
 //
+// `--date "<YYYY-MM-DD>"` fills the first visible `input[type=date]` — Calendar step 14b, so the
+// drawer's "Set the day" can be WALKED and not only unit-tested. `--type` cannot do it: it looks
+// for a textarea or a text input, and a date input is neither. Set through the native setter
+// before a bubbling `input` and `change`, for the reason --select does: a plain assignment leaves
+// React's own state behind, so the field would photograph as filled and submit as empty.
+//
 // `--type "<text>"` types into the first visible textarea — Calendar step 10b, so a question can
 // be ASKED by the harness rather than only clicked at. Set through the native setter and an
 // `input` event, for the reason --select sets a value that way: a plain assignment leaves React's
@@ -112,6 +118,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--click') { const v = argv[++i]; clicks.push(v); actions.push({ kind: 'click', value: v }) }
   else if (a === '--select') actions.push({ kind: 'select', value: argv[++i] })
   else if (a === '--type') actions.push({ kind: 'type', value: argv[++i] })
+  else if (a === '--date') actions.push({ kind: 'date', value: argv[++i] })
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
   else if (a === '--base') base = argv[++i].replace(/\/+$/, '')
@@ -259,6 +266,24 @@ try {
     if (!typed) throw new Error('--type: no visible textarea or text input on the page')
     await new Promise((r) => setTimeout(r, 300))
     console.log(`typed: ${typed}`)
+   } else if (action.kind === 'date') {
+    const want = action.value
+    const filled = await evaluate(`(() => {
+      const want = ${JSON.stringify(want)}
+      const visible = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 }
+      const el = [...document.querySelectorAll('input[type=date]')].filter(visible)[0]
+      if (!el) return null
+      // React tracks the value on the node; a plain assignment is invisible to it, which is how a
+      // field photographs as filled and submits as empty (the same trap --select documents).
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(el, want)
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+      el.dispatchEvent(new Event('change', { bubbles: true }))
+      el.scrollIntoView({ block: 'center' })
+      return (el.getAttribute('aria-label') || 'date') + ' = ' + el.value
+    })()`)
+    if (!filled) throw new Error('--date: no visible input[type=date] on the page')
+    await new Promise((r) => setTimeout(r, 300))
+    console.log(`dated: ${filled}`)
    } else if (action.kind === 'select') {
     const pair = action.value
     const at = pair.indexOf('=')

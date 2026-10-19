@@ -383,12 +383,14 @@ export type ActResult = { status: number; json: Record<string, unknown> }
 /** 404 and never 403, so an id cannot be probed by watching which error comes back (§3.6). */
 const NOT_FOUND: ActResult = { status: 404, json: { error: 'That date was not found.' } }
 
-const ROW_COLUMNS = 'id, status, dismissed_by, dismissed_reason, confirmed_by, confirmed_at, recurs, period'
+const ROW_COLUMNS = 'id, status, dismissed_by, dismissed_reason, confirmed_by, confirmed_at, recurs, period, due_date'
 
 async function load(db: Db, id: string) {
   const { data, error } = await db.from('calendar_events').select(ROW_COLUMNS).eq('id', id).maybeSingle()
   if (error) throw new Error(`calendar_events: ${error.message}`)
-  return data as { id: string; status: string; dismissed_by: string | null; recurs: boolean } | null
+  return data as {
+    id: string; status: string; dismissed_by: string | null; recurs: boolean; due_date: string | null
+  } | null
 }
 
 /**
@@ -577,6 +579,66 @@ export async function setPeriod(db: Db, id: string, period: string | null): Prom
   const { data, error } = await db.from('calendar_events')
     .update({ period: value }).eq('id', id).select(ROW_COLUMNS).maybeSingle()
   if (error) throw new Error(`calendar_events: ${error.message}`)
+  if (!data) return NOT_FOUND
+  return { status: 200, json: { date: data } }
+}
+
+// ---------------------------------------------------------------------------------------------
+// *** THE DAY A PERSON MAY SET — Calendar step 14b, decision 32, migration 079. ***
+//
+// A repeating date whose day WAS read is a date: migration 079 puts it on the grid. A repeating
+// date whose day was NOT read is a question, and this is the answer to it — the drawer's
+// "Set the day", beside "Set how often".
+//
+// *** IT WRITES ONLY FROM NULL, AND THAT RULE IS IN THE DATABASE TOO. *** `due_date` carries what
+// a document said, quoted beside it in `source_line`; a person who may rewrite it may rewrite the
+// evidence. So migration 079 grants `update (due_date)` and 078's trigger refuses the change —
+// `calendar_person_day_refusal`. This function is the same rule said in a sentence a person can
+// read, for the same reason `setPeriod` answers a one-off in words rather than letting a
+// constraint do it: a 23514 from PostgREST is not a message to a human being.
+// ---------------------------------------------------------------------------------------------
+
+/** The sentence BOTH ends refuse with; a test holds that migration 079 carries it word for word. */
+export const DAY_ALREADY_SET =
+  'This date already has a day. A day that has been set is not changed here — remove '
+  + 'the date and add one with the day you want.'
+/** Not a shape the database could store as a date. Said before the write, not after it. */
+export const NEED_A_REAL_DAY = 'Please give the day as a date, for example 2026-11-20.'
+/** The partial unique index meeting an identical date on the same document (073:§5). */
+export const DAY_IS_A_DUPLICATE =
+  'That document already has this date on that day. Open it from the list instead of adding a second one.'
+
+/**
+ * `YYYY-MM-DD`, AND A DAY THAT REALLY EXISTS. The regex alone accepts 2026-02-31, which Postgres
+ * refuses with a 22008 nobody can read; the round-trip through UTC is what catches it here.
+ */
+export function dayProblem(value: string): string | null {
+  const day = String(value ?? '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return NEED_A_REAL_DAY
+  const d = new Date(`${day}T00:00:00Z`)
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== day) return NEED_A_REAL_DAY
+  return null
+}
+
+export async function setDay(db: Db, id: string, day: string): Promise<ActResult> {
+  if (!id) return { status: 400, json: { error: 'No date given.' } }
+  const problem = dayProblem(day)
+  if (problem) return { status: 400, json: { error: problem } }
+  const row = await load(db, id)
+  if (!row) return NOT_FOUND
+  // The row already has one. Read from the row rather than trusted from the screen: the page that
+  // offered "Set the day" may have been open since before somebody else set it.
+  if (row.due_date) return { status: 409, json: { error: DAY_ALREADY_SET } }
+  const { data, error } = await db.from('calendar_events')
+    .update({ due_date: day.trim() }).eq('id', id).select(ROW_COLUMNS).maybeSingle()
+  // 23505 is the partial unique index on (company, document, lower(title), day): giving this date
+  // that day would make it the twin of one already filed. A sentence, not a constraint name.
+  if (error) {
+    if ((error as { code?: string }).code === '23505') {
+      return { status: 409, json: { error: DAY_IS_A_DUPLICATE } }
+    }
+    throw new Error(`calendar_events: ${error.message}`)
+  }
   if (!data) return NOT_FOUND
   return { status: 200, json: { date: data } }
 }

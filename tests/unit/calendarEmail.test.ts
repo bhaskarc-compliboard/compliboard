@@ -227,8 +227,13 @@ describe('the whole email', () => {
   test('the sections, in board 10\'s order', () => {
     assert.deepEqual(mail.shape.sections.map((s) => s.heading),
       [DUE_HEADING('2026-11'), PASSED_HEADING('2026-11'), undefined])
-    assert.match(mail.shape.sections[2].rows[0].primary, /^1 repeating date has no day set yet/)
-    assert.equal(UNDATED_LINE(3), '3 repeating dates have no day set yet — set them in CompliBoard')
+    // *** THE LINE SAYS WHAT THE SECTION IT LINKS TO SAYS — step 14b, decision 32. *** It read
+    // "N repeating dates have no day set yet — set them in CompliBoard" and pointed at the
+    // Calendar tab, where the strip used to be. The strip is gone; the rows are on Dates to
+    // confirm under "Needs a day or how often", and the link opens that section by its own id.
+    assert.match(mail.shape.sections[2].rows[0].primary, /^1 repeating date needs a day or how often/)
+    assert.equal(UNDATED_LINE(3), '3 repeating dates need a day or how often — open Dates to confirm')
+    assert.match(String(mail.shape.sections[2].rows[0].href), /\/calendar\?tab=dates#needs-a-day$/)
   })
   test('the button and the footer, with decision 18\'s line', () => {
     assert.deepEqual(mail.shape.button, { label: 'Open your calendar', href: `${APP}/calendar` })

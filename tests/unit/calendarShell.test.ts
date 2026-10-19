@@ -267,11 +267,15 @@ describe('the page is the HR frame, imported and not copied', () => {
     assert.ok(!dates.includes('counts.toConfirm'),
       'the queue must not be drawn off a count: a failed read leaves it 0 and that reads as "none"')
     const ui = code(QUEUE_UI)
-    assert.match(ui, /if \(waiting\.length === 0\) \{/)
+    // *** AND SINCE STEP 14b IT TAKES BOTH SECTIONS. *** "Nothing waiting" over a tab holding
+    // seven dates that need a day would be the same §5.1 defect in a new place, so the empty
+    // state is behind "the queue is empty AND nothing needs a day", and both are counts of rows
+    // that have been read.
+    assert.match(ui, /if \(waiting\.length === 0 && needsWhen\.length === 0\) \{/)
     // FROM THE GUARD ONWARDS, never from the top of the file: written as an `indexOf` comparison
     // over the whole source, this passed nothing and failed on the IMPORT of `QUEUE_EMPTY_TITLE`,
     // which is above everything. The same trap as the page's own header comment (see `code()`).
-    const guarded = ui.slice(ui.indexOf('if (waiting.length === 0)'))
+    const guarded = ui.slice(ui.indexOf('if (waiting.length === 0 && needsWhen.length === 0)'))
     assert.match(guarded.slice(0, 200), /QUEUE_EMPTY_TITLE/,
       'the empty state is behind the count of rows actually read')
     // The info bar is held to the same rule: no numbers before the read answers.
@@ -560,6 +564,63 @@ describe('a person may only make the moves the product offers (migration 078)', 
     }
     for (const col of ['title', 'source_line', 'source_url', 'document_id', 'company_id', 'added_by']) {
       assert.ok(!granted.includes(col), `${col} must not be writable by a person`)
+    }
+  })
+})
+
+/**
+ * *** A REPEATING DATE WITH A DAY IS A DATE (migration 079, decision 32, Calendar step 14b). ***
+ *
+ * Two rules live in the database and nowhere else, so these read them out of the file: the view's
+ * arithmetic, which is what decides whether a row is on the grid at all, and the day rule, which
+ * is what stops a person rewriting a day a document set. The test above
+ * ("the newest migration defining calendar_v filters withdrawn rows out", in
+ * `tests/unit/calendarDates.test.ts`) already holds that re-emitting the view did not drop step
+ * 6b's filter — 079 is a re-emission, which is exactly the regression that test exists for.
+ */
+describe('a repeating date with a day is a date (migration 079)', () => {
+  const sql = readFileSync('supabase/migrations/079_a_repeating_date_with_a_day_is_a_date.sql', 'utf8')
+  const bare = sql.split('\n').map((l) => l.replace(/--.*$/, '')).join('\n')
+
+  test('the view gives it `next_due` = its day, and a dayless row still gets none', () => {
+    const at = bare.search(/create\s+or\s+replace\s+view\s+public\.calendar_v\b/i)
+    const statement = bare.slice(at, bare.indexOf(';', at) + 1)
+    assert.match(statement, /when e\.due_date is null then null/)
+    assert.match(statement, /when st\.step_months is null then e\.due_date/)
+    // The branch order is the rule: no day beats no period, or a dayless row would get `null`
+    // from the wrong arm and the two cases would be one.
+    assert.ok(statement.indexOf('when e.due_date is null then null')
+      < statement.indexOf('when st.step_months is null then e.due_date'))
+    // And the old expression, which threw a known day away with an unknown period, is gone.
+    assert.ok(!statement.includes('when e.due_date is null or st.step_months is null then null'))
+  })
+
+  test('HAS PASSED IS SAID ONCE, off the day the product shows', () => {
+    const at = bare.search(/create\s+or\s+replace\s+view\s+public\.calendar_v\b/i)
+    const statement = bare.slice(at, bare.indexOf(';', at) + 1)
+    assert.match(statement, /\(nd\.next_due is not null and nd\.next_due < current_date\) as has_passed/)
+    assert.ok(!statement.includes('(not e.recurs and e.due_date is not null and e.due_date < current_date) as has_passed'),
+      'the old expression would answer "no" for a repeating date whose one day is behind us')
+  })
+
+  test('the day rule is a function, proved without a login, and the trigger asks both rules', () => {
+    assert.match(sql, /create or replace function public\.calendar_person_day_refusal/)
+    assert.match(sql, /language sql\s+immutable/)
+    // The gate is 078's and is unchanged.
+    assert.match(sql, /if current_user <> 'authenticated' then return new; end if;/)
+    const guard = sql.slice(sql.indexOf('create or replace function public.calendar_events_guard_person_update'))
+    assert.ok(guard.indexOf('calendar_person_move_refusal') < guard.indexOf('calendar_person_day_refusal'),
+      'the status rule is asked first: it is the bigger claim')
+  })
+
+  test('`due_date` is the twelfth column a person may write, and the thirteen are still shut', () => {
+    assert.match(sql, /grant update \(due_date\) on table public\.calendar_events to authenticated/)
+    // 078's list is not restated here — one list, read back from the catalog by 079's own §5 —
+    // so what this holds is that nothing else was quietly opened with it.
+    const grants = [...sql.matchAll(/grant update \(([^)]*)\) on table public\.calendar_events/g)]
+    assert.equal(grants.length, 1, '079 grants exactly one column')
+    for (const col of ['title', 'source_line', 'recurs', 'company_id', 'added_by']) {
+      assert.ok(!grants[0][1].includes(col), `${col} must not be writable by a person`)
     }
   })
 })

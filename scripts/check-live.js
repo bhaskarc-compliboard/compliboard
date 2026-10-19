@@ -484,6 +484,75 @@ const CAL_TABLES = ['calendar_events', 'calendar_mailings', 'calendar_feed_token
       }
     }
 
+    /**
+     * *** THE DAY A PERSON MAY SET — migration 079, Calendar step 14b, decision 32. ***
+     *
+     * The other half of 079's own proof, for the same reason 078's is split: the migration proves
+     * the RULE exhaustively (it is a pure function of two dates) and cannot prove the GATE, which
+     * needs a real login. This is a real signed-in person writing `due_date` through PostgREST —
+     * not through `app/api/calendar/route.ts`, which is a UX affordance and not the boundary.
+     *
+     * Both directions, and the second is the one that matters: a day a DOCUMENT set is evidence,
+     * quoted beside the date in `source_line`, and a person who could move it could move the
+     * evidence. Before 079 the first of these failed too (no column grant at all).
+     */
+    {
+      const { data: dayProbe } = await admin.from('calendar_events')
+        .insert({ company_id: companyId, title: `079 probe ${stamp}`, due_date: null, recurs: true,
+                  source: 'document', status: 'proposed' })
+        .select('id, due_date').maybeSingle()
+      if (!dayProbe) {
+        ok(`${'calendar_events'.padEnd(26)} 079: a dayless probe row could be written`, false, 'not written')
+      } else {
+        // 1. A DAY IS SET FROM NOTHING — the drawer's "Set the day".
+        const { error: setErr } = await asUser.from('calendar_events')
+          .update({ due_date: '2027-08-20' }).eq('id', dayProbe.id)
+        const { data: set1 } = await admin.from('calendar_events').select('due_date').eq('id', dayProbe.id).maybeSingle()
+        ok(`${'calendar_events'.padEnd(26)} 079: a person can set a day on a date that had none`,
+          !setErr && set1?.due_date === '2027-08-20',
+          setErr ? `${setErr.code} ${String(setErr.message).slice(0, 48)}` : `due_date ${set1?.due_date}`)
+
+        // 2. AND CANNOT MOVE IT AFTERWARDS. 23514 from the trigger, and the stored day untouched.
+        const { error: moveErr } = await asUser.from('calendar_events')
+          .update({ due_date: '2027-09-01' }).eq('id', dayProbe.id)
+        const { data: set2 } = await admin.from('calendar_events').select('due_date').eq('id', dayProbe.id).maybeSingle()
+        ok(`${'calendar_events'.padEnd(26)} 079: and cannot move a day once it is set`,
+          !!moveErr && set2?.due_date === '2027-08-20',
+          moveErr ? `${moveErr.code} ${String(moveErr.message).slice(0, 42)}` : 'ALLOWED')
+
+        // 3. NOR CLEAR IT, which would take the date off the grid while the row still says a
+        //    document set it.
+        const { error: clearErr } = await asUser.from('calendar_events')
+          .update({ due_date: null }).eq('id', dayProbe.id)
+        const { data: set3 } = await admin.from('calendar_events').select('due_date').eq('id', dayProbe.id).maybeSingle()
+        ok(`${'calendar_events'.padEnd(26)} 079: nor clear a day a document set`,
+          !!clearErr && set3?.due_date === '2027-08-20',
+          clearErr ? `${clearErr.code}` : 'ALLOWED')
+
+        // 4. AND THE VIEW NOW PLACES IT: a repeating row with a day and no period IS that day.
+        //    §9a — the presence this whole step is about, read as the person, not as the server.
+        const { data: vday } = await asUser.from('calendar_v')
+          .select('next_due, days_until, has_passed, period').eq('id', dayProbe.id).maybeSingle()
+        ok(`${'calendar_v'.padEnd(26)} 079: a repeating date with a day and no period is ON the calendar`,
+          vday?.next_due === '2027-08-20' && vday?.has_passed === false && vday?.period === null,
+          `next_due ${vday?.next_due}, has_passed ${vday?.has_passed}, period ${vday?.period}`)
+
+        // 5. AND THE ABSENCE BESIDE IT: with no day there is still no next date (decision 12).
+        const { data: noDay } = await admin.from('calendar_events')
+          .insert({ company_id: companyId, title: `079 dayless ${stamp}`, due_date: null, recurs: true,
+                    source: 'document', status: 'proposed' })
+          .select('id').maybeSingle()
+        const { data: vnone } = await asUser.from('calendar_v')
+          .select('next_due, has_passed').eq('id', noDay?.id ?? '').maybeSingle()
+        ok(`${'calendar_v'.padEnd(26)} 079: and a repeating date with NO day still has none`,
+          vnone?.next_due === null && vnone?.has_passed === false,
+          `next_due ${vnone?.next_due === null ? 'null' : vnone?.next_due}`)
+        if (noDay?.id) await admin.from('calendar_events').delete().eq('id', noDay.id)
+
+        await admin.from('calendar_events').delete().eq('id', dayProbe.id)
+      }
+    }
+
     // DELETE IS GONE (decision 11): the grant was removed and the policy dropped by 073.
     const { error: delErr } = await asUser.from('calendar_events').delete().eq('id', ev.id)
     ok(`${'calendar_events'.padEnd(26)} authenticated REFUSED delete (42501)`, refused(delErr), delErr?.code ?? 'ALLOWED')
@@ -1948,4 +2017,4 @@ console.log(`  check:live: ok — ${CASES.length} tenant table(s): ${writable} w
   + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon; `
   + `and HR's ${HR_TABLES.length} tables (066), each allowing and refusing exactly its grant; `
   + `and the Calendar's ${CAL_TABLES.length} relations (073) — insert and update as the person, `
-  + `DELETE refused, a cross-tenant row proven present and unread, calendar_v computing next_due, and step 6b's withdrawal: a date the newest reading no longer says is hidden by the view while the kept one is still returned, and a matching later reading revives it.\n`)
+  + `DELETE refused, a cross-tenant row proven present and unread, calendar_v computing next_due, and step 6b's withdrawal: a date the newest reading no longer says is hidden by the view while the kept one is still returned, and a matching later reading revives it. Step 14b: a person sets a day from nothing and can neither move nor clear one, and the view places a repeating date that has a day and no period.\n`)

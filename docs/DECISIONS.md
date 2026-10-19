@@ -14190,3 +14190,158 @@ say seven.
 lines, which now say two rows and not five (`RELEASE.md`'s day-of table, `TESTING.md` C14-2,
 `CALENDAR-PLAN.md`'s step 14 row). The unrelated matches are English prose in the requirement
 library's seed data (`supabase/seed-data/load-chemical-requirements.sql`, `013`).
+
+---
+
+## 201. A CLEAN CALENDAR: A REPEATING DATE WITH A DAY IS A DATE — 19 October 2026 (Calendar step 14b, decision 32)
+
+**The owner's rule, from the first look at the calendar on production.** *The month grid and the
+list show dates and nothing else. Every question for a person — confirm, how often, which day —
+lives in the date drawer and in Dates to confirm. The "Repeating, day not read yet" strip goes.*
+
+### What was wrong, and it was not the strip
+
+`calendar_v` answered `next_due = null` for a repeating row whenever **either** the day or the
+period was missing — one branch for two different states (073:§7, re-emitted by 075):
+
+```sql
+when e.due_date is null or st.step_months is null then null
+```
+
+So a document that said *"next annual maintenance due 20 August 2026"* produced a row with a real
+day, read from the document, that the calendar refused to place, because nobody had read how often
+it repeats **afterwards**. **One unknown threw away a known.** The strip was the symptom: it held
+two kinds of row and only one of them was a question.
+
+### Read before anything was written — SELECT only, both databases
+
+| | production | staging |
+|---|---|---|
+| live rows | 74 | 52 |
+| had a day the view would place | 47 | 16 |
+| **repeating, a DAY and no how often — moved onto the grid** | **20** | **24** |
+| repeating, no day at all — the new section's N | **7** | **12** |
+
+The second row is the control: a query that can see a presence is the only one entitled to report
+an absence (§9a). After 079 on staging the same query reads **40 with a day, 12 without**, and
+`next_due = due_date` on exactly the 24.
+
+### Migration 079 — three changes, no backfill
+
+1. **The view.** `when e.due_date is null then null` / `when st.step_months is null then e.due_date`,
+   in that order — no day beats no period, or the two states collapse again. A repeating row with
+   a period is untouched; a repeating row with no day still has no next date, with or without one.
+2. **`has_passed` is said once, off the day the product shows:** `next_due < current_date`. It was
+   `not recurs and due_date < current_date`, which gave the SAME answer for every row that could
+   already have a day — a one-off **is** its day, and a periodic date's next occurrence is ahead by
+   construction — and the wrong answer for the rows 079 adds, whose single day may well be behind
+   us. The old expression would have said "no" while the list beside it read "60 days ago" and the
+   info bar offered a past date as the **next** one. §5e of the migration proves the two agree on
+   every other row **in the database it is running against**, which a probe cannot do.
+3. **A person may write `due_date`, and only from null.** `grant update (due_date)`, and a second
+   pure function, `calendar_person_day_refusal`, which 078's trigger now asks after the status
+   rule. A second function rather than widening 078's: that one is proved case by case by 078's
+   own §4, applied on staging and production, and changing its signature means dropping and
+   recreating a function those proofs name.
+
+**Nothing is backfilled and no row is written.** The rows that moved onto the grid moved because
+they always had a day.
+
+### Why `period` is still not inferred
+
+"next **annual** maintenance" is prose. Reading a frequency out of a title is the silent guess
+decision 30 forbids, and decision 23 is unchanged: the scan says whether a date repeats, not how
+often, and the drawer asks. What changed is that the unanswered question no longer hides the
+answered one.
+
+### The screens
+
+- **Gone:** `UNDATED_STRIP` ("Repeating, day not read yet (N)") above the grid, and `UNDATED_GROUP`
+  ("Repeats — how often or when wasn't read yet"), the list's last group.
+- **The two views end on one quiet line** when there is something to say: *"N repeating dates need
+  a day or how often — see Dates to confirm"*, the tail a link to the section.
+- **Dates to confirm gains a second section** under the queue: **"Needs a day or how often (N)"**,
+  with *"These repeat, and nothing in the reading said when. Open one to set the day, or how often
+  it repeats."* Grouped by source exactly as the queue is; no Confirm and no picker on its rows,
+  because the question here is WHEN and it is answered in the drawer.
+- **The tab's count stays the queue's** (`lib/calendarCounts.ts` is untouched, and a test holds
+  that it never learns about this section). The sidebar badge is that same number on every page in
+  the product; one that followed this section would say a number no other screen agrees with.
+- **The overlap is deliberate (the owner):** a *proposed* row with no day is in both — the queue
+  asks "is this right?", the section asks "when?", and both are open about it.
+- **"Nothing waiting" now needs both to be empty.** Until this step the component returned the
+  empty state the moment the queue was, which from today would have drawn it over a tab holding
+  seven dates that need a day — §5.1's worked example in a new place, on the tab it has already
+  bitten once.
+- **The drawer gains "Set the day"** beside "Set how often", a date field under *"Which day is
+  it?"*. Offered only where `due_date` is null — tested on `due_date` and **not** on the day being
+  displayed, which 079 now fills from it, and would have hidden the control the moment it worked.
+
+### The three the owner decided with the plan
+
+- **Q1, the queue's own line.** It read "repeats — how often wasn't read, from 20 Aug", which was
+  true and buried the one thing the row has. Now: **"20 August 2026, how often wasn't read"** — the
+  day the grid is showing, then what is still unknown. With no day at all the old sentence is the
+  whole answer.
+- **Q2, the subscription feed.** A repeating row with a day and no period was skipped from the
+  `.ics` with the dayless ones, because there is no RRULE without a period. A subscription that
+  leaves out a date the calendar shows is the worst answer available — the person lives in the
+  diary. It is now **one non-repeating event on that day**, which claims no more than the document
+  said, and the repeat appears when somebody answers "how often".
+- **Q3, the monthly email.** Its line now says what the section says and links to it:
+  *"N repeating dates need a day or how often — open Dates to confirm"*, `?tab=dates#needs-a-day`.
+  Two names for one list is how a person ends up looking for something that is not where they were
+  sent. On production's figures that line falls from **27 to 7**.
+
+### What was proved, and how
+
+- **`npm run check`: 1376 tests, 0 failures** (1353 before; +23). `check-schema-contracts: ok —
+  311 files, 58 relations`. Build green.
+- **Migration 079 applied to staging**, read back from `supabase_migrations.schema_migrations`
+  (version `079`) and not from the exit code — the 22 September lesson.
+- **Five new `check:live` probes, as a real signed-in person**, which is the half a migration
+  cannot prove (078's §4 says why): a day **set from nothing** (`due_date 2027-08-20`); the same
+  person **refused 23514** when moving it, with 079's own sentence coming back; refused when
+  clearing it; the view **placing** the row (`next_due 2027-08-20, has_passed false, period null`);
+  and beside it the absence — a dayless row still has `next_due null`.
+- **Walked on Haiku** (isolated copy, port 3998, 13 of 13 tiers on `claude-haiku-4-5`, **$0.00** —
+  nothing on this path reaches a model). The list shows **AUGUST 2026** holding *"Next annual
+  maintenance for all units"*, 20 August 2026, greyed and marked **"passed 60 days ago"** — the
+  brief's own example row, which yesterday was in the strip. Dates to confirm shows **"Needs a day
+  or how often (1)"** under an empty queue, holding a **confirmed** row the queue would never show.
+  The day was then set **through the screen**: one PATCH, the drawer re-read as *"10 February 2027
+  (Wednesday) · in 114 days"*, "Set the day" gone from the footer and "Send to my calendar"
+  arrived, the row in **FEBRUARY 2027** in the list, and the foot line gone. Screenshots:
+  `shots/14b-list.png`, `shots/14b-needs-a-day.png`, `shots/14b-set-the-day.png`,
+  `shots/14b-day-set.png`, `shots/14b-list-after.png`.
+- **The walk's one write was put back.** It set a real fixture row's day as a person, and only the
+  service role can undo that — which is the rule working. A one-line script restored
+  `due_date = null`, so staging reads **52 live, 12 needing a day, 24 on the grid since 079**,
+  exactly the figures above, and the new section still has an example in it for the owner's look.
+- **`npm run measure` gained `--date`**, because the harness could set a `<select>` and type into a
+  textarea and had no way to fill a date input: the one path this step adds could not have been
+  walked at all. Set through the native setter before a bubbling `input` and `change`, for the
+  reason `--select` documents.
+
+### What is NOT proved
+
+**079 has not run on production.** `npm run preflight` reads `PENDING COUNT: 1`. The migration's
+own §5 is what will catch it there, including the has_passed equivalence check, which runs against
+production's own rows rather than against a probe.
+
+### Effects on other sections, by file
+
+- **`app/dashboard/page.tsx:153`** — no code change, and the behaviour moves: a repeating date with
+  a day and no period within 30 days is now an **upcoming** row. It reads `calendar_v` through the
+  shared filter, which is why it inherited this without being touched.
+- **`lib/ask/calendarBrief.ts:51`** — the chat's brief now states the day where it said "no day
+  read yet". No code change; one fewer thing the answer has to hedge.
+- **`lib/calendarEmail.ts`** — Q3 above, and `splitForMonth` now files those rows under due / early
+  / passed instead of the undated line. No change to its arithmetic.
+- **`lib/calendarIcs.ts`** — Q2 above. `GET /api/calendar/feed` and the sheet's download both read
+  it; neither route changed.
+- **`scripts/check-live.js`** — five probes added in the Calendar's own block; the closing summary
+  names them.
+- **`scripts/measure-layout.mjs`** — `--date`, available to every section's walks.
+- **Documents, Audits, HR:** nothing. No file of theirs is touched, and `proposeDate` — the one
+  writer — is unchanged.

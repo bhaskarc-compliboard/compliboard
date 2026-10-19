@@ -4092,6 +4092,57 @@ staging fixture and writes a probe row into every tenant table, and its database
 from `NEXT_PUBLIC_SUPABASE_URL` — staging — so a run aimed at production 401s on every route and
 still writes to staging. It stays on staging (`scripts/check-live.js:66–92`).
 
+## The Calendar, step 14b — a clean calendar (decision 32)
+
+*Added 19 October 2026, staging only. `DECISIONS.md` §201, migration 079. All three are free: no
+path here reaches a model.*
+
+### C14b-1 · A repeating date with a day is on the calendar (free)
+
+1. Find a live row with `recurs = true`, a `due_date`, and **no** `period` — on staging,
+   *"Next annual maintenance for all units"* (Test Gamma, 20 August 2026). **Pass:** it is in the
+   list under its own month and on the grid on its day, like any other date.
+2. **Its day is behind us, so it says "passed 60 days ago" in amber and is greyed.** This is the
+   `has_passed` change and it is the easy one to get wrong: before 079 the expression asked "is
+   this a one-off whose day is behind us", which for this row answers **no** — so it would sit in
+   the past saying nothing, and the info bar would offer it as the **next** date.
+3. **The absence beside it:** a repeating row with no day at all (*"Respirator fit testing"*) is on
+   neither view. §9a — the test that cannot see the presence in 1 proves nothing here.
+4. **Fail:** the strip above the grid ("Repeating, day not read yet"), or a last group in the list.
+   Both went with this step; seeing either means a page was reverted, not that a row is odd.
+
+### C14b-2 · The question has one home, and the count has one meaning (free)
+
+1. Dates to confirm, under the queue: **"Needs a day or how often (N)"**, grouped by source, with
+   *"These repeat, and nothing in the reading said when…"*. Every row opens the drawer; none has a
+   Confirm button or a how-often picker — those belong to the queue above.
+2. **A CONFIRMED row with no day is here**, which the queue never shows. That is the point of the
+   section being its own list and not a filter on the queue.
+3. **The tab's count is still the queue's**, and so is the sidebar badge. If either moves when a
+   date gets a day, something has started reading this section's number.
+4. **With the queue empty and this section not**, the tab must NOT say "Nothing waiting" alone: the
+   empty state is drawn for the queue and the section below it. This is §5.1's worked example in
+   its third place on this tab — check it with a company that has confirmed dates and no proposed
+   ones.
+5. The month and the list each end on *"N repeating dates need a day or how often — see Dates to
+   confirm"*, and the link opens that section. When N is 0 there is no line at all.
+
+### C14b-3 · A day may be set, and never moved (free)
+
+1. Open a date with no day: the drawer's footer offers **"Set the day"** beside "Set how often".
+   Pick a day. **Pass:** one PATCH, the drawer re-reads with the day and its weekday, "Set the day"
+   disappears from the footer, "Send to my calendar" appears, and the row is in the list under its
+   new month with the foot line's count one lower.
+2. **Open a date that HAS a day: the control is not there.** That is the affordance; the rule is
+   the next step.
+3. **The rule, which is the half a screen cannot prove.** `npm run check:live` writes `due_date`
+   through PostgREST as the signed-in fixture, not through the route: **set from null succeeds**,
+   **moving it is refused 23514** with 079's own sentence, **clearing it is refused**, and the
+   stored day is unchanged after both refusals. A screen test alone would prove only that we did
+   not draw a button.
+4. **Fail:** any path by which a person changes a day a document gave. The day is the evidence the
+   drawer quotes beside it.
+
 ## The Calendar, step 12 — the Dashboard, and the moves a person may make
 
 *Added 16 October 2026, staging only. `DECISIONS.md` §198. Both are free.*

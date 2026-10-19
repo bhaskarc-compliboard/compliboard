@@ -12,8 +12,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   waitingRows, queueGroups, groupKeyOf, groupHeading, groupCount, queueWhen, queueMeta,
-  needsPeriod, idsShown, confirmAllLabel, PERIOD_UNREAD, NO_DAY_YET, QUEUE_BAR,
+  needsPeriod, idsShown, confirmAllLabel, PERIOD_UNREAD, HOW_OFTEN_UNREAD, NO_DAY_YET, QUEUE_BAR,
   QUEUE_EMPTY_TITLE, QUEUE_EMPTY_NOTE, CONFIRM, NOT_RIGHT, DONT_KNOW_YET,
+  needsWhenRows, needsWhenGroups, NEEDS_WHEN_HEADING, NEEDS_WHEN_NOTE, NEEDS_WHEN_ID,
 } from '../../lib/calendarQueue.ts'
 import { PERIOD_LABEL, type CalendarRow } from '../../lib/calendarView.ts'
 
@@ -71,11 +72,16 @@ describe('what goes where the date goes', () => {
    * a confident day would be the silent guess decision 30 forbids. The ANCHOR is said when there
    * is one, because an anchor we have must not be hidden by a frequency we do not.
    */
-  test('repeating with no period says so, with the anchor when there is one', () => {
+  test('REPEATING WITH NO PERIOD: THE DAY FIRST WHEN THERE IS ONE — step 14b (the owner)', () => {
+    // It read "repeats — how often wasn't read, from 20 Aug", which was true and buried the one
+    // thing the row has. Migration 079 puts that date on the grid, so the queue leads with the
+    // day the grid is showing and then says what is still unknown. With NO day there is nothing
+    // to lead with, and the old sentence is the whole answer.
     assert.equal(queueWhen(row({ recurs: true, period: null, due_date: null })), PERIOD_UNREAD)
-    assert.equal(queueWhen(row({ recurs: true, period: null, due_date: '2026-08-20' })),
-      `${PERIOD_UNREAD}, from 20 Aug`)
+    assert.equal(queueWhen(row({ recurs: true, period: null, due_date: '2026-08-20', next_due: '2026-08-20' })),
+      "20 August 2026, how often wasn't read")
     assert.equal(PERIOD_UNREAD, "repeats — how often wasn't read")
+    assert.equal(HOW_OFTEN_UNREAD, "how often wasn't read")
   })
   test('repeating with a period and no anchor is the other honest state', () => {
     assert.equal(queueWhen(row({ recurs: true, period: 'month', due_date: null, next_due: null })),
@@ -227,6 +233,71 @@ describe('"Confirm all" sends the ids that were on the screen', () => {
       .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
     assert.match(route, /confirmMany\(db, body\?\.ids, userId\)/)
     assert.ok(!/confirm_many[\s\S]{0,200}document_id/.test(route))
+  })
+})
+
+/**
+ * *** NEEDS A DAY OR HOW OFTEN — the second section (decision 32, Calendar step 14b). ***
+ *
+ * The month grid and the list show dates and nothing else now; a row with no day is not a date
+ * yet, it is a question, and this is where it is asked. The rules worth holding: WHICH rows
+ * (every live row with no day, proposed or confirmed — not just the queue's), that the overlap
+ * with the queue is deliberate, that the grouping is the queue's own, and that the tab's count is
+ * still the queue's and never this one.
+ */
+describe('the section that holds a date with no day', () => {
+  const dated = row({ id: 'has-day', next_due: '2026-11-20', due_date: '2026-11-20', recurs: true })
+  const openQ = row({ id: 'none-proposed', recurs: true, status: 'proposed' })
+  const settled = row({ id: 'none-confirmed', recurs: true, status: 'confirmed' })
+  const rows = [dated, openQ, settled]
+
+  test('it is every LIVE row with no day — confirmed ones too, which the queue never shows', () => {
+    assert.deepEqual(needsWhenRows(rows).map((r) => r.id), ['none-proposed', 'none-confirmed'])
+    // The queue is the proposed rows: the confirmed one is a question nobody is asking there.
+    assert.deepEqual(waitingRows(rows).map((r) => r.id), ['has-day', 'none-proposed'])
+  })
+  test('A DATE WITH A DAY IS NOT HERE, whatever its period — migration 079 put it on the grid', () => {
+    assert.ok(!needsWhenRows(rows).some((r) => r.id === 'has-day'))
+    assert.deepEqual(needsWhenRows([row({ id: 'p', recurs: true, period: 'year', next_due: '2027-01-01' })]), [])
+  })
+  test('THE OVERLAP IS DELIBERATE: a proposed row with no day is in both, and answers two questions', () => {
+    const both = waitingRows(rows).filter((r) => needsWhenRows(rows).some((n) => n.id === r.id))
+    assert.deepEqual(both.map((r) => r.id), ['none-proposed'])
+  })
+  test('grouped by source exactly as the queue is — and ordered by heading, since none has a day', () => {
+    const two = [row({ id: 'a', recurs: true, document_id: 'doc1' }),
+      row({ id: 'b', recurs: true, document_id: 'doc2', source_title: 'The other permit' })]
+    const groups = needsWhenGroups(two)
+    assert.deepEqual(groups.map((g) => g.key), ['document:doc2', 'document:doc1'])
+    assert.deepEqual(groups.map((g) => g.heading), ['The other permit', 'The permit'])
+    assert.deepEqual(groups.map((g) => g.rows.length), [1, 1])
+    // Every group in this section has no day by definition, so the queue's "soonest first" has
+    // nothing to sort on and falls through to its tie-break, the heading — which is what makes
+    // the order stable between reloads rather than left to the order rows came back in.
+  })
+  test('the heading carries its own count, and the note is the owner’s own sentence', () => {
+    assert.equal(NEEDS_WHEN_HEADING(7), 'Needs a day or how often (7)')
+    assert.equal(NEEDS_WHEN_NOTE,
+      'These repeat, and nothing in the reading said when. Open one to set the day, or how often it repeats.')
+    assert.equal(NEEDS_WHEN_ID, 'needs-a-day')
+  })
+  test('the component draws it, with no Confirm and no picker on its rows', () => {
+    const ui = readFileSync('components/DateQueue.tsx', 'utf8')
+    const at = ui.indexOf('NEEDS_WHEN_HEADING(')
+    assert.ok(at > 0, 'the section must be drawn')
+    const section = ui.slice(at)
+    assert.ok(!section.includes('{CONFIRM}'), 'the question here is WHEN, and it is answered in the drawer')
+    assert.ok(!section.includes('needsPeriod('), 'the picker belongs to the queue above')
+    assert.match(ui, /id=\{NEEDS_WHEN_ID\}/)
+    assert.match(section, /onOpen\(r\.id\)/, 'every row opens the drawer')
+  })
+  test('THE TAB COUNT IS STILL THE QUEUE’S, and this section carries its own', () => {
+    // `lib/calendarCounts.ts` is what the tab and the sidebar badge read, and it counts `proposed`
+    // rows — unchanged by this step. A badge that followed this section would say a number no
+    // other screen in the product agrees with.
+    const counts = readFileSync('lib/calendarCounts.ts', 'utf8')
+    assert.match(counts, /rows\.filter\(\(r\) => r\.status === 'proposed'\)\.length/)
+    assert.ok(!counts.includes('needsWhen'), 'the counts file must not learn about this section')
   })
 })
 

@@ -31,7 +31,7 @@ import { RemoveDateSheet } from '@/components/RemoveDateSheet'
 import { statusWord, KIND_WORD } from '@/lib/documentStatus'
 import { labelFor, hostOf, OTHER_SOURCE_LINE } from '@/lib/howTo'
 import {
-  type CalendarRow, longDay, longDayAndWeekday, repeatWords, whenWords, passedWords, siteWords,
+  type CalendarRow, dayOf, longDay, longDayAndWeekday, repeatWords, whenWords, passedWords, siteWords,
   PERIOD_CHOICES, PERIOD_LABEL, NOT_CONFIRMED, PERIOD_NOT_READ, ALREADY_HANDLED, NEWER_VERSION,
   DOCUMENT_GONE, googleCalendarUrl, outlookCalendarUrl, splitSiblings, ASKS_BEFORE,
 } from '@/lib/calendarView'
@@ -117,6 +117,9 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
   const [removing, setRemoving] = useState(false)
   const [reason, setReason] = useState('')
   const [picking, setPicking] = useState(false)
+  /** Board 6's new control (step 14b): the date field, and what has been typed into it. */
+  const [settingDay, setSettingDay] = useState(false)
+  const [dayDraft, setDayDraft] = useState('')
 
   /**
    * A different date starts clean — a failure, an open picker and a half-typed reason all belong to
@@ -183,8 +186,23 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
           {busy ? 'Working…' : 'Confirm'}
         </button>
       )}
+      {/*
+        *** "SET THE DAY" ONLY WHERE THERE IS NO DAY — Calendar step 14b, decision 32. ***
+        The test is `row.due_date` and not the `day` above it: `day` is `next_due`, which migration
+        079 now fills from `due_date` for exactly these rows, so asking it would hide the control
+        the moment it worked. A day that is already there is the document's own evidence and is not
+        edited from a drawer — `lib/calendarDates.ts` answers 409 and 078's trigger refuses the
+        write itself, so this is the affordance and not the rule.
+      */}
+      {row.recurs && !row.due_date && (
+        <button className={TEXT_ACTION} disabled={busy}
+          onClick={() => { setPicking(false); setSettingDay((d) => !d) }}>
+          Set the day
+        </button>
+      )}
       {row.recurs && (
-        <button className={TEXT_ACTION} disabled={busy} onClick={() => setPicking((p) => !p)}>
+        <button className={TEXT_ACTION} disabled={busy}
+          onClick={() => { setSettingDay(false); setPicking((p) => !p) }}>
           Set how often
         </button>
       )}
@@ -256,7 +274,15 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
           <Fact k="Repeats" v={row.recurs
             ? (row.period ? PERIOD_LABEL[row.period] : <span className="text-gray-500">Yes — how often wasn&apos;t read</span>)
             : 'No'} />
-          {row.recurs && row.due_date && (
+          {/*
+            *** "COUNTING FROM" ONLY WHEN IT IS A DIFFERENT DAY — migration 079. ***
+            The anchor is worth saying when the product counted FORWARD from it: "20 August 2026,
+            every year" shows next year's occurrence above and the day it was measured from here.
+            For a repeating date with a day and no period the two are the same day, and 079 made
+            that the common case — the drawer photographed as "When 10 February 2027 … Counting
+            from 10 February 2027", which says one fact twice and reads as a second deadline.
+          */}
+          {row.recurs && row.due_date && dayOf(row.due_date) !== dayOf(row.next_due) && (
             <Fact k="Counting from" v={longDay(row.due_date)} />
           )}
           {siteCount > 1 && <Fact k="Site" v={site} />}
@@ -264,6 +290,25 @@ export function CalendarDateDrawer({ data, onClose, onChanged, onOpenOther, onOp
             ? <>Confirmed{row.confirmed_at ? ` by ${nameOf(row.confirmed_by)} on ${longDay(row.confirmed_at)}` : ''}</>
             : <span className="text-gray-500">{NOT_CONFIRMED}</span>} />
         </div>
+
+        {/* THE DATE FIELD, opened from the footer. A native date input, which is what every other
+            day in this product is typed into (`components/AddDateSheet.tsx`), so the format is the
+            browser's problem and not the person's. Empty until they pick one; the route refuses
+            anything that is not a real day. */}
+        {settingDay && (
+          <div className="no-print mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <p className="text-[12px] text-gray-500">Which day is it?</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <input type="date" value={dayDraft} aria-label="Which day is it?"
+                onChange={(e) => setDayDraft(e.target.value)}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-[13px] text-gray-900 outline-none focus:border-[var(--green)]" />
+              <button disabled={busy || !dayDraft} className={OUTLINE}
+                onClick={async () => { if (await act({ action: 'day', day: dayDraft })) setSettingDay(false) }}>
+                {busy ? 'Working…' : 'Set the day'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* The period picker, opened from the footer. Five choices and nothing else: the route
             refuses anything outside them, and a free-text box would invite a sixth. */}

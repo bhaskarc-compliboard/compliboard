@@ -26,6 +26,7 @@
  * silence is indistinguishable from a product that has stopped working.
  */
 import { longDay, dayAndShortMonth, dayOf, monthOf, monthTitle, siteWords, EVERY_SITE, type CalendarRow } from './calendarView.ts'
+import { NEEDS_WHEN_ID } from './calendarQueue.ts'
 import { FOOTER_NOT_LEGAL_ADVICE, footerBecauseMember, type EmailRow, type EmailSection, type EmailShape } from './email.ts'
 
 /** How many days of the next month are shown with this one. */
@@ -133,8 +134,17 @@ export const EARLY_HEADING = (month: string) =>
   `Early in ${monthTitle(nextMonthKey(month)).split(' ')[0]}`
 export const PASSED_HEADING = (month: string) =>
   `Still on your calendar from ${monthTitle(prevMonthKey(month)).split(' ')[0]}, passed`
+/**
+ * *** THE SAME WORDS AS THE SECTION IT POINTS AT — Calendar step 14b, decision 32. ***
+ * It read "N repeating dates have no day set yet — set them in CompliBoard" and linked to the
+ * Calendar tab, where the strip used to be. The strip is gone and the rows now live in one place:
+ * Dates to confirm, under "Needs a day or how often". Two names for one list is how a person ends
+ * up looking for something that is not where they were sent, so the line says what the section
+ * says and the link opens it.
+ */
 export const UNDATED_LINE = (n: number) =>
-  `${n} repeating date${n === 1 ? '' : 's'} ${n === 1 ? 'has' : 'have'} no day set yet — set ${n === 1 ? 'it' : 'them'} in CompliBoard`
+  `${n} repeating date${n === 1 ? '' : 's'} need${n === 1 ? 's' : ''} a day or how often `
+  + '— open Dates to confirm'
 export const NOTHING_DUE = (month: string) => `Nothing is due in ${monthTitle(month).split(' ')[0]}.`
 /** Decision 18's line, and the one thing the email asks of anybody. */
 export const NOT_RIGHT_LINE =
@@ -182,7 +192,8 @@ export function calendarEmail(input: CalendarEmailInput): CalendarEmail {
       rows: parts.passed.map((r) => emailRow(r, appUrl, siteCount, r.added_by ? names[r.added_by] : null)) })
   }
   if (parts.undated.length) {
-    sections.push({ rows: [{ primary: UNDATED_LINE(parts.undated.length), href: `${appUrl}/calendar?tab=calendar` }] })
+    sections.push({ rows: [{ primary: UNDATED_LINE(parts.undated.length),
+      href: `${appUrl}/calendar?tab=dates#${NEEDS_WHEN_ID}` }] })
   }
 
   const count = parts.due.length

@@ -207,10 +207,26 @@ export const SITE_REMOVED = 'Site removed — choose where it applies'
 export const SITE_REMOVED_SHORT = 'Site removed'
 /** A company-wide date. `entity_id` null is a real value, not a gap. */
 export const EVERY_SITE = 'Every site'
-/** The list's last group — the owner's words, step 8a. */
-export const UNDATED_GROUP = "Repeats — how often or when wasn't read yet"
-/** The strip above the month grid, which cannot hold a date with no day. */
-export const UNDATED_STRIP = (n: number) => `Repeating, day not read yet (${n})`
+/**
+ * *** THE MONTH AND THE LIST SHOW DATES AND NOTHING ELSE — decision 32, Calendar step 14b. ***
+ *
+ * Two constants stood here until 19 October: `UNDATED_GROUP` ("Repeats — how often or when wasn't
+ * read yet"), the list's last group, and `UNDATED_STRIP` ("Repeating, day not read yet (N)"), the
+ * strip above the grid. Both are gone, and so are the rows they held:
+ *
+ *   · a repeating date with a DAY is now on the grid and in the list like any other date —
+ *     migration 079 gives it `next_due`, because a day read from a document is a day whatever
+ *     nobody read about what comes after it;
+ *   · a repeating date with NO day is not on either view at all. It is a question, and every
+ *     question for a person lives in the drawer and in Dates to confirm (the owner's rule).
+ *
+ * What is left here is the one quiet line the two views end on, which says how many questions are
+ * waiting and where they are. The section itself is `lib/calendarQueue.ts`'s.
+ */
+export const NEEDS_WHEN_LINE = (n: number) =>
+  `${n} repeating date${n === 1 ? '' : 's'} need${n === 1 ? 's' : ''} a day or how often`
+/** The tail of that line, drawn as the link to the section. */
+export const NEEDS_WHEN_LINK = 'see Dates to confirm'
 /** A link that points at a date the calendar no longer carries. */
 export const NOT_ON_CALENDAR =
   "That date isn't on the calendar any more. If it should be, add it with + Add a date."
@@ -263,22 +279,32 @@ export function metaParts(row: CalendarRow, siteCount: number, addedByName?: str
 // THE TWO VIEWS
 // ---------------------------------------------------------------------------------------------
 
-/** A date with no day cannot sit on a calendar: it belongs to the strip and to the last group. */
+/**
+ * A DATE WITH NO DAY CANNOT SIT ON A CALENDAR, and since step 14b it sits nowhere else on these
+ * two views either: it is counted for the foot line and shown in Dates to confirm, under
+ * "Needs a day or how often". After migration 079 this is a much smaller set than it reads like —
+ * only a REPEATING row whose day was never read at all (a one-off cannot exist without one:
+ * 073's `calendar_events_date_or_recurs`).
+ */
 export const hasNoDay = (r: CalendarRow): boolean => !dayOf(r.next_due)
 
 export interface MonthGroup { key: string; title: string; rows: CalendarRow[] }
 
 /**
- * THE LIST, GROUPED BY MONTH, SOONEST FIRST — and the dates with no day in their own group at the
- * foot. A passed date sits in ITS OWN month, which is in the past and therefore first: that is
- * where somebody looking for it would go, and hiding it would be the product deciding a date it
- * read no longer counts.
+ * THE LIST, GROUPED BY MONTH, SOONEST FIRST. A passed date sits in ITS OWN month, which is in the
+ * past and therefore first: that is where somebody looking for it would go, and hiding it would be
+ * the product deciding a date it read no longer counts.
+ *
+ * *** `needsWhen` IS NO LONGER A GROUP IN THE LIST — decision 32. *** It was the last group, drawn
+ * under "Repeats — how often or when wasn't read yet". The rows are still counted and still
+ * returned, because the foot line says how many there are; what has gone is the list pretending
+ * they are dates. They are questions, and Dates to confirm is where the product asks them.
  */
-export function listGroups(rows: CalendarRow[]): { months: MonthGroup[]; undated: CalendarRow[] } {
+export function listGroups(rows: CalendarRow[]): { months: MonthGroup[]; needsWhen: CalendarRow[] } {
   const byMonth = new Map<string, CalendarRow[]>()
-  const undated: CalendarRow[] = []
+  const needsWhen: CalendarRow[] = []
   for (const r of rows) {
-    if (hasNoDay(r)) { undated.push(r); continue }
+    if (hasNoDay(r)) { needsWhen.push(r); continue }
     const k = monthOf(r.next_due)
     if (!byMonth.has(k)) byMonth.set(k, [])
     byMonth.get(k)!.push(r)
@@ -291,7 +317,7 @@ export function listGroups(rows: CalendarRow[]): { months: MonthGroup[]; undated
       rows: list.slice().sort((a, b) =>
         dayOf(a.next_due).localeCompare(dayOf(b.next_due)) || a.title.localeCompare(b.title)),
     }))
-  return { months, undated: undated.slice().sort((a, b) => a.title.localeCompare(b.title)) }
+  return { months, needsWhen: needsWhen.slice().sort((a, b) => a.title.localeCompare(b.title)) }
 }
 
 export interface DayCell {

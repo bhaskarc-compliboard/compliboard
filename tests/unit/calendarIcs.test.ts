@@ -58,9 +58,22 @@ describe('which rows become an event', () => {
     const { events, skipped } = planEvents(ALL)
     assert.ok(!events.some((e) => e.row.id === 'd3'))
     assert.deepEqual(skipped.map((r) => r.id), ['d3'])
-    // And so is a repeating date that HAS a day but no rule to count by.
+    // NO DAY AT ALL is now the only thing that cannot be written: see the test below.
+  })
+  test('A REPEATING DATE WITH A DAY AND NO PERIOD IS ONE EVENT ON THAT DAY — step 14b', () => {
+    // It was skipped with the dayless ones, because there is no RRULE without a period. Migration
+    // 079 puts that row on the grid on its own day, and a subscription that leaves out a date the
+    // calendar shows is worse than one that claims no repeat: the person lives in the diary. So
+    // it is written once, on that day, with `repeat` null — which says no more than the document.
     const noRule = row({ id: 'd5', recurs: true, period: null, due_date: '2026-08-20' })
-    assert.deepEqual(planEvents([noRule]).skipped.map((r) => r.id), ['d5'])
+    const { events, skipped } = planEvents([noRule])
+    assert.deepEqual(skipped.map((r) => r.id), [])
+    assert.deepEqual(events.map((e) => [e.row.id, e.start, e.repeat]), [['d5', '2026-08-20', null]])
+    // And no RRULE line reaches the file for it.
+    const file = buildIcs([noRule], { name: 'x', now: new Date('2026-10-19T12:00:00Z') })
+    assert.equal(file.included, 1)
+    assert.ok(!file.text.includes('RRULE'), 'no repeat rule may be invented for it')
+    assert.match(file.text, /DTSTART;VALUE=DATE:20260820/)
   })
   test('A PASSED DATE IS STILL AN EVENT — a date has passed, it is not deleted', () => {
     const { events } = planEvents([PASSED])

@@ -20,7 +20,8 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync } from 'node:fs'
 import {
-  proposeDate, confirmDate, dismissDate, setPeriod, confirmMany, periodProblem,
+  proposeDate, confirmDate, dismissDate, setPeriod, setDay, confirmMany, periodProblem, dayProblem,
+  DAY_ALREADY_SET, NEED_A_REAL_DAY,
   withdrawUnseenDocumentDates, withdrawAuditDatesNotMatchedBy,
   PERIODS, SOURCES, STATUSES, CONFIRMED_SOURCES, normaliseTitle, CONFIRM_MANY_MAX,
 } from '../../lib/calendarDates.ts'
@@ -591,6 +592,67 @@ describe('setPeriod', () => {
   })
 })
 
+/**
+ * *** setDay — THE DAY A PERSON MAY SET, AND ONLY FROM NOTHING (step 14b, decision 32). ***
+ *
+ * Migration 079 puts a repeating date WITH a day on the grid, so the question left on the ones
+ * without is "which day", and the drawer asks it. Both directions are tested here because both
+ * are rules: a day may be written onto a row that has none, and a day that is there is the
+ * document's own evidence — `source_line` quotes the sentence it came from — so it is not edited
+ * from a drawer. The same rule is in the database (078's trigger over
+ * `calendar_person_day_refusal`), because this route is a UX affordance and not the boundary.
+ */
+describe('setDay', () => {
+  const noDay = { id: 'd1', company_id: CO, status: 'proposed', recurs: true, title: 'x', due_date: null }
+
+  test('A DAY IS WRITTEN ONTO A ROW THAT HAS NONE, which is the whole point of the control', async () => {
+    const f = fake([{ ...noDay }])
+    const r = await setDay(f.db, 'd1', '2026-11-20')
+    assert.equal(r.status, 200)
+    assert.equal(f.rows[0].due_date, '2026-11-20')
+    // And nothing else moved: it is not a confirmation and not a frequency.
+    assert.equal(f.rows[0].status, 'proposed')
+    assert.equal(f.rows[0].period, undefined)
+  })
+
+  test('AND A DAY THAT IS ALREADY THERE IS NOT CHANGED — 409, in a sentence, nothing written', async () => {
+    for (const day of ['2026-09-01', '2026-08-20']) {
+      const f = fake([{ ...noDay, due_date: '2026-08-20' }])
+      const r = await setDay(f.db, 'd1', day)
+      assert.equal(r.status, 409, day)
+      assert.equal(r.json.error, DAY_ALREADY_SET)
+      assert.equal(f.rows[0].due_date, '2026-08-20', 'nothing was written')
+    }
+  })
+
+  test('THE SENTENCE IS THE DATABASE\'S OWN, word for word', () => {
+    // Two copies of a refusal is two refusals. The migration carries it for the caller who never
+    // comes through the route, and this is what keeps them one sentence.
+    const sql = readFileSync('supabase/migrations/079_a_repeating_date_with_a_day_is_a_date.sql', 'utf8')
+    const joined = sql.replace(/'\s*\n\s*'/g, '')
+    assert.ok(joined.includes(DAY_ALREADY_SET),
+      'migration 079 must refuse with the same words lib/calendarDates.ts does')
+  })
+
+  test('a day that is not a day is refused BEFORE the row is read', async () => {
+    for (const bad of ['', 'tomorrow', '20-11-2026', '2026-11', '2026-02-31', '2026-13-01']) {
+      const f = fake([{ ...noDay }])
+      const r = await setDay(f.db, 'd1', bad)
+      assert.equal(r.status, 400, bad)
+      assert.equal(r.json.error, NEED_A_REAL_DAY)
+      assert.equal(f.rows[0].due_date, null)
+    }
+    assert.equal(dayProblem('2026-11-20'), null)
+    assert.equal(dayProblem('2026-02-29'), NEED_A_REAL_DAY, '2026 is not a leap year')
+    assert.equal(dayProblem('2028-02-29'), null, 'but 2028 is')
+  })
+
+  test('an unknown id is 404 and never 403; no id is 400', async () => {
+    assert.equal((await setDay(fake().db, 'nope', '2026-11-20')).status, 404)
+    assert.equal((await setDay(fake().db, '', '2026-11-20')).status, 400)
+  })
+})
+
 // ===========================================================================================
 // STEP 6b — THE CURRENT READING WINS (decision 29, the owner, 15 October 2026)
 // ===========================================================================================
@@ -1141,7 +1203,7 @@ describe('the route hands both of them straight through', () => {
   const ROUTE = readFileSync('app/api/calendar/route.ts', 'utf8')
   const code = ROUTE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
   test('confirm_many is an action, and it is answered BEFORE the id check', () => {
-    assert.match(code, /const ACTIONS = \['confirm', 'dismiss', 'period', 'confirm_many'\] as const/)
+    assert.match(code, /const ACTIONS = \['confirm', 'dismiss', 'period', 'day', 'confirm_many'\] as const/)
     assert.ok(code.indexOf("action === 'confirm_many'") < code.indexOf("if (!id) return"),
       'the one action with no id must not be answered "Missing id"')
     assert.match(code, /await confirmMany\(db, body\?\.ids, userId\)/)

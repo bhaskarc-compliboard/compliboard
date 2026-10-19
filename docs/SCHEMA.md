@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-16 19:21 UTC
-**Migrations applied:** 79 — `000` to `078`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-19 17:39 UTC
+**Migrations applied:** 80 — `000` to `079`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,7 +29,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 22 rows · touched by route calendar/topics/[id]/summarise, route chat, route checklists/from-topic, route documents, route hr/answer, +14 more
+- `topics` — 26 rows · touched by route calendar/topics/[id]/summarise, route chat, route checklists/from-topic, route documents, route hr/answer, +14 more
 - `checklists` — 3 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +8 more
 - `checklist_items` — 13 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
@@ -74,13 +74,13 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 7 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +22 more
+- `companies` — 6 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +22 more
 - `profiles` — 5 rows · touched by route account/export, route account, route jobs/calendar-month, route signup, screen audits, +10 more
 - `entities` — 7 rows · touched by route audit-runs, route audits/index, route calendar, route company-information, route document-actions, +22 more
 
 **Calendar**
 
-- `calendar_events` — 66 rows · touched by route audit-runs/[id], route calendar, lib calendarDates, script check-live
+- `calendar_events` — 67 rows · touched by route audit-runs/[id], route calendar, lib calendarDates, script check-live
 
 **Worker queue**
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 54 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 60 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -493,7 +493,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `calendar_events`
 
-**Rows:** 66 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 67 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-runs/[id]`, `route calendar`, `lib calendarDates`, `script check-live`
 
@@ -610,7 +610,7 @@ The secret address for the subscription feed (decision 20). GET /api/calendar/fe
 
 One row per company per month, written by the monthly email job as a CLAIM before the send (Calendar step 11). UNIQUE (company_id, month) is what stops a second email about the same month: the second attempt is refused with 23505 and skips. sent_at null means the claim was taken and the send did not finish; `error` says why. Migrations 073 and 077.
 
-**Rows:** 2 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/calendar-month`, `script check-live`
 
@@ -763,7 +763,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 ### `companies`
 
-**Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -2000,7 +2000,7 @@ One check of one handbook version (decision 2).
 
 Company-level dates a handbook sets; sent to the one calendar only when a person presses Add to calendar (decision 29).
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `script check-live`
 
@@ -2336,7 +2336,7 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 9 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 15 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
@@ -2928,7 +2928,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 22 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 26 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route calendar/topics/[id]/summarise`, `route chat`, `route checklists/from-topic`, `route documents`, `route hr/answer`, `route hr/topics/[id]/summarise`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen calendar`, `screen compliance`, `screen hr`, `lib ask`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
 
@@ -2995,7 +2995,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 58 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 68 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
@@ -3139,6 +3139,12 @@ The company of the currently authenticated user, read from profiles with definer
 
 **Returns** `trigger` · **security invoker**
 
+### `calendar_person_day_refusal(old_day date, new_day date)`
+
+**Returns** `text` · **security invoker**
+
+Whether a PERSON may make this change to a calendar date's day: NULL when they may, else the sentence to refuse with. A day may be SET from nothing — the drawer's "Set the day", Calendar step 14b — and a day that is already there may never be changed or cleared by hand, because it is the document's own evidence. A pure function so migration 079 can prove every case of it without a login, as 078 does for the status moves. Migration 079.
+
 ### `calendar_person_move_refusal(old_status text, new_status text, old_withdrawn timestamp with time zone, new_withdrawn timestamp with time zone)`
 
 **Returns** `text` · **security invoker**
@@ -3188,7 +3194,7 @@ Does this SITE hold ANY ONE substance at or above ITS OWN threshold on the named
 
 ### `calendar_v`
 
-Every calendar_events column plus the site read live from the document, next_due computed from the period and the anchor, days_until, has_passed and source_title. NOTHING DERIVED IS STORED — migration 049's rule. security_invoker: it shows only the rows the caller could select. WITHDRAWN ROWS ARE NOT RETURNED (decision 29, migration 075); dismissed and superseded rows are. Migration 073.
+Every calendar_events column plus the site read live from the document, next_due computed from the period and the anchor, days_until, has_passed and source_title. NOTHING DERIVED IS STORED — migration 049's rule. security_invoker: it shows only the rows the caller could select. A REPEATING DATE WITH A DAY AND NO PERIOD HAS next_due = ITS DAY (decision 32, migration 079); with no day it has none, whether or not it has a period. has_passed is next_due < today. WITHDRAWN ROWS ARE NOT RETURNED (decision 29, migration 075); dismissed and superseded rows are. Migration 073.
 
 ### `checklist_list_v`
 
@@ -3311,4 +3317,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 076
 077
 078
+079
 ```

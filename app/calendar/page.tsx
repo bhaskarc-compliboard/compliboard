@@ -55,9 +55,9 @@ import { readTopicList, type TopicRow } from '@/lib/topicList'
 import { readCalendarCounts, infoBarParts, type CalendarCounts } from '@/lib/calendarCounts'
 import {
   readCalendarRows, listGroups, monthGrid, monthTitle, shiftMonth, openingMonth, monthOf,
-  repeatWords, whenWords, passedWords, metaParts, hasNoDay, resolveLink,
+  whenWords, passedWords, metaParts, hasNoDay, resolveLink,
   siteChoices, filterBySite,
-  WEEKDAYS, PER_DAY, MORE_WORD, UNDATED_GROUP, UNDATED_STRIP, NOT_ON_CALENDAR, NOT_CONFIRMED,
+  WEEKDAYS, PER_DAY, MORE_WORD, NEEDS_WHEN_LINE, NEEDS_WHEN_LINK, NOT_ON_CALENDAR, NOT_CONFIRMED,
   COULD_NOT_LOAD,
   type CalendarRow,
 } from '@/lib/calendarView'
@@ -72,7 +72,7 @@ import { AnswerBody, type AnswerSource } from '@/components/AnswerBody'
 import { displayTitle } from '@/lib/listWords'
 import { conversationStatus, friendlyDate } from '@/lib/conversationStatus'
 import { CLAIM_WORDS } from '@/lib/topicClaim'
-import { type DocumentHead } from '@/lib/calendarQueue'
+import { type DocumentHead, NEEDS_WHEN_ID } from '@/lib/calendarQueue'
 import { SendCalendarSheet } from '@/components/SendCalendarSheet'
 import DocumentReport from '@/components/DocumentReport'
 import AuditReport from '@/components/AuditReport'
@@ -543,7 +543,27 @@ function Calendar() {
    */
   const shownRows = filterBySite(rows, siteFilter)
   const groups = listGroups(shownRows)
-  const undated = groups.undated
+  /**
+   * *** THE DATES WITH NO DAY ARE COUNTED HERE AND SHOWN NOWHERE ON THIS TAB — decision 32. ***
+   * The strip above the grid and the list's last group both went with step 14b; what is left is
+   * the one line at the foot of each view saying how many questions are waiting and where. The
+   * section itself is on Dates to confirm, under the queue.
+   */
+  const needsWhen = groups.needsWhen
+  /** The address of the section those dates live on, with this tab's other parameters kept. */
+  const needsWhenHref = (() => {
+    const p = new URLSearchParams(params.toString())
+    p.set('tab', 'dates')
+    p.delete('new')
+    return `/calendar?${p}#${NEEDS_WHEN_ID}`
+  })()
+  /** The quiet line both views end on, drawn only when there is something to say. */
+  const needsWhenLine = needsWhen.length > 0 ? (
+    <p className="mt-4 text-[12px] text-gray-500">
+      {NEEDS_WHEN_LINE(needsWhen.length)} — <a href={needsWhenHref} className="underline hover:text-gray-900">{NEEDS_WHEN_LINK}</a>
+    </p>
+  ) : null
+
   /** The month shown: the one chosen, else the linked date's, else the soonest date still ahead. */
   const monthKey = month
     ?? (open && !hasNoDay(open) ? monthOf(open.next_due) : null)
@@ -597,25 +617,7 @@ function Calendar() {
                     </div>
                   </div>
                 ))}
-                {undated.length > 0 && (
-                  <div className="mt-5">
-                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{UNDATED_GROUP}</p>
-                    <div className="divide-y divide-gray-100 border-y border-gray-100">
-                      {undated.map((r) => (
-                        <button key={r.id} onClick={() => openDate(r.id)}
-                          className="group -mx-3 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-white">
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{r.title}</span>
-                            <span className="mt-0.5 block truncate text-[12px] text-gray-500">
-                              {metaParts(r, sites.length, r.added_by ? names[r.added_by] : null).join(' · ')}
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-[12px] text-gray-400">{whenWords(r)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {needsWhenLine}
     </>
   )
 
@@ -780,22 +782,15 @@ function Calendar() {
                   </div>
                 </div>
 
-                {/* A DATE WITH NO DAY CANNOT SIT ON A GRID (decisions 12 and 23), and leaving it out
-                    of the month view with no word would be the calendar quietly dropping dates it
-                    has. The strip says how many and lists them, each opening the same drawer. */}
-                {undated.length > 0 && (
-                  <div className="no-print mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5">
-                    <p className="text-[12px] font-medium text-gray-600">{UNDATED_STRIP(undated.length)}</p>
-                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
-                      {undated.map((r) => (
-                        <button key={r.id} onClick={() => openDate(r.id)}
-                          className="max-w-full truncate text-left text-[12px] text-gray-600 underline hover:text-gray-900">
-                          {r.title}{repeatWords(r) ? ` · ${repeatWords(r)}` : ''}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/*
+                  *** THE STRIP IS GONE — decision 32, Calendar step 14b. ***
+                  It sat here, between the month bar and the grid, headed "Repeating, day not read
+                  yet (N)" and listing every one of them. Two kinds of row were in it and only one
+                  belonged: a date whose day WAS read is now on the grid itself (migration 079),
+                  and a date with no day at all is a question, which lives in the drawer and in
+                  Dates to confirm. The grid shows dates and nothing else; the foot line below
+                  says how many questions are waiting and where they are.
+                */}
 
                 {/* THE GRID. Seven equal columns, six equal rows: `grid-rows-6` with a fixed row
                     height, so a busy day scrolls inside its box and the month never changes shape
@@ -829,8 +824,10 @@ function Calendar() {
                 <div className="no-print mt-2 flex flex-wrap items-center gap-4 text-[11px] text-gray-400">
                   <span className="inline-flex items-center gap-1.5"><Dot confirmed faint={false} />confirmed</span>
                   <span className="inline-flex items-center gap-1.5"><Dot confirmed={false} faint={false} />{NOT_CONFIRMED}</span>
-                  {undated.length > 0 && <span>{UNDATED_STRIP(undated.length)} — see the list</span>}
                 </div>
+                {/* The same line the list ends on, on screen only: on paper the list below carries
+                    its own copy, and two would print one under the other. */}
+                <div className="no-print">{needsWhenLine}</div>
                 {/* On paper the month is the list: see `listBody`. */}
                 <div className="hidden print:block">{listBody}</div>
               </>) : listBody}

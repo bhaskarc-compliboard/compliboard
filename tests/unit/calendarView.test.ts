@@ -14,7 +14,7 @@ import {
   dayAndShortMonth, repeatWords, whenWords, passedWords, siteWords, metaParts, listGroups,
   monthGrid, openingMonth, shiftMonth, hasNoDay, resolveLink, googleCalendarUrl, outlookCalendarUrl,
   PERIOD_LABEL, PERIOD_CHOICES, WEEKDAYS, PER_DAY, MORE_WORD, NOT_CONFIRMED, EVERY_SITE, SITE_REMOVED,
-  UNDATED_GROUP, UNDATED_STRIP, NOT_ON_CALENDAR, PERIOD_NOT_READ, ALREADY_HANDLED, COULD_NOT_LOAD,
+  NEEDS_WHEN_LINE, NEEDS_WHEN_LINK, NOT_ON_CALENDAR, PERIOD_NOT_READ, ALREADY_HANDLED, COULD_NOT_LOAD,
   splitSiblings, ASKS_BEFORE, siteKeyOf, siteChoices, filterBySite, addDateProblem,
   NEED_A_TITLE, NEED_A_DAY,
   type CalendarRow,
@@ -211,7 +211,7 @@ describe('the list row\'s meta line, in board 5\'s order', () => {
   })
 })
 
-describe('the list: by month, soonest first, the undated last', () => {
+describe('the list: by month, soonest first, and the dates with no day on neither view', () => {
   const rows = [
     row({ id: 'c', next_due: '2026-12-12', days_until: 58 }),
     row({ id: 'a', next_due: '2026-10-03', days_until: -12, has_passed: true }),
@@ -229,15 +229,26 @@ describe('the list: by month, soonest first, the undated last', () => {
     const { months } = listGroups(rows)
     assert.deepEqual(months[1].rows.map((r) => r.id), ['b1', 'b2'])
   })
-  test('a date with no day is in neither month — it is the group at the foot', () => {
-    const { months, undated } = listGroups(rows)
-    assert.deepEqual(undated.map((r) => r.id), ['u1'])
+  test('A DATE WITH NO DAY IS IN NO MONTH AND IN NO GROUP — decision 32', () => {
+    // It was the list's last group, under "Repeats — how often or when wasn't read yet". It is
+    // still RETURNED, because the foot line counts it, and it is drawn nowhere on this tab.
+    const { months, needsWhen } = listGroups(rows)
+    assert.deepEqual(needsWhen.map((r) => r.id), ['u1'])
     assert.ok(!months.some((m) => m.rows.some((r) => r.id === 'u1')))
-    assert.equal(UNDATED_GROUP, "Repeats — how often or when wasn't read yet")
     assert.ok(hasNoDay(rows[2]) && !hasNoDay(rows[0]))
   })
+  test('A REPEATING DATE WITH A DAY IS IN ITS MONTH LIKE ANY OTHER — migration 079', () => {
+    // The row the whole step is for: it repeats, nobody read how often, and the view gives it
+    // `next_due` = its day. It belongs in the list, not in a group of questions at the foot.
+    const dated = row({ id: 'r1', recurs: true, period: null, due_date: '2026-11-20',
+      next_due: '2026-11-20', days_until: 32 })
+    const { months, needsWhen } = listGroups([...rows, dated])
+    assert.deepEqual(needsWhen.map((r) => r.id), ['u1'])
+    assert.ok(months.find((m) => m.key === '2026-11')?.rows.some((r) => r.id === 'r1'))
+    assert.equal(hasNoDay(dated), false)
+  })
   test('nothing at all groups to nothing, not to an empty month', () => {
-    assert.deepEqual(listGroups([]), { months: [], undated: [] })
+    assert.deepEqual(listGroups([]), { months: [], needsWhen: [] })
   })
 })
 
@@ -285,8 +296,23 @@ describe('the month grid', () => {
     for (const glyph of ['●', '○']) assert.ok(!code.includes(glyph), `the grid must not print ${glyph}`)
     assert.match(code, /<circle cx="4" cy="4" r="3" fill=\{confirmed \? 'currentColor' : 'none'\}/)
   })
-  test('the strip above the grid counts what cannot sit on it', () => {
-    assert.equal(UNDATED_STRIP(4), 'Repeating, day not read yet (4)')
+  test('THE STRIP IS GONE, AND THE LINE THAT REPLACED IT NAMES THE SECTION — decision 32', () => {
+    assert.equal(NEEDS_WHEN_LINE(4), '4 repeating dates need a day or how often')
+    assert.equal(NEEDS_WHEN_LINE(1), '1 repeating date needs a day or how often')
+    assert.equal(NEEDS_WHEN_LINK, 'see Dates to confirm')
+    // The two constants the strip and the list's group were drawn from, and every word of them.
+    const code = PAGE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    for (const gone of ['UNDATED_STRIP', 'UNDATED_GROUP', 'Repeating, day not read yet']) {
+      assert.ok(!code.includes(gone), `${gone} is still drawn on the Calendar tab`)
+    }
+    // And the line is a LINK TO THE SECTION, not a sentence with nowhere to go. The page does not
+    // spell the anchor: it imports `NEEDS_WHEN_ID` from the file that owns the section, so the
+    // two cannot drift — which is why this asserts the import and the href, and the id's own
+    // value is asserted where it is defined (`tests/unit/calendarQueue.test.ts`).
+    assert.match(code, /import \{ type DocumentHead, NEEDS_WHEN_ID \} from '@\/lib\/calendarQueue'/)
+    assert.match(code, /p\.set\('tab', 'dates'\)/)
+    assert.match(code, /\$\{NEEDS_WHEN_ID\}`/)
+    assert.match(code, /NEEDS_WHEN_LINE\(needsWhen\.length\)/)
   })
   test('a month either side, across a year boundary', () => {
     assert.equal(shiftMonth('2026-12', 1), '2027-01')
@@ -349,6 +375,51 @@ describe('sending one date to a personal calendar — the old page\'s two URLs, 
     assert.equal(googleCalendarUrl(u), '')
     assert.equal(outlookCalendarUrl(u), '')
     assert.match(DRAWER, /googleCalendarUrl\(row\) && \(/)
+  })
+})
+
+/**
+ * *** "SET THE DAY" — the drawer's new control (Calendar step 14b, decision 32). ***
+ *
+ * The one place in the product where a person writes `due_date` onto a row that already exists.
+ * What these hold is the affordance: that it is offered ONLY where there is no day, that it is
+ * tested on `due_date` and not on the day being displayed, and that it writes through the one
+ * writer like every other action in this drawer. The RULE — that a day already set may not be
+ * moved — is `lib/calendarDates.ts`'s and migration 079's, and is tested in both of those.
+ */
+describe('the drawer can set a day, and only where there is none', () => {
+  test('the control is offered on a repeating date with no day', () => {
+    assert.match(DRAWER_CODE, /\{row\.recurs && !row\.due_date && \(/)
+    assert.match(DRAWER_CODE, />\s*Set the day\s*</)
+    assert.match(DRAWER_CODE, /Which day is it\?/)
+    assert.match(DRAWER_CODE, /<input type="date"/)
+  })
+  test('IT TESTS `due_date`, NOT THE DAY ON SCREEN — which would hide the control the moment it worked', () => {
+    // `day` in this component is `longDay(row.next_due)`, and migration 079 fills `next_due` from
+    // `due_date` for exactly the rows this control is for. Asking `!day` would have been right
+    // yesterday and silently wrong today.
+    assert.ok(!/\{row\.recurs && !day && \(/.test(DRAWER_CODE))
+  })
+  test('"Counting from" is not drawn when it is the SAME day as the one above it', () => {
+    // 079 made `next_due = due_date` the common case for a repeating date with no period, and the
+    // drawer then said one fact twice — "When 10 February 2027 … Counting from 10 February 2027",
+    // which reads as a second deadline. The anchor is worth saying only when it differs.
+    assert.match(DRAWER_CODE, /dayOf\(row\.due_date\) !== dayOf\(row\.next_due\) && \(/)
+  })
+  test('it writes through PATCH /api/calendar with the new action, and nothing else', () => {
+    assert.match(DRAWER_CODE, /act\(\{ action: 'day', day: dayDraft \}\)/)
+    assert.ok(!/\.from\('calendar_events'\)/.test(DRAWER_CODE), 'the drawer never touches the table')
+  })
+  test('the two panels do not open over one another', () => {
+    // One grey panel at a time: opening "Set the day" closes the period picker and the other way
+    // round, because they share the same place under the facts.
+    assert.match(DRAWER_CODE, /setPicking\(false\); setSettingDay/)
+    assert.match(DRAWER_CODE, /setSettingDay\(false\); setPicking/)
+  })
+  test('the route accepts it, and the one writer is what answers', () => {
+    const route = readFileSync('app/api/calendar/route.ts', 'utf8')
+    assert.match(route, /const ACTIONS = \['confirm', 'dismiss', 'period', 'day', 'confirm_many'\] as const/)
+    assert.match(route, /action === 'day' \? await setDay\(db, id, String\(body\?\.day \?\? ''\)\)/)
   })
 })
 

@@ -26,8 +26,9 @@ import { RemoveDateSheet } from '@/components/RemoveDateSheet'
 import { PERIOD_CHOICES, type CalendarRow } from '@/lib/calendarView'
 import {
   queueGroups, queueWhen, queueMeta, needsPeriod, idsShown, groupCount, confirmAllLabel,
-  waitingRows, QUEUE_BAR, QUEUE_EMPTY_TITLE, QUEUE_EMPTY_NOTE, CONFIRM, NOT_RIGHT, DONT_KNOW_YET,
-  HOW_OFTEN, ROW_FAILED, GROUP_FAILED, type DocumentHead,
+  waitingRows, needsWhenRows, needsWhenGroups, QUEUE_BAR, QUEUE_EMPTY_TITLE, QUEUE_EMPTY_NOTE,
+  NEEDS_WHEN_HEADING, NEEDS_WHEN_NOTE, NEEDS_WHEN_ID,
+  CONFIRM, NOT_RIGHT, DONT_KNOW_YET, HOW_OFTEN, ROW_FAILED, GROUP_FAILED, type DocumentHead,
 } from '@/lib/calendarQueue'
 
 const OUTLINE = 'rounded-md border border-[var(--green)] px-3 py-1 text-[13px] font-medium '
@@ -56,6 +57,13 @@ export function DateQueue({ rows, heads, siteCount, onOpen, onChanged }: {
 
   const waiting = waitingRows(rows)
   const groups = queueGroups(rows, heads)
+  /**
+   * THE SECOND SECTION'S ROWS AND GROUPS (step 14b). Every LIVE row with no day, proposed or
+   * confirmed — a different question from the queue's, asked of a different set, and a proposed
+   * row with no day is in both on purpose (`lib/calendarQueue.ts` says why).
+   */
+  const needsWhen = needsWhenRows(rows)
+  const needsGroups = needsWhenGroups(rows, heads)
 
   /** One PATCH, and the page re-read only when the route said yes. */
   async function send(key: string, body: Record<string, unknown>, failure: string): Promise<boolean> {
@@ -83,15 +91,26 @@ export function DateQueue({ rows, heads, siteCount, onOpen, onChanged }: {
     } finally { setBusy(null) }
   }
 
-  if (waiting.length === 0) {
+  /**
+   * *** "NOTHING WAITING" IS NOW ONLY TRUE WHEN BOTH SECTIONS ARE EMPTY. ***
+   * Until step 14b this component returned the empty state the moment the QUEUE was empty, which
+   * from this step on would have drawn "Nothing waiting" over a tab holding seven dates that need
+   * a day — the §5.1 failure this very tab has already had once (the page's own comment records
+   * the read-that-failed version of it). The empty state still belongs to the queue and keeps its
+   * words; what changes is that it no longer ends the component.
+   */
+  if (waiting.length === 0 && needsWhen.length === 0) {
     return <Empty title={QUEUE_EMPTY_TITLE} note={QUEUE_EMPTY_NOTE} />
   }
 
   return (<>
     {/* Board 7's line under the tabs, in the info bar's own place and type. */}
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
-      <p className="text-[13px] text-gray-500">{QUEUE_BAR}</p>
-    </div>
+    {waiting.length > 0 && (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+        <p className="text-[13px] text-gray-500">{QUEUE_BAR}</p>
+      </div>
+    )}
+    {waiting.length === 0 && <Empty title={QUEUE_EMPTY_TITLE} note={QUEUE_EMPTY_NOTE} />}
 
     {groups.map((g) => (
       <div key={g.key} className="mt-5">
@@ -181,6 +200,48 @@ export function DateQueue({ rows, heads, siteCount, onOpen, onChanged }: {
         </div>
       </div>
     ))}
+
+    {/*
+      *** NEEDS A DAY OR HOW OFTEN — decision 32, Calendar step 14b. ***
+      Below the queue, grouped the same way, with no Confirm and no picker on the row: the question
+      here is WHEN, and it is answered in the drawer where the whole date is. The heading carries
+      its own count; the tab's count above is still the queue's.
+    */}
+    {needsWhen.length > 0 && (
+      <div id={NEEDS_WHEN_ID} className="mt-8 border-t border-gray-200 pt-5">
+        <p className="text-[13px] font-medium text-gray-700">{NEEDS_WHEN_HEADING(needsWhen.length)}</p>
+        <p className="mt-0.5 text-[13px] text-gray-500">{NEEDS_WHEN_NOTE}</p>
+        {needsGroups.map((g) => (
+          <div key={g.key} className="mt-4">
+            <p className="min-w-0 text-[13px] font-medium text-gray-700">
+              <span className="break-words">{g.heading}</span>
+              <span className="text-gray-400"> · {groupCount(g.rows.length)}</span>
+            </p>
+            <div className="mt-1.5 divide-y divide-gray-100 border-y border-gray-100">
+              {g.rows.map((r) => (
+                <button key={r.id} onClick={() => onOpen(r.id)}
+                  className="group block w-full py-2.5 text-left">
+                  <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">
+                    {r.title}
+                  </span>
+                  <span className="mt-0.5 block text-[12px] text-gray-500">
+                    <span className="text-gray-600">{queueWhen(r)}</span>
+                    {queueMeta(r, siteCount).map((part) => (
+                      <span key={part}><span aria-hidden="true"> · </span>{part}</span>
+                    ))}
+                  </span>
+                  {r.source_line && (
+                    <span className="mt-0.5 block truncate text-[12px] italic text-gray-500">
+                      &ldquo;{r.source_line}&rdquo;
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
 
     {/* BOARD 8, the same sheet the drawer's Remove opens, with its other title. */}
     {notRight && (

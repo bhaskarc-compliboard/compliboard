@@ -19,8 +19,16 @@
  * (`docs/CALENDAR-PLAN.md` §2.1).
  *
  * *** AND A DATE WE CANNOT PLACE IS LEFT OUT AND COUNTED, NEVER GUESSED AT. *** A repeating date
- * with no day, or with no period, has no honest occurrence to write (decisions 12 and 23), and an
- * invented one would be a deadline nobody set. `skipped` carries them back so the sheet can say so.
+ * with no day has no honest occurrence to write (decision 12), and an invented one would be a
+ * deadline nobody set. `skipped` carries them back so the sheet can say so.
+ *
+ * *** A REPEATING DATE WITH A DAY AND NO PERIOD GOES IN AS ONE EVENT — step 14b, decision 32. ***
+ * It was skipped with the dayless ones, because without a period there is no RRULE. But migration
+ * 079 puts that row on the grid on its own day, and a subscription that silently leaves out a date
+ * the calendar shows is the worst of the three answers: the person sees a deadline in CompliBoard
+ * and not in the diary they actually live by. So it is written as a single, non-repeating event on
+ * that day — which claims no more than the document said — and the repeat appears the moment
+ * somebody answers "how often" in the drawer.
  */
 import type { CalendarRow } from './calendarView.ts'
 
@@ -84,9 +92,10 @@ export interface IcsEvent { row: CalendarRow; start: string; repeat: string | nu
 
 /**
  * WHICH ROWS CAN BE WRITTEN AS AN EVENT, AND WHICH CANNOT.
- *   · a one-off with a day            → one event on that day
+ *   · a one-off with a day              → one event on that day
  *   · repeating, with a day AND a period → one event on the anchor, with an RRULE
- *   · anything else                   → skipped, and counted
+ *   · repeating, with a day and NO period → one event on that day and no RRULE (step 14b)
+ *   · repeating with no day at all      → skipped, and counted
  * A PASSED date is written like any other: a date has passed, it is not deleted (decision 11), and
  * a calendar app showing last month is showing the truth.
  */
@@ -95,10 +104,11 @@ export function planEvents(rows: CalendarRow[]): { events: IcsEvent[]; skipped: 
   const skipped: CalendarRow[] = []
   for (const row of rows) {
     if (row.recurs) {
+      // `repeat` is null when nobody read how often: the event is then a single day, not a series.
       const repeat = rrule(row.period)
       const anchor = (row.due_date ?? '').slice(0, 10)
-      // No anchor, or no rule to count by: there is no honest occurrence to write.
-      if (!repeat || !/^\d{4}-\d{2}-\d{2}$/.test(anchor)) { skipped.push(row); continue }
+      // NO ANCHOR IS THE ONLY THING THAT CANNOT BE WRITTEN: there is no day to put it on.
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(anchor)) { skipped.push(row); continue }
       events.push({ row, start: anchor, repeat })
     } else {
       const day = (row.next_due ?? row.due_date ?? '').slice(0, 10)
