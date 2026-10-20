@@ -2,7 +2,9 @@
 
 # CompliBoard — Project Rules for Claude Code
 
-**Updated:** 16 October 2026 — §3.4a: the owner's `.env.local` runs Opus on all thirteen tiers, so the guard is the only thing keeping Claude Code's runs cheap (corrected at Calendar step 6b; `DECISIONS.md` §189).
+**Updated:** 20 October 2026 — §3.4a: the owner's laptop runs **Opus 5**, not Opus 5.5 (corrected at the Dashboard's
+close-out; the 15 October reading said 5.5 and the model is `claude-opus-5`).
+16 October 2026 — §3.4a: the owner's `.env.local` runs Opus on all thirteen tiers, so the guard is the only thing keeping Claude Code's runs cheap (corrected at Calendar step 6b; `DECISIONS.md` §189).
 7 October 2026 — §3.4a: the guard, `npm run haiku -- <command>` (§168).
 7 October 2026 — §3.4a: the laptop runs Opus, Claude Code runs Haiku by command environment (§166).
 7 October 2026 — §3.6: the default privileges now grant `anon` and `authenticated` nothing (migration 068); revoke-then-grant stands; read grants with `has_table_privilege`.
@@ -233,9 +235,15 @@ when the question is **"is this answer any good"**, and not before.
 > **Every model-capable command of Claude Code's goes through it** — the isolated server
 > (`env HR_PREVIEW=1 node scripts/haiku.mjs npx next dev -p 3998` in the copy), `check:live`, any script.
 >
-> **As read on 15 October 2026, the owner's `.env.local` is on Opus 5.5.** `AI_MODEL_PROSE`,
+> **CORRECTED 20 OCTOBER 2026 (the owner, at the Dashboard's close-out): the laptop runs OPUS 5, not Opus 5.5.**
+> The paragraph below was written on 15 October and said 5.5 throughout; the model is `claude-opus-5`. Everything
+> else about it holds — every tier resolves to the same one model locally, and the guard is still the only thing
+> keeping Claude Code's own runs on Haiku. **`docs/RELEASE.md`'s variable table remains the authoritative record of
+> what VERCEL holds** (§136: the dashboard wins); this paragraph is about the laptop.
+>
+> **As read on 15 October 2026, the owner's `.env.local` is on Opus (`claude-opus-5`).** `AI_MODEL_PROSE`,
 > `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_MODEL_HR`, `AI_MODEL_HR_CHECK` and the bare
-> `AI_MODEL` are all `claude-opus-5-5`, so **all thirteen tiers in `lib/ai.ts` resolve to `claude-opus-5-5`
+> `AI_MODEL` are all the same value, so **all thirteen tiers in `lib/ai.ts` resolve to that one model
 > locally** — asked of `modelForTask()` itself rather than read off the variables, because a tier's fallback chain
 > lives in the code and only the code can say where it lands (`AI_MODEL_DOCUMENT_SCAN` is unset here and falls
 > through to the judgement tier). §166 is in force on the laptop. **The guard is what keeps Claude Code's own runs

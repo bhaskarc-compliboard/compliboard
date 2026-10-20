@@ -14543,3 +14543,153 @@ after the migration. Production is unaffected: `check:live` cannot be pointed at
   §125's doctrine, and the backfill uses the same rule so the two agree — but it is a different number from
   the old "Files reviewed" tile, which counted documents. On staging today: Cascade 12 readings over 12
   documents, Test Gamma 10 over 3.
+
+---
+
+## 204. THE DASHBOARD, DECISION BY DECISION — 19–20 October 2026 (Dashboard steps 1–7b)
+
+The owner's twelve decisions, each with the file that holds it. The plan is `docs/DASHBOARD-PLAN.md`; the pictures
+are `docs/dashboard-boards.html`; the read-only map that preceded all of it is `docs/DASHBOARD-MACHINERY.md`.
+
+| # | The decision | Where it lives |
+|---|---|---|
+| 1 | **Login lands on the Dashboard.** It landed on the marketing homepage — a person who had just typed their password was shown the page inviting them to sign up | `app/login/page.tsx:34`, `app/signup/page.tsx:195` and `:207`. `app/account/page.tsx:198` still pushes `/` and is correct: it follows `signOut()` after the account is deleted |
+| 2 | **Four numbers, and they only go up.** "Issues identified" is dropped — it is a judgement, not an event, and it could overstate | `lib/dashboardView.ts` `COUNTER_TILES`; `app/dashboard/page.tsx:244` |
+| 3 | **Files, audits and checklists are counted by the database**, so no route can forget. Questions answered stays on the code's bump, because a stopped answer must not count | migration 080; `app/api/chat/route.ts:510` |
+| 4 | **A company with no number yet sees a dash**, not a zero | `lib/dashboardView.ts:67` `countWord` |
+| 5 | **The welcome is the page title**, and `profiles.welcomed_at` decides which | `lib/dashboardView.ts:41` `welcomeFor` |
+| 6 | **Upcoming** reads the one live view through the Calendar's own call, six rows and a "more" line | `app/dashboard/page.tsx:210`, `lib/dashboardView.ts:112` |
+| 7 | **Recent audits replaces Recently read.** The last three `done` runs; a dismissed run still counts | `app/dashboard/page.tsx:137` |
+| 8 | **Three questions a calendar day**, company scope only, one at a time, nothing said about what an answer did | `components/DashboardQuestions.tsx` |
+| 9 | **The questions never come from the proposals queue** — its keys are names the scanner invented | the queue is untouched; `docs/HANDOFF-CODE.md` §7 |
+| 10 | **Slightly-off numbers are acceptable.** Honesty still: every number is a real event | `docs/HANDOFF-FROM-DASHBOARD.md` §5 lists every edge |
+| 11 | **The Dashboard prints nothing**, so no `print-page` | `app/dashboard/page.tsx:231` |
+| 12 | **The sidebar**: the owner's order, a hairline, "Documents" and "Audit Workspace", the active page marked as a workspace marks its active tab, no box, plain grey counts | `components/AppLayout.tsx:56` and the nav markup below it |
+
+**Two decisions were refined by building them.**
+
+- **Decision 5 closes with "No name on file → 'Welcome back'"**, which reads like a third rule and is not one: it
+  describes the ordinary case. The two inputs are independent — whether we know a name, and whether this is the first
+  visit — so there are four answers, and a nameless person's **first** visit gets plain "Welcome".
+- **Decision 8 asks for board 2's grey help line**, and there was nothing to draw it from. That is §205.
+
+**What the map found before any of it was built** (`docs/DASHBOARD-MACHINERY.md`): the page's four tiles were the
+untested part — all five existing tests were about the calendar panel — and the wrong part. "Questions answered" read
+**0** for Test Gamma against a counter holding **31**, because the page counted checklist ROWS where the counter
+counts chat ANSWERS. `usage_counters` had five writers and no reader. The ranking the questions needed already
+existed, with no caller.
+
+---
+
+## 205. MIGRATION 081: A QUESTION SAYS WHAT COUNTS — 20 October 2026 (Dashboard step 7b)
+
+**The help line.** Board 2 draws a sentence under each question saying what counts and what does not. Step 7 could not
+draw it: `switches` carried `question_plain`, `label` and `notes`, and **`notes` is our working note, not the
+customer's** — on this database `has_employees` reads *"NOT IN §2.4 AND NEEDED BY 9 REQUIREMENTS — payroll tax, I-9,
+workers' comp … Oregon's safety-committee rule exempts a sole owner who is the only employee."* Putting that on a
+customer's Dashboard is the raw-industry-slug mistake step 5 removed; writing the sentence inside a React component
+would be a page inventing regulatory guidance, which §3.3 and §6 both forbid. So `switches.help_plain` holds it,
+filled for all 22 company-scope questions, and both the Dashboard's card and Company information's editor read it.
+
+**And it is not decoration.** `has_employees` "looks trivially true and is not": Oregon's safety-committee rule
+exempts a sole owner who is the only employee, so an owner-only business answering Yes gets a committee it does not
+owe. Nine requirements hang off that switch.
+
+**Eleven questions reworded, and the two kinds are not the same thing.**
+
+- **Ten were forks** — a question offering alternatives, where Yes cannot say which half is meant.
+  `owns_fleet` was the type: *"Do you run your own trucks, or does a carrier collect everything?"* It is now *"Do you
+  run your own trucks?"* with *"If a carrier collects everything, answer No."* under it.
+- **Six of those ten were only wordy, not forked.** *"Do you hold federal contracts or subcontracts?"* is answerable
+  with Yes; it was simply longer than it needed to be. They were reworded **for plainness**, which is a preference,
+  not a defect — and saying so matters, because a check that treats the two alike cannot work. The six:
+  `consumer_products_cpsc`, `federal_contractor`, `has_contract_flowdowns`, `nonexempt_employees`,
+  `open_adverse_reaction_allegation`, `sponsors_erisa_plan`.
+- **The eleventh**, `open_substantial_risk_information`, was answerable and unreadable — the statute's own phrase.
+
+> ### THE SELF-TEST REFUSED THE FIRST RUN, AND IT WAS THE CHECK THAT WAS WRONG.
+>
+> 5e began as `question_plain like '% or %'` and refused `sponsors_erisa_plan` and
+> `tsca_regulated_substances` — both of them the owner's own wordings. Both were right: *"a retirement or benefit
+> plan"* and *"methylene chloride, perc or TCE"* are **lists**, and Yes to a list is unambiguous. **The rule is now a
+> clause joiner** — `", or "`, `" or is "`, `" or does "` — which is the shape where Yes is ambiguous.
+>
+> **And the instruction that narrowed it could not be satisfied as written.** It asked that the rule still fail on
+> all ten old wordings; the narrowed rule fires on four. No rule based on `" or "` can do both, because the old
+> `sponsors_erisa_plan` — *"a retirement **or welfare benefit** plan"* — is the same grammatical shape as the new one
+> it must pass. The conflict was reported rather than resolved silently, and the self-test now runs the rule against
+> the wordings it replaced so what it catches is recorded rather than asserted.
+
+**Labels, not renamed values.** A `toll_processor` button is machine text. The obvious fix is the dangerous one:
+every one of the twelve option values on the three enum switches is compared against by at least one live
+requirement's `applies_expression`, so renaming one silently changes which requirements apply — the §3.2 class of
+failure. `switches.allowed_value_labels jsonb` holds the readable half; the value stays a key. This closes the note
+`app/company-information/page.tsx` had carried since September: *"When labels exist in the library, this is the one
+place that changes."*
+
+**"Rail tank cars do not" was read, not assumed.** Both requirements behind `cargo_tanks_or_rail` are highway rows
+(49 CFR § 180.407; §§ 177.834 and 177.837), and **no live requirement in the library reaches a rail tank car** — 200
+live rows, zero. The switch's name promises something the library does not deliver.
+
+**It would be reversed if** a help line turned out to be read as advice rather than as a definition, or if a switch's
+option values ever needed to change — at which point the labels are the half that may move and the keys are not.
+
+**Effects on other sections, by file.** `app/api/switches/ask/route.ts:50` selects two more columns;
+`lib/switchAsk.ts` carries them onto `Askable`; `app/api/company-information/route.ts:60` and
+`app/company-information/page.tsx` draw the question, its help line and the labelled options in the declared-fact
+editor — the only change this section made to that page. **`company_switches` is empty on production**, so no stored
+answer was re-labelled by the rewordings.
+
+---
+
+## 206. A REPORT OPENED FROM THE ADDRESS COULD NOT BE CLOSED — 20 October 2026 (the hotfix, `f4e09d4`)
+
+Found by the **owner**, on production, in the step 9 live checks. Every automated gate was green.
+
+**The cause.** `app/audits/page.tsx` derived the open drawer from the address — `openRun = params.get('run')` — and
+closing it removed the only parameter and asked the router for the bare `/audits`. **`router.replace` does not
+navigate to the bare path of this prerendered route**: `useSearchParams()` kept returning `run=…`, so `openRun` was
+still the id and the drawer re-rendered open. Measured on one production build of the tree:
+
+```
+/audits?run=<id>                  → X → address UNCHANGED, drawer still open   ← the bug
+/audits?tab=past&run=<id>         → X → /audits?tab=past, drawer closed        ← a parameter remained
+/calendar?tab=calendar&date=<id>  → X → /calendar?tab=calendar, closed
+```
+
+The Calendar escaped it **by accident**: `closeDate` keeps `?tab=`, so its query is never empty. A trailing `?` was
+tried and changes nothing. **The same line had broken the tab, unnoticed** — "Where you stand" from `/audits?tab=past`
+removes the only parameter too, and on the same build the address did not change and the page stayed on Past audits.
+One cause, two controls; only the drawer was reported.
+
+**The fix.** `run` and `tab` are state seeded from the address; an effect follows the address only when the
+**parameter** changes, never on a re-render. `setParam` keeps its one-call API, so no other line on the page changed:
+it moves the state first, then writes the address with `router.replace` while a parameter remains and
+`history.replaceState` for the empty case. A `searchRef` holds what the page last wrote, because after a manual write
+the router's `params` is stale and the next tab click would resurrect the report just closed.
+
+**Escape now closes any drawer** — `components/Drawer.tsx:75`. There was no key handler at all. One listener, so
+every drawer in the product answers it: the Calendar's date drawer, Documents' and Audits' reports, HR's handbook
+check.
+
+> ### ⚡ THE STANDING RULE, AND IT IS WHAT THIS DEFECT BOUGHT:
+> ### ONE MEASURED WALK PER RELEASE AGAINST A PRODUCTION BUILD, NOT THE DEV SERVER.
+>
+> **`next dev` does not reproduce this class of bug at all.** The first reproduction attempt ran against a dev server
+> and the X worked perfectly. The Next 16 docs say why —
+> `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/use-search-params.md:178`: *"In development,
+> routes are rendered on-demand, so `useSearchParams` doesn't suspend and things may appear to work without
+> `Suspense`."*
+>
+> Every measured walk in this project has run against `npm run dev`. **At least one per release now runs against
+> `npm run build && npx next start`**, in an isolated copy when the owner's server is up. It costs about a minute of
+> build time and it would have caught this. `docs/TESTING.md` carries the rule; `docs/RELEASE.md` puts it in every
+> routine's free checks.
+>
+> **And no unit test could have held it.** `tests/unit/auditDrawer.test.ts` says so in its own header rather than
+> pretending otherwise: it holds that the page no longer derives the drawer from the address between renders and no
+> longer depends on the router to clear the last parameter. The behaviour itself is held by the walk.
+
+**Effects on other sections, by file.** `components/Drawer.tsx` changes every drawer in the product (Escape).
+`app/audits/page.tsx` fixes the tab as well as the drawer. `tests/unit/dashboardView.test.ts` had one assertion
+naming the old line verbatim; it names the new shape and its claim is unchanged.

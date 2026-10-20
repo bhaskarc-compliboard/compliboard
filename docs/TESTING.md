@@ -4358,3 +4358,52 @@ reaches no model.*
    branch is ever removed).
 3. Rotate: stamp the live row's `revoked_at` and open the sheet again. **Pass:** a new link is
    issued and the old one 404s.
+
+---
+
+## The Dashboard (steps 1–10, released 20 October 2026)
+
+> ### ⚡ THE RULE THIS SECTION BOUGHT, AND IT APPLIES TO EVERY SECTION:
+> ### AT LEAST ONE MEASURED WALK PER RELEASE RUNS AGAINST A PRODUCTION BUILD.
+>
+> `npm run build && npx next start`, not `npm run dev`. In an isolated copy when the owner's server
+> is up on 3000, because a build empties `.next/`.
+>
+> **Why.** On 20 October a customer found that `/audits?run=<id>` opened a report the X could not
+> close (`DECISIONS.md` §206). Every automated gate was green, and the first attempt to reproduce it
+> — against a dev server — showed the X working perfectly. The bug exists only on a production
+> build: `router.replace` will not navigate to the bare path of a prerendered route, and
+> `useSearchParams()` kept returning the parameter the close had removed. The Next 16 docs say why
+> (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/use-search-params.md:178`):
+> *"In development, routes are rendered on-demand, so `useSearchParams` doesn't suspend and things
+> may appear to work without `Suspense`."*
+>
+> **Every measured walk in this project before that day ran against the dev server.** One walk per
+> release against a real build costs about a minute and would have caught it. `docs/RELEASE.md`
+> carries it in every routine's free checks.
+
+> ### AND ONE PRACTICAL NOTE BEFORE ANY FIRST-VISIT TEST.
+>
+> **A sign-in through the real `/login` form now lands on `/dashboard`, and the page records the
+> first visit.** So simply logging in spends the "Welcome, ‹name›" state for that person —
+> `profiles.welcomed_at` is written once and **the database refuses every later change**, including
+> clearing it. Only the service role can reset it.
+>
+> **Reset `welcomed_at` to null immediately before the test, not hours before.** It happened three
+> times during this section's build: the row came back set between a reset and the measurement,
+> each time because something had signed in through the form in between.
+
+### The Dashboard's tests, by file
+
+| File | What it holds |
+|---|---|
+| `tests/unit/dashboardView.test.ts` | The section's own file, ~90 tests. The welcome's four cases and both ledes against the boards; the dash rule; the six-and-more split at 0, 1, 6, 7 and 20; the 30-day window's boundaries; which question, the card number and the three states; local midnight and the skip key; skips with storage absent, throwing and holding rubbish; board 2's words; the option labels; the sidebar's order, hrefs, hairline and the two active tokens read off `components/Tabs.tsx`; the breadcrumb's absence; and that `/api/switches/answer`'s whole import closure reaches `lib/ai.ts` nowhere |
+| `tests/unit/auditDrawer.test.ts` | The hotfix's rule: the page no longer derives the drawer from the address between renders, the effect depends on the parameter and not on `params`, the state moves before the address, the empty case is written without the router, and Escape lives once in the shared `Drawer`. **Its header says plainly that no test which runs the page could have caught the original defect** |
+| `tests/unit/calendarShell.test.ts` | Four Calendar step-12 checks, rewritten at step 6 against the **claim** rather than the spelling when the Dashboard moved to `readCalendarRows` |
+| `tests/unit/calendarView.test.ts` | `metaParts`' order — rewritten at step 7 when the state moved to the front, with the real Cascade title that caused it |
+| `tests/unit/schemaGrants.test.ts` | Unchanged, and it covers 080's grant work: it fails if `docs/SCHEMA.md` ever shows TRUNCATE, TRIGGER, REFERENCES or MAINTAIN for `anon` or `authenticated` |
+
+**What no unit test holds**, by construction: anything that needs a browser. The layout is held by
+`npm run measure` and the screenshots in `shots/`; the drawer's behaviour is held by the walk recorded
+in `DECISIONS.md` §206; the migrations' rules are held by their own `DO` blocks, which run on the
+database and roll the whole migration back on failure.

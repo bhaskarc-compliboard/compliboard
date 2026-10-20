@@ -456,3 +456,114 @@ free checks; a change to the first two after its yardstick makes it stale:
 ---
 
 <!-- Other sections: add your part below, in the same shape (A to J). -->
+
+---
+
+# The Dashboard
+
+**Released 20 October 2026** (`3c2c2bf`, plus the hotfix `f4e09d4`); migrations 080 and 081 on production.
+`docs/HANDOFF-FROM-DASHBOARD.md` is the file to read first.
+
+### A. What is different about this section
+
+**No model is called anywhere on the Dashboard**, so every scenario below is **free**. There is no paid path to hold
+for the finish line and no Opus run to budget. What is held here is not cost — it is the things only a person can
+judge, and the things that need a second company, a second day, or a database reset to see at all.
+
+**Two settings before any of it.**
+
+- **Run at least one pass against a production build** — `npm run build && npx next start` — not the dev server.
+  `DECISIONS.md` §206: the one defect a customer found was invisible to `next dev`.
+- **Reset `profiles.welcomed_at` to null immediately before any first-visit scenario**, with the service role.
+  Signing in through the form lands on `/dashboard` and records the visit, so simply logging in spends it, and the
+  database refuses every later change.
+
+### B. The counters — each event moves its own number by one
+
+| # | Do this | Expect |
+|---|---|---|
+| B1 | Note the four numbers. Read one document. | **Files read +1**, the other three unchanged |
+| B2 | Read the **same** document again | **Files read +1 again.** The label says readings and the trigger counts readings. If this surprises you, the label is what to change |
+| B3 | Upload a file the product cannot read | **Files read does not move.** `status = 'could_not_read'` is excluded by the trigger's WHEN clause |
+| B4 | Run an audit to completion | **Audits done +1** |
+| B5 | Make a checklist | **Checklists created +1** |
+| B6 | Start a checklist and let it fail halfway | **Checklists created +1 anyway.** The row is inserted before the work is done. Decide whether the label should read "started" |
+| B7 | Ask a question in a chat and let it finish | **Questions answered +1** |
+| B8 | **Ask a question and stop it part-way** | **Nothing moves.** This is the one counter still kept in code, for exactly this reason |
+| B9 | Delete a document you read | **Files read does not go down.** Counters record events, never inventory |
+
+### C. The welcome
+
+| # | Do this | Expect |
+|---|---|---|
+| C1 | Reset `welcomed_at` to null, then open `/dashboard` | **"Welcome, ‹first name›"** and the first-visit lede: *"This page will show what has been done and what is coming up. Three quick questions below get things started."* |
+| C2 | Reload | **"Welcome back, ‹first name›"**, and the lede changes |
+| C3 | Clear `full_name` on the profile, reset `welcomed_at`, open it | **"Welcome"** — not "Welcome, " with a comma and nothing after it |
+| C4 | With no name and a visit recorded | **"Welcome back"** |
+| C5 | Try to change `welcomed_at` as the signed-in person | Refused, 23514: *"Your first visit is already recorded and is not changed here."* |
+
+### D. The three questions
+
+| # | Do this | Expect |
+|---|---|---|
+| D1 | Open the Dashboard on a company with questions left | **"1 of 3"**, one question, its grey help line, the answer buttons, and "I don't know yet" |
+| D2 | Answer it | The next question, **"2 of 3"**. **Nothing says what the answer did** |
+| D3 | Answer two more | After the third: **"Thanks — that's all for today. We'll ask a few more another day."** and *"Your answers are in Company information if you want to change one."* |
+| D4 | Reload | The quiet card again, and **no request goes out** |
+| D5 | **Come back the next calendar day** | Three more questions. The day turns at **your** midnight, not UTC's |
+| D6 | Press "I don't know yet" | The next question shows and **the number still reads the same**. A skip is not an answer, and nothing is written anywhere |
+| D7 | Reload after a skip | The skipped question is still skipped (browser storage). **In a private window it comes back** — that is the designed cost |
+| D8 | Answer one, then open **Company information** | The fact is there under its topic, reading *"you answered · ‹the question›"* — and the editor shows the same question and the same help line |
+| D9 | Reach an option question | The buttons read **words** — "Toll processor", "ISO 9001", "Neither" — never `toll_processor` |
+| D10 | A company with every company-scope question answered | **No heading and no card at all.** Not an empty card, not a "well done" |
+
+### E. Upcoming
+
+| # | Do this | Expect |
+|---|---|---|
+| E1 | A company with 1–6 dates in the window | Each row: the title, then the Calendar's own meta line, then the when-word on the right. **Seven or more days out is grey; a week or less is amber** |
+| E2 | **A company with more than six** | Six rows and one grey line: **"N more in the next 30 days."** with "See them on the Calendar". *No fixture has this today — it is held by unit tests only* |
+| E3 | A date that is not yet confirmed | **"not confirmed" is the FIRST thing in the grey line**, before the date and the document. Check the same row on the Calendar's list tab: same order |
+| E4 | A row whose document has a very long title | The line truncates — **but never on the state**. That is the whole point of E3 |
+| E5 | Click a row | `/calendar?tab=calendar&date=…` with that date's drawer open |
+| E6 | Count the rows plus the "more" number | It equals the Calendar's own count of live dates within 30 days |
+
+### F. Recent audits
+
+| # | Do this | Expect |
+|---|---|---|
+| F1 | A company with audits | The last three `done` runs, newest first: the name, the site and the date, "Open the report" |
+| F2 | **Dismiss a run on the Audits page, then look again** | **It is still there.** Dismissing clears a banner; the work was done |
+| F3 | Click a row | `/audits?run=…` with that report open |
+| F4 | **Press the X** | **The report closes and the address becomes `/audits`.** Then press Escape on another one, and click the scrim on a third. All three close it. **This is the hotfix** — `DECISIONS.md` §206 |
+| F5 | Close it, then click a sidebar link | It navigates. The scrim is not swallowing the click |
+| F6 | An HR handbook check | **It does not appear here.** Handbook checks are `handbook_checks`, not `audit_runs` |
+
+### G. Day one — a company with nothing
+
+| # | Do this | Expect |
+|---|---|---|
+| G1 | A brand-new company's Dashboard | **Four em dashes in faint grey**, never a 0, and no coaching line |
+| G2 | Upcoming | *"Deadlines from your documents will be displayed here."* and **Add a document** |
+| G3 | Recent audits | *"Your recent audits will show here."* and **Run your first audit** |
+| G4 | The questions | **They work on day one.** A company that has uploaded nothing can still answer three |
+| G5 | Break the network and reload | Upcoming says *"We could not load your dates just now. Nothing has changed…"* — **not** the day-one line. A failed read is not an empty calendar |
+
+### H. The sidebar, on every page
+
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Visit all eight signed-in pages | The same order every time: Dashboard · Compliance Workspace · Audit Workspace · HR Workspace · Calendar · Documents — **a hairline** — Company information · My Account |
+| H2 | On each | The page you are on has **no green box**: the word in dark green, medium weight, with a 2px green underline a little under it. Compare it with a workspace's active tab — **the same two greens** |
+| H3 | A count | A plain grey number, **no pill**, and nothing at all at zero |
+| H4 | Anywhere | **No breadcrumb** beside the wordmark. The logo is unchanged and still goes to `/dashboard` |
+| H5 | "Documents" and "Audit Workspace" | They go to `/documents` and `/audits` — the words changed, the addresses did not |
+
+### I. Open items, and the shared files the Dashboard depends on
+
+- **The three parked items** — `docs/DASHBOARD-PLAN.md`, "Parked for the final check". The owner's decision.
+- **The scanner's invented keys** (Documents) — they reach the confirmation queue and three prompts.
+- **The three forked site questions** — before any site question is asked anywhere.
+- **Shared, and changed by this section**: `lib/calendarView.ts` `metaParts` (the Calendar's list changes with it),
+  `components/Drawer.tsx` (Escape, every drawer in the product), `lib/auditView.ts` (the Audits page's own words),
+  `scripts/measure-layout.mjs` (the sidebar, the top bar, a column on a page that does not print).

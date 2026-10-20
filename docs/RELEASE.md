@@ -369,6 +369,22 @@ has exactly **one site**, so no email in this release groups its dates by site (
 
 ## THE DASHBOARD'S RELEASE ROUTINE — written 20 October 2026 at step 9
 
+> ### ✅ RUN ON 20 OCTOBER 2026. Migrations **080** and **081** are on production; `main` is at
+> ### **`3c2c2bf`**, and the hotfix **`f4e09d4`** followed the same day.
+>
+> Read back from production after the migrations, from the database and not from the exit code:
+> `newest` **081** · both counter columns · `welcomed_at` present · `usage_counters` **2 rows → 10**,
+> CB-Test-3 at `files_read` 15 · `questions_answered` 16 · `audits_done` 2 · `checklists_created` 2
+> and every other company 0 · 0 · 0 · 0, exactly the figures step 3 recorded in advance ·
+> `has_column_privilege('authenticated','profiles','company_id','UPDATE')` **false**, where it was
+> **true** that morning · `help_plain` filled for all 22 company-scope questions and none of the 73
+> site-scope ones · the three label maps · the five triggers and the guard · `welcomed_at` null on
+> all four profiles.
+>
+> **The free checks found one defect, and it was the owner who found it.** `/audits?run=<id>` opened
+> a report the X could not close. Fixed the same day as `f4e09d4`; `DECISIONS.md` §206 has the cause.
+> **Check 11 below is the rule that came out of it.**
+
 *Every command below is one the owner pastes, in this order. Claude Code has run none of them
 against production and pushes nothing. The branch is `dashboard`, **9 commits ahead of `main` and 0
 behind** (read 20 October: `main` is at `fa26070`, unmoved since the branch was cut, so step 4 is a
@@ -500,6 +516,7 @@ Sign in as yourself. Nothing below calls a model, so the whole list is free.
 | 8 | **One Recent audits row** | click it: `/audits?run=…` opens with that report open |
 | 9 | **One question** | answer it. The card moves to the next question and says nothing about what the answer did. Then open **Company information** — the fact is there under its topic, reading *"you answered · ‹the question›"* |
 | 10 | **The help line** | each question carries a grey sentence under it saying what counts. An option question draws its options as **words** — "Toll processor", not `toll_processor` |
+| 11 | **A drawer opened from the address** | open `/audits?run=<id>` and press the X: the report closes and the address becomes `/audits`. Escape closes it too, and so does a click on the scrim. **This is the check the hotfix bought** — see the rule below |
 
 **Nothing is paid and nothing is a model call**, including check 9: `/api/switches/answer` writes two
 rows and recomputes obligations in code (`lib/obligationWriter.ts`), and nothing in its import
@@ -520,6 +537,32 @@ closure reaches `lib/ai.ts`.
 - **The three site-scope questions that cannot be answered Yes or No** are recorded as owed in
   `docs/HANDOFF-CODE.md` §7. Site questions are asked nowhere yet, so nothing on production shows
   them.
+
+## ⚡ ONE WALK PER RELEASE AGAINST A PRODUCTION BUILD — every routine, from 20 October 2026
+
+**`npm run build && npx next start`, not `npm run dev`.** In an isolated copy of the tree when the
+owner's server is up on 3000, because a build empties `.next/`.
+
+Walk the screens the release touched and press the things a person presses. It costs about a minute
+of build time.
+
+**Why it is here.** On 20 October the Dashboard's own free checks passed and the owner then found
+that `/audits?run=<id>` opened a report the X could not close. Every automated gate was green, and
+the first attempt to reproduce it against a dev server showed the X working perfectly: the bug exists
+only on a production build, because `router.replace` will not navigate to the bare path of a
+prerendered route (`DECISIONS.md` §206). **Every measured walk in this project before that day ran
+against the dev server.** `docs/TESTING.md` carries the same rule.
+
+## A HOTFIX — the short shape
+
+For a defect found on production, code only, no migration.
+
+1. **Branch from `main`** — `git checkout -b hotfix-<what> main`. Reproduce it first, on a
+   production build, and say in one sentence what the cause is with file and line. A fix for a
+   defect nobody has reproduced is a guess.
+2. **The owner pushes**, after the gates: `git checkout main && git merge --ff-only hotfix-<what> &&
+   git push origin main`. Then watch Vercel, and **run the one live check that proves the thing the
+   customer saw** — for `f4e09d4`, open a report from `/audits?run=<id>` and press the X.
 
 ## Rolling back
 
