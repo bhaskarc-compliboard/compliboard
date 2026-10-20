@@ -152,3 +152,173 @@ export function inNext30Days(
 
 /** Decision 6's window, named so the page and its test cannot disagree about the number. */
 export const UPCOMING_DAYS = 30
+
+// -------------------------------------------------------------------------------------------
+// STEP 7 — THE THREE QUESTIONS (decisions 8, 9, 10; open question 1, settled at step 4)
+// -------------------------------------------------------------------------------------------
+
+/** Decision 8. Three a calendar day, then the card goes quiet. */
+export const QUESTIONS_PER_DAY = 3
+
+/** The heading and its quiet note — board 1. The note is plain faint text, not a link. */
+export const QUESTIONS_HEADING = 'Three quick questions'
+export const QUESTIONS_NOTE = 'Your answers are kept in Company information'
+
+/** Board 2, state d. */
+export const QUESTIONS_DONE = "Thanks — that's all for today. We'll ask a few more another day."
+export const QUESTIONS_DONE_SUB = 'Your answers are in Company information if you want to change one.'
+
+/** The one failure sentence. §5.1: it says whose problem it is and that nothing was lost. */
+export const ANSWER_FAILED =
+  'That answer could not be saved. Nothing was changed. Please try again.'
+
+/** Board 2's skip, which writes nothing anywhere. */
+export const SKIP_WORD = "I don't know yet"
+
+/**
+ * *** HOW A SWITCH IS ANSWERED, FROM ITS OWN TYPE. ***
+ *
+ * `switches.value_type` is the enum `switch_value_type` — `boolean | number | enum | text`
+ * (`lib/resolve.ts:134`) — and three of the four map onto a control board 2 draws. `text` does
+ * not: a free-text fact typed into a card has no way to be checked, and the Company information
+ * page is where a sentence belongs. A switch of a type this cannot draw is SKIPPED, not guessed
+ * at, and the step that skips it says so.
+ *
+ * On staging today no question-carrying switch is `text` at all: 78 boolean, 11 enum, 6 number.
+ * The branch exists because the enum can grow and a card that silently drew nothing would be the
+ * harder bug.
+ */
+export type AnswerKind = 'yes_no' | 'number' | 'options'
+export function answerKind(valueType: string): AnswerKind | null {
+  if (valueType === 'boolean') return 'yes_no'
+  if (valueType === 'number') return 'number'
+  if (valueType === 'enum') return 'options'
+  return null
+}
+
+/** The two words a boolean switch is answered with, and what goes on the wire for each. */
+export const YES_NO: Array<{ label: string; value: string }> = [
+  { label: 'Yes', value: 'true' },
+  { label: 'No', value: 'false' },
+]
+
+/** As much of an `Askable` (`lib/switchAsk.ts:38`) as the card needs. */
+export interface CardQuestion {
+  switch_id: string
+  question: string
+  scope: 'company' | 'site'
+  value_type: string
+  allowed_values: string[]
+}
+
+/**
+ * *** COMPANY SCOPE ONLY — decision 8, and it is not a preference. ***
+ *
+ * `switches.scope` is the enum `switch_scope`, carried onto `Askable.scope`
+ * (`lib/switchAsk.ts:141`). 73 of the 95 switches are site-scoped, because a second plant has its
+ * own air permit and its own generator category. A site question asked on a page that names no
+ * site would have to pick one, and picking one is exactly what `DECISIONS.md` §20 forbids — the
+ * answer would be wrong at every site but that one, confidently. `/api/switches/answer` refuses
+ * it anyway (`app/api/switches/answer/route.ts:60`); this keeps it off the card.
+ *
+ * A type no control fits is dropped here too, so everything downstream can assume a control.
+ */
+export function askableHere<T extends CardQuestion>(askables: readonly T[]): T[] {
+  return (askables ?? []).filter((a) => a.scope === 'company' && answerKind(a.value_type) !== null)
+}
+
+/** Those an unfittable value type dropped, so the step can list them rather than lose them. */
+export function skippedForType<T extends CardQuestion>(askables: readonly T[]): T[] {
+  return (askables ?? []).filter((a) => a.scope === 'company' && answerKind(a.value_type) === null)
+}
+
+/**
+ * THE QUESTION ON THE CARD: the first one left that today has not already passed over.
+ *
+ * An ANSWERED switch is not in `askables` at all — `askableSwitches` drops anything established
+ * (`lib/switchAsk.ts:137`) — so answering is subtraction from the list and only skips are carried.
+ * The order is the route's: unblocked first, then the ones only a person can answer, then by what
+ * answering unblocks. Nothing here re-ranks.
+ */
+export function nextQuestion<T extends CardQuestion>(
+  askables: readonly T[], skips: readonly string[],
+): T | null {
+  const skipped = new Set(skips ?? [])
+  return askableHere(askables).find((a) => !skipped.has(a.switch_id)) ?? null
+}
+
+/** "1 of 3". A skip does not advance it, because a skip is not an answer. */
+export function cardNumber(answeredToday: number, perDay: number = QUESTIONS_PER_DAY): string {
+  return `${Math.min(answeredToday + 1, perDay)} of ${perDay}`
+}
+
+/**
+ * WHICH OF THE THREE STATES THE BLOCK IS IN.
+ *
+ *   question — there is something to ask and today's three are not used up
+ *   quiet    — board 2's state d: three answered, or nothing left to ask TODAY because the rest
+ *              were skipped. Tomorrow the skips are gone and those questions come back.
+ *   hidden   — no heading and no card at all: this company has no company-scope question left.
+ *              Not "well done", not an empty card — nothing, because there is nothing to say.
+ */
+export type QuestionState = 'question' | 'quiet' | 'hidden'
+export function questionState<T extends CardQuestion>(
+  askables: readonly T[], answeredToday: number, skips: readonly string[],
+  perDay: number = QUESTIONS_PER_DAY,
+): QuestionState {
+  if (askableHere(askables).length === 0) return 'hidden'
+  if (answeredToday >= perDay) return 'quiet'
+  return nextQuestion(askables, skips) ? 'question' : 'quiet'
+}
+
+/**
+ * *** TODAY STARTS AT THE PERSON'S OWN MIDNIGHT, NOT AT UTC'S. ***
+ *
+ * "Three a calendar day" is a promise about the day the person is living in. Oregon is 7 or 8
+ * hours behind UTC, so a UTC day boundary would end somebody's quota at 4 or 5 in the afternoon
+ * and hand them three more questions over dinner. The browser is the only thing that knows the
+ * local zone, so it computes the moment and sends it as an absolute instant; the database
+ * compares timestamps and never a date.
+ *
+ * This is the same reasoning `lib/calendarCounts.ts` carries for the info bar, pointing the other
+ * way: there, a DATE must not be compared to a browser clock; here, an INSTANT must come from one.
+ */
+export function localMidnightIso(now: Date = new Date()): string {
+  const m = new Date(now.getTime())
+  m.setHours(0, 0, 0, 0)
+  return m.toISOString()
+}
+
+/** The browser-storage key for a day's skips. The local date, so it rolls at local midnight too. */
+export function skipKey(now: Date = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `compliboard:dashboard-skips:${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
+}
+
+/** The least of `Storage` this needs, so a test can hand it one that throws. */
+export interface SkipStore { getItem(k: string): string | null; setItem(k: string, v: string): void }
+
+/**
+ * *** A SKIP IS A BROWSER'S OPINION, AND THE PAGE WORKS WITHOUT ONE. ***
+ *
+ * "I don't know yet" writes nothing to the database on purpose (decision 8): the switch stays
+ * unanswered, because "I don't know" is not a fact about the company and this product does not
+ * store one. So the only place a skip can live is the browser — and `localStorage` throws outright
+ * in a private window and comes back empty when site data is cleared. Both reads and writes are
+ * therefore guarded, and failing to remember a skip costs the person one repeated question, which
+ * is the right way for this to fail.
+ */
+export function readSkips(store: SkipStore | null | undefined, key: string): string[] {
+  try {
+    const raw = store?.getItem(key)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []
+  } catch { return [] }
+}
+
+export function writeSkip(store: SkipStore | null | undefined, key: string, switchId: string): string[] {
+  const next = [...new Set([...readSkips(store, key), switchId])]
+  try { store?.setItem(key, JSON.stringify(next)) } catch { /* one repeated question, not an error */ }
+  return next
+}

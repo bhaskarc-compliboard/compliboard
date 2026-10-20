@@ -23,6 +23,10 @@ import {
   LEDE_FIRST_VISIT, LEDE_RETURNING,
   splitUpcoming, moreLine, inNext30Days, RECENT_AUDITS_MAX,
   UPCOMING_EMPTY, UPCOMING_EMPTY_LINK, AUDITS_EMPTY, AUDITS_EMPTY_LINK,
+  answerKind, askableHere, skippedForType, nextQuestion, cardNumber, questionState,
+  localMidnightIso, skipKey, readSkips, writeSkip,
+  QUESTIONS_HEADING, QUESTIONS_NOTE, QUESTIONS_DONE, QUESTIONS_DONE_SUB,
+  ANSWER_FAILED, SKIP_WORD, type CardQuestion,
 } from '../../lib/dashboardView.ts'
 import { runName, ALL_AGENCIES } from '../../lib/auditView.ts'
 
@@ -528,13 +532,8 @@ describe('the two sections, their headings and their day-one lines', () => {
     assert.ok(recent.indexOf('audits === null') < recent.indexOf('audits.length === 0'))
   })
 
-  test('the question card has its place kept and draws nothing', () => {
-    assert.match(PAGE, /THE THREE QUESTIONS GO HERE — step 7/)
-    const page = PAGE.indexOf('THE THREE QUESTIONS GO HERE')
-    assert.ok(page < PAGE.indexOf('Upcoming in the next 30 days'), 'the card belongs above Upcoming')
-    assert.ok(page > PAGE.indexOf('COUNTER_TILES.map'), 'and below the numbers')
-    assert.ok(!CODE.includes('question'), 'step 7 has not been started')
-  })
+  /* The placeholder this held is filled: see "the card sits between the numbers and Upcoming"
+     below, which checks the same order against the component that now sits there. */
 })
 
 describe('the breadcrumb is gone — step 6F', () => {
@@ -560,5 +559,266 @@ describe('the breadcrumb is gone — step 6F', () => {
 
   test('the logo is untouched and still goes to the Dashboard', () => {
     assert.match(LAYOUT, /<a href="\/dashboard" className="hidden lg:flex items-center gap-2 pl-3">/)
+  })
+})
+
+// =================================================================================================
+// STEP 7 — THE THREE QUESTIONS (decisions 8, 9, 10; open question 1, settled at step 4)
+// =================================================================================================
+
+const CARD = readFileSync('components/DashboardQuestions.tsx', 'utf8')
+const cardCode = code(CARD)
+const ANSWER_ROUTE = readFileSync('app/api/switches/answer/route.ts', 'utf8')
+const SWITCH_ASK = readFileSync('lib/switchAsk.ts', 'utf8')
+
+const q = (over: Partial<CardQuestion> = {}): CardQuestion => ({
+  switch_id: 's1', question: 'Do you have employees other than the owner?',
+  scope: 'company', value_type: 'boolean', allowed_values: [], ...over,
+})
+
+describe('what can be asked here — decision 8', () => {
+  test('company scope only: a site question never reaches this card', () => {
+    const list = [q({ switch_id: 'a' }), q({ switch_id: 'b', scope: 'site' }), q({ switch_id: 'c' })]
+    assert.deepEqual(askableHere(list).map(x => x.switch_id), ['a', 'c'])
+  })
+
+  /**
+   * Scope is `switches.scope`, the enum `switch_scope`, carried onto `Askable.scope`. The route
+   * does not filter by it — `askableSwitches(..., entityId = null)` returns site-scoped rows too —
+   * so the filter has to be here, and this records that it is not optional.
+   */
+  test('and the route does not do it for us', () => {
+    assert.match(SWITCH_ASK, /scope: sw\.scope,/)
+    assert.ok(!/scope === 'company'/.test(readFileSync('app/api/switches/ask/route.ts', 'utf8')),
+      'the route now filters by scope; this page could stop')
+    // The route would refuse one anyway, which is the second line of defence, not the first.
+    assert.match(ANSWER_ROUTE, /if \(sw\.scope === 'site' && !entityId\)/)
+  })
+
+  test('a value type no control fits is skipped, not guessed at', () => {
+    assert.equal(answerKind('boolean'), 'yes_no')
+    assert.equal(answerKind('number'), 'number')
+    assert.equal(answerKind('enum'), 'options')
+    assert.equal(answerKind('text'), null)
+    assert.equal(answerKind('something_new'), null)
+    const list = [q({ switch_id: 'a' }), q({ switch_id: 't', value_type: 'text' })]
+    assert.deepEqual(askableHere(list).map(x => x.switch_id), ['a'])
+    assert.deepEqual(skippedForType(list).map(x => x.switch_id), ['t'])
+  })
+})
+
+describe('which question, and which state — C', () => {
+  const three = [q({ switch_id: 'a' }), q({ switch_id: 'b' }), q({ switch_id: 'c' })]
+
+  test('the first one left, in the route\'s order, skipping today\'s skips', () => {
+    assert.equal(nextQuestion(three, [])?.switch_id, 'a')
+    assert.equal(nextQuestion(three, ['a'])?.switch_id, 'b')
+    assert.equal(nextQuestion(three, ['a', 'b'])?.switch_id, 'c')
+    assert.equal(nextQuestion(three, ['a', 'b', 'c']), null)
+  })
+
+  test('the number is answered-today plus one, and never passes three', () => {
+    assert.equal(cardNumber(0), '1 of 3')
+    assert.equal(cardNumber(1), '2 of 3')
+    assert.equal(cardNumber(2), '3 of 3')
+    assert.equal(cardNumber(3), '3 of 3', 'the quiet card shows instead, but the number cannot lie')
+  })
+
+  test('the three states, at 0, 2 and 3 answered', () => {
+    assert.equal(questionState(three, 0, []), 'question')
+    assert.equal(questionState(three, 2, []), 'question')
+    assert.equal(questionState(three, 3, []), 'quiet')
+    assert.equal(questionState(three, 4, []), 'quiet', 'a colleague answering too is not a bug')
+  })
+
+  test('all skipped today: quiet, not hidden — tomorrow they come back', () => {
+    assert.equal(questionState(three, 0, ['a', 'b', 'c']), 'quiet')
+    assert.equal(questionState(three, 1, ['a', 'b', 'c']), 'quiet')
+  })
+
+  test('nothing left to ask at all: hidden — no heading and no card', () => {
+    assert.equal(questionState([], 0, []), 'hidden')
+    assert.equal(questionState([q({ scope: 'site' })], 0, []), 'hidden', 'site questions do not count')
+    assert.equal(questionState([q({ value_type: 'text' })], 0, []), 'hidden')
+    // And hidden beats everything: a company with no question has nothing to be quiet about.
+    assert.equal(questionState([], 3, ['a']), 'hidden')
+  })
+})
+
+describe('today starts at the person\'s own midnight', () => {
+  test('the instant is the browser\'s local midnight, not UTC\'s', () => {
+    const noonLocal = new Date(2026, 9, 20, 12, 30, 0)   // 20 Oct 2026, 12:30 local
+    const iso = localMidnightIso(noonLocal)
+    const back = new Date(iso)
+    assert.equal(back.getFullYear(), 2026)
+    assert.equal(back.getMonth(), 9)
+    assert.equal(back.getDate(), 20)
+    assert.equal(back.getHours(), 0)
+    assert.equal(back.getMinutes(), 0)
+    assert.equal(back.getSeconds(), 0)
+    assert.ok(iso.endsWith('Z'), 'it goes on the wire as an absolute instant')
+  })
+
+  test('a moment just after midnight is already the new day', () => {
+    const justAfter = new Date(2026, 9, 21, 0, 1, 0)
+    assert.equal(new Date(localMidnightIso(justAfter)).getDate(), 21)
+  })
+
+  test('the skip key is the LOCAL date, so it rolls at the same moment', () => {
+    assert.equal(skipKey(new Date(2026, 9, 20, 23, 59)), 'compliboard:dashboard-skips:2026-10-20')
+    assert.equal(skipKey(new Date(2026, 9, 21, 0, 1)), 'compliboard:dashboard-skips:2026-10-21')
+    assert.equal(skipKey(new Date(2026, 0, 5, 9, 0)), 'compliboard:dashboard-skips:2026-01-05')
+  })
+})
+
+describe('skips live in the browser, and the page works without one', () => {
+  const mem = () => {
+    const m = new Map<string, string>()
+    return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, v) } }
+  }
+  const throwing = {
+    getItem() { throw new Error('SecurityError: localStorage is not available') },
+    setItem() { throw new Error('SecurityError: localStorage is not available') },
+  }
+
+  test('a skip is remembered for the day', () => {
+    const s = mem()
+    assert.deepEqual(readSkips(s, 'k'), [])
+    assert.deepEqual(writeSkip(s, 'k', 'a'), ['a'])
+    assert.deepEqual(writeSkip(s, 'k', 'b'), ['a', 'b'])
+    assert.deepEqual(writeSkip(s, 'k', 'a'), ['a', 'b'], 'and not twice')
+    assert.deepEqual(readSkips(s, 'k'), ['a', 'b'])
+  })
+
+  /** A private window, or site data blocked. The cost is one repeated question, not a crash. */
+  test('storage that THROWS costs one repeated question and nothing else', () => {
+    assert.deepEqual(readSkips(throwing, 'k'), [])
+    assert.deepEqual(writeSkip(throwing, 'k', 'a'), ['a'], 'the answer is still right for this view')
+    assert.deepEqual(readSkips(null, 'k'), [])
+    assert.deepEqual(readSkips(undefined, 'k'), [])
+  })
+
+  test('rubbish in storage is not trusted', () => {
+    const s = mem(); s.setItem('k', 'not json at all')
+    assert.deepEqual(readSkips(s, 'k'), [])
+    s.setItem('k', '{"a":1}')
+    assert.deepEqual(readSkips(s, 'k'), [], 'an object is not a list of ids')
+    s.setItem('k', '["a", 3, null, "b"]')
+    assert.deepEqual(readSkips(s, 'k'), ['a', 'b'], 'and only the strings survive')
+  })
+
+  test('a skip never reaches the database', () => {
+    const skipFn = cardCode.slice(cardCode.indexOf('function skip()'), cardCode.indexOf('function skip()') + 400)
+    assert.ok(!/fetch|postSwitchAnswer|\.from\(/.test(skipFn), 'the skip is posting something')
+    assert.ok(skipFn.includes('writeSkip('))
+  })
+})
+
+describe('the card: its words, its one write, and what it never says', () => {
+  test('board 2\'s words, exactly', () => {
+    assert.equal(QUESTIONS_DONE, "Thanks — that's all for today. We'll ask a few more another day.")
+    assert.equal(QUESTIONS_DONE_SUB, 'Your answers are in Company information if you want to change one.')
+    assert.equal(SKIP_WORD, "I don't know yet")
+    assert.equal(QUESTIONS_HEADING, 'Three quick questions')
+    assert.equal(QUESTIONS_NOTE, 'Your answers are kept in Company information')
+    for (const w of [QUESTIONS_DONE, QUESTIONS_DONE_SUB, SKIP_WORD, QUESTIONS_HEADING, QUESTIONS_NOTE]) {
+      assert.ok(BOARDS.includes(w), `board 2 no longer carries "${w}"`)
+    }
+  })
+
+  test('the question words come from the switch and are never written here', () => {
+    assert.match(SWITCH_ASK, /question: sw\.question_plain,/)
+    assert.ok(cardCode.includes('{current.question}'))
+    assert.ok(!/<p[^>]*>[A-Z][^<{]{15,}\?/.test(cardCode), 'a question is hard-coded in the card')
+  })
+
+  /**
+   * Board 2 draws a grey help line under each question. There is no column to draw it from —
+   * `switches` carries `question_plain`, `label` and `notes`, and `notes` is a regulatory working
+   * note, not customer text. This test holds the absence, so adding one is a deliberate act.
+   */
+  test('and board 2\'s grey help line is NOT invented', () => {
+    assert.ok(!/help|hint|why|explain/i.test(cardCode.replace(/className="[^"]*"/g, '')),
+      'the card has grown a help line with nothing to fill it')
+    const schema = readFileSync('docs/SCHEMA.md', 'utf8')
+    const table = schema.slice(schema.indexOf('### `switches`'), schema.indexOf('**Points at:**', schema.indexOf('### `switches`')))
+    for (const col of ['help', 'hint', 'why_plain', 'explanation']) {
+      assert.ok(!table.includes(`\`${col}\``), `switches now has a ${col} column; the card should use it`)
+    }
+  })
+
+  test('one writer, one body shape, and no second copy of it', () => {
+    assert.match(readFileSync('lib/switchAnswer.ts', 'utf8'), /ANSWER_ENDPOINT = '\/api\/switches\/answer'/)
+    assert.ok(cardCode.includes('postSwitchAnswer({ switch_id: current.switch_id, value, entity_id: null })'))
+    assert.ok(!cardCode.includes('fetch(\'/api/switches/answer'), 'the card posts through the helper')
+    // The same three fields Company information's route proxies with.
+    assert.match(readFileSync('app/api/company-information/route.ts', 'utf8'),
+      /JSON\.stringify\(\{ switch_id: switchId, value, entity_id: entityId \}\)/)
+  })
+
+  test('nothing says what the answer did — decision 8', () => {
+    // The route returns both and the card reads neither.
+    assert.match(ANSWER_ROUTE, /unblocked/)
+    assert.ok(!cardCode.includes('unblocked'), 'the card is reporting what an answer unlocked')
+    assert.ok(!/requirement/i.test(cardCode), 'the card is naming requirements')
+  })
+
+  test('a failure keeps the question, says one sentence, and moves no number', () => {
+    assert.equal(ANSWER_FAILED, 'That answer could not be saved. Nothing was changed. Please try again.')
+    assert.ok(cardCode.includes('setFailed(true)'))
+    // The early return is what leaves `answeredToday` and `current` exactly where they were.
+    const fn = cardCode.slice(cardCode.indexOf('async function answer('), cardCode.indexOf('function skip()'))
+    assert.ok(fn.indexOf('setFailed(true)') < fn.indexOf('await Promise.all'), 'a failure must return first')
+    assert.ok(/if \(!res\.ok\) \{[\s\S]{0,200}return\s*\n/.test(fn), 'a failed answer must return early')
+  })
+
+  test('a second click sends nothing', () => {
+    assert.ok(cardCode.includes('if (!current || busy) return'))
+    assert.equal((cardCode.match(/disabled=\{busy/g) ?? []).length >= 3, true)
+  })
+
+  test('"three today" is counted from what was written, not kept in a column', () => {
+    assert.ok(cardCode.includes(".from('switch_determinations')"))
+    assert.ok(cardCode.includes(".eq('source', 'user_set')"))
+    assert.ok(cardCode.includes(".gte('determined_at', localMidnightIso())"))
+    // `fromUserAnswer` is what writes that source, so the count cannot drift from the write.
+    assert.match(readFileSync('lib/switchDetermination.ts', 'utf8'), /source: 'user_set',/)
+  })
+
+  test('the card asks no site question of the route either', () => {
+    assert.ok(cardCode.includes("fetch('/api/switches/ask'"))
+    assert.ok(!/switches\/ask\?entity_id/.test(cardCode), 'an entity_id would make it a site question')
+  })
+})
+
+describe('the card sits between the numbers and Upcoming — board 1', () => {
+  test('in the page, in that order', () => {
+    const card = PAGE.indexOf('<DashboardQuestions')
+    assert.ok(card > 0, 'the card is not on the page')
+    assert.ok(card > PAGE.indexOf('COUNTER_TILES.map'), 'it belongs below the numbers')
+    assert.ok(card < PAGE.indexOf('Upcoming in the next 30 days'), 'and above Upcoming')
+  })
+
+  test('it uses the same section heading the other two do', () => {
+    assert.ok(cardCode.includes('<DashboardSection heading={QUESTIONS_HEADING} quiet={QUESTIONS_NOTE} />'))
+  })
+})
+
+describe('the answer route calls no model — checked, not assumed', () => {
+  /**
+   * The whole import closure of `/api/switches/answer`, walked. Resolution is code and never AI
+   * (`CLAUDE.md` §1 layer 3, §3.2 "Resolution is deterministic"), and this is the check that it
+   * stayed that way — the recompute is the only thing on this page that writes anything.
+   */
+  test('nothing in its closure imports lib/ai.ts', () => {
+    const closure = ['app/api/switches/answer/route.ts', 'lib/obligationWriter.ts', 'lib/resolve.ts',
+      'lib/appliesExpression.ts', 'lib/switchDetermination.ts', 'lib/switchAsk.ts',
+      'lib/jurisdiction.ts', 'lib/basis.ts']
+    for (const f of closure) {
+      const src = readFileSync(f, 'utf8')
+      assert.ok(!/from '@?\.?\/?lib\/ai'|from '\.\/ai\.ts'|askAI/.test(src), `${f} reaches a model`)
+    }
+    // And the card itself, which is the new caller.
+    assert.ok(!/askAI|lib\/ai/.test(CARD))
   })
 })

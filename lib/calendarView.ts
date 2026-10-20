@@ -248,30 +248,58 @@ export function siteWords(row: Pick<CalendarRow, 'site_id' | 'entity_id' | 'site
 }
 
 /**
- * THE LIST ROW'S META LINE, in board 5's order: the day (or how often, for an undated repeating
- * date), how often it repeats when it also has a day, the site, where it was read from, and its
- * state. Each part is left out when there is nothing true to put there.
+ * THE LIST ROW'S META LINE: THE STATE FIRST, then the day, how often, the site, and where it was
+ * read from. Each part is left out when there is nothing true to put there.
+ *
+ * *** THE STATE MOVED TO THE FRONT ON 20 OCTOBER 2026, AND A SCREENSHOT IS WHY. ***
+ *
+ * Board 5 put it last, and for ten days it was last. Then the Dashboard's Upcoming section
+ * started drawing this same line in a 900 column (Dashboard step 6) and Cascade's rows came out
+ * as:
+ *
+ *     31 October 2026 · Certificate of Annual Maintenance, Portable Fire Extinguishers
+ *     (14 units), service date August 20, 2025, Portland Facility · no…
+ *
+ * The line is `truncate`d, a source title can be any length a document's name happens to be, and
+ * what the ellipsis ate was **"not confirmed"** — the one part of the line that says this date is
+ * not yet a fact. The Calendar's own list does it too, on the same rows, which is how long it had
+ * been true without being seen.
+ *
+ * So the order is now: **what state this date is in**, then everything that describes it. A long
+ * title can still be cut; it can no longer cut the state off. The owner's decision, and it is for
+ * both pages because both draw this one function.
+ *
+ * "How often wasn't read" leads with the state too, for the same reason: it is the thing about
+ * the row that needs a person, not a description of the row.
  */
 export function metaParts(row: CalendarRow, siteCount: number, addedByName?: string | null): string[] {
   const out: string[] = []
   const day = longDay(row.next_due)
   const repeat = repeatWords(row)
-  if (day) {
-    out.push(day)
-    if (repeat) out.push(repeat)
-  } else {
-    // No day: how often is all there is, and when that was not read either, say THAT.
-    out.push(repeat || "how often wasn't read")
-  }
-  const site = siteWords(row, siteCount)
-  if (site) out.push(site)
-  // Where it came from. A typed date has no `source_title` — the board puts the person there
-  // instead, because "somebody here decided this" is exactly as much provenance as a document is.
-  if (row.source_title) out.push(row.source_title)
-  else if (row.source === 'person') out.push(addedByName ? `Added by ${addedByName}` : 'Added by hand')
+
+  // 1. THE STATE, FIRST. A passed date says it has passed INSTEAD of "not confirmed" — one thing
+  //    at a time, and "it is behind you" is the more urgent of the two.
   const passed = passedWords(row)
   if (passed) out.push(passed)
   else if (row.status === 'proposed') out.push(NOT_CONFIRMED)
+  // The other thing that needs a person: a repeating date nobody has read a period for.
+  if (!day && !repeat) out.push("how often wasn't read")
+
+  // 2. WHEN. The day, and how often when it has both.
+  if (day) {
+    out.push(day)
+    if (repeat) out.push(repeat)
+  } else if (repeat) {
+    out.push(repeat)
+  }
+
+  // 3. WHERE, and 4. WHAT IT WAS READ FROM. A typed date has no `source_title` — the board puts
+  //    the person there instead, because "somebody here decided this" is exactly as much
+  //    provenance as a document is.
+  const site = siteWords(row, siteCount)
+  if (site) out.push(site)
+  if (row.source_title) out.push(row.source_title)
+  else if (row.source === 'person') out.push(addedByName ? `Added by ${addedByName}` : 'Added by hand')
   return out
 }
 

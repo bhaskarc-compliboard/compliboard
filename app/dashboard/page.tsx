@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import DashboardSection from '@/components/DashboardSection'
+import DashboardQuestions from '@/components/DashboardQuestions'
 import {
   readCalendarRows, type CalendarRow,
   metaParts, whenWords, passedWords, longDay, siteWords,
@@ -53,6 +54,7 @@ interface AuditRunRow extends NameableRun {
 export default function Dashboard() {
   const supabase = createClient()
   const router = useRouter()
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const [dates, setDates] = useState<CalendarRow[] | null>([])
   const [audits, setAudits] = useState<AuditRunRow[] | null>([])
   /** Names for a template run's checklist, and the site names both sections need. */
@@ -90,6 +92,7 @@ export default function Dashboard() {
       setWelcome(greeting)
 
       const companyId = profileData?.company_id
+      setCompanyId(companyId ?? null)
       if (companyId) {
         /**
          * THE SITES AND THE NAMES, for the same reason the Calendar reads them
@@ -250,10 +253,12 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* ***** THE THREE QUESTIONS GO HERE — step 7, decision 8. *****
+        {/* ***** THE THREE QUESTIONS — step 7, decision 8. *****
             Board 1 puts the card directly under the numbers and above Upcoming, so that the one
-            thing the product wants from a person is above the fold on a laptop. Nothing is drawn
-            here yet; the space is named so the order is not rediscovered later. */}
+            thing the product wants from a person is above the fold on a laptop. It owns its own
+            reads and its own state, and it draws NOTHING when this company has no company-scope
+            question left — no heading, no empty card. */}
+        {companyId && <DashboardQuestions db={supabase} companyId={companyId} />}
 
         {/* ===== UPCOMING — decision 6 ===== */}
         <DashboardSection heading="Upcoming in the next 30 days" action="Open the Calendar →" href="/calendar" />

@@ -178,25 +178,38 @@ describe('the site shows only when there is a choice to make — decision 24', (
   })
 })
 
-describe('the list row\'s meta line, in board 5\'s order', () => {
+describe('the list row\'s meta line — THE STATE FIRST, then the date and the source', () => {
+  /**
+   * *** THE ORDER CHANGED ON 20 OCTOBER 2026, AND THESE TESTS CHANGED WITH IT. ***
+   *
+   * Board 5 put the state last and this block held that order. The Dashboard's Upcoming section
+   * then drew the same line in a 900 column and Cascade's rows came out ending "· no…" — the
+   * `truncate` had eaten "not confirmed", the one part that says the date is not yet a fact. The
+   * Calendar's own list was doing it too. The owner's decision is that the state leads, on both
+   * pages, because both draw this one function.
+   *
+   * They are rewritten rather than deleted: every row below is the same row as before, and the
+   * only thing asserted differently is where the state sits.
+   */
   const base = { next_due: '2026-11-15', days_until: 31, source_title: '1200-Z stormwater permit' }
-  test('day · site · where it was read from · not confirmed', () => {
+  test('not confirmed · day · site · where it was read from', () => {
     assert.deepEqual(metaParts(row({ ...base, site_name: 'Portland plant', site_id: 's1' }), 2),
-      ['15 November 2026', 'Portland plant', '1200-Z stormwater permit', NOT_CONFIRMED])
+      [NOT_CONFIRMED, '15 November 2026', 'Portland plant', '1200-Z stormwater permit'])
   })
   test('a confirmed date says nothing about being confirmed — the line is for what needs doing', () => {
     assert.deepEqual(metaParts(row({ ...base, status: 'confirmed' }), 1),
       ['15 November 2026', '1200-Z stormwater permit'])
   })
-  test('a repeating date with a day shows both, in that order', () => {
+  test('a repeating date with a day shows both, in that order, after the state', () => {
     assert.deepEqual(metaParts(row({ ...base, recurs: true, period: 'year', due_date: '2026-03-01' }), 1),
-      ['15 November 2026', 'every year from 1 Mar', '1200-Z stormwater permit', NOT_CONFIRMED])
+      [NOT_CONFIRMED, '15 November 2026', 'every year from 1 Mar', '1200-Z stormwater permit'])
   })
-  test('a repeating date with NO day leads with how often, and says so when that is unread too', () => {
+  test('a repeating date with NO day gives how often, and says so when that is unread too', () => {
     assert.deepEqual(metaParts(row({ recurs: true, period: 'month', source_title: 'X' }), 1),
-      ['every month', 'X', NOT_CONFIRMED])
+      [NOT_CONFIRMED, 'every month', 'X'])
+    // Two things need a person here, and both lead: it is not confirmed AND nobody read a period.
     assert.deepEqual(metaParts(row({ recurs: true, period: null, source_title: 'X' }), 1),
-      ["how often wasn't read", 'X', NOT_CONFIRMED])
+      [NOT_CONFIRMED, "how often wasn't read", 'X'])
   })
   test('a typed date names the person where a document names itself (board 5)', () => {
     const typed = row({ next_due: '2026-11-30', days_until: 46, source: 'person', status: 'confirmed', added_by: 'u1' })
@@ -206,8 +219,21 @@ describe('the list row\'s meta line, in board 5\'s order', () => {
   })
   test('a passed date says it has passed INSTEAD of "not confirmed" — one thing at a time', () => {
     const parts = metaParts(row({ ...base, next_due: '2026-10-03', days_until: -12, has_passed: true }), 1)
-    assert.ok(parts.includes('passed 12 days ago'))
+    assert.equal(parts[0], 'passed 12 days ago', 'and it leads')
     assert.ok(!parts.includes(NOT_CONFIRMED))
+  })
+
+  /**
+   * THE CHECK THE SCREENSHOT WOULD HAVE BEEN. A real Cascade row, with the real document title
+   * that caused this: whatever happens to the rest of the line, the state is the first thing in
+   * it, so a `truncate` cannot reach it.
+   */
+  test('a source title long enough to truncate the line cannot truncate the state', () => {
+    const long = 'Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), '
+      + 'service date August 20, 2025, Portland Facility'
+    const parts = metaParts(row({ next_due: '2026-10-31', days_until: 11, source_title: long }), 1)
+    assert.equal(parts[0], NOT_CONFIRMED)
+    assert.equal(parts[parts.length - 1], long, 'the long part is last, where the cut lands')
   })
 })
 
