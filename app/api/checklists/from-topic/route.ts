@@ -45,9 +45,9 @@
  */
 import { NextRequest, NextResponse, after } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
 import { askAIJson, askAIWithSearchResults, extractJsonText, searchLimit } from '@/lib/ai'
-import { loadTurns, bumpCounter } from '@/lib/conversation'
+import { loadTurns } from '@/lib/conversation'
 import { CONVERT_DISCUSSED, CONVERT_COMPLETE, CONVERT_DISCUSSED_ASKS_FOR_BASIS } from '@/prompts/convert'
 import { numberedTranscript } from '@/lib/summaryReport'
 import { checkConversion, checkAddedLinks, itemColumns, type ItemGroup } from '@/lib/checklistConvert'
@@ -269,8 +269,9 @@ async function buildChecklist(args: {
   const { error: iErr } = await db.from('checklist_items').insert(rows)
   if (iErr) throw new Error(`writing the items: ${iErr.message}`)
 
-  try { await bumpCounter(supabaseAdmin, companyId, 'checklists_created') }
-  catch (e) { console.error('checklist counter not incremented:', e) }
+  // THE COUNTER IS THE DATABASE'S NOW — migration 080's trigger on `checklists`. Removed here
+  // for the reason `app/api/chat/route.ts` carries in full: a counter kept by four routes was kept
+  // by two of them. DASHBOARD-PLAN decision 3.
 
   // What used to come back in the response — the counts and what the citation check did — is in the
   // log now, for the person reviewing a conversion; the page reads the checklist itself.

@@ -3505,18 +3505,21 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          welcomed_at: string | null
         }
         Insert: {
           company_id?: string | null
           created_at?: string | null
           full_name?: string | null
           id: string
+          welcomed_at?: string | null
         }
         Update: {
           company_id?: string | null
           created_at?: string | null
           full_name?: string | null
           id?: string
+          welcomed_at?: string | null
         }
         Relationships: [
           {
@@ -4102,23 +4105,29 @@ export type Database = {
       }
       usage_counters: {
         Row: {
+          audits_done: number
           checklists_created: number
           company_id: string
           created_at: string
+          files_read: number
           questions_answered: number
           updated_at: string
         }
         Insert: {
+          audits_done?: number
           checklists_created?: number
           company_id: string
           created_at?: string
+          files_read?: number
           questions_answered?: number
           updated_at?: string
         }
         Update: {
+          audits_done?: number
           checklists_created?: number
           company_id?: string
           created_at?: string
+          files_read?: number
           questions_answered?: number
           updated_at?: string
         }
@@ -4415,6 +4424,10 @@ export type Database = {
     Functions: {
       array_is_ascending: { Args: { a: number[] }; Returns: boolean }
       auth_company_id: { Args: never; Returns: string }
+      bump_usage_counter_for: {
+        Args: { p_company_id: string; p_field: string }
+        Returns: undefined
+      }
       calendar_person_day_refusal: {
         Args: { new_day: string; old_day: string }
         Returns: string
@@ -4435,6 +4448,10 @@ export type Database = {
       increment_usage_counter: {
         Args: { p_company_id: string; p_field: string }
         Returns: undefined
+      }
+      profiles_person_welcome_refusal: {
+        Args: { new_welcomed: string; old_welcomed: string }
+        Returns: string
       }
       substance_inventory: {
         Args: { p_entity_id: string; p_list: string }

@@ -435,9 +435,12 @@ export async function POST(request: NextRequest) {
               { error: 'The checklist was written but could not be saved. Please try again.' }, { status: 500 });
           }
         }
-        // The counter moves only for a checklist that now exists.
-        try { await bumpCounter(supabaseAdmin, companyId, 'checklists_created'); }
-        catch (e) { console.error('checklist counter not incremented:', e); }
+        // THE COUNTER IS THE DATABASE'S NOW — migration 080's trigger on `checklists`.
+        // It used to be bumped here, after the items landed. Two of the four routes that create a
+        // checklist never bumped at all (`app/api/document-checklist/route.ts`, which says in its
+        // header that it does, and `app/api/audit-checklist/route.ts`), so the number was short by
+        // every checklist made from a document gap or an audit finding. A trigger on the row cannot
+        // be forgotten by a route. `docs/DASHBOARD-MACHINERY.md` §B2; DASHBOARD-PLAN decision 3.
         return NextResponse.json({ outcome: 'answer', ...data, checklistId: saved.id, topicId: topicId || null });
       }
 
