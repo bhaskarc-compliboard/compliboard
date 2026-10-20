@@ -483,8 +483,16 @@ describe('recent audits — decision 7, and open question 2', () => {
 
   test('a row opens the report at an address the Audits page already understands', () => {
     assert.ok(CODE.includes('/audits?run='), 'the row must link to the report')
-    // Not a claim about this page: the Audits page's own two lines that make it true.
-    assert.match(AUDITS, /const openRun = params\.get\('run'\)/)
+    // Not a claim about this page: the Audits page's own lines that make it true.
+    //
+    // *** THE SPELLING CHANGED ON 20 OCTOBER AND THE CLAIM DID NOT. *** This asserted
+    // `const openRun = params.get('run')`. The hotfix made the drawer STATE seeded from that
+    // parameter, because deriving it from the address every render meant a report opened from the
+    // address could not be closed on a production build (`tests/unit/auditDrawer.test.ts` holds
+    // the why). `/audits` still reads `?run=` and still opens that report, which is all this
+    // check was ever about.
+    assert.match(AUDITS, /const runParam = params\.get\('run'\)/)
+    assert.match(AUDITS, /useState<string \| null>\(runParam\)/)
     assert.match(AUDITS, /<AuditReport runId=\{openRun\}/)
   })
 

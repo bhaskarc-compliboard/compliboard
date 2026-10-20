@@ -210,8 +210,51 @@ export default function AuditsPage() {
 function Audits() {
   const router = useRouter()
   const params = useSearchParams()
-  const openRun = params.get('run')
-  const tab = params.get('tab') === 'past' ? 'past' : 'stand'
+
+  /**
+   * *** THE DRAWER AND THE TAB ARE STATE, SEEDED FROM THE ADDRESS — the 20 October hotfix. ***
+   *
+   * They were derived from `useSearchParams()` directly: `openRun = params.get('run')`. That is the
+   * right shape and it did not work, and the way it failed is worth keeping.
+   *
+   * *** A REPORT OPENED FROM THE ADDRESS COULD NOT BE CLOSED ON PRODUCTION, AND CLOSED FINE IN DEV. ***
+   * The X called `setParam('run', null)`, which removed the only parameter and asked the router for
+   * `/audits`. **`router.replace` to the bare path of this prerendered route does not navigate**:
+   * `useSearchParams()` kept returning `run=…`, so `openRun` was still the id and the drawer
+   * re-rendered open. Measured on a production build of this tree on 20 October:
+   *
+   *   /audits?run=<id>           → X → address UNCHANGED, drawer still open   (the bug)
+   *   /audits?tab=past&run=<id>  → X → /audits?tab=past, drawer closed         (a parameter remained)
+   *   /calendar?tab=calendar&date=<id> → X → /calendar?tab=calendar, closed    (never hits it)
+   *
+   * The Calendar escaped it by accident: `closeDate` keeps `?tab=`, so its query is never empty.
+   * A trailing `?` was tried and changes nothing — the router refuses the navigation either way.
+   * `next dev` renders on demand and does not reproduce it at all, which is why every walk of this
+   * page before today passed (`node_modules/next/dist/docs/.../use-search-params.md`: "In
+   * development, routes are rendered on-demand…").
+   *
+   * *** AND THE TAB WAS BROKEN BY THE SAME LINE, UNNOTICED. *** "Where you stand" from
+   * `/audits?tab=past` removes the only parameter too: on the same build the address did not change
+   * and the page stayed on Past audits. One cause, two controls; only the drawer was reported.
+   *
+   * So the address is no longer what the page reads from render to render. It seeds this state,
+   * and an effect follows it **only when it actually changes** — a link from the Dashboard, a
+   * reload, Back — never on a re-render, which is what let a closed drawer come back.
+   */
+  const runParam = params.get('run')
+  const tabParam = params.get('tab') === 'past' ? 'past' : 'stand'
+  const [openRun, setOpenRun] = useState<string | null>(runParam)
+  const [tab, setTab] = useState<'stand' | 'past'>(tabParam)
+  useEffect(() => { setOpenRun(runParam) }, [runParam])
+  useEffect(() => { setTab(tabParam) }, [tabParam])
+
+  /**
+   * The address as it stands, including a change this page made that the router did not take.
+   * Without it, `new URLSearchParams(params.toString())` would read a stale `run=` back out and
+   * the next tab click would resurrect the report a person had just closed.
+   */
+  const searchRef = useRef(params.toString())
+  useEffect(() => { searchRef.current = params.toString() }, [params])
 
   const [idx, setIdx] = useState<Index | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -422,10 +465,25 @@ function Audits() {
     load()
   }
 
+  /**
+   * ONE CALL SITE API, UNCHANGED — every `setParam('tab', …)` and `setParam('run', …)` on this page
+   * still reads the same. What changed is underneath: the state moves FIRST, so closing works
+   * whether or not the router agrees to navigate, and the address is then written to match.
+   *
+   * `history.replaceState` for the empty case, because that is the one the router refuses. It
+   * writes the address without a navigation, which is exactly what is wanted now that nothing is
+   * derived from the address between renders. It adds no history entry — neither did
+   * `router.replace`, so Back behaves as it did.
+   */
   const setParam = (k: string, v: string | null) => {
-    const p = new URLSearchParams(params.toString())
+    if (k === 'run') setOpenRun(v)
+    if (k === 'tab') setTab(v === 'past' ? 'past' : 'stand')
+    const p = new URLSearchParams(searchRef.current)
     if (v === null) p.delete(k); else p.set(k, v)
-    router.replace(`/audits${p.toString() ? `?${p}` : ''}`, { scroll: false })
+    searchRef.current = p.toString()
+    const url = `/audits${p.toString() ? `?${p}` : ''}`
+    if (p.toString()) router.replace(url, { scroll: false })
+    else window.history.replaceState(null, '', url)
   }
 
   /* ── per-agency derived numbers, all off the one read ─────────────────────── */

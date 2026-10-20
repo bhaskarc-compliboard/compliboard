@@ -12,6 +12,7 @@
  */
 'use client'
 
+import { useEffect } from 'react'
 import { printWithFrame, printDate } from '@/lib/printFrame'
 
 /**
@@ -62,6 +63,20 @@ function Drawer({ title, sub, children, footer, onClose, company, topLine, print
    */
   topLine?: React.ReactNode
 }) {
+  /**
+   * *** ESCAPE CLOSES IT — added with the 20 October audits hotfix. ***
+   * There was no key handler at all: the X and the scrim were the only ways out, and a person
+   * whose reflex is Escape had nothing happen. One listener here rather than one per caller, so
+   * every drawer in the product behaves the same — the Calendar's date drawer, Documents' and
+   * Audits' reports, and HR's handbook check. `capture` is not needed and is not used: nothing
+   * inside a drawer handles Escape, so the window hears it either way.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   return (
     <aside className="print-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-[720px] flex-col border-l border-gray-200 bg-white shadow-2xl"
       data-print-company={company ?? ''} data-print-type={printType ?? ''}>
