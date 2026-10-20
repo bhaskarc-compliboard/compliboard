@@ -107,6 +107,22 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
 .qfoot { margin-top: 8px; font-size: 12px; color: var(--text-faint); }
 .stack { display: flex; flex-direction: column; gap: 20px; padding: 32px; }
 .stack .cap { font-size: 12px; color: var(--text-muted); }
+
+/* sidebar variants, board 4 */
+.sb-pair { display: flex; gap: 32px; padding: 28px 32px 32px; align-items: flex-start; }
+.sb-pair .one { flex: 1; min-width: 0; }
+.sb-pair .cap { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.sb { width: 224px; height: 520px; display: flex; flex-direction: column; padding: 16px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
+.sb .group { display: flex; flex-direction: column; gap: 2px; }
+.sb .rule { height: 1px; margin: 14px 12px; background: var(--line); }
+.sb .bottom { margin-top: auto; }
+.sb .it { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; font-size: 14px; color: var(--text-nav); border-radius: 6px; text-decoration: none; }
+.sb .it .n { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.sb.u .it.on { color: var(--brand-strong); font-weight: 500; }
+.sb.u .it.on span:first-child { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.sb.r .it { border-left: 2px solid transparent; border-radius: 0; padding-left: 14px; }
+.sb.r .it.on { color: var(--ink); font-weight: 500; border-left-color: var(--brand-strong); }
+.sb.r .it:hover { background: var(--panel); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -247,6 +263,23 @@ body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: v
           <div class="empty-line">Your recent audits will show here. <a href="#">Run your first audit</a></div>
         </div></main>
       </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">The sidebar</div>
+
+<!-- ===================== BOARD 4 ===================== -->
+<section class="cv-frame" id="b4">
+  <div class="cv-label"><span class="t">4 · The sidebar</span><span class="s">720 × 600</span></div>
+  <p class="cv-note">The green box goes. Both versions share the rest: the items in the order a person uses them (Dashboard, Calendar, Documents, Audits, the two workspaces), a thin line, then Company information and My Account together under it; "Audits" tried as "Audit Workspace"; "Company Documents" shortened to "Documents", since everything here is the company's; the counts as plain small grey numbers, no pill, shown only when something waits for a person. The active page is in ink and medium weight. Left: a dark green underline under the word, the owner's idea. Right: a 2px dark green rail on the left edge, the usual mark in a vertical list, with a faint fill on hover.</p>
+  <div class="scaler"><div class="board narrow" style="height:600px">
+    <div class="sb-pair">
+      <div class="one"><div class="cap">the active page, marked as the workspaces mark their active tab</div><div class="sb u">
+          <div class="group"><a class="it on" href="#"><span>Dashboard</span></a><a class="it" href="#"><span>Compliance Workspace</span></a><a class="it" href="#"><span>Audit Workspace</span></a><a class="it" href="#"><span>HR Workspace</span></a><a class="it" href="#"><span>Calendar</span><span class="n">27</span></a><a class="it" href="#"><span>Documents</span></a></div>
+          <div class="rule"></div>
+          <div class="group"><a class="it" href="#"><span>Company information</span><span class="n">19</span></a><a class="it" href="#"><span>My Account</span></a></div>
+        </div></div>
     </div>
   </div></div>
 </section>

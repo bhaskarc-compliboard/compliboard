@@ -258,3 +258,97 @@ describe('login lands on the Dashboard — decision 1', () => {
     assert.ok(/signOut\(\)[\s\S]{0,200}router\.push\('\/'\)/.test(ACCOUNT))
   })
 })
+
+// =================================================================================================
+// STEP 5b — THE SIDEBAR (`docs/DASHBOARD-PLAN.md` decision 12, `docs/dashboard-boards.html` board 4)
+// =================================================================================================
+
+const LAYOUT = readFileSync('components/AppLayout.tsx', 'utf8')
+const TABS = readFileSync('components/Tabs.tsx', 'utf8')
+/** `NAV_ITEMS` alone, so a word in a comment cannot stand in for a word in the list. */
+const NAV = LAYOUT.slice(LAYOUT.indexOf('const NAV_ITEMS = ['), LAYOUT.indexOf('export default'))
+  .replace(/^\s*\/\/.*$/gm, '')
+/**
+ * THE SIDEBAR'S OWN MARKUP, AND NOTHING ELSE OF THE FRAME. The first version of the two checks
+ * below read the whole file and failed on `hover:text-green-700` in the header's Feedback button
+ * and `bg-green-50` in the referral modal — both untouched by this step, both correct where they
+ * are. A check scoped to a file when the rule is about a component finds the component's green in
+ * three other people's buttons.
+ */
+const NAVBLOCK = LAYOUT.slice(LAYOUT.indexOf('const SidebarContent'), LAYOUT.indexOf('  return (\n    <div className="min-h-screen'))
+
+describe('the sidebar — the owner\'s order, and the hrefs that did not move', () => {
+  test('the eight items are in decision 12\'s order', () => {
+    const labels = [...NAV.matchAll(/label: '([^']+)'/g)].map(m => m[1])
+    assert.deepEqual(labels, [
+      'Dashboard', 'Compliance Workspace', 'Audit Workspace', 'HR Workspace',
+      'Calendar', 'Documents', 'Company information', 'My Account',
+    ])
+  })
+
+  /**
+   * Two words changed and no address did. This is the half of the rename that can break silently:
+   * a label is read by a person, an href is read by every link, bookmark and test in the product.
+   */
+  test('"Audit Workspace" still goes to /audits and "Documents" still to /documents', () => {
+    assert.match(NAV, /label: 'Audit Workspace', href: '\/audits'/)
+    assert.match(NAV, /label: 'Documents', href: '\/documents'/)
+    const hrefs = [...NAV.matchAll(/href: '([^']+)'/g)].map(m => m[1])
+    assert.deepEqual([...hrefs].sort(), [
+      '/account', '/audits', '/calendar', '/company-information',
+      '/compliance', '/dashboard', '/documents', '/hr',
+    ])
+  })
+
+  test('the old words are gone from the list', () => {
+    assert.ok(!/label: 'Audits'/.test(NAV), '"Audits" is still a nav label')
+    assert.ok(!/label: 'Company Documents'/.test(NAV), '"Company Documents" is still a nav label')
+  })
+
+  test('the hairline sits between Documents and Company information, and nowhere else', () => {
+    assert.equal((NAV.match(/ruleBefore: true/g) ?? []).length, 1)
+    assert.match(NAV, /label: 'Company information'[^\n]*ruleBefore: true/)
+    // A line, not a gap: 1px of the shared line token, inset by the items' own padding.
+    assert.match(LAYOUT, /item\.ruleBefore && <div className="mx-3 my-3\.5 h-px bg-\[var\(--line\)\]" \/>/)
+  })
+})
+
+describe('the active page is marked as a workspace marks its active tab', () => {
+  /**
+   * The tokens are not chosen here, they are read off `components/Tabs.tsx`. If the tab row ever
+   * moves to a different green, this test fails and the sidebar is told to follow — which is the
+   * whole claim decision 12 makes: one mark, two places.
+   */
+  test('the same two tokens the tab row uses, read from Tabs.tsx', () => {
+    assert.match(TABS, /border-\[var\(--green\)\] text-\[var\(--green-ink\)\]/)
+    assert.match(TABS, /font-medium/)
+    assert.match(LAYOUT, /isActive\s*\?\s*'text-\[var\(--green-ink\)\] font-medium'/)
+    assert.match(LAYOUT, /underline decoration-\[var\(--green\)\] decoration-2 underline-offset-\[6px\]/)
+  })
+
+  test('no box, no fill, no green background in the nav', () => {
+    assert.ok(!NAVBLOCK.includes('bg-green-50'), 'the green box is back')
+    assert.ok(!NAVBLOCK.includes('text-green-800'), 'the old active text colour is back')
+    assert.ok(!/bg-green/.test(NAVBLOCK), 'a green fill is back in the nav')
+    assert.ok(NAVBLOCK.length > 500, 'the nav block was not found — this check is reading nothing')
+  })
+
+  test('the underline is on the word, not on the row', () => {
+    // The row is a flex container and the label span is one of its children. An underline on the
+    // button would run the full 176px of the row, under the count as well as the word.
+    const span = LAYOUT.slice(LAYOUT.indexOf('<span className={`text-left'))
+    assert.match(span.slice(0, 220), /isActive \? 'underline decoration/)
+    assert.ok(!/className=\{`w-full flex[^`]*underline/.test(LAYOUT), 'the underline is on the button')
+  })
+
+  test('hover is a grey fill and never green', () => {
+    assert.match(NAVBLOCK, /hover:bg-gray-50 hover:text-gray-900/)
+    assert.ok(!/hover:(bg|text|border)-green/.test(NAVBLOCK), 'a green hover is back in the nav')
+  })
+
+  test('the 224px width and the item padding are unchanged, so no page\'s column moves', () => {
+    assert.match(LAYOUT, /<aside className="no-print hidden lg:flex flex-col w-56/)
+    assert.match(LAYOUT, /px-3 py-2\.5 rounded-md text-sm/)
+    assert.match(LAYOUT, /<nav className="flex-1 px-3 py-4 space-y-1">/)
+  })
+})

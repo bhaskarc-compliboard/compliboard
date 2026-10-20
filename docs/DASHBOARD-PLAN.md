@@ -1,10 +1,10 @@
 # The Dashboard — the plan
 
-**Version:** 1 · **Written:** 19 October 2026, by the Calendar chat, continued into the Dashboard.
+**Version:** 2 · **Updated:** 20 October 2026: step 4 done; step 5b (the sidebar, board 4) and decision 12 added. Version 1: 19 October 2026, by the Calendar chat, continued into the Dashboard.
 
 > **The owner's working copy is a Claude Doc, "Dashboard — the master plan".** This file mirrors it so the next
 > session can read the plan from the repository. When the two disagree, the owner's doc wins and this file is corrected.
-> The pictures are `docs/dashboard-boards.html` (three boards, approved 19 October). The read-only map is
+> The pictures are `docs/dashboard-boards.html` (four boards: three approved 19 October, the sidebar 20 October). The read-only map is
 > `docs/DASHBOARD-MACHINERY.md` (commit b98a17d). Branch `dashboard`, from `main` at fa26070.
 
 **What it is.** The Dashboard is where a person lands after login. It shows four numbers that only go up, one quick
@@ -29,8 +29,9 @@ page, so every test is free.
 | 1 | Read-only map | `docs/DASHBOARD-MACHINERY.md`, read from the code and staging; nothing changed | Done 19 Oct (b98a17d) |
 | 2 | Boards | Three boards in the HR frame: the page with history, the question card's four states, the first visit | Done 19 Oct |
 | 3 | The plan | The owner's doc; this file mirrors it | Done 19 Oct |
-| 4 | Migration 080 | Two counters that never go down (`files_read`, `audits_done`) kept by database triggers, backfilled once; `profiles.welcomed_at`; the gap-checklist bump. One stop: the migration is reviewed in the chat before it runs on staging | Not started |
-| 5 | The page shell and the numbers | The Dashboard moves onto the shared frame and column; the welcome title; four tiles reading `usage_counters`, dashes when there is nothing; login lands on `/dashboard` | Not started |
+| 4 | Migration 080 | Two counters that never go down (`files_read`, `audits_done`) kept by database triggers, backfilled once; `profiles.welcomed_at`; the gap-checklist bump. One stop: the migration is reviewed in the chat before it runs on staging | Done 20 Oct (4af030e, ea3ad63; 080 on staging) |
+| 5 | The page shell and the numbers | The Dashboard moves onto the shared frame and column; the welcome title; four tiles reading `usage_counters`, dashes when there is nothing; login lands on `/dashboard` | In progress |
+| 5b | The sidebar | Board 4: the green box goes; the active page marked as the workspaces mark their active tab (the same two greens, the same 2px underline); the owner's order; a thin line before Company information and My Account; "Documents"; "Audit Workspace"; plain grey counts, no pill. One file every page shares, so before-and-after measurements of every page | Not started |
 | 6 | Upcoming and Recent audits | The Calendar's rows and words for the next 30 days, up to six and a "more" line; the last three audits, each opening its report on the Audits page | Not started |
 | 7 | The three questions | One card, one question at a time, from the existing ranking (`lib/switchAsk.ts`, `GET /api/switches/ask`); answers through `/api/switches/answer`; three a calendar day, then the quiet card | Not started |
 | 8 | The owner's test on staging | By hand, every board against the real page, as two test users; free | Not started |
@@ -66,15 +67,20 @@ page, so every test is free.
 10. **Slightly-off numbers are acceptable to the owner**; nobody audits them. Honesty still: every number is a real
     event, never an estimate.
 11. **The Dashboard prints nothing**, so it stays out of the print frame.
+12. **The sidebar (board 4, 20 Oct).** Order: Dashboard, Compliance Workspace, Audit Workspace, HR Workspace, Calendar,
+    Documents; a thin line; Company information, My Account. The active page is marked exactly as a workspace's active
+    tab: the word in `--brand-strong`, a 2px underline in `--brand`; no box. "Company Documents" becomes "Documents";
+    "Audits" becomes "Audit Workspace". Counts are plain small grey numbers, shown only when something waits for a person.
 
 ## Open questions
 
-1. Where "three today" is kept: counted from `switch_determinations` written today, with the day's skips held in the
-   browser — or one small column. Settled at the step 4 stop.
+1. ~~Where "three today" is kept~~ — settled at step 4: counted from `switch_determinations` rows with `source = 'user_set'`
+   written today; the day's skips live in the browser; no column.
 2. Whether HR's handbook audits are `audit_runs` rows and so appear under Recent audits. Settled by the step 6 read.
 
 ## Change log
 
 | Date | Change |
 |---|---|
+| 20 Oct 2026 | Step 4 done (4af030e, ea3ad63): 080 on staging; the profiles grant narrowed (authenticated could update `company_id` — a tenancy hole, now closed); open question 1 settled. Board 4 (the sidebar) approved; step 5b and decision 12 added. |
 | 19 Oct 2026 | Plan written: 10 steps, 11 decisions, 2 open questions. Steps 1–3 done. Boards approved. |

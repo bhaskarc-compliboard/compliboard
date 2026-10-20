@@ -461,8 +461,34 @@ try {
         counts: counts ? counts.textContent.trim() : null,
       }
     }
+    // *** THE SIDEBAR, ITS BOX AND EVERY ITEM'S y — Dashboard step 5b. ***
+    // The nav is shared by every signed-in page, so a change to it is the one change that can move
+    // eight pages at once. Measuring it before and after is the only way to say that it did not:
+    // the box must not move, and each item's y is what the reorder and the new rule are allowed to
+    // change. The active item's own colours come too, because the mark is the point of the step and
+    // a screenshot cannot tell #256541 from #2F7D52.
+    const aside = document.querySelector('aside')
+    const navItems = aside ? [...aside.querySelectorAll('button')].map((b) => {
+      const r = b.getBoundingClientRect()
+      const label = b.querySelector('span')
+      const cs = getComputedStyle(label || b)
+      const count = [...b.querySelectorAll('span')].slice(1).map((n) => n.textContent.trim()).filter(Boolean)
+      return {
+        text: (label || b).textContent.trim(), count: count.join(' '),
+        top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left),
+        color: cs.color, weight: cs.fontWeight,
+        decoration: cs.textDecorationLine, decorationColor: cs.textDecorationColor,
+        thickness: cs.textDecorationThickness, offset: cs.textUnderlineOffset,
+        fill: getComputedStyle(b).backgroundColor,
+      }
+    }) : []
+    // The hairline between the two groups: any element inside the nav with no text and a height of
+    // one pixel. Named by shape rather than by a class, so it is found whatever it is built from.
+    const navRule = aside ? [...aside.querySelectorAll('div, hr')].find((e) => !e.textContent.trim() && Math.round(e.getBoundingClientRect().height) === 1) : null
     return {
       composer,
+      sidebar: aside ? { box: edges(aside), items: navItems,
+        rule: navRule ? { ...edges(navRule), top: Math.round(navRule.getBoundingClientRect().top) } : null } : null,
       path: location.pathname + location.search, viewport: innerWidth,
       scrollbar: innerWidth - document.documentElement.clientWidth,
       title: h1 ? { text: h1.textContent, x: Math.round(h1.getBoundingClientRect().left) } : null,
@@ -482,6 +508,15 @@ try {
   console.log(`  column content   ${o.column ? `${o.column.content.left}–${o.column.content.right}` : '-'}`)
   console.log(`  tab row          ${o.tabRow ? `${o.tabRow.left}–${o.tabRow.right}   ${o.tabRow.tabs.join(' | ')}` : 'none'}`)
   console.log(`  footer content   ${o.footer ? `${o.footer.content.left}–${o.footer.content.right}   text starts x=${o.footer.textStartsAt}` : 'none'}`)
+  if (o.sidebar) {
+    console.log(`  sidebar box      ${o.sidebar.box.left}–${o.sidebar.box.right} (${o.sidebar.box.width})`)
+    for (const it of o.sidebar.items) {
+      const mark = it.decoration === 'none' ? '' : `  ${it.decoration} ${it.decorationColor} ${it.thickness} offset ${it.offset}`
+      const fill = /rgba\(0, 0, 0, 0\)/.test(it.fill) ? 'no fill' : it.fill
+      console.log(`    y=${String(it.top).padStart(4)}–${String(it.bottom).padStart(4)}  x=${it.left}  ${it.text.padEnd(22)} ${it.count.padEnd(3)} ${it.color} w${it.weight} ${fill}${mark}`)
+    }
+    console.log(`    rule           ${o.sidebar.rule ? `y=${o.sidebar.rule.top}  x=${o.sidebar.rule.left}–${o.sidebar.rule.right} (${o.sidebar.rule.width})` : 'none'}`)
+  }
   if (o.composer) {
     const c = o.composer
     console.log(`  composer box     ${c.box ? `${c.box.left}–${c.box.right} (${c.box.width}), top y=${c.boxTop}, bottom y=${c.boxBottom}` : '-'}   placeholder: ${c.placeholder === null ? 'none' : `"${c.placeholder}"`}`)

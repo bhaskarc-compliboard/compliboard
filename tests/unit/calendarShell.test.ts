@@ -421,16 +421,24 @@ describe('NOTHING OF THE OLD PAGE CAME ACROSS, and the new one writes nothing', 
   })
 })
 
-describe('the sidebar badge is the same component and the same position', () => {
+describe('the sidebar badge is the same component as Company information\'s', () => {
+  /**
+   * *** THE POSITION MOVED AT DASHBOARD STEP 5b, THE BADGE DID NOT. *** This test asserted that
+   * Company information came BEFORE Calendar in `NAV_ITEMS`, and said "the nav order is
+   * unchanged". Board 4 reorders the whole list and puts Company information under a hairline with
+   * My Account, so that clause is spent and the check is now the one that still matters: the two
+   * badges are the same thing, drawn the same way, and Calendar still has one.
+   */
   test('Calendar carries a badge, where Company information carries its own', () => {
     assert.match(LAYOUT, /\{ label: 'Calendar', href: '\/calendar', badge: 'calendarDates' as const \},/)
-    const items = LAYOUT.slice(LAYOUT.indexOf('const NAV_ITEMS'), LAYOUT.indexOf('export default'))
-    assert.ok(items.indexOf("label: 'Company information'") < items.indexOf("label: 'Calendar'"),
-      'the nav order is unchanged')
+    assert.match(LAYOUT, /label: 'Company information'[^\n]*badge: 'toConfirm' as const/)
   })
   test('both badges draw the SAME span, so neither can be restyled alone', () => {
-    const spans = LAYOUT.match(/<span className="rounded-md bg-gray-100 px-1\.5 py-0\.5 text-xs text-gray-600">\{(toConfirm|calendarDates)\}<\/span>/g)
+    // The grey pill went with the green box at step 5b (board 4): a filled shape beside a word
+    // reads as a control, and this is a number. One span, two uses, still.
+    const spans = LAYOUT.match(/<span className="shrink-0 text-xs tabular-nums text-gray-400">\{(toConfirm|calendarDates)\}<\/span>/g)
     assert.equal(spans?.length, 2)
+    assert.ok(!/bg-gray-100 px-1\.5 py-0\.5/.test(LAYOUT), 'the pill is back')
   })
   test('nothing is shown at zero, for either number', () => {
     assert.match(LAYOUT, /item\.badge === 'toConfirm' && !!toConfirm &&/)

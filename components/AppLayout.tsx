@@ -36,27 +36,55 @@ export const COUNTS_CHANGED = 'compliboard:counts-changed'
 // *** NO ICONS. *** Multicolour OS emoji put seven uncontrolled colour schemes into a product
 // whose rule is one green, used only where it means something — and they render differently on
 // Mac and Windows, so the nav was a different object on each. Text only; no icon library.
+//
+// *** THE ORDER, THE WORDS AND THE LINE — Dashboard step 5b (`DASHBOARD-PLAN.md` decision 12,
+// board 4). *** The places a person works come first, in the order they work in them, and the two
+// items that are about the account rather than the work sit together under a hairline.
+//
+// Two words changed and NO href did: "Audits" became "Audit Workspace", because it is the fourth
+// workspace and was the only one of the four not named as one; "Company Documents" became
+// "Documents", because everything in this product is the company's and the longer name was the
+// widest item in a 224px column. `/audits` and `/documents` are unchanged, so every link, every
+// test that asserts an href, and every address a person has bookmarked still works.
+//
+// *** AND THE WORDS ELSEWHERE DID NOT FOLLOW. *** Four places still say "Company Documents" in
+// prose a person reads — `lib/calendarView.ts:198`, `app/calendar/page.tsx:732`,
+// `app/account/page.tsx:390` and `:432` — plus the marketing page (`app/page.tsx:275`). They name a
+// section by a name the nav no longer shows. Left alone on purpose: this step owns the layout
+// file, and those sentences are the Calendar's and the Account page's to change. Recorded in the
+// step's report.
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Audits', href: '/audits' },
   { label: 'Compliance Workspace', href: '/compliance' },
+  { label: 'Audit Workspace', href: '/audits' },
   { label: 'HR Workspace', href: '/hr' },
-  { label: 'Company Documents', href: '/documents' },
-  // THE COUNT IS PART OF THE ITEM. "Company information" with nothing waiting is a record to read;
-  // "Company information 3" is the one thing on this nav that asks for a minute rather than offering a
-  // place to go.
-  //
-  // *** IT WAS "To confirm" UNTIL TASK 0, COMMIT 2, AND IT KEEPS THAT POSITION AND THAT BADGE. ***
-  // The queue is now the first section of the page rather than a screen of its own: the questions
-  // and the record they complete are one thing. The position is unchanged on purpose — a person who
-  // has learnt where the badge appears should not have to learn again — and the badge still counts
-  // QUESTION LINES, which is the number of decisions waiting, not the number of readings behind
-  // them. `/to-confirm` 308s here.
-  { label: 'Company information', href: '/company-information', badge: 'toConfirm' as const },
   // THE SAME BADGE, THE SECOND NUMBER — Calendar step 7. "Calendar 10" is the queue of dates a
-  // reading has found and nobody has confirmed, which is the one thing on this entry that asks for a
-  // minute rather than offering a place to go. Same component, same position rule, same nothing-at-zero.
+  // reading has found and nobody has confirmed, which is the one thing on this entry that asks for
+  // a minute rather than offering a place to go. Same component, same position rule, same
+  // nothing-at-zero.
   { label: 'Calendar', href: '/calendar', badge: 'calendarDates' as const },
+  { label: 'Documents', href: '/documents' },
+  //
+  // *** THE HAIRLINE STARTS HERE, AND THE TWO ITEMS UNDER IT WERE NOT MOVED FOR TIDINESS. ***
+  // Everything above the rule is somewhere a person goes to do the work. Company information and
+  // My Account are the record of who they are and what they have told us, which is a different
+  // kind of thing, and the line is the product saying so rather than a gap hoping it reads that
+  // way.
+  //
+  // THE COUNT IS PART OF THE ITEM. "Company information" with nothing waiting is a record to read;
+  // "Company information 3" is the one thing on this nav that asks for a minute rather than
+  // offering a place to go.
+  //
+  // *** IT WAS "To confirm" UNTIL TASK 0, COMMIT 2, AND IT KEEPS ITS BADGE. *** The queue is now
+  // the first section of the page rather than a screen of its own: the questions and the record
+  // they complete are one thing. The badge still counts QUESTION LINES, which is the number of
+  // decisions waiting, not the number of readings behind them. `/to-confirm` 308s here.
+  //
+  // Its POSITION was held unchanged through Task 0 for a reason this step has now spent: a person
+  // who has learnt where the badge appears should not have to learn again. Decision 12 moves it
+  // anyway, because the line it now sits under says more about what the item is than its place in
+  // a list of eight did. The number is still beside the same words.
+  { label: 'Company information', href: '/company-information', badge: 'toConfirm' as const, ruleBefore: true },
   { label: 'My Account', href: '/account', soon: false },
 ]
 
@@ -207,43 +235,76 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
     setTimeout(() => setToast(null), 3000)
   }
 
+  /**
+   * *** THE ACTIVE PAGE IS MARKED EXACTLY AS A WORKSPACE MARKS ITS ACTIVE TAB — board 4,
+   * decision 12. *** The green box is gone. It was the only filled shape in the product that
+   * carried no meaning: green here means "this is the thing", and a page you are already on is not
+   * a thing to act on.
+   *
+   * The two tokens are read from `components/Tabs.tsx:22`, not chosen: an active tab is
+   * `border-[var(--green)] text-[var(--green-ink)]` plus `font-medium`. So the word is
+   * `--green-ink` (#256541) at weight 500 and the line under it is 2px of `--green` (#2F7D52) —
+   * the same two colours doing the same job in a vertical list, which is the whole point. A tab
+   * draws its line with `border-b-2`; here it is `text-decoration`, because the line has to be as
+   * wide as the WORD and a border would run the width of the row.
+   *
+   * There is no `aria-selected` to copy: `Tabs.tsx` marks its active tab with classes alone.
+   * (Worth its own fix one day; it is not this step's file.)
+   *
+   * `underline-offset-[6px]` is the board's number, and it is not decoration: at the default
+   * offset the line runs through the descenders of "Compliance Workspace" and "Company
+   * information", which is five of the eight items.
+   */
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
+      {/* `space-y-1` is untouched. Board 4 draws the items 2px apart; the step's instruction says
+          the item y positions move for the reorder and the line, so a third reason to move them
+          is not this step's to add. */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href
           return (
-            <button
-              key={item.href}
-              onClick={() => {
-                if (!item.soon) {
-                  router.push(item.href)
-                  setSidebarOpen(false)
-                }
-              }}
-              className={`w-full flex items-center px-3 py-2.5 rounded-xl text-sm transition-all ${
-                isActive
-                  ? 'bg-green-50 text-green-800 font-medium'
-                  : item.soon
-                  ? 'text-gray-300 cursor-not-allowed'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer'
-              }`}>
-              <span className="flex-1 text-left">{item.label}</span>
-              {/* A COUNT, NOT A DOT. "3" says how much work; a dot says only that something
-                  happened, which is the kind of badge people learn to ignore. Nothing is shown
-                  at zero — an empty queue should not ask for attention. */}
-              {item.badge === 'toConfirm' && !!toConfirm && (
-                <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{toConfirm}</span>
-              )}
-              {item.badge === 'calendarDates' && !!calendarDates && (
-                <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{calendarDates}</span>
-              )}
-              {item.soon && (
-                <span className="text-xs px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-400">
-                  Soon
+            <div key={item.href}>
+              {/* THE HAIRLINE, NOT A GAP. A gap asks the eye to infer a grouping; a line states
+                  one. Inset by the items' own `px-3` so it starts and ends where the words do,
+                  and drawn in `--line` (#E6E9ED), the same token every other hairline in the
+                  product uses. `my-3.5` is board 4's 14px. */}
+              {item.ruleBefore && <div className="mx-3 my-3.5 h-px bg-[var(--line)]" />}
+              <button
+                onClick={() => {
+                  if (!item.soon) {
+                    router.push(item.href)
+                    setSidebarOpen(false)
+                  }
+                }}
+                className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                  isActive
+                    ? 'text-[var(--green-ink)] font-medium'
+                    : item.soon
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer'
+                }`}>
+                <span className={`text-left ${
+                  isActive ? 'underline decoration-[var(--green)] decoration-2 underline-offset-[6px]' : ''}`}>
+                  {item.label}
                 </span>
-              )}
-            </button>
+                {/* A COUNT, NOT A DOT, AND NOW NOT A PILL EITHER. "3" says how much work; a dot
+                    says only that something happened, which is the kind of badge people learn to
+                    ignore. The grey pill went with the green box (board 4): a filled shape beside
+                    a word reads as a control, and this is a number. Plain 12px in the faint grey,
+                    tabular so two numbers in a column do not jitter. Nothing is shown at zero —
+                    an empty queue should not ask for attention. */}
+                {item.badge === 'toConfirm' && !!toConfirm && (
+                  <span className="shrink-0 text-xs tabular-nums text-gray-400">{toConfirm}</span>
+                )}
+                {item.badge === 'calendarDates' && !!calendarDates && (
+                  <span className="shrink-0 text-xs tabular-nums text-gray-400">{calendarDates}</span>
+                )}
+                {item.soon && (
+                  <span className="shrink-0 text-xs tabular-nums text-gray-400">Soon</span>
+                )}
+              </button>
+            </div>
           )
         })}
       </nav>
