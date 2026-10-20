@@ -367,6 +367,160 @@ null. **Four people across four companies** is what production holds today (10 c
 with nobody on them, which the job skips as "nobody to send to"). Every one of those four companies
 has exactly **one site**, so no email in this release groups its dates by site (decision 24).
 
+## THE DASHBOARD'S RELEASE ROUTINE — written 20 October 2026 at step 9
+
+*Every command below is one the owner pastes, in this order. Claude Code has run none of them
+against production and pushes nothing. The branch is `dashboard`, **9 commits ahead of `main` and 0
+behind** (read 20 October: `main` is at `fa26070`, unmoved since the branch was cut, so step 4 is a
+fast-forward); the pending migrations are **080 and 081**, two of them, and `npm run preflight` says
+`PENDING COUNT: 2` and names both.*
+
+**There is no step 0 and no gate.** Nothing in this release sends an email, calls a model, or needs
+a variable. Every live check at step 5 is free.
+
+### What goes out
+
+| | |
+|---|---|
+| **The Dashboard** | the shared 900 column, the welcome title, four numbers from `usage_counters`, Upcoming, Recent audits, three questions a day |
+| **Login lands on `/dashboard`** | it landed on the marketing homepage until now |
+| **The sidebar** | the owner's order, "Documents" and "Audit Workspace", a hairline, the active page marked as a workspace marks its active tab, no green box, plain grey counts |
+| **The breadcrumb goes** | `/ Dashboard` and `/ My Account` beside the wordmark; six of the eight signed-in pages never had one |
+| **080** | `files_read` and `audits_done` kept by database triggers, backfilled once; `profiles.welcomed_at`; **the `profiles` UPDATE grant narrowed to two columns** |
+| **081** | `switches.help_plain` for all 22 company-scope questions, eleven questions reworded, `allowed_value_labels` for the three option switches |
+| **Two shared files move with it** | `lib/calendarView.ts` — a date's state leads its meta line, so a long document title can no longer cut "not confirmed" off (the Calendar's list changes too, deliberately); `app/audits/page.tsx` — the run-naming words move to `lib/auditView.ts`, same words, now shared |
+
+### Step 1 — the backup
+
+**Production SQL editor → run each, Download CSV, keep the three files together with the date.**
+These are the three tables 080 and 081 change, and nothing else in this release writes a row.
+
+```sql
+select * from public.usage_counters order by company_id;
+select * from public.profiles order by id;
+select * from public.switches order by id;
+```
+
+`usage_counters` holds **2 rows** today and `profiles` **4**; `switches` is 95 rows of reference
+data and is the one worth having, because 081 rewrites 22 of its `question_plain` values in place.
+**A switch row is not versioned** — unlike a requirement, which gets a new version and an
+`effective_to` — so the CSV is the only copy of the old wordings once 081 runs.
+
+### Step 2 — preflight, and read the pending list
+
+```
+npm run preflight
+```
+
+**Expect `PENDING COUNT: 2`**, with `080_dashboard_counters.sql` and
+`081_a_question_says_what_counts.sql` named in `INPUT 1 minus INPUT 2`, and
+`INPUT 2 minus INPUT 1` empty. If it says anything else, stop: the subtraction is checkable without
+trusting the script, and both lists are printed.
+
+### Step 3 — the migrations
+
+```
+npm run db:migrate:prod
+```
+
+Type `PRODUCTION` when asked. Both files carry a self-test that fails loudly and rolls the whole
+migration back; **080's refused once on staging over an aliasing bug and 081's refused once over
+its own check being too blunt**, and in both cases nothing was applied. If a self-test fires here,
+stop and read it: the migration failing is not the same as the migration being wrong.
+
+**Read the result from the database, not from the exit code:**
+
+```bash
+npx supabase db query --project-ref "$SUPABASE_PROD_REF" --linked --agent no -o json \
+  "select max(version) as newest,
+          (select count(*) from information_schema.columns
+            where table_schema='public' and table_name='usage_counters'
+              and column_name in ('files_read','audits_done')) as counter_cols,
+          (select count(*) from information_schema.columns
+            where table_schema='public' and table_name='profiles' and column_name='welcomed_at') as welcomed_at,
+          has_column_privilege('authenticated','public.profiles','company_id','UPDATE') as can_still_move_company,
+          (select count(*) from public.switches where scope='company' and help_plain is not null) as helped
+     from supabase_migrations.schema_migrations;"
+```
+
+**Expect `newest` 081, `counter_cols` 2, `welcomed_at` 1, `can_still_move_company` FALSE, `helped`
+22.** `can_still_move_company` is the one that matters most: it is **true on production today**, and
+080 is what makes it false. Until then a signed-in person can move their own profile to another
+company's id, because the UPDATE grant is table-wide and the policy had no `WITH CHECK`.
+
+**What the backfill will write**, read from production on 20 October before any of this ran — so
+the numbers can be checked afterwards rather than taken on trust:
+
+| Company | `files_read` after | `audits_done` after | had a counter row |
+|---|---|---|---|
+| CB-Test-3 | **15** | **2** | yes |
+| the other 9 companies | 0 | 0 | one of them yes, eight no |
+
+The backfill inserts a row for every company, so `usage_counters` goes from **2 rows to 10**. It
+does **not** touch `questions_answered` or `checklists_created` — CB-Test-3's 16 and 2 stay exactly
+as they are, because recomputing them from rows would make a counter go down, which decision 2
+forbids.
+
+**And 081 changes no stored answer, because there are none.** `company_switches` is **completely
+empty on production** — 0 rows, no company has ever answered a switch — so the eleven reworded
+questions have no answers behind them to be re-read under new wording. (The check that found that
+was proved able to see a presence: the same query returns 16 rows on staging.)
+
+### Step 4 — merge and push
+
+`main` has not moved since the branch was cut (`fa26070`), so this is a fast-forward:
+
+```
+git status --porcelain && npm run typecheck     # empty, green
+git checkout main && git merge --ff-only dashboard && git push
+```
+
+Watch Vercel until the deployment is green. *(If `main` has moved by the time you run this, stop:
+the merge wants looking at, not forcing.)*
+
+### Variables — none
+
+**This release adds no environment variable and changes none.** Every file it touches was checked
+on 20 October: not one reads `process.env`. Nothing here is behind a flag, and the pipeline
+switches in `lib/pipelineConfig.ts` are not part of it.
+
+### Step 5 — the free checks on production
+
+Sign in as yourself. Nothing below calls a model, so the whole list is free.
+
+| # | Check | What to see |
+|---|---|---|
+| 1 | **Log in** | you land on **`/dashboard`**, not the marketing homepage |
+| 2 | **The welcome** | the title reads **"Welcome, ‹your first name›"** the first time — the first-visit wording — and the lede under it is *"This page will show what has been done and what is coming up. Three quick questions below get things started."* |
+| 3 | **Reload** | now **"Welcome back, ‹name›"**, and the lede changes. This is `profiles.welcomed_at`, written once by the first view. It cannot be undone from the product — only the service role can clear it, so check 2 has one chance per person |
+| 4 | **The four numbers** | they equal step 3's table. For a company with nothing, four **em dashes** in faint grey — never a 0 |
+| 5 | **The sidebar** | Dashboard · Compliance Workspace · Audit Workspace · HR Workspace · Calendar · Documents — a hairline — Company information · My Account. The page you are on has **no green box**: the word in dark green with a 2px green underline, the same mark a workspace's active tab uses. Counts are plain grey numbers, no pill |
+| 6 | **The breadcrumb** | there is none beside the wordmark, on any page. The logo is unchanged and still goes to `/dashboard` |
+| 7 | **One Upcoming row** | click it: `/calendar?tab=calendar&date=…` opens with that date's drawer open. A date that is not yet confirmed reads **"not confirmed" first** in its grey line, before the date and the document — check the Calendar's own list tab shows it the same way |
+| 8 | **One Recent audits row** | click it: `/audits?run=…` opens with that report open |
+| 9 | **One question** | answer it. The card moves to the next question and says nothing about what the answer did. Then open **Company information** — the fact is there under its topic, reading *"you answered · ‹the question›"* |
+| 10 | **The help line** | each question carries a grey sentence under it saying what counts. An option question draws its options as **words** — "Toll processor", not `toll_processor` |
+
+**Nothing is paid and nothing is a model call**, including check 9: `/api/switches/answer` writes two
+rows and recomputes obligations in code (`lib/obligationWriter.ts`), and nothing in its import
+closure reaches `lib/ai.ts`.
+
+> **One thing check 9 does that is worth knowing.** Answering a switch rewrites that company's whole
+> `obligations` table. On a fixture with 16 facts that is 221 rows. Nothing in the product shows
+> them — `/requirements` is the only page that does and **nothing in the app links to it** — so this
+> is invisible work, not a visible change.
+
+### After
+
+- **`usage_counters` only ever goes up.** `check:live` seeds a real `document_scans` row and deletes
+  its parent document afterwards, so **every `db:migrate` run against a database adds 1 to that
+  company's `files_read`**. On staging the test company's number drifts upward per run. Production
+  is not reachable by `check:live`, so this does not apply there — but it is why a staging number
+  and a row count will not agree.
+- **The three site-scope questions that cannot be answered Yes or No** are recorded as owed in
+  `docs/HANDOFF-CODE.md` §7. Site questions are asked nowhere yet, so nothing on production shows
+  them.
+
 ## Rolling back
 
 - **Code:** revert the commit and push. Migrations stay; they're additive and the old code ignores them.
