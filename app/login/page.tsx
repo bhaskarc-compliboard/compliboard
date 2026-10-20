@@ -26,7 +26,12 @@ export default function LoginPage() {
         password,
       })
       if (authError) throw authError
-      router.push('/')
+      // *** SIGNING IN LANDS ON THE DASHBOARD — Dashboard decision 1. ***
+      // This pushed '/' until 20 October, which is the MARKETING homepage: a person who had just
+      // typed their password was shown the page that invites them to sign up, with no sign that
+      // anything had happened. Only `/reset-password` ever landed anywhere useful
+      // (`app/reset-password/page.tsx:46`). `docs/DASHBOARD-MACHINERY.md` §A recorded it.
+      router.push('/dashboard')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Invalid email or password')
     } finally {

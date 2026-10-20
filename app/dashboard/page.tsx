@@ -4,16 +4,12 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
-import { isAmber, statusWord } from '@/lib/documentStatus'
 import { liveDates, CALENDAR_COUNT_COLUMNS } from '@/lib/calendarCounts'
 import { NOT_CONFIRMED } from '@/lib/calendarView'
-
-interface CompanyProfile {
-  name: string
-  industry?: string
-  state?: string
-  city?: string
-}
+import {
+  welcomeFor, countWord, isNoCount, COUNTER_TILES, COUNTER_COLUMNS,
+  type CounterRow, type Welcome,
+} from '@/lib/dashboardView'
 
 /**
  * *** THE DASHBOARD READS `calendar_v` THROUGH THE CALENDAR'S OWN FILTER — Calendar step 12. ***
@@ -35,41 +31,34 @@ interface CompanyProfile {
  * Now: `liveDates` — the one filter the tab counts, the sidebar badge, the feed and the monthly
  * email share — and `next_due`, `days_until` and `has_passed` as the VIEW computed them against
  * the server's today. Nothing here does date arithmetic.
+ *
+ * *** STEP 6 REBUILDS THIS PANEL. *** Step 5 moved it inside the new column and changed nothing
+ * about what it reads or says.
  */
 interface CalEvent {
   id: string; title: string; status: string
   next_due: string | null; days_until: number | null; has_passed: boolean | null
 }
 
-/**
- * One line of the readings list. Every field is a column of `document_index_v` — the same view the
- * Documents page groups and the report drawer opens, so the dashboard cannot say a different word
- * about a document than the page it links to. That is the whole reason this reads the view rather
- * than a table: a second query shape is a second answer.
- */
-interface Reading {
-  document_id: string
-  title: string | null
-  file_name: string
-  kind: string | null
-  display_status: string
-  document_status: string
-  scanned_at: string | null
-  open_gap_count: number
-}
-
-const KIND_WORD: Record<string, string> = {
-  permit: 'Permit', certificate: 'Certificate', program: 'Program', policy: 'Policy',
-  record: 'Record', supplier_document: 'Supplier document', other: 'Other',
-}
-
 export default function Dashboard() {
   const supabase = createClient()
   const router = useRouter()
-  const [profile, setProfile] = useState<CompanyProfile | null>(null)
   const [events, setEvents] = useState<CalEvent[] | null>([])
-  const [stats, setStats] = useState({ filesReviewed: 0, issuesIdentified: 0, questionsAnswered: 0, checklistsCreated: 0 })
-  const [readings, setReadings] = useState<Reading[]>([])
+  /**
+   * *** THE FOUR NUMBERS COME FROM `usage_counters` AND NOWHERE ELSE — decision 2. ***
+   *
+   * `null` is not "all zeros": it is "no row", which `countWord` draws as a dash exactly like a 0.
+   * The page used to count rows instead — `document_index_v` for files, a `research_answer` split
+   * on `checklists` for the other two — and `docs/DASHBOARD-MACHINERY.md` §C recorded what that
+   * cost: "Questions answered" read 0 for Test Gamma against a counter holding 31, because the
+   * split counted checklist ROWS and the counter counts chat ANSWERS. Those are two different
+   * questions and only one of them is the one the label asks. Counting inventory also means a
+   * number can go DOWN when a row is deleted, and decision 2 is that these four only go up.
+   */
+  const [counters, setCounters] = useState<CounterRow | null>(null)
+  // Null until the profile has been read. There is no sensible placeholder greeting: a guess
+  // here would flash the wrong one of the two sentences, so the page waits instead.
+  const [welcome, setWelcome] = useState<Welcome | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -77,15 +66,15 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
+      // The person's own row: the name for the greeting, and whether they have been here before.
       const { data: profileData } = await supabase
-        .from('profiles').select('company_id').eq('id', user.id).single()
+        .from('profiles').select('company_id, full_name, welcomed_at').eq('id', user.id).single()
+
+      const greeting = welcomeFor(profileData?.full_name, profileData?.welcomed_at)
+      setWelcome(greeting)
 
       const companyId = profileData?.company_id
       if (companyId) {
-        const { data: company } = await supabase
-          .from('companies').select('name, industry, state, city').eq('id', companyId).single()
-        if (company) setProfile(company)
-
         try {
           // The caller's own client: `calendar_v` is security_invoker, so RLS decides what comes
           // back and this page names no company.
@@ -104,42 +93,50 @@ export default function Dashboard() {
           setEvents(null)
         }
 
-        // *** THE READINGS AND THE COUNTS BOTH COME FROM `document_index_v` — 28 September 2026. ***
-        //
-        // This block used to GET `/api/document-review`, and by 28 September that was a live query
-        // against a table nothing writes any more: `document_reviews` held **0 rows**, so "Files
-        // reviewed" and "Issues identified" both read 0 on a company with ten documents and 88 open
-        // gaps. Worse than wrong — it was a confident zero, which is the one thing `CLAUDE.md` §6
-        // says the dashboard must never show. The old review route is deleted.
-        //
-        // `document_index_v` is one row per document joined to its CURRENT scan, which is what makes
-        // the counts honest: a re-read replaces a reading rather than adding one, and a corrected
-        // status is counted as corrected. Read through the caller's own client, so RLS scopes it.
-        try {
-          const [readRes, checklistsRes] = await Promise.all([
-            supabase.from('document_index_v')
-              .select('document_id, title, file_name, kind, display_status, document_status, scanned_at, open_gap_count')
-              .eq('company_id', companyId)
-              .not('scanned_at', 'is', null)
-              .order('scanned_at', { ascending: false }),
-            supabase.from('checklists').select('research_answer').eq('company_id', companyId),
-          ])
-          const all = (readRes.data ?? []) as Reading[]
-          const checklists = checklistsRes.data || []
-          // FIVE MOST RECENT for the list; the counts are over everything, not over the five.
-          setReadings(all.slice(0, 5))
-          setStats({
-            // Every document we got a reading out of — which is all of them except the ones we could
-            // not open. A document that needs work was read perfectly well (`lib/documentBatch.ts`
-            // uses the same definition for the batch email, so the two cannot disagree).
-            filesReviewed: all.filter(r => r.display_status !== 'could_not_read').length,
-            issuesIdentified: all.reduce((sum, r) => sum + (r.open_gap_count ?? 0), 0),
-            questionsAnswered: checklists.filter(c => c.research_answer).length,
-            checklistsCreated: checklists.filter(c => !c.research_answer).length,
-          })
-        } catch { /* leave stats at zero and the list empty */ }
+        /**
+         * *** READ WITH THE CALLER'S OWN CLIENT, NOT A ROUTE. ***
+         *
+         * The step asked which path this takes and why. Read from the catalog on 20 October:
+         * `authenticated` holds SELECT on `public.usage_counters`, and the table carries exactly
+         * one policy — `usage_counters_select_own_company`, SELECT to `authenticated`,
+         * `using (company_id = auth_company_id())`. So a signed-in person can read their own
+         * company's row and no other, and a `GET /api/dashboard/counters` would add a second
+         * hop, a second place for the tenancy rule to live, and nothing else.
+         *
+         * `maybeSingle`, not `single`: a company with no row yet is the ordinary day-one state
+         * (board 3), and `single` turns it into an error.
+         */
+        const { data: counterRow, error: counterError } = await supabase
+          .from('usage_counters').select(COUNTER_COLUMNS).eq('company_id', companyId).maybeSingle()
+        if (counterError) {
+          // A failed read is not four zeros. `null` draws four dashes, which is what "we have
+          // nothing to show you" looks like — and never a confident 0 (`CLAUDE.md` §6).
+          console.error('dashboard: the counters could not be read', counterError)
+          setCounters(null)
+        } else {
+          setCounters((counterRow ?? null) as CounterRow | null)
+        }
       }
       setLoading(false)
+
+      /**
+       * *** THE FIRST VISIT IS RECORDED AFTER THE PAGE HAS DRAWN, ONCE, AND MAY FAIL. ***
+       *
+       * This write is the only one the Dashboard does. It goes through the caller's own client on
+       * the column grant migration 080 added, so the rule that a recorded first visit is never
+       * changed is enforced by the database, not by this line
+       * (`profiles_person_welcome_refusal`).
+       *
+       * A refusal is SWALLOWED on purpose, and there are two of them: a colleague's tab racing
+       * this one, and the refusal trigger itself if `welcomed_at` is somehow already set. Neither
+       * is a thing to tell a person about on their first morning — and the title above is already
+       * right for THIS view, because it was computed from the row as it was read.
+       */
+      if (greeting.firstVisit) {
+        const { error: welcomeError } = await supabase
+          .from('profiles').update({ welcomed_at: new Date().toISOString() }).eq('id', user.id)
+        if (welcomeError) console.debug('dashboard: welcomed_at was not recorded', welcomeError.message)
+      }
     }
     load()
   }, [])
@@ -153,7 +150,7 @@ export default function Dashboard() {
     .filter((e) => e.next_due && !e.has_passed && e.days_until !== null && e.days_until >= 0 && e.days_until <= 30)
     .sort((a, b) => (a.next_due ?? '').localeCompare(b.next_due ?? ''))
 
-  if (loading) {
+  if (loading || !welcome) {
     return (
       <AppLayout title="Dashboard">
         <div className="flex items-center justify-center h-64">
@@ -165,82 +162,38 @@ export default function Dashboard() {
 
   return (
     <AppLayout title="Dashboard">
-      <div className="p-6 max-w-5xl mx-auto">
-
-        {/* Welcome header */}
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-900">{profile?.name}</h1>
-          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-            {profile?.industry && <span className="text-sm text-gray-500">{profile.industry}</span>}
-            {profile?.industry && profile?.state && <span className="text-gray-300">·</span>}
-            {profile?.state && <span className="text-sm text-gray-500">{profile.state}</span>}
-            {profile?.state && profile?.city && <span className="text-gray-300">·</span>}
-            {profile?.city && <span className="text-sm text-gray-500">{profile.city}</span>}
-          </div>
+      {/* The 900 column, the same as /hr, /calendar and /compliance
+          (`app/calendar/page.tsx:627`). No `print-page`: decision 11, the Dashboard prints
+          nothing, so it stays out of the print frame. */}
+      <div className="mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
+        <div className="pt-6">
+          {/* The welcome IS the title — decision 5. The company name and the raw industry slug
+              that stood here are gone: the slug was machine text on the first line a person
+              reads (`docs/DASHBOARD-MACHINERY.md` §B), and the company name is in the topbar. */}
+          <h1 className="font-serif text-[28px] font-normal text-gray-900">{welcome.title}</h1>
+          <p className="mt-1 text-[14px] text-gray-500">{welcome.lede}</p>
         </div>
 
-        {/* Activity — what CompliBoard has done */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Files reviewed', value: stats.filesReviewed },
-            { label: 'Issues identified', value: stats.issuesIdentified },
-            { label: 'Questions answered', value: stats.questionsAnswered },
-            { label: 'Checklists created', value: stats.checklistsCreated },
-          ].map(box => (
-            <div key={box.label} className="bg-white rounded-xl px-5 py-4">
-              <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1.5">{box.label}</p>
-              <p className="text-2xl font-semibold text-gray-700">{box.value}</p>
+        {/* *** THE FOUR NUMBERS — one row of hairline cells, board 1. ***
+            No cards: a hairline above and below, a hairline between each pair, and one surface
+            for the whole page. Tabular numbers so the four values do not jitter against each
+            other, and the reading serif at 34px because these are the page's own figures. */}
+        <div className="mt-6 grid grid-cols-2 border-t border-b border-gray-200 sm:grid-cols-4">
+          {COUNTER_TILES.map((tile, i) => (
+            <div key={tile.key}
+                 className={`py-[18px] pr-5 ${i > 0 ? 'pl-5 sm:border-l sm:border-gray-200' : ''}`}>
+              <p className="text-xs font-medium uppercase tracking-[0.04em] text-gray-700">{tile.label}</p>
+              <p className={`mt-1.5 font-serif text-[34px] font-normal leading-10 tabular-nums ${
+                isNoCount(counters?.[tile.key]) ? 'text-gray-300' : 'text-gray-900'}`}>
+                {countWord(counters?.[tile.key])}
+              </p>
             </div>
           ))}
         </div>
 
-        {/* *** THE READINGS LIST — the five most recent, and a way through to all of them. ***
-            It links to /documents rather than opening a drawer here: one reading surface, and the
-            drawer belongs to the page that owns the document (`docs/DESIGN.md` §3). */}
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Recently read</h2>
-          {readings.length > 0 && (
-            <a href="/documents" className="text-[13px] text-gray-600 hover:text-gray-900 hover:underline">
-              All documents
-            </a>
-          )}
-        </div>
-        <div className="bg-white rounded-xl mb-8">
-          {readings.length === 0 ? (
-            /* *** AN EMPTY STATE IS A CLAIM, AND THIS ONE HAS TO BE TRUE (`CLAUDE.md` §5.1). ***
-               "No documents read yet" is exactly what it means — the query returned no document with
-               a scan on it — and it says what to do next rather than leaving a blank panel. It does
-               NOT say "no documents": there may be files waiting to be read, and this list is about
-               readings. */
-            <div className="px-6 py-8 text-center">
-              <p className="text-sm text-gray-400">No documents read yet.</p>
-              <a href="/documents" className="mt-2 inline-block text-[13px] text-gray-600 hover:text-gray-900 underline">
-                Add files
-              </a>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {readings.map(r => (
-                <a key={r.document_id} href="/documents"
-                   className="px-6 py-3 flex items-center justify-between gap-4 hover:bg-gray-50">
-                  <span className="min-w-0">
-                    <span className="block text-sm text-gray-800 truncate">{r.title || r.file_name}</span>
-                    <span className="block text-xs text-gray-400">
-                      {r.kind ? (KIND_WORD[r.kind] ?? r.kind) : 'Document'}
-                      {r.scanned_at ? ` · read ${new Date(r.scanned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
-                    </span>
-                  </span>
-                  <span className={`shrink-0 text-xs font-medium ${isAmber(r) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
-                    {statusWord(r)}
-                  </span>
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Upcoming deadlines */}
-        <h2 className="text-lg font-semibold text-orange-600 mb-3">Upcoming — next 30 days</h2>
+        {/* Upcoming deadlines — step 6 rebuilds this in the boards' words and rows. Step 5 only
+            moved it inside the column. */}
+        <h2 className="mt-9 mb-3 text-lg font-semibold text-orange-600">Upcoming — next 30 days</h2>
         <div className="bg-white rounded-xl">
           {events === null ? (
             <div className="px-6 py-8 text-center">

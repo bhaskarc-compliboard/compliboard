@@ -374,7 +374,15 @@ try {
     const inner = (e) => { if (!e) return null; const b = e.getBoundingClientRect(); const cs = getComputedStyle(e)
       return { left: Math.round(b.left + parseFloat(cs.paddingLeft)), right: Math.round(b.right - parseFloat(cs.paddingRight)) } }
     const h1 = document.querySelector('h1')
-    const col = document.querySelector('.print-page')
+    // THE COLUMN, AND WHY IT IS NOT JUST .print-page ANY MORE — Dashboard step 5.
+    // Every measured page until now carried .print-page, so that class was doing two jobs: the
+    // one print rule that hides the page while a drawer prints, and, here, "this is the column".
+    // The Dashboard is the first page that deliberately has neither a drawer nor a print
+    // (DASHBOARD-PLAN decision 11), so it carries no .print-page and measured as
+    // "column box: no .print-page" -- the tool could not see a column that was plainly there.
+    // So it now also looks for what the column actually IS: the 900 wrapper every rebuilt page
+    // shares. .print-page stays first, so nothing about the printable pages changes.
+    const col = document.querySelector('.print-page') || document.querySelector('main [class*="max-w-[900px]"]')
     // A tab is a button carrying the underline classes every sectioned page uses; its row is the
     // nearest ancestor with the hairline. Matched on both classes, not one: a selector scoped to a
     // class alone matches things you did not mean (DESIGN.md §6 item 10).
@@ -470,7 +478,7 @@ try {
   const o = out
   console.log(`\n  ${o.path} at ${o.viewport}px (vertical scrollbar ${o.scrollbar}px) as ${email}`)
   console.log(`  title            ${o.title ? `x=${o.title.x}   "${o.title.text}"` : 'none'}`)
-  console.log(`  column box       ${o.column ? `${o.column.box.left}–${o.column.box.right} (${o.column.box.width})` : 'no .print-page'}`)
+  console.log(`  column box       ${o.column ? `${o.column.box.left}–${o.column.box.right} (${o.column.box.width})` : 'no column found'}`)
   console.log(`  column content   ${o.column ? `${o.column.content.left}–${o.column.content.right}` : '-'}`)
   console.log(`  tab row          ${o.tabRow ? `${o.tabRow.left}–${o.tabRow.right}   ${o.tabRow.tabs.join(' | ')}` : 'none'}`)
   console.log(`  footer content   ${o.footer ? `${o.footer.content.left}–${o.footer.content.right}   text starts x=${o.footer.textStartsAt}` : 'none'}`)
@@ -499,7 +507,7 @@ try {
     await evaluate(`document.fonts.ready.then(() => true)`)
     await cdp(ws, 'DOM.enable'); await cdp(ws, 'CSS.enable')
     const { root } = await cdp(ws, 'DOM.getDocument', { depth: -1 })
-    for (const [label, selector] of [['title', 'h1'], ['body text', '.print-page p']]) {
+    for (const [label, selector] of [['title', 'h1'], ['body text', '.print-page p, main [class*="max-w-[900px]"] p']]) {
       const { nodeId } = await cdp(ws, 'DOM.querySelector', { nodeId: root.nodeId, selector })
       if (!nodeId) { console.log(`  font ${label.padEnd(11)} no ${selector}`); continue }
       const declared = await evaluate(`getComputedStyle(document.querySelector(${JSON.stringify(selector)})).fontFamily`)

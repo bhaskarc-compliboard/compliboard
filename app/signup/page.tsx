@@ -190,7 +190,9 @@ export default function SignupPage() {
         setShowPopup(true)
         setLoading(false)
       } else {
-        router.push('/')
+        // Decision 1: a new account lands on the Dashboard, not the marketing homepage. Its
+        // first visit is the one that says "Welcome, <name>" rather than "Welcome back".
+        router.push('/dashboard')
         router.refresh()
       }
     } catch (err: unknown) {
@@ -200,7 +202,9 @@ export default function SignupPage() {
   }
 
   async function handlePopupConfirm() {
-    router.push('/')
+    // The other way out of signup — the industry-questions pop-up — and it lands in the same
+    // place, or half of new accounts would go to the marketing page and half to the Dashboard.
+    router.push('/dashboard')
     router.refresh()
   }
 
