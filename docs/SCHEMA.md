@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-19 17:39 UTC
-**Migrations applied:** 80 — `000` to `079`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-20 00:33 UTC
+**Migrations applied:** 81 — `000` to `080`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 60 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 61 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -376,6 +376,8 @@ One audit of one company at one moment. Sections are to a run what files are to 
 | `audit_runs_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
 | `audit_runs_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `audit_runs_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Triggers:** `audit_runs_count_done_insert` (AFTER → `audit_runs_count_done`), `audit_runs_count_done_update` (AFTER → `audit_runs_count_done`)
 
 **Indexes:** `audit_runs_company_id_id_key`, `audit_runs_pkey`, `idx_audit_runs_company_created`, `idx_audit_runs_open`
 
@@ -758,6 +760,8 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 | `checklists_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
 | `checklists_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `checklists_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Triggers:** `checklists_count_created` (AFTER → `checklists_count_created`)
 
 **Indexes:** `checklists_pkey`, `idx_checklists_company_document`, `idx_checklists_document_gap`, `idx_checklists_from_topic`
 
@@ -1633,6 +1637,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 | Policy | For | Roles | USING | WITH CHECK |
 |---|---|---|---|---|
 | `document_scans_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+
+**Triggers:** `document_scans_count_reading` (AFTER → `document_scans_count_reading`)
 
 **Indexes:** `document_scans_company_id_id_key`, `document_scans_pkey`, `idx_document_scans_company_scanned`, `idx_document_scans_document_current`
 
@@ -2592,6 +2598,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 | `company_id` | uuid | yes | — |
 | `full_name` | text | yes | — |
 | `created_at` | timestamp with time zone | yes | `timezone('utc'::text, now())` |
+| `welcomed_at` | timestamp with time zone | yes | — |
 
 **Points at:**
 
@@ -2601,7 +2608,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT
 - `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
@@ -2609,7 +2616,9 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 | Policy | For | Roles | USING | WITH CHECK |
 |---|---|---|---|---|
 | `profiles_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
-| `Users can update own profile` | UPDATE | authenticated | `(auth.uid() = id)` | — |
+| `Users can update own profile` | UPDATE | authenticated | `(auth.uid() = id)` | `(auth.uid() = id)` |
+
+**Triggers:** `profiles_person_update` (BEFORE → `profiles_guard_person_update`)
 
 **Indexes:** `profiles_pkey`
 
@@ -3047,7 +3056,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 
 Events, not inventory. Never decremented, never derived from row counts — transcripts are cleared after 7 days and checklists can be deleted, and neither rewrites what happened. DECISIONS.md §125.
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `company_id`
+**Rows:** 6 · **RLS:** enabled · **Primary key:** `company_id`
 
 **Read or written by:** `lib conversation`, `script check-live`
 
@@ -3058,6 +3067,8 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 | `checklists_created` | integer | no | `0` |
 | `created_at` | timestamp with time zone | no | `now()` |
 | `updated_at` | timestamp with time zone | no | `now()` |
+| `files_read` | integer | no | `0` |
+| `audits_done` | integer | no | `0` |
 
 **Points at:**
 
@@ -3065,7 +3076,9 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 
 **Constraints:**
 
+- `usage_counters_audits_done_check` — `CHECK ((audits_done >= 0))`
 - `usage_counters_checklists_created_check` — `CHECK ((checklists_created >= 0))`
+- `usage_counters_files_read_check` — `CHECK ((files_read >= 0))`
 - `usage_counters_questions_answered_check` — `CHECK ((questions_answered >= 0))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -3129,11 +3142,23 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 
 Strictly ascending test for a numeric array. Exists because a CHECK constraint may not contain a subquery and this rule needs one — see migration 012 section 3. IMMUTABLE so the planner accepts it inside a constraint.
 
+### `audit_runs_count_done()`
+
+**Returns** `trigger` · **SECURITY DEFINER**
+
+Adds one to usage_counters.audits_done when a run reaches done — once, on the transition or on an insert that is born done. Migration 080.
+
 ### `auth_company_id()`
 
 **Returns** `uuid` · **SECURITY DEFINER**
 
 The company of the currently authenticated user, read from profiles with definer rights so that tenancy does not depend on the RLS policies of profiles itself. Every company-scoped policy in this database is expressed through this function. Returns null when there is no session or the user has no profile, and a null company_id never matches a row, so the failure direction is closed.
+
+### `bump_usage_counter_for(p_company_id uuid, p_field text)`
+
+**Returns** `void` · **SECURITY DEFINER**
+
+Atomic create-or-add on one usage counter, for the triggers of migration 080. SECURITY DEFINER because the caller is whoever wrote the row and authenticated holds only SELECT on usage_counters (032). A null company is ignored, not raised — checklists.company_id is nullable. Counters record events and never go down (DECISIONS.md §125).
 
 ### `calendar_events_guard_person_update()`
 
@@ -3150,6 +3175,12 @@ Whether a PERSON may make this change to a calendar date's day: NULL when they m
 **Returns** `text` · **security invoker**
 
 The moves a PERSON may make on a calendar date, as a pure function of the old and new status and withdrawal stamp: NULL when the move is one the product offers, else the sentence to refuse with. A function rather than a block inside the trigger so migration 078 can prove every case of it without a login. Calendar step 12.
+
+### `checklists_count_created()`
+
+**Returns** `trigger` · **SECURITY DEFINER**
+
+Adds one to usage_counters.checklists_created for each checklist row. Migration 080 — it replaces the two bumps in app/api/chat and app/api/checklists/from-topic, and covers the two routes that never bumped at all (document-checklist, audit-checklist).
 
 ### `close_and_replace_obligations(p_company_id uuid, p_obligations jsonb)`
 
@@ -3168,6 +3199,12 @@ caller holds the service role and RLS will not check it for them. DECISIONS.md �
 
 Gives every new company a primary site, in the same statement that creates the company. TODO 1.6: a default site for everyone, including single-site customers, so that nothing downstream ever has to ask whether a company has sites. A trigger rather than route code because /api/signup is three inserts with no transaction, and a site created by the third one is a site that can silently fail to exist.
 
+### `document_scans_count_reading()`
+
+**Returns** `trigger` · **SECURITY DEFINER**
+
+Adds one to usage_counters.files_read for each stored reading. Migration 080.
+
 ### `fact_proposals_stamp_topic_title()`
 
 **Returns** `trigger` · **security invoker**
@@ -3177,6 +3214,16 @@ Gives every new company a primary site, in the same statement that creates the c
 **Returns** `void` · **security invoker**
 
 Atomic +1 on a usage counter. Counters record events and never go down (DECISIONS.md §125). service_role only.
+
+### `profiles_guard_person_update()`
+
+**Returns** `trigger` · **security invoker**
+
+### `profiles_person_welcome_refusal(old_welcomed timestamp with time zone, new_welcomed timestamp with time zone)`
+
+**Returns** `text` · **security invoker**
+
+Whether a PERSON may make this change to profiles.welcomed_at: NULL when they may, else the sentence to refuse with. It may be SET from nothing — the Dashboard's first visit — and never changed or cleared by hand afterwards. A pure function so migration 080 can prove every case without a login, as 078 and 079 do for the calendar. Migration 080.
 
 ### `set_updated_at()`
 
@@ -3216,10 +3263,14 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | Table | Trigger | When | Function |
 |---|---|---|---|
 | `agencies` | `set_updated_at` | BEFORE | `set_updated_at` |
+| `audit_runs` | `audit_runs_count_done_insert` | AFTER | `audit_runs_count_done` |
+| `audit_runs` | `audit_runs_count_done_update` | AFTER | `audit_runs_count_done` |
 | `calendar_events` | `calendar_events_person_update` | BEFORE | `calendar_events_guard_person_update` |
+| `checklists` | `checklists_count_created` | AFTER | `checklists_count_created` |
 | `companies` | `create_primary_site` | AFTER | `create_primary_site` |
 | `company_chemicals` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `company_switches` | `set_updated_at` | BEFORE | `set_updated_at` |
+| `document_scans` | `document_scans_count_reading` | AFTER | `document_scans_count_reading` |
 | `entities` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `fact_proposals` | `set_updated_at_fact_proposals` | BEFORE | `set_updated_at` |
 | `fact_proposals` | `stamp_topic_title_fact_proposals` | BEFORE | `fact_proposals_stamp_topic_title` |
@@ -3228,6 +3279,7 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | `jobs` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `library_candidates` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `obligations` | `set_updated_at` | BEFORE | `set_updated_at` |
+| `profiles` | `profiles_person_update` | BEFORE | `profiles_guard_person_update` |
 | `regulated_substances` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `requirement_templates` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `standard_templates` | `set_updated_at` | BEFORE | `set_updated_at` |
@@ -3318,4 +3370,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 077
 078
 079
+080
 ```

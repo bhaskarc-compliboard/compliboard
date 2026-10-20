@@ -14424,3 +14424,122 @@ the two apart is to read the row, which is what `TEST-AT-FINISH-LINE` I says to 
 **None.** No file under `app`, `lib`, `components`, `prompts`, `config`, `scripts`, `supabase` or `tests` was
 touched by this step: `git status` shows only `STATUS.md` and six files under `docs/`. `npm run check` was re-run
 anyway and is unchanged at **1377 tests, 0 failures**.
+
+---
+
+## 203. THE DASHBOARD'S COUNTERS BELONG TO THE DATABASE — AND THE PROFILES GRANT THAT CAME WITH THEM — 19 October 2026 (Dashboard step 4, migration 080)
+
+**The decision.** `files_read` and `audits_done` join `questions_answered` and `checklists_created` on
+`usage_counters`, and all three of the new ones are kept by **triggers on the table that records the event**,
+not by a line in a route. `questions_answered` keeps its three code bumps.
+
+**Why a trigger, with the evidence that settled it.** `docs/DASHBOARD-MACHINERY.md` §B1 listed the five
+`bumpCounter` sites and §B2 read the code beside them. Four routes insert a checklist —
+`app/api/chat/route.ts:410`, `app/api/checklists/from-topic/route.ts:258`,
+`app/api/document-checklist/route.ts:109`, `app/api/audit-checklist/route.ts:57` — and **only the first two
+ever counted it.** `app/api/document-checklist/route.ts:8` says in its own header *"same `checklists_created`
+counter"* and the file contains no `bumpCounter` call; `app/api/audit-checklist` never had one either and
+nothing had noticed. A counter kept by four routes was kept by two. The trigger fires on the row, so a route
+cannot forget, and both of those are now counted without being edited. The two bumps that did exist were
+removed in the same commit, or a checklist would count twice.
+
+**Why `questions_answered` is NOT a trigger.** A stopped answer must not count (§125, and migration `032:20`).
+The three chats already get that right by bumping only inside the `done` branch — `app/api/chat/route.ts:507`,
+`app/api/hr/answer/route.ts:249`, `lib/ask/engine.ts:220` — and a trigger on `turns` cannot see whether a
+stream completed. `scripts/check-live.js:996` is the probe that holds it.
+
+**The backfill SETS and never ADDS**, so replaying the chain from `000` writes the same number from the same
+rows rather than accumulating. It uses the triggers' own filters word for word, so the number written on the
+day and the number kept afterwards are one measurement.
+
+### And the part nobody went looking for: `profiles` was a tenancy hole
+
+Decision 5 needs a person to write **one** column of their own profile (`welcomed_at`, for "Welcome" then
+"Welcome back"). The only honest way to grant one column is to stop granting all of them — and reading what
+was actually there is what turned a routine grant into this entry.
+
+**What was there, read from staging on 19 October 2026 before the migration:** `authenticated` held a
+**table-wide, column-blind UPDATE** on `public.profiles` (migration `000_baseline.sql:680`), under one policy:
+
+```
+"Users can update own profile"  UPDATE  authenticated  using (auth.uid() = id)    -- and no WITH CHECK
+```
+
+The only test is *that the row is yours*. **`profiles.company_id` is in that row.**
+`public.auth_company_id()` reads `profiles.company_id`, and `CLAUDE.md` §3.6 records that **59 of 65 policies
+call that function.** So a caller going straight to PostgREST — not through a route, because a route is a UX
+affordance and not the boundary — could write another company's id into their own profile and be inside that
+company for every table at once. This is migration 078's finding in a worse place: there the blast radius was
+one section's dates; here it was tenancy.
+
+**What 080 does about it.** REVOKE the table-wide UPDATE; GRANT two columns:
+
+```sql
+revoke update on table public.profiles from authenticated;
+grant update (full_name, welcomed_at) on table public.profiles to authenticated;
+```
+
+`full_name` stays because `app/api/account/route.ts:116` writes it through `authed.db`, the **caller's own**
+client, and the Account page must keep working. `company_id`, `id` and `created_at` are no longer writable by
+a person. Every other writer of the table is the service role and is untouched, checked one by one rather than
+assumed: `app/api/signup/route.ts:58` (`supabaseAdmin`, inserts the row) and
+`scripts/run-golden-audit.js:941` (client built from `SUPABASE_SERVICE_ROLE_KEY` at `:63`, relinks the Cascade
+fixture after a reset). `grep -rn "from('profiles')" app lib scripts` finds no other write of any kind.
+
+The policy was also recreated with an explicit `with check (auth.uid() = profiles.id)`. Postgres falls back to
+`USING` when an UPDATE policy has no `WITH CHECK`, so this changes no behaviour — it is §3.6's house rule said
+in the catalog instead of relied on as a default.
+
+**And the rule a grant cannot express.** A column grant lets a person write `welcomed_at`; it cannot say
+"once, from nothing". `public.profiles_person_welcome_refusal(old, new)` is a pure function, the shape of
+`calendar_person_day_refusal` (079), behind a `BEFORE UPDATE` trigger gated on `current_user =
+'authenticated'` so the service role is untouched.
+
+**Proved on staging as `testgamma@example.com`, signed in:**
+
+| | |
+|---|---|
+| set `welcomed_at` once | **OK** |
+| set it again | **refused, 23514** — *"Your first visit is already recorded and is not changed here."* |
+| clear it | **refused, 23514**, same sentence |
+| write `company_id` (to its own value, so the test is safe either way) | **refused, 42501** — *permission denied for table profiles*. That is the **grant**, not the policy |
+| write `full_name` | **OK** — the Account page still works |
+
+### What would reverse this
+
+If a second person at one company ever needs to be welcomed separately from the first, `welcomed_at` is on
+`profiles` and already per-person, so nothing changes. If a route ever needs to move a person between
+companies, it does it as the **service role** behind a check, never by granting the column back.
+
+### The thing to know before trusting a counter on staging
+
+`scripts/check-live.js:627` seeds a real `document_scans` row (`status: 'current'`) for Test Gamma and
+`:725` deletes its parent document afterwards. The trigger counts the insert; the delete cannot un-count it,
+because counters record events and never go down. **So every `check:live` run adds 1 to Test Gamma's
+`files_read` on staging.** That is the counter working as 032 specifies, not a defect — but it means staging's
+number drifts upward with the test harness, and it is why Gamma read 10 against 9 countable scan rows minutes
+after the migration. Production is unaffected: `check:live` cannot be pointed at it
+(`docs/HANDOFF-CODE.md:536`).
+
+### Effects on other sections, by file
+
+- **Documents** — `lib/documentScan.ts:749` (the one INSERT into `document_scans`) now also moves a counter.
+  The trigger is `AFTER INSERT` and returns null, so it cannot refuse or alter a reading. `:747`'s
+  `is_current = false` is an UPDATE and never counts. A failed read carries `could_not_read` and is excluded
+  by the trigger's own `WHEN`.
+- **Audits** — `lib/auditRun.ts:1117` (the `.neq('status','done')` claim) and `:234` / `:305` (runs born done)
+  are all covered. `dismissed_at` and `notified_at` write a done row again and do not count twice.
+- **Compliance Workspace** — `app/api/chat/route.ts` and `app/api/checklists/from-topic/route.ts` lost their
+  bumps; net behaviour unchanged, still counted once.
+- **Documents and Audits checklists** — `app/api/document-checklist/route.ts` and
+  `app/api/audit-checklist/route.ts` are counted for the first time. Neither file was edited.
+- **Account** — `app/api/account/route.ts:116` keeps `full_name`; `docs/SCHEMA.md` now shows `authenticated`
+  on `profiles` as DELETE, INSERT, SELECT, with UPDATE held at column level.
+- **One consequence named rather than discovered later:** `app/api/chat/route.ts:433` deletes a checklist
+  whose items failed to save. The old bump sat after that, so a rolled-back checklist was not counted; the
+  trigger counts it. The row existed, so it is a real event (plan decision 10) — reachable only when a
+  `checklist_items` insert errors.
+- **`files_read` counts READINGS, not documents.** A re-read inserts a new row and counts again. That is
+  §125's doctrine, and the backfill uses the same rule so the two agree — but it is a different number from
+  the old "Files reviewed" tile, which counted documents. On staging today: Cascade 12 readings over 12
+  documents, Test Gamma 10 over 3.
