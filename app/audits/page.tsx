@@ -23,6 +23,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import AppLayout from '@/components/AppLayout'
 import AuditReport from '@/components/AuditReport'
+import { runName, checklistTitle as sharedChecklistTitle } from '@/lib/auditView'
 import DocumentReport from '@/components/DocumentReport'
 import { authHeaders, createClient } from '@/lib/supabase'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
@@ -175,16 +176,19 @@ function needsOf(s: RunSummary | null | undefined): number {
 }
 
 /**
- * The checklist's own title, from the document it is. Falls back to the run's scope and then to a
- * plain noun — never to an id, and never to "All agencies", which is what a template run's
- * `agency_label` is empty of (Run 5a, item 3).
+ * *** THE WORDS MOVED TO `lib/auditView.ts` AT DASHBOARD STEP 6. *** `checklistTitle` and the
+ * expression that named a run in the Past audits list both live there now, because the Dashboard's
+ * "Recent audits" shows the same runs and a second copy is a second answer. This page looks the
+ * document up — it holds the list already — and hands the title over; nothing else changed.
  */
-function checklistTitle(run: { template_document_id: string | null; scope: string | null }, idx: Index): string {
-  const d = run.template_document_id
-    ? idx.documents.find((x) => x.document_id === run.template_document_id)
+const titleOfTemplate = (run: { template_document_id: string | null }, idx: Index): string | null =>
+  run.template_document_id
+    ? idx.documents.find((x) => x.document_id === run.template_document_id)?.title ?? null
     : null
-  return d?.title ?? run.scope ?? 'your checklist'
-}
+/** Kept at this page's own two call sites (the running and the landed banner), now one line. */
+const checklistTitle = (run: { template_document_id: string | null; scope: string | null }, idx: Index): string =>
+  sharedChecklistTitle(run, titleOfTemplate(run, idx))
+const runTitle = (run: Run, idx: Index): string => runName(run, titleOfTemplate(run, idx))
 
 const fmt = (iso: string | null | undefined) => {
   if (!iso) return ''
@@ -744,14 +748,9 @@ function Audits() {
                         <div className="min-w-0 flex-1">
                           <p className="text-[14px] text-gray-900">
                             {fmt(r.finished_at ?? r.created_at)}
-                            {/* *** A TEMPLATE RUN IS NAMED BY ITS CHECKLIST. *** Its `agency_label`
-                                is null — its questions came from a form — and the fallback read
-                                "All agencies", which is the one thing it is not. */}
-                            <span className="ml-2 text-gray-600">
-                              {r.kind === 'template'
-                                ? `Against ${checklistTitle(r, idx)}`
-                                : (r.section_count > 1 ? 'All agencies' : (r.agency_label ?? 'All agencies'))}
-                            </span>
+                            {/* The run's name, from `lib/auditView.ts` — the same words the
+                                Dashboard's Recent audits draws. */}
+                            <span className="ml-2 text-gray-600">{runTitle(r, idx)}</span>
                           </p>
                           <p className="mt-0.5 text-[12px] text-gray-500">
                             {r.status !== 'done'

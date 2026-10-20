@@ -87,3 +87,68 @@ export const COUNTER_TILES = [
 export const COUNTER_COLUMNS = COUNTER_TILES.map(t => t.key).join(', ')
 
 export type CounterRow = Partial<Record<(typeof COUNTER_TILES)[number]['key'], number | null>>
+
+// -------------------------------------------------------------------------------------------
+// STEP 6 — THE TWO SECTIONS UNDER THE NUMBERS
+// -------------------------------------------------------------------------------------------
+
+/** Board 1: at most six dates, then one line saying how many more. */
+export const UPCOMING_MAX = 6
+/** Decision 7: the last three runs. */
+export const RECENT_AUDITS_MAX = 3
+
+/**
+ * SIX, AND A LINE THAT SAYS HOW MANY MORE — decision 6.
+ *
+ * Pure, and split out from the page for the reason the welcome was: the interesting cases are the
+ * boundaries, and a boundary inside a `.map()` is only ever checked by looking at a screen that
+ * happens to have seven dates on it. Six shows six and says nothing; seven shows six and says
+ * "1 more".
+ *
+ * It does NOT sort. The caller hands in the order it wants shown — the Dashboard's is the view's
+ * own `next_due`, soonest first — because a function that silently re-sorted would be a second
+ * opinion about which date is next, and the Calendar already has the only one.
+ */
+export function splitUpcoming<T>(rows: readonly T[], max: number = UPCOMING_MAX): { shown: T[]; more: number } {
+  const all = rows ?? []
+  return { shown: all.slice(0, max), more: Math.max(0, all.length - max) }
+}
+
+/** The grey line under the rows. Singular at one, because "1 more dates" is how a product sounds careless. */
+export function moreLine(n: number): string {
+  return n === 1 ? '1 more in the next 30 days.' : `${n} more in the next 30 days.`
+}
+
+/** The link beside it, and where it goes — the Calendar's own tab, not the Calendar's front door. */
+export const MORE_LINK = 'See them on the Calendar'
+export const MORE_HREF = '/calendar?tab=calendar'
+
+/**
+ * THE DAY-ONE LINES — board 3. Each says what will appear there and how to make it happen, which
+ * is `CLAUDE.md` §5.1's rule for an empty state: "nothing found" is a claim, and a claim has to be
+ * true and has to leave the person somewhere to go.
+ */
+export const UPCOMING_EMPTY = 'Deadlines from your documents will be displayed here.'
+export const UPCOMING_EMPTY_LINK = 'Add a document'
+export const UPCOMING_EMPTY_HREF = '/documents'
+export const AUDITS_EMPTY = 'Your recent audits will show here.'
+export const AUDITS_EMPTY_LINK = 'Run your first audit'
+export const AUDITS_EMPTY_HREF = '/audits'
+
+/**
+ * *** A DATE IN THE WINDOW — the Dashboard's one filter, and it computes nothing. ***
+ *
+ * `next_due`, `days_until` and `has_passed` are the VIEW's, worked out against the server's today;
+ * a browser comparing a DATE to its own clock slips a day for anybody west of UTC. A row with no
+ * computable day (`next_due` null) is not a deadline at all — decision 23 — and one that has passed
+ * belongs to the Calendar's list rather than to "upcoming".
+ */
+export function inNext30Days(
+  row: { next_due: string | null; days_until: number | null; has_passed: boolean | null },
+): boolean {
+  return !!row.next_due && !row.has_passed
+    && row.days_until !== null && row.days_until >= 0 && row.days_until <= 30
+}
+
+/** Decision 6's window, named so the page and its test cannot disagree about the number. */
+export const UPCOMING_DAYS = 30

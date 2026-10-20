@@ -329,9 +329,18 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
           <a href="/dashboard" className="hidden lg:flex items-center gap-2 pl-3">
             <span className="text-base font-semibold"><span className="text-green-700">Compli</span><span className="text-orange-600">Board</span></span>
           </a>
-          {title && (
-            <span className="text-sm text-gray-400 hidden sm:block">/ {title}</span>
-          )}
+          {/*
+            *** THE BREADCRUMB IS GONE — Dashboard step 6F. ***
+            It drew "/ Dashboard" and "/ My Account" beside the wordmark, and only those two: six
+            of the eight signed-in pages passed no `title` at all, so the bar said where you were
+            on a quarter of the product and nothing on the rest. A trail of one is not a trail, and
+            the sidebar already marks the page you are on (step 5b).
+
+            The MARKUP is removed rather than the pages' prop, so no page can bring it back by
+            passing a title — and the prop itself stays, because it has a second job this step did
+            not touch: `document.title` at the effect below, which is the name on the browser tab.
+            /dashboard and /account keep passing it for that, and that is now all it does.
+          */}
         </div>
         <div className="flex items-center gap-2">
           <button

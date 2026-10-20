@@ -467,6 +467,12 @@ try {
     // the box must not move, and each item's y is what the reorder and the new rule are allowed to
     // change. The active item's own colours come too, because the mark is the point of the step and
     // a screenshot cannot tell #256541 from #2F7D52.
+    // THE TOP BAR AND THE LOGO — Dashboard step 6F. The breadcrumb beside the logo is being
+    // removed, and the thing to prove is that nothing else in the bar moved with it: the bar's own
+    // height and where the wordmark sits.
+    const topbar = document.querySelector('header')
+    const logo = topbar ? topbar.querySelector('a[href="/dashboard"]') : null
+    const crumb = topbar ? [...topbar.querySelectorAll('span')].find((n) => n.textContent.trim().startsWith('/ ')) : null
     const aside = document.querySelector('aside')
     const navItems = aside ? [...aside.querySelectorAll('button')].map((b) => {
       const r = b.getBoundingClientRect()
@@ -487,6 +493,9 @@ try {
     const navRule = aside ? [...aside.querySelectorAll('div, hr')].find((e) => !e.textContent.trim() && Math.round(e.getBoundingClientRect().height) === 1) : null
     return {
       composer,
+      topbar: topbar ? { height: Math.round(topbar.getBoundingClientRect().height),
+        logo: logo ? { ...edges(logo), text: logo.textContent.trim() } : null,
+        crumb: crumb ? { ...edges(crumb), text: crumb.textContent.trim() } : null } : null,
       sidebar: aside ? { box: edges(aside), items: navItems,
         rule: navRule ? { ...edges(navRule), top: Math.round(navRule.getBoundingClientRect().top) } : null } : null,
       path: location.pathname + location.search, viewport: innerWidth,
@@ -508,6 +517,9 @@ try {
   console.log(`  column content   ${o.column ? `${o.column.content.left}–${o.column.content.right}` : '-'}`)
   console.log(`  tab row          ${o.tabRow ? `${o.tabRow.left}–${o.tabRow.right}   ${o.tabRow.tabs.join(' | ')}` : 'none'}`)
   console.log(`  footer content   ${o.footer ? `${o.footer.content.left}–${o.footer.content.right}   text starts x=${o.footer.textStartsAt}` : 'none'}`)
+  if (o.topbar) {
+    console.log(`  top bar          height ${o.topbar.height}px   logo ${o.topbar.logo ? `${o.topbar.logo.left}–${o.topbar.logo.right} "${o.topbar.logo.text}"` : 'none'}   breadcrumb ${o.topbar.crumb ? `${o.topbar.crumb.left}–${o.topbar.crumb.right} "${o.topbar.crumb.text}"` : 'none'}`)
+  }
   if (o.sidebar) {
     console.log(`  sidebar box      ${o.sidebar.box.left}–${o.sidebar.box.right} (${o.sidebar.box.width})`)
     for (const it of o.sidebar.items) {

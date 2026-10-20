@@ -491,40 +491,53 @@ describe('the Dashboard reads what the Calendar reads', () => {
   const DASH = readFileSync('app/dashboard/page.tsx', 'utf8')
   const code = DASH.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
+  /**
+   * *** DASHBOARD STEP 6 MOVED THIS UP A LEVEL, AND THE CLAIM IS UNCHANGED. ***
+   *
+   * These four checks were written at Calendar step 12, when the Dashboard called
+   * `liveDates(supabase, `${CALENDAR_COUNT_COLUMNS}, title, days_until`)` and then wrote its own
+   * row and its own filter. It now calls `readCalendarRows`, which IS that filter with the view's
+   * full column list (`lib/calendarView.ts:84`), and the 30-day test is `inNext30Days`
+   * (`lib/dashboardView.ts`), which has its own boundary tests in
+   * `tests/unit/dashboardView.test.ts`.
+   *
+   * So the spelling each check looked for is gone and every claim behind them still holds. They
+   * are rewritten against the claim — one shared filter, no browser clock, no base table, a
+   * failed read that is not an empty calendar — rather than deleted, because what they were
+   * written for is what happened on staging: Gamma showed 7 rows where 5 are live, two of them
+   * dates a person had removed, and Cascade announced "in 15 days" for a repeating date whose
+   * period nobody had read.
+   */
   test('through the one shared filter, not a query of its own and not the route', () => {
-    assert.match(code, /liveDates\(supabase, `\$\{CALENDAR_COUNT_COLUMNS\}, title, days_until`\)/)
-    // `days_until` is in that list because the filter below reads it, and it was missing once:
-    // `undefined >= 0` is false, so every row was dropped and the page said there were none.
-    const filter = code.slice(code.indexOf('const upcoming'))
-    assert.match(filter, /e\.days_until/)
+    assert.match(code, /readCalendarRows\(supabase\)/)
     assert.ok(!code.includes("fetch('/api/calendar'"), 'the route is gone')
     assert.ok(!/\.from\('calendar_events'\)/.test(code), 'never the base table')
+    assert.ok(!/\.from\('calendar_v'\)/.test(code), 'nor the view by name — the shared call does that')
   })
 
-  /**
-   * Measured on staging before this change: Test Gamma showed 7 rows where 5 are live — two were
-   * dates a person had REMOVED — and Cascade showed 4 where 1 is due, the three extras being
-   * repeating dates whose period was never read, whose day the Calendar refuses to compute and
-   * the Dashboard announced as "in 15 days".
-   */
   test('a date with no computable day is not a deadline, and a passed one is not upcoming', () => {
-    assert.match(code, /e\.next_due && !e\.has_passed/)
-    assert.match(code, /e\.days_until !== null && e\.days_until >= 0 && e\.days_until <= 30/)
-    assert.ok(!/new Date\(e\.due_date\)/.test(code), 'no browser clock decides what is due')
+    // The rule moved into `inNext30Days`; the page applies it and adds nothing.
+    assert.match(code, /\.filter\(inNext30Days\)/)
+    const RULE = readFileSync('lib/dashboardView.ts', 'utf8')
+    assert.match(RULE, /!!row\.next_due && !row\.has_passed/)
+    assert.match(RULE, /row\.days_until !== null && row\.days_until >= 0 && row\.days_until <= 30/)
+    assert.ok(!/new Date\(.*due_date\)/.test(code), 'no browser clock decides what is due')
     assert.ok(!code.includes('function daysUntil'), 'the view counts the days')
   })
 
-  test('an unconfirmed date is marked, in the page\'s own words, and every row opens the date', () => {
-    assert.match(code, /e\.status === 'proposed'/)
-    assert.match(code, /\{NOT_CONFIRMED\}/)
-    assert.match(code, /href=\{`\/calendar\?tab=calendar&date=\$\{e\.id\}`\}/)
+  test('an unconfirmed date is marked, in the CALENDAR\'s words, and every row opens the date', () => {
+    // It was the page's own `NOT_CONFIRMED` span until step 6; `metaParts` carries it now, which
+    // is why the Dashboard no longer names the constant at all.
+    assert.match(code, /metaParts\(r, siteCount/)
+    assert.match(readFileSync('lib/calendarView.ts', 'utf8'), /else if \(row\.status === 'proposed'\) out\.push\(NOT_CONFIRMED\)/)
+    assert.match(code, /href=\{`\/calendar\?tab=calendar&date=\$\{r\.id\}`\}/)
   })
 
   test('a read that failed is not an empty calendar (§5.1)', () => {
-    assert.match(code, /setEvents\(null\)/)
+    assert.match(code, /setDates\(null\)/)
     assert.match(DASH, /We could not load your dates just now/)
-    // And the empty state is only reached when the read answered.
-    assert.ok(code.indexOf('events === null') < code.indexOf('upcoming.length === 0'))
+    // And the day-one line is only reached when the read answered.
+    assert.ok(code.indexOf('dates === null') < code.indexOf('shown.length === 0'))
   })
 })
 

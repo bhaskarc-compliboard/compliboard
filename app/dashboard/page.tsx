@@ -4,11 +4,18 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
-import { liveDates, CALENDAR_COUNT_COLUMNS } from '@/lib/calendarCounts'
-import { NOT_CONFIRMED } from '@/lib/calendarView'
+import DashboardSection from '@/components/DashboardSection'
+import {
+  readCalendarRows, type CalendarRow,
+  metaParts, whenWords, passedWords, longDay, siteWords,
+} from '@/lib/calendarView'
+import { runName, AUDIT_RUN_ROW_COLUMNS, AUDIT_DONE, type NameableRun } from '@/lib/auditView'
 import {
   welcomeFor, countWord, isNoCount, COUNTER_TILES, COUNTER_COLUMNS,
   type CounterRow, type Welcome,
+  splitUpcoming, moreLine, MORE_LINK, MORE_HREF, inNext30Days, RECENT_AUDITS_MAX,
+  UPCOMING_EMPTY, UPCOMING_EMPTY_LINK, UPCOMING_EMPTY_HREF,
+  AUDITS_EMPTY, AUDITS_EMPTY_LINK, AUDITS_EMPTY_HREF,
 } from '@/lib/dashboardView'
 
 /**
@@ -28,22 +35,31 @@ import {
  *   · **A DATE compared with the browser's clock** slips a day for anybody west of UTC
  *     (`lib/calendarCounts.ts` carries the same reasoning for the info bar).
  *
- * Now: `liveDates` — the one filter the tab counts, the sidebar badge, the feed and the monthly
- * email share — and `next_due`, `days_until` and `has_passed` as the VIEW computed them against
- * the server's today. Nothing here does date arithmetic.
- *
- * *** STEP 6 REBUILDS THIS PANEL. *** Step 5 moved it inside the new column and changed nothing
- * about what it reads or says.
+ * *** AND AT STEP 6 IT STOPPED PHRASING THEM TOO. *** The page used to write its own "Today",
+ * "Tomorrow", "in N days" and its own red pill. Those are `whenWords` (`lib/calendarView.ts:173`),
+ * and the rows now carry the Calendar's whole meta line — the day, how often, the site, what it
+ * was read from, whether it is confirmed — from `metaParts` (`:255`). `readCalendarRows` is the
+ * same call the Calendar page makes, so the two cannot disagree about what is on the calendar OR
+ * about what to call it.
  */
-interface CalEvent {
-  id: string; title: string; status: string
-  next_due: string | null; days_until: number | null; has_passed: boolean | null
+interface AuditRunRow extends NameableRun {
+  id: string
+  entity_id: string | null
+  status: string
+  finished_at: string | null
+  created_at: string
 }
 
 export default function Dashboard() {
   const supabase = createClient()
   const router = useRouter()
-  const [events, setEvents] = useState<CalEvent[] | null>([])
+  const [dates, setDates] = useState<CalendarRow[] | null>([])
+  const [audits, setAudits] = useState<AuditRunRow[] | null>([])
+  /** Names for a template run's checklist, and the site names both sections need. */
+  const [docTitles, setDocTitles] = useState<Record<string, string>>({})
+  const [siteNames, setSiteNames] = useState<Record<string, string>>({})
+  const [siteCount, setSiteCount] = useState(0)
+  const [people, setPeople] = useState<Record<string, string>>({})
   /**
    * *** THE FOUR NUMBERS COME FROM `usage_counters` AND NOWHERE ELSE — decision 2. ***
    *
@@ -75,33 +91,76 @@ export default function Dashboard() {
 
       const companyId = profileData?.company_id
       if (companyId) {
+        /**
+         * THE SITES AND THE NAMES, for the same reason the Calendar reads them
+         * (`app/calendar/page.tsx:239-241`): `siteWords` says nothing at all when a company has
+         * ONE site (decision 24), so the count decides whether a site is named anywhere on this
+         * page, and `metaParts` puts a person behind a typed date. Both are small reads scoped by
+         * RLS, and neither is a second opinion about anything.
+         */
+        const [siteRes, peopleRes] = await Promise.all([
+          supabase.from('entities').select('id, name'),
+          supabase.from('profiles').select('id, full_name'),
+        ])
+        const sites = siteRes.data ?? []
+        setSiteCount(sites.length)
+        setSiteNames(Object.fromEntries(sites.map((s) => [s.id, s.name])))
+        setPeople(Object.fromEntries((peopleRes.data ?? []).map((p) => [p.id, p.full_name ?? ''])))
+
         try {
-          // The caller's own client: `calendar_v` is security_invoker, so RLS decides what comes
-          // back and this page names no company.
-          // `title` and `days_until` on top of the counts' own columns: the counts need neither,
-          // and this list is the whole of what a dashboard row shows. **`days_until` was missing
-          // from the first version of this line**, and because `undefined >= 0` is false the
-          // filter below dropped every row — the page drew "No deadlines in the next 30 days"
-          // over a company with one. Found in the step's own screenshot, not by a test.
-          const { data: cal, error: calError } = await liveDates(supabase, `${CALENDAR_COUNT_COLUMNS}, title, days_until`)
-          if (calError) throw new Error(calError.message)
-          setEvents((cal ?? []) as unknown as CalEvent[])
+          // The caller's own client, the Calendar's own call. `calendar_v` is security_invoker, so
+          // RLS decides what comes back and this page names no company.
+          setDates(await readCalendarRows(supabase))
         } catch (e) {
           // §5.1: a read that failed is not an empty calendar. The list says so rather than
-          // drawing "No deadlines in the next 30 days" over dates that exist.
+          // drawing the day-one line over dates that exist.
           console.error('dashboard: the calendar could not be read', e)
-          setEvents(null)
+          setDates(null)
+        }
+
+        /**
+         * *** RECENT AUDITS — decision 7, read as the person. ***
+         *
+         * `audit_runs_select` is SELECT to `authenticated` `using (company_id = auth_company_id())`
+         * (`docs/SCHEMA.md`), so the caller's own client returns this company's runs and no
+         * other's, and the page names no company here either.
+         *
+         * `status = 'done'` and NOTHING about `dismissed_at`: dismissing a run clears its banner on
+         * the Audits page, it does not un-run the audit. Decision 7 says the work was done, so it
+         * counts. Ordered by `finished_at` — the moment the audit actually landed — with
+         * `created_at` behind it for a row that somehow has no finish.
+         */
+        const { data: runRows, error: runError } = await supabase
+          .from('audit_runs').select(AUDIT_RUN_ROW_COLUMNS)
+          .eq('status', AUDIT_DONE)
+          .order('finished_at', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false })
+          .limit(RECENT_AUDITS_MAX)
+        if (runError) {
+          console.error('dashboard: the audits could not be read', runError)
+          setAudits(null)
+        } else {
+          const runs = (runRows ?? []) as unknown as AuditRunRow[]
+          setAudits(runs)
+          // A template run is named by its checklist, so the three rows' documents are looked up —
+          // and only when there is a template run among them. Agency runs need nothing.
+          const templateIds = runs.map((r) => r.template_document_id).filter((x): x is string => !!x)
+          if (templateIds.length) {
+            const { data: docs } = await supabase.from('document_index_v')
+              .select('document_id, title').in('document_id', templateIds)
+            setDocTitles(Object.fromEntries((docs ?? []).map((d) => [d.document_id, d.title ?? ''])))
+          }
         }
 
         /**
          * *** READ WITH THE CALLER'S OWN CLIENT, NOT A ROUTE. ***
          *
-         * The step asked which path this takes and why. Read from the catalog on 20 October:
-         * `authenticated` holds SELECT on `public.usage_counters`, and the table carries exactly
-         * one policy — `usage_counters_select_own_company`, SELECT to `authenticated`,
+         * Read from the catalog on 20 October: `authenticated` holds SELECT on
+         * `public.usage_counters`, and the table carries exactly one policy —
+         * `usage_counters_select_own_company`, SELECT to `authenticated`,
          * `using (company_id = auth_company_id())`. So a signed-in person can read their own
-         * company's row and no other, and a `GET /api/dashboard/counters` would add a second
-         * hop, a second place for the tenancy rule to live, and nothing else.
+         * company's row and no other, and a `GET /api/dashboard/counters` would add a second hop,
+         * a second place for the tenancy rule to live, and nothing else.
          *
          * `maybeSingle`, not `single`: a company with no row yet is the ordinary day-one state
          * (board 3), and `single` turns it into an error.
@@ -142,13 +201,13 @@ export default function Dashboard() {
   }, [])
 
   /**
-   * The next 30 days, from the view's own numbers: a date with no day computable is not a
-   * deadline (`next_due` null), and one that has passed belongs to the Calendar's list, not to
-   * "upcoming". `days_until` is the server's count, so nothing here reads a clock.
+   * The next 30 days, in the view's own order. `inNext30Days` is the whole of the filter and it
+   * reads only columns the VIEW computed; nothing here touches a clock.
    */
-  const upcoming = (events ?? [])
-    .filter((e) => e.next_due && !e.has_passed && e.days_until !== null && e.days_until >= 0 && e.days_until <= 30)
+  const upcoming = (dates ?? [])
+    .filter(inNext30Days)
     .sort((a, b) => (a.next_due ?? '').localeCompare(b.next_due ?? ''))
+  const { shown, more } = splitUpcoming(upcoming)
 
   if (loading || !welcome) {
     return (
@@ -191,48 +250,123 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Upcoming deadlines — step 6 rebuilds this in the boards' words and rows. Step 5 only
-            moved it inside the column. */}
-        <h2 className="mt-9 mb-3 text-lg font-semibold text-orange-600">Upcoming — next 30 days</h2>
-        <div className="bg-white rounded-xl">
-          {events === null ? (
-            <div className="px-6 py-8 text-center">
-              <p className="text-sm text-amber-800">
-                We could not load your dates just now. Nothing has changed — open the Calendar to see them.
+        {/* ***** THE THREE QUESTIONS GO HERE — step 7, decision 8. *****
+            Board 1 puts the card directly under the numbers and above Upcoming, so that the one
+            thing the product wants from a person is above the fold on a laptop. Nothing is drawn
+            here yet; the space is named so the order is not rediscovered later. */}
+
+        {/* ===== UPCOMING — decision 6 ===== */}
+        <DashboardSection heading="Upcoming in the next 30 days" action="Open the Calendar →" href="/calendar" />
+        {dates === null ? (
+          /* §5.1: a read that failed is checked BEFORE the empty state, and says what is true —
+             that we could not look — rather than "nothing is due", which is a claim about dates
+             nobody read. Checked first here for exactly that reason. */
+          <p className="border-y border-gray-100 py-3.5 text-[13px] text-[var(--amber)]">
+            We could not load your dates just now. Nothing has changed — open the Calendar to see them.
+          </p>
+        ) : shown.length === 0 ? (
+          <p className="border-y border-gray-100 py-3.5 text-[13px] text-gray-500">
+            {UPCOMING_EMPTY}{' '}
+            <a href={UPCOMING_EMPTY_HREF} className="ml-1 text-[12px] text-[var(--green-ink)] hover:underline">
+              {UPCOMING_EMPTY_LINK}
+            </a>
+          </p>
+        ) : (
+          <>
+            <div className="divide-y divide-gray-100 border-y border-gray-100">
+              {shown.map((r) => (
+                // Every row opens the date itself, where everything about it is (Calendar step
+                // 8a's drawer). A dashboard that names a deadline and cannot show it is a dead
+                // end. Unchanged from step 5.
+                <a key={r.id} href={`/calendar?tab=calendar&date=${r.id}`}
+                   className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">
+                      {r.title}
+                    </span>
+                    {/* The Calendar's own meta line, through the Calendar's own function: the day,
+                        how often, the site, what it was read from, and `not confirmed` when it is.
+                        The Dashboard phrases none of it. */}
+                    <span className="mt-0.5 block truncate text-[12px] text-gray-500">
+                      {metaParts(r, siteCount, r.added_by ? people[r.added_by] : null).map((part, i) => (
+                        <span key={i}>
+                          {i > 0 && <span aria-hidden="true"> · </span>}
+                          <span className={part === passedWords(r) ? 'text-[var(--amber)]' : ''}>{part}</span>
+                        </span>
+                      ))}
+                    </span>
+                  </span>
+                  {/* *** THE BOARD'S `--danger` HAS NO TOKEN IN THIS PRODUCT, so this is amber. ***
+                      `app/globals.css` carries one attention colour, `--amber` (#B7791F), and no
+                      red one; and the Calendar's own list draws `whenWords` in plain grey with no
+                      urgency colour at all (`app/calendar/page.tsx:614`). Amber is the nearest
+                      thing that exists, and it is already what this very meta line uses for
+                      `passedWords`. A week or less is amber; everything further out is the
+                      Calendar's grey. */}
+                  <span className={`shrink-0 text-[12px] tabular-nums ${
+                    (r.days_until ?? 99) <= 7 ? 'text-[var(--amber)]' : 'text-gray-400'}`}>
+                    {whenWords(r)}
+                  </span>
+                </a>
+              ))}
+            </div>
+            {more > 0 && (
+              <p className="pt-2.5 text-[12px] text-gray-500">
+                {moreLine(more)}{' '}
+                <a href={MORE_HREF} className="ml-1 text-[12px] text-[var(--green-ink)] hover:underline">
+                  {MORE_LINK}
+                </a>
               </p>
-            </div>
-          ) : upcoming.length === 0 ? (
-            <div className="px-6 py-8 text-center">
-              <p className="text-sm text-gray-400">No deadlines in the next 30 days.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {upcoming.map(e => {
-                const d = e.days_until as number
-                const urgent = d <= 7
-                return (
-                  // Every row opens the date itself, where everything about it is (step 8a's
-                  // drawer). A dashboard that names a deadline and cannot show it is a dead end.
-                  <a key={e.id} href={`/calendar?tab=calendar&date=${e.id}`}
-                    className="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
-                    <span className="min-w-0 text-sm text-gray-800">
-                      <span className="truncate">{e.title}</span>
-                      {/* Decision 8: an unconfirmed date shows everywhere, marked, in the page's
-                          own words — lower case, because it is the normal condition of a date a
-                          reading found yesterday, not an alarm. */}
-                      {e.status === 'proposed' && (
-                        <span className="ml-2 text-xs text-gray-400">{NOT_CONFIRMED}</span>
-                      )}
+            )}
+          </>
+        )}
+
+        {/* ===== RECENT AUDITS — decision 7. It replaced "Recently read" at step 5. ===== */}
+        <DashboardSection heading="Recent audits" action="All audits →" href="/audits" />
+        {audits === null ? (
+          <p className="border-y border-gray-100 py-3.5 text-[13px] text-[var(--amber)]">
+            We could not load your audits just now. Nothing has changed — open Audits to see them.
+          </p>
+        ) : audits.length === 0 ? (
+          <p className="border-y border-gray-100 py-3.5 text-[13px] text-gray-500">
+            {AUDITS_EMPTY}{' '}
+            <a href={AUDITS_EMPTY_HREF} className="ml-1 text-[12px] text-[var(--green-ink)] hover:underline">
+              {AUDITS_EMPTY_LINK}
+            </a>
+          </p>
+        ) : (
+          <div className="divide-y divide-gray-100 border-y border-gray-100">
+            {audits.map((r) => {
+              // `siteWords` says nothing at all for a single-site company (decision 24), and an
+              // `audit_runs` row names its site in `entity_id` where a calendar row names it in
+              // `site_id` — so the row is shaped for the shared function rather than copied.
+              const site = siteWords(
+                { site_id: null, entity_id: r.entity_id, site_name: r.entity_id ? siteNames[r.entity_id] ?? null : null },
+                siteCount,
+              )
+              const when = longDay(r.finished_at ?? r.created_at)
+              return (
+                // *** /audits ALREADY OPENS A RUN FROM ITS ADDRESS. *** `app/audits/page.tsx:208`
+                // reads `?run=`, `:791` draws that report. Nothing had to be taught; the Calendar's
+                // `?date=` lesson had already been learnt on this page.
+                <a key={r.id} href={`/audits?run=${r.id}`}
+                   className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">
+                      {runName(r, r.template_document_id ? docTitles[r.template_document_id] ?? null : null)}
                     </span>
-                    <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-md ${urgent ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}`}>
-                      {d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : `in ${d} days`}
+                    <span className="mt-0.5 block truncate text-[12px] text-gray-500">
+                      {[site, when].filter(Boolean).map((part, i) => (
+                        <span key={i}>{i > 0 && <span aria-hidden="true"> · </span>}{part}</span>
+                      ))}
                     </span>
-                  </a>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                  </span>
+                  <span className="shrink-0 text-[12px] text-[var(--green-ink)]">Open the report</span>
+                </a>
+              )
+            })}
+          </div>
+        )}
 
       </div>
     </AppLayout>

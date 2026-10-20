@@ -21,7 +21,10 @@ import { readFileSync } from 'node:fs'
 import {
   welcomeFor, countWord, isNoCount, NO_COUNT, COUNTER_TILES, COUNTER_COLUMNS,
   LEDE_FIRST_VISIT, LEDE_RETURNING,
+  splitUpcoming, moreLine, inNext30Days, RECENT_AUDITS_MAX,
+  UPCOMING_EMPTY, UPCOMING_EMPTY_LINK, AUDITS_EMPTY, AUDITS_EMPTY_LINK,
 } from '../../lib/dashboardView.ts'
+import { runName, ALL_AGENCIES } from '../../lib/auditView.ts'
 
 const PAGE = readFileSync('app/dashboard/page.tsx', 'utf8')
 /**
@@ -154,11 +157,17 @@ describe('the four numbers come from usage_counters and nowhere else — decisio
     assert.ok(!/usage_counters'\)[\s\S]{0,200}\.single\(\)/.test(CODE))
   })
 
-  test('the old row-counting is gone: no document_index_v, no research_answer, no issues', () => {
-    for (const gone of ['document_index_v', 'research_answer', 'issuesIdentified', 'filesReviewed',
+  test('the old row-counting is gone: no research_answer, no issues, nothing counted from rows', () => {
+    for (const gone of ['research_answer', 'issuesIdentified', 'filesReviewed',
                         'open_gap_count', 'display_status']) {
       assert.ok(!CODE.includes(gone), `the page still names ${gone}`)
     }
+    // *** `document_index_v` IS BACK AT STEP 6, AND IT IS NOT COUNTING. *** It is read for the
+    // TITLE of a template audit's checklist, for at most three rows, by id. What this check is
+    // really about is that no number on the page is computed from rows, so that is what it says:
+    // the view is selected for two columns and never filtered-and-counted.
+    assert.match(CODE, /from\('document_index_v'\)\s*\n?\s*\.select\('document_id, title'\)/)
+    assert.ok(!/document_index_v[\s\S]{0,400}\.length/.test(CODE), 'something is counting the view again')
     // "Issues identified" is dropped from this revision altogether — decision 2.
     assert.ok(!PAGE.includes('Issues identified'))
   })
@@ -207,9 +216,10 @@ describe('the shell — the shared column, and what left the page', () => {
   })
 
   test('the Recently read panel and its reads are gone', () => {
+    // Against CODE: step 6's header names "Recently read" in order to say what replaced it.
     for (const gone of ['Recently read', 'No documents read yet', 'readings', 'KIND_WORD',
                         'statusWord', 'isAmber', 'documentStatus']) {
-      assert.ok(!PAGE.includes(gone), `the page still carries ${gone}`)
+      assert.ok(!CODE.includes(gone), `the page still carries ${gone}`)
     }
   })
 
@@ -218,9 +228,16 @@ describe('the shell — the shared column, and what left the page', () => {
     assert.ok(DOCSTATUS.includes('TWO OTHER COPIES'), 'the copy count was not re-counted')
   })
 
-  test('Upcoming is still there and still reads the one live filter — step 6 rebuilds it', () => {
-    assert.ok(CODE.includes('liveDates('))
-    assert.ok(CODE.includes('CALENDAR_COUNT_COLUMNS'))
+  /**
+   * STEP 6 MOVED THIS UP A LEVEL. The page called `liveDates(supabase, CALENDAR_COUNT_COLUMNS …)`
+   * and built its own row; it now calls `readCalendarRows`, which IS `liveDates` with the view's
+   * full column list (`lib/calendarView.ts:84`) and is what the Calendar page itself calls. The
+   * claim is unchanged — one filter, shared — so the check follows it rather than the old spelling.
+   */
+  test('Upcoming still reads the one live filter, through the Calendar\'s own call', () => {
+    assert.ok(CODE.includes('readCalendarRows(supabase)'))
+    assert.match(CALVIEW, /export async function readCalendarRows[\s\S]{0,200}liveDates\(db, CALENDAR_VIEW_COLUMNS\)/)
+    assert.ok(!/\.from\('calendar_v'\)/.test(CODE), 'the page must not name the view itself')
     assert.ok(CODE.includes('/calendar?tab=calendar&date='), 'a row must still open the drawer')
     // §5.1: a read that failed must not be drawn as an empty calendar.
     assert.ok(PAGE.includes('We could not load your dates just now'))
@@ -350,5 +367,198 @@ describe('the active page is marked as a workspace marks its active tab', () => 
     assert.match(LAYOUT, /<aside className="no-print hidden lg:flex flex-col w-56/)
     assert.match(LAYOUT, /px-3 py-2\.5 rounded-md text-sm/)
     assert.match(LAYOUT, /<nav className="flex-1 px-3 py-4 space-y-1">/)
+  })
+})
+
+// =================================================================================================
+// STEP 6 — UPCOMING, RECENT AUDITS, AND THE BREADCRUMB THAT WENT
+// =================================================================================================
+
+const SECTION = readFileSync('components/DashboardSection.tsx', 'utf8')
+const AUDITS = readFileSync('app/audits/page.tsx', 'utf8')
+const CALVIEW = readFileSync('lib/calendarView.ts', 'utf8')
+
+describe('six, and a line that says how many more — decision 6', () => {
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ id: String(i) }))
+
+  test('the boundaries, which are the whole of this function', () => {
+    for (const [n, want, more] of [[0, 0, 0], [1, 1, 0], [6, 6, 0], [7, 6, 1], [20, 6, 14]] as const) {
+      const s = splitUpcoming(rows(n))
+      assert.equal(s.shown.length, want, `${n} dates should show ${want}`)
+      assert.equal(s.more, more, `${n} dates should say ${more} more`)
+    }
+  })
+
+  test('shown plus more is always everything — nothing is silently dropped', () => {
+    for (const n of [0, 1, 5, 6, 7, 13, 20, 99]) {
+      const s = splitUpcoming(rows(n))
+      assert.equal(s.shown.length + s.more, n, `${n} dates`)
+    }
+  })
+
+  test('it does not re-sort: the caller\'s order is the order shown', () => {
+    const given = [{ id: 'c' }, { id: 'a' }, { id: 'b' }]
+    assert.deepEqual(splitUpcoming(given).shown.map(r => r.id), ['c', 'a', 'b'])
+  })
+
+  test('the more line is singular at one', () => {
+    assert.equal(moreLine(1), '1 more in the next 30 days.')
+    assert.equal(moreLine(2), '2 more in the next 30 days.')
+    assert.equal(moreLine(14), '14 more in the next 30 days.')
+  })
+
+  test('the window is the view\'s own numbers, and a date with no day is not a deadline', () => {
+    const base = { next_due: '2026-11-01', days_until: 5, has_passed: false }
+    assert.equal(inNext30Days(base), true)
+    assert.equal(inNext30Days({ ...base, days_until: 0 }), true, 'today is in the window')
+    assert.equal(inNext30Days({ ...base, days_until: 30 }), true, '30 is the edge and is in')
+    assert.equal(inNext30Days({ ...base, days_until: 31 }), false)
+    assert.equal(inNext30Days({ ...base, days_until: -1 }), false)
+    // Decision 23: a repeating date whose period was never read has no computable next day.
+    assert.equal(inNext30Days({ ...base, next_due: null }), false, 'no day is not a deadline')
+    assert.equal(inNext30Days({ ...base, days_until: null }), false)
+    assert.equal(inNext30Days({ ...base, has_passed: true }), false, 'passed belongs to the Calendar')
+  })
+})
+
+describe('the rows are the Calendar\'s own, not a copy', () => {
+  test('the page imports the Calendar\'s words and writes none of its own', () => {
+    for (const fn of ['metaParts', 'whenWords', 'passedWords', 'longDay', 'siteWords', 'readCalendarRows']) {
+      assert.ok(CODE.includes(fn), `the page must use ${fn}`)
+    }
+    // The page used to phrase these itself. "Today"/"Tomorrow" are `whenWords`' "today"/"tomorrow".
+    assert.ok(!/'Today'/.test(CODE), 'the page is phrasing the when-word again')
+    assert.ok(!/'Tomorrow'/.test(CODE), 'the page is phrasing the when-word again')
+    assert.ok(!/in \$\{/.test(CODE), 'the page is building an "in N days" of its own')
+    assert.ok(!CODE.includes('NOT_CONFIRMED'), 'not confirmed comes from metaParts, not from here')
+  })
+
+  test('and it still opens the Calendar\'s drawer', () => {
+    assert.ok(CODE.includes('/calendar?tab=calendar&date='))
+  })
+
+  /**
+   * The board draws a soon date in `--danger`. There is no such token: `app/globals.css` carries
+   * `--amber` and no red. This test is the record of that substitution — if a danger token is ever
+   * added, it fails and the page is told to use it.
+   */
+  test('the soon colour is amber, because no danger token exists', () => {
+    const css = readFileSync('app/globals.css', 'utf8')
+    assert.ok(!/--danger:/.test(css), 'a --danger token now exists; the Upcoming row should use it')
+    assert.match(CODE, /days_until \?\? 99\) <= 7 \? 'text-\[var\(--amber\)\]'/)
+    // And the Calendar itself draws the when-word in plain grey, which is what this departs from.
+    assert.match(CALVIEW, /export function whenWords/)
+  })
+})
+
+describe('recent audits — decision 7, and open question 2', () => {
+  /**
+   * *** OPEN QUESTION 2, ANSWERED: HR's handbook audits are NOT `audit_runs` rows. ***
+   * They are `handbook_checks` (`lib/handbookCheck.ts:131`), with their own sections and findings
+   * tables, and `audit_runs.kind` is constrained to 'agency' or 'template' — there is no handbook
+   * kind to be. So this section shows compliance audits only. This test holds the answer, so a
+   * later change that starts writing handbook checks into `audit_runs` has to come past it.
+   */
+  test('a handbook check is its own table, so it is not a recent audit', () => {
+    const hb = readFileSync('lib/handbookCheck.ts', 'utf8')
+    assert.ok(hb.includes("from('handbook_checks')"), 'a handbook check is a handbook_checks row')
+    assert.ok(!hb.includes('audit_runs'), 'HR has started writing into audit_runs')
+    const schema = readFileSync('docs/SCHEMA.md', 'utf8')
+    assert.match(schema, /audit_runs_kind_check.*'agency'.*'template'/)
+  })
+
+  test('the read is done runs, newest first, three of them — and says nothing about dismissed', () => {
+    assert.match(CODE, /\.from\('audit_runs'\)\.select\(AUDIT_RUN_ROW_COLUMNS\)/)
+    assert.match(CODE, /\.eq\('status', AUDIT_DONE\)/)
+    assert.match(CODE, /\.order\('finished_at', \{ ascending: false, nullsFirst: false \}\)/)
+    assert.match(CODE, /\.limit\(RECENT_AUDITS_MAX\)/)
+    assert.equal(RECENT_AUDITS_MAX, 3)
+    // Decision 7: dismissing clears a banner, it does not un-run the audit.
+    assert.ok(!CODE.includes('dismissed_at'), 'the read is filtering dismissed runs out')
+  })
+
+  test('a row opens the report at an address the Audits page already understands', () => {
+    assert.ok(CODE.includes('/audits?run='), 'the row must link to the report')
+    // Not a claim about this page: the Audits page's own two lines that make it true.
+    assert.match(AUDITS, /const openRun = params\.get\('run'\)/)
+    assert.match(AUDITS, /<AuditReport runId=\{openRun\}/)
+  })
+
+  test('both pages name a run with the same function', () => {
+    assert.match(AUDITS, /import \{ runName.*\} from '@\/lib\/auditView'/)
+    assert.ok(CODE.includes('runName('), 'the Dashboard must use it too')
+    // The words themselves, moved and not rewritten.
+    assert.equal(runName({ kind: 'agency', scope: null, agency_label: 'Oregon OSHA', section_count: 1, template_document_id: null }), 'Oregon OSHA')
+    assert.equal(runName({ kind: 'agency', scope: null, agency_label: 'Oregon OSHA', section_count: 4, template_document_id: null }), ALL_AGENCIES)
+    assert.equal(runName({ kind: 'agency', scope: null, agency_label: null, section_count: 1, template_document_id: null }), ALL_AGENCIES)
+    // A template run is named by its checklist, never "All agencies" and never an id.
+    assert.equal(runName({ kind: 'template', scope: 'the fire form', section_count: 1, agency_label: null, template_document_id: 'd1' }, 'Fire marshal checklist'), 'Against Fire marshal checklist')
+    assert.equal(runName({ kind: 'template', scope: 'the fire form', section_count: 1, agency_label: null, template_document_id: 'd1' }), 'Against the fire form')
+    assert.equal(runName({ kind: 'template', scope: null, section_count: 1, agency_label: null, template_document_id: 'd1' }), 'Against your checklist')
+  })
+})
+
+describe('the two sections, their headings and their day-one lines', () => {
+  test('one shared heading, used by both', () => {
+    assert.equal((CODE.match(/<DashboardSection /g) ?? []).length, 2)
+    assert.ok(CODE.includes('heading="Upcoming in the next 30 days" action="Open the Calendar →" href="/calendar"'))
+    assert.ok(CODE.includes('heading="Recent audits" action="All audits →" href="/audits"'))
+    // Board 1's numbers: a serif 20 on the left, the action 13px in the dark green.
+    assert.match(SECTION, /font-serif text-\[20px\] font-normal/)
+    assert.match(SECTION, /text-\[13px\] text-\[var\(--green-ink\)\]/)
+  })
+
+  test('the day-one lines are board 3\'s, with somewhere to go', () => {
+    assert.equal(UPCOMING_EMPTY, 'Deadlines from your documents will be displayed here.')
+    assert.equal(AUDITS_EMPTY, 'Your recent audits will show here.')
+    assert.equal(UPCOMING_EMPTY_LINK, 'Add a document')
+    assert.equal(AUDITS_EMPTY_LINK, 'Run your first audit')
+    assert.ok(BOARDS.includes(UPCOMING_EMPTY), 'board 3 no longer carries the Upcoming line')
+    assert.ok(BOARDS.includes(AUDITS_EMPTY), 'board 3 no longer carries the audits line')
+  })
+
+  /**
+   * §5.1, and it is an ORDER, not a pair of branches: "nothing is due" over dates nobody managed
+   * to read is the exact failure `CLAUDE.md` §5.1 is written about.
+   */
+  test('a failed read is checked before the empty state, in both sections', () => {
+    const upcoming = CODE.slice(CODE.indexOf('Upcoming in the next 30 days'))
+    assert.ok(upcoming.indexOf('dates === null') < upcoming.indexOf('shown.length === 0'))
+    const recent = CODE.slice(CODE.indexOf('heading="Recent audits"'))
+    assert.ok(recent.indexOf('audits === null') < recent.indexOf('audits.length === 0'))
+  })
+
+  test('the question card has its place kept and draws nothing', () => {
+    assert.match(PAGE, /THE THREE QUESTIONS GO HERE — step 7/)
+    const page = PAGE.indexOf('THE THREE QUESTIONS GO HERE')
+    assert.ok(page < PAGE.indexOf('Upcoming in the next 30 days'), 'the card belongs above Upcoming')
+    assert.ok(page > PAGE.indexOf('COUNTER_TILES.map'), 'and below the numbers')
+    assert.ok(!CODE.includes('question'), 'step 7 has not been started')
+  })
+})
+
+describe('the breadcrumb is gone — step 6F', () => {
+  test('nothing draws "/ {title}" any more', () => {
+    assert.ok(!/\{title\}<\/span>/.test(LAYOUT), 'the breadcrumb markup is back')
+    assert.ok(!/\/ \{title\}/.test(LAYOUT.replace(/\{\/\*[\s\S]*?\*\/\}/g, '')), 'the breadcrumb markup is back')
+  })
+
+  /**
+   * The prop stays, and this records why: it is what names the browser tab. Removing it would
+   * have turned "Dashboard — CompliBoard" into plain "CompliBoard" on the two pages that pass one.
+   */
+  test('the title prop survives for the browser tab, and for nothing else', () => {
+    assert.match(LAYOUT, /if \(title\) document\.title = `\$\{title\} — CompliBoard`/)
+    assert.match(LAYOUT, /else document\.title = 'CompliBoard'/)
+    // Nothing RENDERS it. That is the check that matters: a prop that only ever reaches
+    // `document.title` cannot put words back beside the logo.
+    // `(?<!\$)` so the template literal on the document.title line is not mistaken for JSX —
+    // `${title}` and `{title}` are one character apart and only one of them draws anything.
+    assert.ok(!/(?<!\$)\{title\}/.test(LAYOUT.replace(/\{\/\*[\s\S]*?\*\/\}/g, '')), 'title is rendered somewhere')
+    assert.ok(!/\{title &&/.test(LAYOUT), 'a title branch is back in the markup')
+  })
+
+  test('the logo is untouched and still goes to the Dashboard', () => {
+    assert.match(LAYOUT, /<a href="\/dashboard" className="hidden lg:flex items-center gap-2 pl-3">/)
   })
 })
