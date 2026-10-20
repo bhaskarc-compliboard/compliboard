@@ -47,7 +47,10 @@ export async function GET(request: NextRequest) {
 
     const [{ data: switches, error: swErr }, { data: values, error: csErr }, { data: reqs, error: rtErr }] =
       await Promise.all([
-        db.from('switches').select('id, scope, value_type, allowed_values, question_plain, determination_source, depends_on_switch, depends_on_value'),
+        // `help_plain` (migration 081) is the one column added here for display rather than for
+        // resolution: the card draws it under the question. Everything else on this line decides
+        // what can be asked.
+        db.from('switches').select('id, scope, value_type, allowed_values, allowed_value_labels, question_plain, help_plain, determination_source, depends_on_switch, depends_on_value'),
         db.from('company_switches').select('switch_id, entity_id, value, state').eq('company_id', companyId),
         db.from('requirement_templates').select('id, applies_expression').is('effective_to', null),
       ])

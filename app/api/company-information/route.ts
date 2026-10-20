@@ -57,7 +57,9 @@ export async function GET(request: NextRequest) {
     const ids = [...new Set(ctx.parts.declared.map((d) => d.switchId))].sort()
     const { data: swRows } = ids.length
       ? await db.from('switches')
-          .select('id, domain, value_type, allowed_values').in('id', ids).order('id')
+          // `help_plain` (migration 081) comes with the rest: the editor shows the same sentence
+          // the Dashboard's card does, from the same column, so the two pages ask alike.
+          .select('id, domain, value_type, allowed_values, allowed_value_labels, help_plain').in('id', ids).order('id')
       : { data: [] }
     const meta = Object.fromEntries((swRows ?? []).map((s: Record<string, unknown>) =>
       [s.id as string, s]))
@@ -90,6 +92,9 @@ export async function GET(request: NextRequest) {
           topic: domain ? (TOPIC_WORDS[domain] ?? domain) : 'Other',
           valueType: (m.value_type as string) ?? null,
           allowedValues: (m.allowed_values as string[]) ?? [],
+          help: (m.help_plain as string) ?? null,
+          // The readable half of an enum. The VALUE still goes back on a save — it is a key.
+          allowedValueLabels: (m.allowed_value_labels as Record<string, string>) ?? {},
         }
       }),
       confirmed: ctx.parts.confirmed.map((f) => ({

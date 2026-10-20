@@ -30,6 +30,15 @@ export interface SwitchRow {
   determination_source: 'documents' | 'user_answer' | 'profile' | 'computed_by_requirement'
   depends_on_switch: string | null
   depends_on_value: string | null
+  /**
+   * The customer-facing sentence under the question — migration 081. OPTIONAL on this type on
+   * purpose: `/api/switches/answer` builds `SwitchRow`s from a narrower select that has no use
+   * for it, and requiring it there would make a display column a condition of writing a fact.
+   */
+  help_plain?: string | null
+  /** value → the word a button shows, for an enum switch — migration 081. Optional for the reason
+   *  `help_plain` is: the answer route builds `SwitchRow`s from a narrower select. */
+  allowed_value_labels?: Record<string, string> | null
 }
 
 /** What this company has already established. Keyed by switch id; site-scoped keys carry the site. */
@@ -38,9 +47,24 @@ export type Established = Record<string, string | null | undefined>
 export interface Askable {
   switch_id: string
   question: string
+  /**
+   * What counts and what does not, in the customer's words — `switches.help_plain`, migration 081.
+   * Null for every site-scope switch today and for any question nobody has written a line for;
+   * a caller draws it when it is there and nothing when it is not. It is never composed by a
+   * page: a sentence about what a regulation counts is library content, not markup
+   * (`CLAUDE.md` §3.3).
+   */
+  help: string | null
   scope: 'company' | 'site'
   value_type: SwitchRow['value_type']
   allowed_values: string[]
+  /**
+   * The word to DRAW for each allowed value — `switches.allowed_value_labels`, migration 081.
+   * The value is what goes on the wire and is what a requirement's expression compares against;
+   * this is only what a person reads. Empty when a switch has no options, and a value with no
+   * label falls back to the value itself, which is visibly wrong rather than invisibly wrong.
+   */
+  allowed_value_labels: Record<string, string>
   /** Switch ids that must be answered BEFORE this one. Empty means askable now. */
   blocked_by: string[]
   /** Transitive requirements this unblocks — the number that makes a user willing to answer. */
@@ -151,9 +175,11 @@ export function askableSwitches(
     out.push({
       switch_id: sw.id,
       question: sw.question_plain,
+      help: sw.help_plain ?? null,
       scope: sw.scope,
       value_type: sw.value_type,
       allowed_values: sw.allowed_values ?? [],
+      allowed_value_labels: sw.allowed_value_labels ?? {},
       blocked_by: blockedBy(sw, est, entityId),
       affects: transitiveAffects(sw.id, switches, requirementSwitches),
       only_a_person: sw.determination_source === 'user_answer',

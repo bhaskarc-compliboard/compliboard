@@ -11,14 +11,15 @@
  * (`lib/switchAsk.ts:138`). So the Company information page and this card ask in the same words,
  * and changing a question is a data change.
  *
- * *** AND BOARD 2'S GREY HELP LINE IS NOT DRAWN, BECAUSE THERE IS NOTHING TO DRAW IT FROM. ***
- * The board shows a sentence under each question ("Anyone on payroll, full or part time…"). There
- * is no such column: `switches` carries `question_plain`, `label` and `notes`, and `notes` is a
- * regulatory working note, not customer text — on staging it reads "Gates every Oregon row (94
- * live). … DECISIONS.md §25" and "NOT IN §2.4 AND NEEDED BY 9 REQUIREMENTS". Putting that on a
- * customer's Dashboard would be the raw-industry-slug mistake step 5 removed. Writing a help line
- * here instead would be this file inventing regulatory guidance, which is the one thing it must
- * not do. So the card shows the question alone, and a help column is a data decision for later.
+ * *** AND SO IS THE GREY LINE UNDER IT — `switches.help_plain`, migration 081. ***
+ * Board 2 draws a sentence under each question saying what counts ("Anyone on payroll, full or
+ * part time. Owners who only draw a share do not count."). Step 7 could not draw it: there was no
+ * such column, and the nearest thing — `notes` — is OUR working note ("NOT IN §2.4 AND NEEDED BY
+ * 9 REQUIREMENTS"), which on a customer's Dashboard would be the raw-industry-slug mistake step 5
+ * removed. Writing the sentence here instead would be this component inventing regulatory
+ * guidance, which `CLAUDE.md` §3.3 forbids. So it lives in the library beside the question, and
+ * this draws it when it is there and nothing when it is null — which is every site-scope switch
+ * today, and any question nobody has written a line for.
  *
  * *** NOTHING SAYS WHAT THE ANSWER DID — decision 8. *** `/api/switches/answer` returns
  * `unblocked` and an obligation delta and this card ignores both. "That settled 4 requirements" is
@@ -29,7 +30,7 @@ import { useState, useEffect, useCallback } from 'react'
 import DashboardSection from './DashboardSection'
 import { postSwitchAnswer } from '@/lib/switchAnswer'
 import {
-  answerKind, askableHere, nextQuestion, cardNumber, questionState, YES_NO,
+  answerKind, askableHere, nextQuestion, cardNumber, questionState, YES_NO, optionButtons,
   localMidnightIso, skipKey, readSkips, writeSkip,
   QUESTIONS_HEADING, QUESTIONS_NOTE, QUESTIONS_DONE, QUESTIONS_DONE_SUB,
   ANSWER_FAILED, SKIP_WORD, QUESTIONS_PER_DAY,
@@ -152,6 +153,9 @@ export function DashboardQuestions({ db, companyId }: { db: SupabaseClient; comp
           <p className="mt-1.5 font-serif text-[19px] leading-7 text-gray-900 text-balance">
             {current.question}
           </p>
+          {current.help && (
+            <p className="mt-1 text-[13px] leading-5 text-gray-500">{current.help}</p>
+          )}
 
           {answerKind(current.value_type) === 'number' ? (
             <div className="mt-4 flex items-center gap-2.5">
@@ -169,12 +173,13 @@ export function DashboardQuestions({ db, companyId }: { db: SupabaseClient; comp
             </div>
           ) : (
             <div className="mt-4 flex flex-wrap items-center gap-2.5">
-              {/* A yes-or-no switch gets the two words; a choice gets one button per option, in
-                  the switch's OWN option words (`switches.allowed_values`), because the route
-                  refuses anything else (`app/api/switches/answer/route.ts:69`). */}
+              {/* A yes-or-no switch gets the two words; a choice gets one button per option. The
+                  button SHOWS `allowed_value_labels[value]` and POSTS the value, because the value
+                  is a key a requirement's expression compares against and the route refuses
+                  anything else (`app/api/switches/answer/route.ts:69`). */}
               {(answerKind(current.value_type) === 'yes_no'
                 ? YES_NO
-                : current.allowed_values.map((v) => ({ label: v, value: v }))
+                : optionButtons(current)
               ).map((opt) => (
                 <button key={opt.value} type="button" disabled={busy}
                   onClick={() => answer(opt.value)} className={CHOICE}>

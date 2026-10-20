@@ -69,6 +69,10 @@ interface Declared {
   switchId: string; label: string; value: string; scope: 'company' | 'site'
   entityId: string | null; siteName: string | null; question: string | null; source: string | null
   domain: string | null; topic: string; valueType: string | null; allowedValues: string[]
+  /** `switches.help_plain` — the same sentence the Dashboard's question card draws. */
+  help: string | null
+  /** value → the word shown for it (migration 081). The option saved is still the value. */
+  allowedValueLabels: Record<string, string>
 }
 interface Confirmed {
   key: string; value: string; basis: string; entityId: string | null; siteName: string | null
@@ -102,15 +106,25 @@ const SHOW = 5
 type GroupBy = 'topic' | 'site' | 'document' | 'source'
 
 /** A value as a person reads it. Booleans become Yes and No; everything else is shown AS STORED.
- *  The switch library carries `allowed_values` and no labels for them, so there is nothing to
- *  render an enum through — `title_v` is shown as `title_v` rather than as a guess at what it is
- *  called. When labels exist in the library, this is the one place that changes. */
-function plainValue(value: string, valueType: string | null): string {
+ *  **Migration 081 added those labels**, so an enum now renders through
+ *  `switches.allowed_value_labels` — `toll_processor` reads "Toll processor". This is the one
+ *  place that changed, as the note said it would be. A value the map does not name is still shown
+ *  AS STORED rather than as a guess at what it is called. */
+function plainValue(value: string, valueType: string | null, labels?: Record<string, string> | null): string {
   if (valueType === 'boolean') {
     if (value === 'true') return 'Yes'
     if (value === 'false') return 'No'
   }
-  return value
+  // Migration 081 gave the library the labels this comment was waiting for. A value with no label
+  // is still shown AS STORED rather than as a guess at what it is called.
+  return labels?.[value] ?? value
+}
+
+/** The options of an enum switch as [value, word] — the value is saved, the word is shown.
+ *  Read OUTSIDE the callback that draws them, because TypeScript loses the narrowing on
+ *  `l.edit.kind === 'declared'` once you reach for a property inside one. */
+function optionPairs(d: Declared): Array<[string, string]> {
+  return d.allowedValues.map((v) => [v, d.allowedValueLabels?.[v] ?? v])
 }
 
 /**
@@ -353,7 +367,7 @@ function YourCompanyContent() {
       out.push({
         id: `d:${d.switchId}:${d.entityId ?? 'co'}`,
         label: d.label,
-        value: plainValue(d.value, d.valueType),
+        value: plainValue(d.value, d.valueType, d.allowedValueLabels),
         site: d.siteName, siteId: d.entityId,
         // "you answered" plus the question it answered, so a line nobody remembers giving can be
         // recognised by the question rather than by its key.
@@ -886,10 +900,28 @@ function YourCompanyContent() {
                             <div key={l.id} className="py-2.5">
                               {editingLine === l.id ? (
                                 <div className="max-w-[420px]">
+                                  {/* *** THE SAME LINE THE DASHBOARD DRAWS, FROM THE SAME COLUMN
+                                      — `switches.help_plain`, migration 081. *** Editing a fact
+                                      is this page asking the question again, so it is asked in
+                                      the same words with the same sentence under it (Dashboard
+                                      decision 8). Only on a `declared` line: a `confirmed` fact
+                                      came from a document and is not a switch question. */}
+                                  {l.edit.kind === 'declared' && l.edit.d.question && (
+                                    <p className="mb-1.5 text-[13px] leading-5 text-gray-700">{l.edit.d.question}</p>
+                                  )}
+                                  {l.edit.kind === 'declared' && l.edit.d.help && (
+                                    <p className="mb-1.5 text-[13px] leading-5 text-gray-500">{l.edit.d.help}</p>
+                                  )}
                                   {l.edit.kind === 'declared' && l.edit.d.valueType === 'enum' && l.edit.d.allowedValues.length > 0 ? (
                                     <select value={lineDraft} onChange={(e) => setLineDraft(e.target.value)}
                                       className="w-full rounded border border-gray-200 px-2 py-1.5 text-[14px]">
-                                      {l.edit.d.allowedValues.map((v) => <option key={v} value={v}>{v}</option>)}
+                                      {/* The label is shown, the VALUE is saved — migration 081.
+                                          `allowed_values` are keys that live requirement
+                                          expressions compare against, so they are never renamed
+                                          to be readable. A value with no label shows as itself. */}
+                                      {optionPairs(l.edit.d).map(([v, word]) => (
+                                        <option key={v} value={v}>{word}</option>
+                                      ))}
                                     </select>
                                   ) : l.edit.kind === 'declared' && l.edit.d.valueType === 'boolean' ? (
                                     <select value={lineDraft} onChange={(e) => setLineDraft(e.target.value)}

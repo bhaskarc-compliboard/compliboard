@@ -3885,12 +3885,14 @@ export type Database = {
       }
       switches: {
         Row: {
+          allowed_value_labels: Json | null
           allowed_values: string[]
           created_at: string
           depends_on_switch: string | null
           depends_on_value: string | null
           determination_source: Database["public"]["Enums"]["switch_determination_source"]
           domain: string | null
+          help_plain: string | null
           id: string
           jurisdiction_variant: boolean
           label: string
@@ -3903,12 +3905,14 @@ export type Database = {
           volatility: Database["public"]["Enums"]["switch_volatility"]
         }
         Insert: {
+          allowed_value_labels?: Json | null
           allowed_values?: string[]
           created_at?: string
           depends_on_switch?: string | null
           depends_on_value?: string | null
           determination_source: Database["public"]["Enums"]["switch_determination_source"]
           domain?: string | null
+          help_plain?: string | null
           id: string
           jurisdiction_variant?: boolean
           label: string
@@ -3921,12 +3925,14 @@ export type Database = {
           volatility?: Database["public"]["Enums"]["switch_volatility"]
         }
         Update: {
+          allowed_value_labels?: Json | null
           allowed_values?: string[]
           created_at?: string
           depends_on_switch?: string | null
           depends_on_value?: string | null
           determination_source?: Database["public"]["Enums"]["switch_determination_source"]
           domain?: string | null
+          help_plain?: string | null
           id?: string
           jurisdiction_variant?: boolean
           label?: string

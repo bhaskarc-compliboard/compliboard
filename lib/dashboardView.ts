@@ -196,6 +196,20 @@ export function answerKind(valueType: string): AnswerKind | null {
   return null
 }
 
+/**
+ * THE BUTTONS FOR AN OPTION SWITCH: the label is drawn, the VALUE is posted.
+ *
+ * `allowed_values` holds keys that live requirement expressions compare against — `toll_processor`,
+ * `iso_9001` — and `/api/switches/answer` refuses anything that is not one of them
+ * (`app/api/switches/answer/route.ts:69`). So the value never changes shape on its way to the
+ * wire. A value with no label falls back to the value itself: visibly wrong on a button beats
+ * invisibly missing.
+ */
+export function optionButtons(q: Pick<CardQuestion, 'allowed_values' | 'allowed_value_labels'>) {
+  const labels = q.allowed_value_labels ?? {}
+  return (q.allowed_values ?? []).map((value) => ({ value, label: labels[value] ?? value }))
+}
+
 /** The two words a boolean switch is answered with, and what goes on the wire for each. */
 export const YES_NO: Array<{ label: string; value: string }> = [
   { label: 'Yes', value: 'true' },
@@ -206,9 +220,13 @@ export const YES_NO: Array<{ label: string; value: string }> = [
 export interface CardQuestion {
   switch_id: string
   question: string
+  /** `switches.help_plain` (migration 081), or null — the card draws it only when it is there. */
+  help?: string | null
   scope: 'company' | 'site'
   value_type: string
   allowed_values: string[]
+  /** value → the word on the button (migration 081). A value with no label shows as itself. */
+  allowed_value_labels?: Record<string, string> | null
 }
 
 /**

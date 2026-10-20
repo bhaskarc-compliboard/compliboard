@@ -26,7 +26,7 @@ import {
   answerKind, askableHere, skippedForType, nextQuestion, cardNumber, questionState,
   localMidnightIso, skipKey, readSkips, writeSkip,
   QUESTIONS_HEADING, QUESTIONS_NOTE, QUESTIONS_DONE, QUESTIONS_DONE_SUB,
-  ANSWER_FAILED, SKIP_WORD, type CardQuestion,
+  ANSWER_FAILED, SKIP_WORD, optionButtons, type CardQuestion,
 } from '../../lib/dashboardView.ts'
 import { runName, ALL_AGENCIES } from '../../lib/auditView.ts'
 
@@ -733,18 +733,49 @@ describe('the card: its words, its one write, and what it never says', () => {
   })
 
   /**
-   * Board 2 draws a grey help line under each question. There is no column to draw it from —
-   * `switches` carries `question_plain`, `label` and `notes`, and `notes` is a regulatory working
-   * note, not customer text. This test holds the absence, so adding one is a deliberate act.
+   * *** THIS TEST HELD AN ABSENCE UNTIL STEP 7b, AND NOW HOLDS A PRESENCE. ***
+   *
+   * It used to assert that the card had NOT grown a help line, because there was no column to
+   * draw one from and a sentence written in the component would be a page inventing regulatory
+   * guidance. Migration 081 adds `switches.help_plain` and fills it for all 22 company-scope
+   * questions, so the rule it protects is unchanged — the words come from the library, never from
+   * here — and what it checks is now that the card draws them, and draws nothing when there are
+   * none.
    */
-  test('and board 2\'s grey help line is NOT invented', () => {
-    assert.ok(!/help|hint|why|explain/i.test(cardCode.replace(/className="[^"]*"/g, '')),
-      'the card has grown a help line with nothing to fill it')
-    const schema = readFileSync('docs/SCHEMA.md', 'utf8')
-    const table = schema.slice(schema.indexOf('### `switches`'), schema.indexOf('**Points at:**', schema.indexOf('### `switches`')))
-    for (const col of ['help', 'hint', 'why_plain', 'explanation']) {
-      assert.ok(!table.includes(`\`${col}\``), `switches now has a ${col} column; the card should use it`)
-    }
+  test('the help line is drawn when the switch carries one', () => {
+    assert.ok(cardCode.includes('{current.help}'), 'the card must draw the library\'s sentence')
+    assert.match(cardCode, /\{current\.help && \(/, 'and only when there is one')
+    // Board 2's weight: grey, 13px, directly under the question.
+    assert.match(cardCode, /current\.help && \(\s*\n\s*<p className="mt-1 text-\[13px\] leading-5 text-gray-500">/)
+  })
+
+  test('and it is never composed here — it comes from the column', () => {
+    assert.match(SWITCH_ASK, /help: sw\.help_plain \?\? null,/)
+    assert.match(readFileSync('app/api/switches/ask/route.ts', 'utf8'), /question_plain, help_plain,/)
+    // AND NO SENTENCE IS WRITTEN IN THE COMPONENT. A help line is a sentence and ends in a full
+    // stop; a class string and an import path do not. Board 2's own four fixed strings live in
+    // `lib/dashboardView.ts`, so the card should hold no sentence-shaped literal at all.
+    const sentences = (cardCode.match(/'[^'\n]{20,}'|"[^"\n]{20,}"/g) ?? [])
+      .map((x) => x.slice(1, -1))
+      .filter((x) => /[a-z]\.$/.test(x.trim()))
+    assert.deepEqual(sentences, [], `the card has grown prose of its own: ${sentences.join(' | ')}`)
+  })
+
+  test('a switch with no help line draws nothing, which is every site switch today', () => {
+    // The field is optional on `CardQuestion` for exactly this: null and absent behave alike.
+    const withNone = q()
+    assert.equal(withNone.help, undefined)
+    assert.equal(nextQuestion([withNone], [])?.help ?? null, null)
+    const withOne = q({ help: 'Anyone on payroll, full or part time.' })
+    assert.equal(nextQuestion([withOne], [])?.help, 'Anyone on payroll, full or part time.')
+  })
+
+  test('Company information draws the same sentence from the same column', () => {
+    const CI = readFileSync('app/company-information/page.tsx', 'utf8')
+    assert.match(CI, /l\.edit\.d\.help && \(/)
+    assert.match(CI, /text-\[13px\] leading-5 text-gray-500">\{l\.edit\.d\.help\}/)
+    assert.match(readFileSync('app/api/company-information/route.ts', 'utf8'),
+      /help: \(m\.help_plain as string\) \?\? null,/)
   })
 
   test('one writer, one body shape, and no second copy of it', () => {
@@ -820,5 +851,70 @@ describe('the answer route calls no model — checked, not assumed', () => {
     }
     // And the card itself, which is the new caller.
     assert.ok(!/askAI|lib\/ai/.test(CARD))
+  })
+})
+
+describe('an option shows a word and posts a key — migration 081', () => {
+  const iso = (): CardQuestion => ({
+    switch_id: 'holds_iso_certification', question: 'Do you hold ISO 9001 or ISO 14001?',
+    scope: 'company', value_type: 'enum',
+    allowed_values: ['none', 'iso_9001', 'iso_14001', 'both'],
+    allowed_value_labels: { none: 'Neither', iso_9001: 'ISO 9001', iso_14001: 'ISO 14001', both: 'Both' },
+  })
+
+  test('the label is drawn and the value is what goes on the wire', () => {
+    assert.deepEqual(optionButtons(iso()), [
+      { value: 'none', label: 'Neither' },
+      { value: 'iso_9001', label: 'ISO 9001' },
+      { value: 'iso_14001', label: 'ISO 14001' },
+      { value: 'both', label: 'Both' },
+    ])
+  })
+
+  test('the order is the switch\'s own, not the map\'s', () => {
+    const shuffled = iso()
+    shuffled.allowed_value_labels = { both: 'Both', none: 'Neither', iso_14001: 'ISO 14001', iso_9001: 'ISO 9001' }
+    assert.deepEqual(optionButtons(shuffled).map(o => o.value), ['none', 'iso_9001', 'iso_14001', 'both'])
+  })
+
+  /**
+   * A value with no label shows AS ITSELF. `toll_processor` on a button is visibly wrong and
+   * somebody fixes it; a missing button is invisibly wrong and nobody does. 081's self-test 5h
+   * refuses the migration if any option of the three enum switches lacks one, so this is the
+   * behaviour for a switch somebody adds later and forgets.
+   */
+  test('a value with no label falls back to the value', () => {
+    assert.deepEqual(optionButtons({ allowed_values: ['toll_processor'], allowed_value_labels: {} }),
+      [{ value: 'toll_processor', label: 'toll_processor' }])
+    assert.deepEqual(optionButtons({ allowed_values: ['a'], allowed_value_labels: null }),
+      [{ value: 'a', label: 'a' }])
+    assert.deepEqual(optionButtons({ allowed_values: [], allowed_value_labels: null }), [])
+  })
+
+  test('the card posts opt.value, never opt.label', () => {
+    assert.ok(cardCode.includes('onClick={() => answer(opt.value)}'))
+    assert.ok(cardCode.includes('{opt.label}'))
+    assert.ok(cardCode.includes('optionButtons(current)'))
+    // The route refuses anything that is not an allowed value, which is what makes this matter.
+    assert.match(ANSWER_ROUTE, /!\(sw\.allowed_values as string\[\]\)\.includes\(value\)/)
+  })
+
+  test('Company information does the same, through its own helper', () => {
+    const CI = readFileSync('app/company-information/page.tsx', 'utf8')
+    assert.match(CI, /function optionPairs\(d: Declared\): Array<\[string, string\]>/)
+    assert.match(CI, /d\.allowedValueLabels\?\.\[v\] \?\? v/)
+    assert.match(CI, /<option key=\{v\} value=\{v\}>\{word\}<\/option>/)
+  })
+
+  test('and the migration gives every option of the three a label', () => {
+    const M = readFileSync('supabase/migrations/081_a_question_says_what_counts.sql', 'utf8')
+    for (const pair of [["'toll_processor'", "'Toll processor'"], ["'iso_9001'", "'ISO 9001'"],
+                        ["'neither'", "'Neither'"], ["'both'", "'Both'"]]) {
+      assert.ok(M.includes(pair[0]) && M.includes(pair[1]), `${pair[0]} → ${pair[1]} is not in 081`)
+    }
+    // 5h is what makes it a rule rather than a list somebody kept up to date.
+    assert.match(M, /081 5h: option value\(s\) with no label/)
+    // And the values themselves are asserted unchanged, because they are keys.
+    assert.match(M, /081 5f: business_type allowed_values changed/)
   })
 })
