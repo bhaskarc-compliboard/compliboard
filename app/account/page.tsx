@@ -40,6 +40,7 @@ import { Tabs } from '@/components/Tabs'
 import DashboardSection from '@/components/DashboardSection'
 import SiteDrawer from '@/components/SiteDrawer'
 import CompanyQuestions from '@/components/CompanyQuestions'
+import PeopleTab from '@/components/PeopleTab'
 import { PRIMARY, TEXT_ACTION } from '@/components/buttonStyles'
 import { createClient, authHeaders } from '@/lib/supabase'
 import { suggestNaics, keepTypedLabel, type NaicsTitle } from '@/lib/naicsTitles'
@@ -50,7 +51,7 @@ import {
   WEBSITE_LABEL, WEBSITE_EMPTY, MAIN_SITE_LABEL, EDIT_ADDRESS,
   CHANGE, SAVE, CANCEL,
   SITES_HEADING, ADD_SITE, MAIN_PILL, EDIT, SITES_NOTE,
-  PEOPLE_EMPTY, siteSubLine, countyLine, addedLine, type SiteRow,
+  siteSubLine, countyLine, addedLine, type SiteRow,
 } from '@/lib/accountView'
 
 export default function AccountPage() {
@@ -406,14 +407,8 @@ function Account() {
           </>
         )}
 
-        {tab === 'people' && (
-          <>
-            <DashboardSection heading="People who can sign in" />
-            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-6 py-5">
-              <p className="text-[14px] text-gray-500">{PEOPLE_EMPTY}</p>
-            </div>
-          </>
-        )}
+        {/* Step 7 replaced the empty state with the list, the invite card and Remove. */}
+        {tab === 'people' && <PeopleTab db={supabase} />}
 
         {tab === 'signin' && <SignInTab />}
         {tab === 'billing' && <BillingTab />}

@@ -115,8 +115,12 @@ export const NEW_SITE_SUB = 'A name and an address, and nothing else.'
 export const COUNTY_LABEL = 'County'
 export const COUNTY_HELP = 'Only if we could not find the address. Your word for it.'
 
-/** The other four tabs until their own steps. */
-export const PEOPLE_EMPTY = 'Who can sign in will appear here'
+/*
+ * `PEOPLE_EMPTY` lived here from step 6 to step 7 — "Who can sign in will appear here", the
+ * placeholder the People tab showed while it was not built. Step 7 built it
+ * (`components/PeopleTab.tsx`, `lib/peopleView.ts`), so the placeholder is gone rather than left
+ * sitting in a file where the next reader would wonder which one the page uses.
+ */
 
 // ── Rules, not words ─────────────────────────────────────────────────────────────────────────────
 

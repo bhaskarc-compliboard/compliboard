@@ -272,7 +272,12 @@ try {
       const want = ${JSON.stringify(text)}
       const aim = ${JSON.stringify(aim)}
       const visible = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 }
-      const fields = [...document.querySelectorAll('textarea, input[type=text]')].filter(visible)
+      // *** A PASSWORD BOX IS A FIELD — My Account step 7. *** The selector took only textarea and
+      // input[type=text], so /join's password could not be typed and the one walk that creates an
+      // account could not be walked at all. Included here; the ECHO is masked below, because a
+      // harness that prints what it typed must not print a credential.
+      // (No backticks in this comment: the whole block is inside a template literal.)
+      const fields = [...document.querySelectorAll('textarea, input[type=text], input[type=password]')].filter(visible)
       const names = (e) => {
         const lab = e.id ? document.querySelector('label[for="' + CSS.escape(e.id) + '"]') : null
         return [e.getAttribute('aria-label'), lab && lab.textContent, e.placeholder, e.name]
@@ -286,7 +291,10 @@ try {
       Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, want)
       el.dispatchEvent(new Event('input', { bubbles: true }))
       el.focus()
-      return want.slice(0, 60)
+      // A password is never echoed. The length is enough to see that something went in.
+      // Concatenation, not a template: this whole block is already inside a template literal, and
+      // a nested backtick ends it.
+      return el.type === 'password' ? '<password, ' + want.length + ' characters>' : want.slice(0, 60)
     })()`)
     if (!typed) {
       throw new Error(aim

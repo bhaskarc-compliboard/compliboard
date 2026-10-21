@@ -22,6 +22,7 @@ import {
 import {
   calendarEmail, splitForMonth, emailRow, bySite, sourceWords, nextMonthKey, prevMonthKey,
   EARLY_DAYS, DUE_HEADING, EARLY_HEADING, PASSED_HEADING, UNDATED_LINE, NOT_RIGHT_LINE,
+  monthlyRecipients, NOBODY_WANTS_IT, NOBODY_TO_SEND_TO,
 } from '../../lib/calendarEmail.ts'
 import type { CalendarRow } from '../../lib/calendarView.ts'
 
@@ -312,7 +313,15 @@ describe('the job: the claim comes first', () => {
   })
   test('the recipients come from auth.users, because profiles has no email column', () => {
     assert.match(code, /auth\.admin\.getUserById\(p\.id\)/)
-    assert.ok(!/profiles'\)\.select\([^)]*email/.test(code), 'profiles carries no email')
+    // The select list is read as a list of COLUMNS, not searched for the substring "email".
+    // `calendar_email` (migration 082, My Account step 7) contains it and is a switch, not an
+    // address — the blunt version of this check started failing the day that column was selected,
+    // for a claim that was still perfectly true.
+    const select = /profiles'\)\.select\('([^']*)'\)/.exec(code)
+    assert.ok(select, 'the job must select from profiles')
+    const columns = select![1].split(',').map((c) => c.trim())
+    assert.ok(!columns.includes('email'), `profiles carries no email column: ${columns.join(', ')}`)
+    assert.ok(columns.includes('calendar_email'), 'and the switch IS read')
   })
   test('NOTIFY_TEST_TO is the To, and the real people are still recorded', () => {
     assert.match(code, /const to = override \? \[override\] : addresses/)
@@ -423,5 +432,46 @@ describe('the sandbox sender cannot reach a customer', () => {
       assert.match(readFileSync(f, 'utf8'), /onboarding@resend\.dev/,
         `${f} no longer sends from the sandbox — give it sandboxSenderRefusal and update this test`)
     }
+  })
+})
+
+
+/* =================================================================================================
+   WHO IT GOES TO — My Account step 7 (`ACCOUNT-PLAN.md` decision 6, migration 082).
+   ================================================================================================= */
+describe('the monthly email\'s recipients', () => {
+  const p = (id: string, calendar_email: boolean | null | undefined) =>
+    ({ id, full_name: null, calendar_email })
+
+  test('everyone who has not switched it off', () => {
+    const { wants, reason } = monthlyRecipients([p('a', true), p('b', false), p('c', true)])
+    assert.deepEqual(wants.map((x) => x.id), ['a', 'c'])
+    assert.equal(reason, null)
+  })
+
+  test('*** A COMPANY WHERE EVERYONE HAS IT OFF IS NOT A COMPANY WITH NOBODY IN IT ***', () => {
+    // Two different facts, and `calendar_mailings.error` is the only place anybody can tell them
+    // apart a month later. Folding them into one sentence would lose that.
+    assert.deepEqual(monthlyRecipients([p('a', false), p('b', false)]),
+      { wants: [], reason: NOBODY_WANTS_IT })
+    assert.deepEqual(monthlyRecipients([]), { wants: [], reason: NOBODY_TO_SEND_TO })
+    assert.notEqual(NOBODY_WANTS_IT, NOBODY_TO_SEND_TO)
+  })
+
+  test('null and undefined count as ON, because that is the column\'s own default', () => {
+    // `profiles.calendar_email` is NOT NULL default true (082), so this cannot come from the
+    // database — but a stale type or a partial select could hand us nothing, and dropping a person
+    // from a mailing they never opted out of is the worse way to be wrong.
+    const { wants } = monthlyRecipients([p('a', null), p('b', undefined), p('c', false)])
+    assert.deepEqual(wants.map((x) => x.id), ['a', 'b'])
+  })
+
+  test('the job reads the column and uses this rule rather than a second copy', () => {
+    const route = readFileSync('app/api/jobs/calendar-month/route.ts', 'utf8')
+    assert.match(route, /select\('id, company_id, full_name, calendar_email'\)/)
+    assert.match(route, /monthlyRecipients\(staff\)/)
+    // And the addresses are resolved for THOSE, not for everyone.
+    assert.match(route, /for \(const p of wants\)/)
+    assert.ok(!/for \(const p of staff\) \{\s*const \{ data: user \}/.test(route))
   })
 })

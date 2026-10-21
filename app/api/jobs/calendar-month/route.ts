@@ -37,7 +37,7 @@ import { supabaseAdmin } from '@/lib/auth'
 import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
 import { liveDatesFor } from '@/lib/calendarCounts'
 import { CALENDAR_VIEW_COLUMNS, type CalendarRow } from '@/lib/calendarView'
-import { calendarEmail } from '@/lib/calendarEmail'
+import { calendarEmail, monthlyRecipients, NOBODY_TO_SEND_TO, NOBODY_WANTS_IT } from '@/lib/calendarEmail'
 import { renderEmail, SANDBOX_FROM, sandboxSenderRefusal } from '@/lib/email'
 
 export const maxDuration = 800
@@ -48,7 +48,13 @@ export const monthKeyOf = (now: Date): string => now.toISOString().slice(0, 7)
 interface CompanyResult {
   company_id: string
   company: string
-  skipped?: 'already sent this month' | 'nobody to send to'
+  /**
+   * The three reasons a company gets nothing this month, each a distinct fact. "Everyone has it
+   * off" joined them at My Account step 7 and is deliberately NOT folded into "nobody to send to":
+   * a company with no logins and a company whose people have all unsubscribed are different
+   * states, and the `calendar_mailings` row is the only place anybody can tell them apart later.
+   */
+  skipped?: 'already sent this month' | typeof NOBODY_TO_SEND_TO | typeof NOBODY_WANTS_IT
   dates?: number
   recipients?: number
   sent?: boolean
@@ -102,12 +108,14 @@ export async function POST(request: NextRequest) {
     // `auth.users`, read through the admin API, which is how `lib/auditNotify.ts` and
     // `app/api/jobs/scan-documents/route.ts` resolve a recipient.
     const { data: people, error: peopleError } = await supabaseAdmin
-      .from('profiles').select('id, company_id, full_name').not('company_id', 'is', null)
+      .from('profiles').select('id, company_id, full_name, calendar_email').not('company_id', 'is', null)
     if (peopleError) throw new Error(`profiles: ${peopleError.message}`)
-    const byCompany = new Map<string, Array<{ id: string; full_name: string | null }>>()
-    for (const p of (people ?? []) as Array<{ id: string; company_id: string; full_name: string | null }>) {
+    const byCompany = new Map<string, Array<{ id: string; full_name: string | null; calendar_email: boolean }>>()
+    for (const p of (people ?? []) as Array<{
+      id: string; company_id: string; full_name: string | null; calendar_email: boolean
+    }>) {
       if (!byCompany.has(p.company_id)) byCompany.set(p.company_id, [])
-      byCompany.get(p.company_id)!.push({ id: p.id, full_name: p.full_name })
+      byCompany.get(p.company_id)!.push({ id: p.id, full_name: p.full_name, calendar_email: p.calendar_email })
     }
 
     const ids = [...byCompany.keys()].filter((id) => !onlyCompany || id === onlyCompany)
@@ -120,7 +128,7 @@ export async function POST(request: NextRequest) {
       results.push(result)
       try {
         const staff = byCompany.get(co.id) ?? []
-        if (!staff.length) { result.skipped = 'nobody to send to'; continue }
+        if (!staff.length) { result.skipped = NOBODY_TO_SEND_TO; continue }
 
         // ---- THE CLAIM, FIRST ----
         if (!dryRun) {
@@ -153,18 +161,29 @@ export async function POST(request: NextRequest) {
         result.dates = mail.counts.due.length
 
         // ---- WHO IT GOES TO ----
+        //
+        // *** EVERY PERSON AT THE COMPANY WHO STILL WANTS IT — My Account step 7, decision 6. ***
+        // `profiles.calendar_email` (migration 082) is the per-person switch board 2 puts on each
+        // row, and `monthlyRecipients` is the one rule that reads it. A company where everyone has
+        // it off is NOT the same fact as a company with no logins, and the claim row says which —
+        // a month later that row is the only thing anybody can look at.
+        //
+        // The names for the email body still come from ALL the staff: "Added by Dev Patel" is true
+        // about a date whether or not Dev wants the email.
+        const { wants, reason } = monthlyRecipients(staff)
         const addresses: string[] = []
-        for (const p of staff) {
+        for (const p of wants) {
           const { data: user } = await supabaseAdmin.auth.admin.getUserById(p.id)
           const email = user?.user?.email
           if (email) addresses.push(email)
         }
         result.recipients = addresses.length
         if (!addresses.length) {
-          result.skipped = 'nobody to send to'
+          const why = reason ?? 'no login on any profile at this company'
+          result.skipped = reason ?? NOBODY_TO_SEND_TO
           if (!dryRun) {
             await supabaseAdmin.from('calendar_mailings')
-              .update({ error: 'no login on any profile at this company' })
+              .update({ error: why })
               .eq('company_id', co.id).eq('month', month)
           }
           continue

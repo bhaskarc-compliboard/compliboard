@@ -22,7 +22,7 @@ import {
   QUESTIONS_HEADING, QUESTIONS_NOTE, NOT_ANSWERED, THREE_SWITCHES,
   SITES_HEADING, ADD_SITE, MAIN_PILL, EDIT, SITES_NOTE,
   SITE_NAME_LABEL, SITE_ADDRESS_LABEL, ON_THIS_SITE, REMOVE_SITE, REMOVE_SITE_CONFIRM,
-  NOTHING_ON_SITE, PEOPLE_EMPTY,
+  NOTHING_ON_SITE,
   addressLine, countyLine, siteSubLine, sitePlaceLine, siteDrawerSub, addedLine,
   siteCountLines, siteIsEmpty, answerWord, type SiteRow, type SiteCounts,
 } from '../../lib/accountView.ts'
@@ -93,8 +93,12 @@ describe('every sentence is the board\'s own', () => {
     assert.ok(!src.includes('Do you have employees other than the owner?'))
   })
 
-  test('People\'s empty state is a sentence about what will be there, not a claim about now', () => {
-    assert.equal(PEOPLE_EMPTY, 'Who can sign in will appear here')
+  test('the People tab is built, so its step-6 placeholder is gone', () => {
+    // It said "Who can sign in will appear here" while the tab was not built. Step 7 built it, so
+    // the constant was removed rather than left for a reader to wonder which the page uses.
+    const src = readFileSync('lib/accountView.ts', 'utf8')
+    assert.ok(!/export const PEOPLE_EMPTY/.test(src))
+    assert.match(readFileSync('app/account/page.tsx', 'utf8'), /<PeopleTab db=\{supabase\} \/>/)
   })
 })
 

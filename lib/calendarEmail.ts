@@ -30,6 +30,52 @@ import { NEEDS_WHEN_ID } from './calendarQueue.ts'
 import { FOOTER_NOT_LEGAL_ADVICE, footerBecauseMember, type EmailRow, type EmailSection, type EmailShape } from './email.ts'
 
 /** How many days of the next month are shown with this one. */
+/**
+ * ====================================================================================
+ * WHO THE MONTHLY EMAIL GOES TO — My Account step 7 (`ACCOUNT-PLAN.md` decision 6).
+ * ====================================================================================
+ *
+ * Until migration 082 the answer was "everyone with a `profiles` row at the company", and there
+ * was no way for one person to stop receiving it short of leaving. 082 added
+ * `profiles.calendar_email boolean not null default true`, and board 2 puts the switch on each
+ * person's own row. This is the rule that reads it.
+ *
+ * *** A COMPANY WHERE EVERYONE HAS IT OFF GETS NO EMAIL, AND THE CLAIM ROW SAYS WHY. ***
+ * Not "nobody to send to", which is what the route already says when a company has no logins at
+ * all — those are different facts and a month later somebody looking at `calendar_mailings` has to
+ * be able to tell them apart. `CLAUDE.md` §5.1's rule about empty states, applied to a row nobody
+ * reads until something looks wrong.
+ *
+ * *** NULL COUNTS AS ON. *** The column is NOT NULL so this cannot arise from the database, but a
+ * row read through a stale type or a partial select could hand us `undefined`, and the honest
+ * default for "we did not read it" is the column's own default rather than silently dropping a
+ * person from a mailing they never opted out of.
+ *
+ * A pure function of a list, so `tests/unit/calendarEmail.test.ts` can hold the rule without a
+ * database and without a mail client.
+ */
+export const NOBODY_WANTS_IT = 'everyone here has the monthly email switched off' as const
+export const NOBODY_TO_SEND_TO = 'nobody to send to' as const
+
+/** The reasons a company gets nothing. Typed, so the job's own result union cannot drift from it. */
+export type NoRecipientsReason = typeof NOBODY_TO_SEND_TO | typeof NOBODY_WANTS_IT
+
+export interface MonthlyPerson {
+  id: string
+  full_name: string | null
+  /** `profiles.calendar_email` (migration 082). Missing is treated as the column's default: true. */
+  calendar_email?: boolean | null
+}
+
+/** Those who still want it, and — when that is nobody — the reason to put on the claim row. */
+export function monthlyRecipients<T extends MonthlyPerson>(
+  staff: readonly T[],
+): { wants: T[]; reason: NoRecipientsReason | null } {
+  if (!staff.length) return { wants: [], reason: NOBODY_TO_SEND_TO }
+  const wants = staff.filter((p) => p.calendar_email !== false)
+  return { wants, reason: wants.length ? null : NOBODY_WANTS_IT }
+}
+
 export const EARLY_DAYS = 7
 
 /** "2026-11" → "2026-12"; and the other way for the month before. */
