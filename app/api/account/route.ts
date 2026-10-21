@@ -281,6 +281,16 @@ const DELETED_BY_CASCADE_OR_PARENT = [
   // by the tenant loop, so nothing is orphaned either way. Found by check-schema-contracts
   // refusing the commit, which is the third time that gate has caught this exact omission.
   'document_batches',
+  // ...and the ninth (migration 082). An invitation is the record of one email address being
+  // asked to join this company, and its token is the credential the /join link carries. It
+  // cascades: company_id -> companies ON DELETE CASCADE, written in 082 itself and proved by
+  // that migration's own §6j, which deletes a throwaway company and fails if a site or an
+  // invitation outlives it. So deleting the company stops every outstanding link answering,
+  // which is the behaviour this list exists to make visible. It sits on this side of the list
+  // because an invitation is addressed to somebody who is NOT yet a person at the company, so
+  // sweeping it in the tenant loop would describe it as the tenant's own row; the cascade is
+  // the honest mechanism and it leaves nothing behind.
+  'invitations',
   'ai_calls',              // cascades with the company: company_id -> companies ON DELETE
                            // CASCADE, read from pg_constraint on 23 Sep rather than assumed —
                            //   conname ai_calls_company_id_fkey · confdeltype = c (cascade)
