@@ -17,7 +17,7 @@
 // THE WRITES are three, and each one reuses a path that already exists rather than inventing a
 // second way in (§3.2: resolution is deterministic against `company_switches`, so a second writer
 // would be a second source of truth):
-//   · `company`   — industry, city, state on `companies` (NOT the name: 082). On the CALLER'S client: authenticated
+//   · `company`   — `industry` on `companies` (NOT the name: 082; NOT state/county/city: 083). On the CALLER'S client: authenticated
 //                   holds SELECT/INSERT/UPDATE on `companies` and RLS scopes it to their own row.
 //   · `declared`  — proxied to `/api/switches/answer`, exactly as `/api/to-confirm` does it. That
 //                   route writes the determination and the switch row under a composite FK, refuses
@@ -150,7 +150,8 @@ export async function POST(request: NextRequest) {
     const action = String(body?.action ?? '')
 
     // ------------------------------------------------------------------
-    // 1. THE COMPANY ROW — industry, city, state. The NAME is not writable (082).
+    // 1. THE COMPANY ROW — `industry`, and nothing else. The NAME is not writable (082);
+    //    `state`, `county` and `city` are a mirror of the main site and not writable either (083).
     // ------------------------------------------------------------------
     if (action === 'company') {
       /**
@@ -165,11 +166,18 @@ export async function POST(request: NextRequest) {
        * The old refusal for a blank name went with it: a column a person cannot write needs no
        * sentence explaining why they must not blank it.
        *
-       * The rest may still be emptied — blanking a city is a person telling us they do not want to
-       * say, and NULL means that honestly (§21.1's rule about '' versus null).
+       * *** AND `city` AND `state` LEFT AT STEP 6b, FOR A DIFFERENT REASON. ***
+       * Not because a person may not say where they are — because the answer is no longer theirs to
+       * type. Migration 083 makes `companies.state`, `.county` and `.city` a MIRROR of the main
+       * site's address, written by a trigger from what `lib/geocode.ts` resolved, and takes all
+       * three out of the person's column grant. A patch naming one would be refused whole, exactly
+       * as a patch naming `name` was between 082 and step 6.
+       *
+       * `industry` may still be emptied — that is a person telling us they do not want to say, and
+       * NULL means that honestly (§21.1's rule about '' versus null).
        */
       const patch: Record<string, string | null> = {}
-      for (const field of ['industry', 'city', 'state'] as const) {
+      for (const field of ['industry'] as const) {
         if (body[field] === undefined) continue
         patch[field] = String(body[field] ?? '').trim() || null
       }

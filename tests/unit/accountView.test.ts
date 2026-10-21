@@ -240,7 +240,12 @@ describe('*** WHAT THE PAGE MUST NEVER SEND — migration 082 ***', () => {
     assert.ok(!/body: JSON\.stringify\(\{[^}]*companyName/.test(pageCode))
     assert.ok(!/name:\s*rec\.company\.name/.test(ci), 'the draft must not carry the name')
     assert.ok(!/'name',\s*'industry'/.test(ciRoute), 'the patch list must not name it')
-    assert.match(ciRoute, /for \(const field of \['industry', 'city', 'state'\] as const\)/)
+    // Narrowed again at step 6b: migration 083 makes companies.state/county/city a mirror of the
+    // main site, so those leave the field list too and `industry` is all that is left.
+    assert.match(ciRoute, /for \(const field of \['industry'\] as const\)/)
+    assert.ok(!/'city'|'state'/.test(ciRoute.slice(ciRoute.indexOf("action === 'company'"),
+                                                   ciRoute.indexOf("action === 'company'") + 1800)),
+      'the company action must not write a place column any more')
   })
 
   test('the dead PUT is gone, and GET and DELETE are not', () => {

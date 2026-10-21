@@ -103,6 +103,17 @@ the trial. Three parts, built and released in order: **A the account page · B t
     the site is saved with its name and address as typed, the person is told in one sentence, and they
     may type the county themselves. A person never types a state or county that WAS resolved.
     `DECISIONS.md` §207 A.
+17. **A company has ONE address, and the company row is a mirror of its main site.** Added 21 October
+    at step 6b (migration 083). Step 6 made `entities.state/county/city` the geocoded truth, but
+    `lib/jurisdiction.ts:93` and `:99` resolve the STATE and COUNTY layers against
+    `companies.state/county` — read there by `lib/obligationWriter.ts:98` and passed at
+    `lib/resolve.ts:283`. Step 6's own walk proved they drift: the main site moved to Washington
+    while the company row stayed Oregon. So a trigger on `entities` copies the main site's three
+    columns onto the company, those three leave the person's column grant, and **the four readers are
+    deliberately left alone** — moving them is a change to resolution (`CLAUDE.md` §3.1) and belongs
+    in its own step with its own golden run. The mirror makes the wrong answer impossible meanwhile.
+    The direction is site → company and never the reverse: the site is the only one of the two ever
+    read off a real street address. **Moving the readers and retiring the three columns is owed.**
 
 ## Open questions
 
@@ -120,5 +131,6 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 21 Oct 2026 | Step 6b: migration 083 written (not run). Decision 17 added: the company row is a mirror of its main site; state, county and city leave the person's grant, and so do INSERT and DELETE on companies. Company information's company block is down to `industry`. |
 | 21 Oct 2026 | Step 6 done: the Company tab, the site drawer and the geocoder; Company information no longer sends the name. Decision 16 added (the Census geocoder behind a variable). `lib/naicsTitles.ts` ships the 1,012 six-digit NAICS 2022 titles. |
 | 21 Oct 2026 | Step 5 done: migration 082 written, applied to staging and proved as a signed-in person. Open question 1 answered (nothing geocodes; the Census geocoder in step 6). Decision 15 added: a site with rows is refused, never reassigned; "closing a site" recorded as a later decision. |

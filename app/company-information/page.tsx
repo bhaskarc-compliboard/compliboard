@@ -191,7 +191,15 @@ function YourCompanyContent() {
    * only changed the city. The name is drawn read-only below with the same grey line My Account
    * shows. `DECISIONS.md` §207's effects list.
    */
-  const [companyDraft, setCompanyDraft] = useState({ industry: '', city: '', state: '' })
+  /**
+   * *** `city` AND `state` LEFT THIS DRAFT AT STEP 6b, AS `name` LEFT IT AT STEP 6. ***
+   * Migration 083 takes `companies.state`, `.county` and `.city` out of the person's column grant:
+   * they are now a MIRROR of the main site's address, kept in step by a trigger, because that is
+   * the column `lib/jurisdiction.ts:93` and `:99` resolve jurisdiction against. A derived column a
+   * person can also type is two sources of truth wearing one name. The address is shown below,
+   * read-only, with the one place it can be changed. `industry` is all that is left here.
+   */
+  const [companyDraft, setCompanyDraft] = useState({ industry: '' })
   const [editingLine, setEditingLine] = useState<string | null>(null)
   const [lineDraft, setLineDraft] = useState('')
   /** Which label is being renamed or merged, and into what. One at a time, in place. */
@@ -460,6 +468,13 @@ function YourCompanyContent() {
   const controlClass =
     'rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[14px] text-gray-700 hover:border-gray-300'
   const sites = rec?.company.sites ?? []
+  /** The company's address IS its main site's (ACCOUNT-PLAN decision 4), and as of migration 083
+   *  the company row is a mirror of it. The same join the Sites list below uses. */
+  const mainSite = sites.find((s) => s.primary) ?? null
+  const mainWhere = mainSite
+    ? [mainSite.address, mainSite.city, mainSite.county ? `${mainSite.county} County` : null, mainSite.state]
+        .filter(Boolean).join(', ')
+    : ''
   const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
@@ -682,12 +697,15 @@ function YourCompanyContent() {
                       {industries.map((s) => <option key={s} value={s}>{s}</option>)}
                       <option value="other">other</option>
                     </select>
-                    <div className="flex gap-2">
-                      <input value={companyDraft.city} onChange={(e) => setCompanyDraft({ ...companyDraft, city: e.target.value })}
-                        placeholder="City" className="w-1/2 rounded border border-gray-200 px-2 py-1.5 text-[14px]" />
-                      <input value={companyDraft.state} onChange={(e) => setCompanyDraft({ ...companyDraft, state: e.target.value })}
-                        placeholder="State" className="w-1/2 rounded border border-gray-200 px-2 py-1.5 text-[14px]" />
-                    </div>
+                    {/* The address, shown and not sent: it is the MAIN SITE's, and migration 083
+                        makes the company row a mirror of it. One line, with the one place it can
+                        be changed — which exists now, as of My Account step 6. */}
+                    <p className="text-[12px] leading-5 text-gray-500">
+                      {mainWhere || 'no address recorded'} ·{' '}
+                      <a href="/account?tab=company" className="text-[var(--green-ink)] hover:underline">
+                        Change it on My Account
+                      </a>
+                    </p>
                     <div className="flex items-center gap-3 pt-1">
                       <button disabled={busy} onClick={saveCompany}
                         className={ACTION_GREEN}>Save</button>
@@ -706,11 +724,7 @@ function YourCompanyContent() {
                     </div>
                     <button className={`no-print shrink-0 ${ACTION_GREY}`}
                       onClick={() => {
-                        setCompanyDraft({
-                          industry: rec.company.industrySlug ?? '',
-                          city: (rec.company.address ?? '').split(',')[0]?.trim() ?? '',
-                          state: rec.company.state ?? '',
-                        })
+                        setCompanyDraft({ industry: rec.company.industrySlug ?? '' })
                         setEditingCompany(true)
                       }}>Edit</button>
                   </div>
@@ -733,14 +747,18 @@ function YourCompanyContent() {
                     </p>
                   </div>
                 ))}
-                {/* *** NOT A LINK, BECAUSE THERE IS NOWHERE FOR IT TO GO. ***
-                    Nothing in the product creates or edits a site: `grep` finds no insert into
-                    `entities` in any page or route. The only site rows come from the trigger that
-                    makes one with the company. A greyed "Add a site" that did nothing would be the
-                    page promising a screen that does not exist, so it says what is true instead. */}
+                {/* *** AND NOW IT IS A LINK, BECAUSE THERE IS SOMEWHERE FOR IT TO GO. ***
+                    This said "There is no screen for adding or changing a site yet", which was true
+                    when it was written and stopped being true at My Account step 6: the Company tab
+                    adds, edits and removes sites, and `/api/sites` geocodes the address. A page that
+                    goes on saying a screen does not exist is the same class of untruth as a page
+                    claiming one does (`CLAUDE.md` §6), so it is corrected here rather than left for
+                    the step that happens to notice. */}
                 <p className="no-print py-3 text-[12px] text-gray-400">
-                  Your first site was made with your company. There is no screen for adding or
-                  changing a site yet.
+                  Sites, and the addresses their state and county are read from, are kept on{' '}
+                  <a href="/account?tab=company" className="text-[var(--green-ink)] hover:underline">
+                    My Account
+                  </a>.
                 </p>
               </div>
 
