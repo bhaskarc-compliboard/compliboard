@@ -1,0 +1,531 @@
+<title>My Account boards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Canvas chrome: a quiet grey desk the boards sit on. The boards use the app's own tokens
+   (the HR Workspace boards, template/tokens.css), the same file the Calendar boards used. */
+:root {
+  --desk: #E9EBEE; --desk-fg: #14171A; --desk-muted: #6B7280; --desk-faint: #9CA3AF; --desk-line: #D6D9DE; --desk-surface: #FFFFFF;
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  --ink: #14171A; --heading: #111827; --text-strong: #1F2937; --text: #4B5563; --text-nav: #5B6470; --text-muted: #6B7280; --text-faint: #9CA3AF;
+  --group-heading: #374151; --dot: #D1D5DB; --line: #E5E7EB; --line-faint: #F0F1F3; --page: #F7F8FA; --surface: #FFFFFF; --panel: #F9FAFB; --bubble: #E5E7EB; --scrim: rgba(20,23,26,0.4);
+  --brand: #2F7D52; --brand-strong: #256541; --brand-tint: #EAF3ED; --warning: #B7791F; --danger: #B42318; --orange: #F94300;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #1E2124; --desk-fg: #E6E8EB; --desk-muted: #A3A9B1; --desk-faint: #7C838C; --desk-line: #33373C; --desk-surface: #26292D; color-scheme: dark; } }
+:root[data-theme="dark"] { --desk: #1E2124; --desk-fg: #E6E8EB; --desk-muted: #A3A9B1; --desk-faint: #7C838C; --desk-line: #33373C; --desk-surface: #26292D; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: var(--font-ui); }
+.cv-top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; gap: 12px; height: 52px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--desk-surface); border-bottom: 1px solid var(--desk-line); }
+.cv-top h1 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cv-top .sp { flex: 1; }
+.cv-top select, .cv-top button { font-family: inherit; font-size: 13px; height: 30px; padding: 0 10px; border: 1px solid var(--desk-line); border-radius: 6px; background: var(--desk-surface); color: var(--desk-fg); cursor: pointer; }
+.cv-top button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-strong); }
+.cv-hint { font-size: 12px; color: var(--desk-faint); white-space: nowrap; }
+@media (max-width: 720px) { .cv-hint, .cv-top h1 { display: none; } }
+.cv-intro { max-width: 900px; padding-block: 28px 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cv-intro h2 { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; line-height: 1.2; text-wrap: balance; }
+.cv-intro p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--desk-muted); max-width: 70ch; }
+.cv-band { padding-block: 28px 4px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.cv-frame { padding-block: 12px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cv-label { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; font-size: 13px; color: var(--desk-muted); }
+.cv-label .t { font-weight: 500; color: var(--desk-fg); min-width: 0; }
+.cv-label .s { font-size: 11px; color: var(--desk-faint); white-space: nowrap; }
+.cv-note { margin: 0 0 8px; font-size: 13px; line-height: 20px; color: var(--desk-muted); max-width: 80ch; }
+.scaler { position: relative; width: 100%; overflow: hidden; }
+.board { position: relative; width: 1280px; transform-origin: 0 0; background: var(--page); color: var(--ink); font-family: var(--font-ui); box-shadow: 0 1px 3px rgba(20,23,26,0.12), 0 8px 24px rgba(20,23,26,0.06); overflow: hidden; }
+.board.narrow { width: 720px; }
+.board a { color: var(--brand-strong); }
+.board button { font-family: inherit; }
+
+/* ---------- The app frame (HR template, verbatim) ---------- */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { height: 57px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .name { font-size: 14px; font-weight: 600; }
+.topbar .org { font-size: 13px; color: var(--text-nav); }
+.bodyrow { display: flex; flex: 1; min-height: 0; }
+.sidebar { width: 224px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; background: var(--surface); border-right: 1px solid var(--line); }
+.nav { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 8px; font-size: 14px; color: var(--text-nav); text-decoration: none; }
+.nav.active { font-weight: 500; color: var(--brand-strong); background: none; text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.nav .badge { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.main { flex: 1; display: flex; justify-content: center; padding: 24px 24px 64px; min-width: 0; }
+.column { width: 852px; max-width: 100%; display: flex; flex-direction: column; }
+.page-title { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; }
+.lede { margin: 6px 0 0; font-size: 14px; color: var(--text-muted); }
+.btn-primary { font-size: 14px; font-weight: 500; padding: 8px 16px; color: #fff; background: var(--brand); border: 0; border-radius: 6px; }
+.btn-outline { font-size: 14px; font-weight: 500; padding: 5px 11px; color: var(--brand); background: transparent; border: 1px solid var(--brand); border-radius: 6px; }
+.btn-text { font-size: 14px; padding: 0; color: var(--text); background: transparent; border: 0; }
+.btn-text.strong { font-weight: 500; color: var(--brand-strong); }
+.btn-text.muted { color: var(--text-faint); }
+.group-heading { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 0 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.group-heading .act { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 12px; color: var(--brand-strong); }
+.rows { border-bottom: 1px solid var(--line); }
+.row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); }
+.row .text { flex: 1; min-width: 0; }
+.row .title { display: block; font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .when { flex-shrink: 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.row .when.soon { color: var(--danger); }
+.row .open { flex-shrink: 0; font-size: 12px; color: var(--brand-strong); white-space: nowrap; }
+.meta { margin-top: 2px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.meta .dot { color: var(--dot); }
+.meta .warn { color: var(--warning); }
+.empty-line { padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 13px; color: var(--text-muted); }
+.empty-line a { margin-left: 8px; font-size: 12px; }
+
+/* ---------- Dashboard pieces, new ---------- */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.tile { padding: 18px 20px 18px 0; }
+.tile + .tile { padding-left: 20px; border-left: 1px solid var(--line); }
+.tile .k { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.tile .v { margin-top: 6px; font-family: var(--font-reading); font-size: 34px; line-height: 40px; font-weight: 400; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tile .v.dash { color: var(--dot); }
+.tile .s { margin-top: 2px; font-size: 12px; color: var(--text-faint); }
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+.twocol > * { min-width: 0; }
+
+.sect { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 36px 0 8px; }
+.sect h2 { margin: 0; font-family: var(--font-reading); font-size: 20px; font-weight: 400; color: var(--heading); }
+.sect .act { font-size: 13px; color: var(--brand-strong); text-decoration: none; white-space: nowrap; }
+.sect .quiet { font-size: 12px; color: var(--text-faint); white-space: nowrap; }
+.more { padding: 10px 0; font-size: 12px; color: var(--text-muted); }
+.more a { margin-left: 6px; font-size: 12px; }
+.qblock { margin-top: 0; }
+.qcard { padding: 20px 24px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.qcard .n { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.qcard .q { margin: 6px 0 0; font-family: var(--font-reading); font-size: 19px; line-height: 27px; color: var(--heading); text-wrap: balance; }
+.qcard .why { margin: 4px 0 0; font-size: 13px; line-height: 19px; color: var(--text-muted); }
+.qcard .choices { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.choice-btn { font-size: 14px; font-weight: 500; padding: 7px 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.choice-btn.on { border-color: var(--brand); color: var(--brand-strong); background: var(--brand-tint); }
+.qcard .skip { margin-left: auto; font-size: 13px; color: var(--text-muted); text-decoration: underline; }
+.qcard .numin { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.qcard .numin .in { width: 120px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; color: var(--ink); background: var(--surface); font-variant-numeric: tabular-nums; }
+.qcard .numin .in.ph { color: var(--text-faint); }
+.qcard.done { background: var(--panel); border-style: dashed; }
+.qcard.done .q { font-size: 16px; line-height: 24px; font-family: var(--font-ui); font-weight: 500; }
+.qfoot { margin-top: 8px; font-size: 12px; color: var(--text-faint); }
+.stack { display: flex; flex-direction: column; gap: 20px; padding: 32px; }
+.stack .cap { font-size: 12px; color: var(--text-muted); }
+
+/* sidebar variants, board 4 */
+.sb-pair { display: flex; gap: 32px; padding: 28px 32px 32px; align-items: flex-start; }
+.sb-pair .one { flex: 1; min-width: 0; }
+.sb-pair .cap { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.sb { width: 224px; height: 520px; display: flex; flex-direction: column; padding: 16px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
+.sb .group { display: flex; flex-direction: column; gap: 2px; }
+.sb .rule { height: 1px; margin: 14px 12px; background: var(--line); }
+.sb .bottom { margin-top: auto; }
+.sb .it { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; font-size: 14px; color: var(--text-nav); border-radius: 6px; text-decoration: none; }
+.sb .it .n { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.sb.u .it.on { color: var(--brand-strong); font-weight: 500; }
+.sb.u .it.on span:first-child { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.sb.r .it { border-left: 2px solid transparent; border-radius: 0; padding-left: 14px; }
+.sb.r .it.on { color: var(--ink); font-weight: 500; border-left-color: var(--brand-strong); }
+.sb.r .it:hover { background: var(--panel); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<style>
+/* the tab row and the drawer, the Calendar boards' own */
+.tabs { display: flex; align-items: center; gap: 24px; margin: 20px 0; border-bottom: 1px solid var(--line); }
+.tab { padding: 8px 0 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--brand-strong); border-bottom-color: var(--brand); }
+.layer { position: absolute; inset: 0; background: var(--scrim); display: flex; }
+.layer.drawer-layer { justify-content: flex-end; }
+.drawer { width: 720px; max-width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line); }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 24px 0; }
+.drawer-head h2 { margin: 0; font-size: 18px; font-weight: 500; line-height: 25px; color: var(--heading); }
+.drawer-head .sub { margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
+.drawer-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 16px 24px 24px; }
+.drawer-foot { display: flex; align-items: center; gap: 16px; padding: 12px 24px; border-top: 1px solid var(--line); }
+.field { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.field label { font-size: 12px; color: var(--text-muted); }
+.field .in { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; color: var(--ink); min-height: 36px; }
+.field .in.ph { color: var(--text-faint); }
+.fineprint { font-size: 12px; line-height: 18px; color: var(--text-muted); }
+/* my account pieces */
+.frow { display: flex; align-items: baseline; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+.frow .k { flex: 0 0 180px; font-size: 13px; color: var(--text-muted); }
+.frow .v { flex: 1; min-width: 0; font-size: 14px; color: var(--ink); }
+.frow .v .sub { display: block; margin-top: 2px; font-size: 12px; color: var(--text-faint); }
+.frow .e { flex-shrink: 0; font-size: 13px; color: var(--brand-strong); text-decoration: none; }
+.frow .e.quiet { color: var(--text-faint); }
+.frows { border-bottom: 1px solid var(--line); }
+.inline-edit { display: flex; align-items: center; gap: 10px; }
+.inline-edit .in { flex: 1; padding: 7px 10px; border: 1px solid var(--brand); border-radius: 8px; background: var(--surface); font-size: 14px; color: var(--ink); }
+.sugg { margin-top: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 13px; }
+.sugg div { padding: 7px 10px; border-top: 1px solid var(--line-faint); color: var(--text); }
+.sugg div:first-child { border-top: 0; }
+.sugg div.on { background: var(--panel); color: var(--ink); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-muted); background: var(--panel); border: 1px solid var(--line); }
+.pill.ok { color: var(--brand-strong); background: var(--brand-tint); border-color: transparent; }
+.pill.warn { color: var(--warning); background: #FBF4E6; border-color: transparent; }
+.banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 16px; background: #FBF4E6; border-bottom: 1px solid #F0DDB0; font-size: 13px; color: #7A4F0C; }
+.banner .b { font-weight: 500; padding: 6px 12px; color: #fff; background: var(--brand); border-radius: 6px; font-size: 13px; }
+.price { font-family: var(--font-reading); font-size: 28px; color: var(--ink); }
+.price small { font-family: var(--font-ui); font-size: 13px; color: var(--text-muted); }
+.dangerbox { margin-top: 16px; padding: 16px 18px; border: 1px solid #F0C9C4; border-radius: 12px; background: #FFF7F6; }
+.dangerbox h3 { margin: 0; font-size: 15px; font-weight: 500; color: var(--danger); }
+.dangerbox p { margin: 6px 0 0; font-size: 13px; line-height: 19px; color: var(--text); }
+/* the front door */
+.door { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--page); }
+.doorcard { width: 420px; padding: 28px 28px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.doorcard h1 { margin: 0; font-family: var(--font-reading); font-size: 24px; font-weight: 400; color: var(--heading); }
+.doorcard .lede { margin: 6px 0 18px; font-size: 13px; color: var(--text-muted); }
+.doorcard .field { margin-top: 12px; display: block; }
+.doorcard .field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.doorcard .field .in { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; color: var(--ink); min-height: 36px; }
+.doorcard .field .in.ph { color: var(--text-faint); }
+.doorcard .field .hint { margin-top: 4px; font-size: 12px; color: var(--brand-strong); }
+.doorcard .btn-primary { width: 100%; margin-top: 18px; padding: 10px 16px; }
+.doorcard .foot { margin-top: 14px; text-align: center; font-size: 12px; color: var(--text-muted); }
+.steps { display: flex; gap: 6px; margin-bottom: 14px; }
+.steps span { flex: 1; height: 3px; border-radius: 2px; background: var(--line); }
+.steps span.on { background: var(--brand); }
+.found { padding: 12px 14px; background: var(--panel); border-radius: 10px; font-size: 13px; line-height: 20px; color: var(--text); }
+.found b { color: var(--ink); font-weight: 500; }
+.found .q { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+.stack .doorcard { width: 100%; }
+</style>
+
+<div class="cv-top">
+  <h1>CompliBoard My Account — the feature boards</h1>
+  <span class="sp"></span>
+  <span class="cv-hint">Scroll down the boards · zoom with the buttons</span>
+  <select id="goto" aria-label="Go to a board"><option value="">Go to a board…</option></select>
+  <button type="button" id="z-fit" aria-pressed="true">Fit</button>
+  <button type="button" id="z-75" aria-pressed="false">75%</button>
+  <button type="button" id="z-100" aria-pressed="false">100%</button>
+</div>
+<div class="cv-intro">
+  <h2>My Account and the front door, drawn in the shared frame</h2>
+  <p>Eight boards for a desktop window 1280 wide. The sample company is Willamette Vinegar Works, Maria is signed in, and today is 21 October 2026. Five tabs on My Account in the shared tab row — Company, People, Sign-in, Billing, Cancel — and the drawer for anything edited (a site, an invitation, a password), as everywhere else in the app. Then the front door: a three-field signup, the onboarding walk in three screens, and what a company sees after the trial with no card.</p>
+</div>
+<div class="cv-band">My Account</div>
+
+<!-- ===================== b1 ===================== -->
+<section class="cv-frame" id="b1">
+  <div class="cv-label"><span class="t">1 · Company</span><span class="s">1280 × 1180</span></div>
+  <p class="cv-note">The company name is shown, not editable, with one grey line saying why. "What you do" is typed with suggestions underneath (a standard list; anything typed is kept). The website shows when it was read and what it gave. The main site is the company's address: state and county come from it. The three questions are the top three switches with their help lines, editable here and asked by the Dashboard; their answers live in Company information. Sites: the main one marked, others with their address and county; "+ Add a site" asks for a name and an address and nothing else.</p>
+  <div class="scaler"><div class="board " style="height:1180px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">Audit Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#"><span>Calendar</span><span class="badge" style="color:var(--text-faint)">7</span></a><a class="nav" href="#">Documents</a><div style="height:1px;margin:14px 12px;background:var(--line)"></div><a class="nav" href="#">Company information</a><a class="nav active" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">My Account</h1>
+          <p class="lede">Your company, the people who can sign in, how you sign in, and billing.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Company</div><div class="tab">People</div><div class="tab">Sign-in</div><div class="tab">Billing</div><div class="tab">Cancel</div></div>
+          
+          <div class="sect" style="margin-top:4px"><h2>Your company</h2></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Company</span><span class="v">Willamette Vinegar Works<span class="sub">Tied to your account and cannot be changed here. Write to us if the name is wrong.</span></span><span class="e quiet">—</span></div>
+            <div class="frow"><span class="k">What you do</span><span class="v"><div class="inline-edit"><span class="in">Vinegar and specialty ferment</span><button class="btn-primary" style="padding:6px 12px">Save</button><button class="btn-text">Cancel</button></div><div class="sugg"><div class="on">Vinegar manufacturing</div><div>Fermented food products manufacturing</div><div>Keep "Vinegar and specialty ferment"</div></div></span></div>
+            <div class="frow"><span class="k">Website</span><span class="v">willamettevinegar.com<span class="sub">Read on 21 October 2026 · 2 facts confirmed from it</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">Main site</span><span class="v">Portland plant<span class="sub">2140 NW Yeon Ave, Portland, OR 97210 · Multnomah County</span></span><a class="e" href="#">Edit the address</a></div>
+          </div>
+          <div class="sect"><h2>Three things we need to know</h2><span class="quiet">Kept in Company information · the same questions the Dashboard asks</span></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Do you have employees other than the owner?</span><span class="v">Yes<span class="sub">Anyone on payroll, full or part time. Owners who only draw a share do not count.</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">How many people do you employ in total?</span><span class="v">38<span class="sub">Everyone on payroll across all your sites, full or part time.</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">Do you manufacture, blend, repackage, distribute, or toll process?</span><span class="v">Manufacturer<span class="sub">Pick what you mainly do with chemicals. Toll processing is making to someone else's recipe.</span></span><a class="e" href="#">Change</a></div>
+          </div>
+          <div class="sect"><h2>Sites</h2><a class="act" href="#">+ Add a site</a></div>
+          <div class="rows">
+            <a class="row" href="#"><div class="text"><span class="title">Portland plant <span class="pill">Main</span></span><div class="meta"><span>2140 NW Yeon Ave, Portland, OR 97210</span><span class="dot">·</span><span>Multnomah County</span></div></div><span class="open">Edit</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">Vancouver warehouse</span><div class="meta"><span>5800 NE 88th St, Vancouver, WA 98665</span><span class="dot">·</span><span>Clark County</span><span class="dot">·</span><span>added 21 October 2026</span></div></div><span class="open">Edit</span></a>
+          </div>
+          <div class="more">A site's state and county come from its address. Dates, audits and site questions attach to the site they belong to.</div>
+
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+<!-- ===================== b1b ===================== -->
+<section class="cv-frame" id="b1b">
+  <div class="cv-label"><span class="t">1b · A site, opened in the drawer</span><span class="s">1280 × 1180</span></div>
+  <p class="cv-note">The drawer is where one thing is edited, as everywhere else in the app: click a site row and it opens here with its name, its address, what the address gave us, and what is on the site; Save, Cancel, Remove. "Invite someone" and "Change your password" open the same way. The page itself stays a glance: the facts, the three answers, the sites and the people, never hidden behind a click.</p>
+  <div class="scaler"><div class="board " style="height:1180px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">Audit Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#"><span>Calendar</span><span class="badge" style="color:var(--text-faint)">7</span></a><a class="nav" href="#">Documents</a><div style="height:1px;margin:14px 12px;background:var(--line)"></div><a class="nav" href="#">Company information</a><a class="nav active" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">My Account</h1>
+          <p class="lede">Your company, the people who can sign in, how you sign in, and billing.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Company</div><div class="tab">People</div><div class="tab">Sign-in</div><div class="tab">Billing</div><div class="tab">Cancel</div></div>
+          
+          <div class="sect" style="margin-top:4px"><h2>Your company</h2></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Company</span><span class="v">Willamette Vinegar Works<span class="sub">Tied to your account and cannot be changed here. Write to us if the name is wrong.</span></span><span class="e quiet">—</span></div>
+            <div class="frow"><span class="k">What you do</span><span class="v"><div class="inline-edit"><span class="in">Vinegar and specialty ferment</span><button class="btn-primary" style="padding:6px 12px">Save</button><button class="btn-text">Cancel</button></div><div class="sugg"><div class="on">Vinegar manufacturing</div><div>Fermented food products manufacturing</div><div>Keep "Vinegar and specialty ferment"</div></div></span></div>
+            <div class="frow"><span class="k">Website</span><span class="v">willamettevinegar.com<span class="sub">Read on 21 October 2026 · 2 facts confirmed from it</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">Main site</span><span class="v">Portland plant<span class="sub">2140 NW Yeon Ave, Portland, OR 97210 · Multnomah County</span></span><a class="e" href="#">Edit the address</a></div>
+          </div>
+          <div class="sect"><h2>Three things we need to know</h2><span class="quiet">Kept in Company information · the same questions the Dashboard asks</span></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Do you have employees other than the owner?</span><span class="v">Yes<span class="sub">Anyone on payroll, full or part time. Owners who only draw a share do not count.</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">How many people do you employ in total?</span><span class="v">38<span class="sub">Everyone on payroll across all your sites, full or part time.</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">Do you manufacture, blend, repackage, distribute, or toll process?</span><span class="v">Manufacturer<span class="sub">Pick what you mainly do with chemicals. Toll processing is making to someone else's recipe.</span></span><a class="e" href="#">Change</a></div>
+          </div>
+          <div class="sect"><h2>Sites</h2><a class="act" href="#">+ Add a site</a></div>
+          <div class="rows">
+            <a class="row" href="#"><div class="text"><span class="title">Portland plant <span class="pill">Main</span></span><div class="meta"><span>2140 NW Yeon Ave, Portland, OR 97210</span><span class="dot">·</span><span>Multnomah County</span></div></div><span class="open">Edit</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">Vancouver warehouse</span><div class="meta"><span>5800 NE 88th St, Vancouver, WA 98665</span><span class="dot">·</span><span>Clark County</span><span class="dot">·</span><span>added 21 October 2026</span></div></div><span class="open">Edit</span></a>
+          </div>
+          <div class="more">A site's state and county come from its address. Dates, audits and site questions attach to the site they belong to.</div>
+
+        </div></main>
+      </div>
+    </div>
+    <div class="layer drawer-layer"><div class="drawer">
+        <div class="drawer-head"><div><h2>Vancouver warehouse</h2><div class="sub">Added 21 October 2026 · Clark County, Washington</div></div><button class="icon-btn" aria-label="Close">✕</button></div>
+        <div class="drawer-body">
+          <div class="field"><label>Site name</label><div class="in">Vancouver warehouse</div></div>
+          <div class="field"><label>Address</label><div class="in">5800 NE 88th St, Vancouver, WA 98665</div></div>
+          <p class="fineprint" style="margin-top:8px">The state and county are read from the address: Washington, Clark County. Dates, audits and site questions for this site attach to it.</p>
+          <div class="sect" style="margin:24px 0 6px"><h2 style="font-size:16px">On this site</h2></div>
+          <div class="rows"><div class="row"><div class="text"><span class="title">4 dates on the calendar</span></div></div><div class="row"><div class="text"><span class="title">1 audit · Washington L&amp;I, 26 September 2026</span></div></div><div class="row"><div class="text"><span class="title">3 site questions answered · 9 open</span></div></div></div>
+        </div>
+        <div class="drawer-foot"><button class="btn-primary">Save</button><button class="btn-text">Cancel</button><button class="btn-text muted push-right">Remove this site</button></div>
+      </div></div>
+  </div></div>
+</section>
+<!-- ===================== b2 ===================== -->
+<section class="cv-frame" id="b2">
+  <div class="cv-label"><span class="t">2 · People</span><span class="s">1280 × 820</span></div>
+  <p class="cv-note">Who can sign in, one row each, with the monthly calendar email switch per person and Remove. An invited person shows as Invited until they set their password from the link (good for 7 days). Inviting is one email box; the person gets a link, chooses their own password, and lands in this company. Everyone at a company sees the same things; there are no roles in this version.</p>
+  <div class="scaler"><div class="board " style="height:820px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">Audit Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#"><span>Calendar</span><span class="badge" style="color:var(--text-faint)">7</span></a><a class="nav" href="#">Documents</a><div style="height:1px;margin:14px 12px;background:var(--line)"></div><a class="nav" href="#">Company information</a><a class="nav active" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">My Account</h1>
+          <p class="lede">Your company, the people who can sign in, how you sign in, and billing.</p>
+          <div class="tabs"><div class="tab">Company</div><div class="tab" aria-selected="true">People</div><div class="tab">Sign-in</div><div class="tab">Billing</div><div class="tab">Cancel</div></div>
+          
+          <div class="sect" style="margin-top:4px"><h2>People who can sign in</h2><a class="act" href="#">+ Invite someone</a></div>
+          <div class="rows">
+            <div class="row"><div class="text"><span class="title">Maria Alvarez <span class="pill ok">You</span></span><div class="meta"><span>maria@willamettevinegar.com</span><span class="dot">·</span><span>joined 10 June 2026</span></div></div><span class="when">Monthly calendar email: <b style="color:var(--ink);font-weight:500">on</b></span></div>
+            <div class="row"><div class="text"><span class="title">Dev Patel</span><div class="meta"><span>dev@willamettevinegar.com</span><span class="dot">·</span><span>joined 14 October 2026</span></div></div><span class="when">Monthly calendar email: <b style="color:var(--ink);font-weight:500">on</b> · <a href="#">Remove</a></span></div>
+            <div class="row"><div class="text"><span class="title">sam@willamettevinegar.com <span class="pill warn">Invited</span></span><div class="meta"><span>invited 21 October 2026</span><span class="dot">·</span><span>the link is good for 7 days</span></div></div><span class="when"><a href="#">Send the link again</a> · <a href="#">Cancel</a></span></div>
+          </div>
+          <div class="qcard" style="margin-top:28px">
+            <p class="q" style="font-size:16px;font-family:var(--font-ui);font-weight:500;margin:0">Invite someone</p>
+            <p class="why">They get a link by email, set their own password, and sign in to this company. Everyone here sees the same things.</p>
+            <div class="numin" style="margin-top:12px"><span class="in ph" style="width:320px">name@company.com</span><button class="btn-primary">Send the invitation</button></div>
+          </div>
+
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+<!-- ===================== b3 ===================== -->
+<section class="cv-frame" id="b3">
+  <div class="cv-label"><span class="t">3 · Sign-in</span><span class="s">1280 × 820</span></div>
+  <p class="cv-note">Your name (the Dashboard's welcome reads it), your email (a change sends a link to the new address and the old one keeps working until it is clicked), your password (the current one is asked for, which it is not today).</p>
+  <div class="scaler"><div class="board " style="height:820px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">Audit Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#"><span>Calendar</span><span class="badge" style="color:var(--text-faint)">7</span></a><a class="nav" href="#">Documents</a><div style="height:1px;margin:14px 12px;background:var(--line)"></div><a class="nav" href="#">Company information</a><a class="nav active" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">My Account</h1>
+          <p class="lede">Your company, the people who can sign in, how you sign in, and billing.</p>
+          <div class="tabs"><div class="tab">Company</div><div class="tab">People</div><div class="tab" aria-selected="true">Sign-in</div><div class="tab">Billing</div><div class="tab">Cancel</div></div>
+          
+          <div class="sect" style="margin-top:4px"><h2>You</h2></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Your name</span><span class="v">Maria Alvarez<span class="sub">The Dashboard greets you by your first name.</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">Email</span><span class="v">maria@willamettevinegar.com<span class="sub">We send a link to the new address to confirm it. Until you click it, the old address still signs in.</span></span><a class="e" href="#">Change</a></div>
+            <div class="frow"><span class="k">Password</span><span class="v">••••••••••<span class="sub">Last changed 3 September 2026</span></span><a class="e" href="#">Change</a></div>
+          </div>
+          <div class="qcard" style="margin-top:28px">
+            <p class="q" style="font-size:16px;font-family:var(--font-ui);font-weight:500;margin:0">Change your password</p>
+            <div class="field"><label>Current password</label><div class="in">••••••••••</div></div>
+            <div class="field"><label>New password</label><div class="in ph">At least 10 characters</div></div>
+            <div class="field"><label>New password again</label><div class="in ph"></div></div>
+            <div class="choices" style="margin-top:16px"><button class="btn-primary">Save the new password</button><button class="btn-text">Cancel</button></div>
+          </div>
+
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+<!-- ===================== b4 ===================== -->
+<section class="cv-frame" id="b4">
+  <div class="cv-label"><span class="t">4 · Billing, during the trial</span><span class="s">1280 × 900</span></div>
+  <p class="cv-note">$199 a month for everyone at the company. The trial's days left and its end date. "Add a card" opens Stripe's own page; "Manage billing and invoices" opens Stripe's portal. We never hold a card number. The second section says in plain words what happens after the trial, on a failed card, and that not paying never deletes anything.</p>
+  <div class="scaler"><div class="board " style="height:900px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">Audit Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#"><span>Calendar</span><span class="badge" style="color:var(--text-faint)">7</span></a><a class="nav" href="#">Documents</a><div style="height:1px;margin:14px 12px;background:var(--line)"></div><a class="nav" href="#">Company information</a><a class="nav active" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">My Account</h1>
+          <p class="lede">Your company, the people who can sign in, how you sign in, and billing.</p>
+          <div class="tabs"><div class="tab">Company</div><div class="tab">People</div><div class="tab">Sign-in</div><div class="tab" aria-selected="true">Billing</div><div class="tab">Cancel</div></div>
+          
+          <div class="sect" style="margin-top:4px"><h2>Your plan</h2></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Plan</span><span class="v"><span class="price">$199 <small>a month</small></span><span class="sub">Everything in CompliBoard, for everyone at your company. Cancel any time.</span></span></div>
+            <div class="frow"><span class="k">Status</span><span class="v"><span class="pill warn">Trial</span> &nbsp;9 days left<span class="sub">Your trial ends 30 October 2026. Add a card before then and nothing changes on the day.</span></span></div>
+            <div class="frow"><span class="k">Card</span><span class="v">No card yet</span><a class="e" href="#">Add a card</a></div>
+          </div>
+          <div class="more">Cards and invoices are handled by Stripe on its own secure page; we never see your card number. <a href="#">Manage billing and invoices</a></div>
+          <div class="sect"><h2>After the trial</h2></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Without a card</span><span class="v">Your account stays, and so does everything in it. You can sign in and read, download and print. Asking, reading documents and auditing pause until a card is added.</span></div>
+            <div class="frow"><span class="k">If a card fails</span><span class="v">We try again for 7 days and email you. After that, the same pause until the card is fixed.</span></div>
+            <div class="frow"><span class="k">Deleting</span><span class="v">Only you can delete your company, from the Cancel tab. Not paying never deletes anything.</span></div>
+          </div>
+
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+<!-- ===================== b5 ===================== -->
+<section class="cv-frame" id="b5">
+  <div class="cv-label"><span class="t">5 · Cancel</span><span class="s">1280 × 820</span></div>
+  <p class="cv-note">Two different things, kept apart: stopping the subscription (the company stays, read-only, come back any time) and deleting the company for good (everything, for everyone, typed confirmation, download first). The delete is what the page does today, with the words tidied; the subscription line is new with billing.</p>
+  <div class="scaler"><div class="board " style="height:820px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">Audit Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#"><span>Calendar</span><span class="badge" style="color:var(--text-faint)">7</span></a><a class="nav" href="#">Documents</a><div style="height:1px;margin:14px 12px;background:var(--line)"></div><a class="nav" href="#">Company information</a><a class="nav active" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">My Account</h1>
+          <p class="lede">Your company, the people who can sign in, how you sign in, and billing.</p>
+          <div class="tabs"><div class="tab">Company</div><div class="tab">People</div><div class="tab">Sign-in</div><div class="tab">Billing</div><div class="tab" aria-selected="true">Cancel</div></div>
+          
+          <div class="sect" style="margin-top:4px"><h2>Cancel and delete</h2></div>
+          <div class="frows">
+            <div class="frow"><span class="k">Stop paying</span><span class="v">Cancels the subscription at the end of the month you have paid for. Your company stays, read-only, and you can come back any time.</span><a class="e" href="#">Cancel the subscription</a></div>
+            <div class="frow"><span class="k">Download everything</span><span class="v">Every document, report, checklist, date and conversation, as files.</span><a class="e" href="#">Download my data</a></div>
+          </div>
+          <div class="dangerbox">
+            <h3>Delete the company for good</h3>
+            <p>This deletes Willamette Vinegar Works from CompliBoard: every document, report, date, conversation and login, for everyone here. It cannot be undone. Download your data first.</p>
+            <div class="field" style="margin-top:12px"><label>Type the company name to confirm</label><div class="in ph" style="max-width:360px">Willamette Vinegar Works</div></div>
+            <div class="choices" style="margin-top:14px"><button class="btn-danger">Delete for good</button><button class="btn-text">Cancel</button></div>
+          </div>
+
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section><div class="cv-band">The front door</div>
+<!-- ===================== b6 ===================== -->
+<section class="cv-frame" id="b6">
+  <div class="cv-label"><span class="t">6 · Sign up</span><span class="s">1280 × 620</span></div>
+  <p class="cv-note">Email, password, company name, and the website — optional, with "Highly recommended — it helps us know your company" under it. Nothing else. The company name is asked here rather than in a popup after login, because the company row is created with the account and should never exist half-named. The account and the 14-day trial exist the moment this is pressed, so the email is ours whether or not they go on. Company name and address come from the website read, or from the next screen if there was no website.</p>
+  <div class="scaler"><div class="board " style="height:620px">
+    <div class="door" style="min-height:620px"><div class="doorcard">
+      <h1>Start with CompliBoard</h1>
+      <p class="lede">14 days free. No card needed to start.</p>
+      <div class="field"><label>Work email</label><div class="in ph">you@company.com</div></div>
+      <div class="field"><label>Password</label><div class="in ph">At least 10 characters</div></div>
+      <div class="field"><label>Company name</label><div class="in ph">As it appears on your permits</div></div>
+      <div class="field"><label>Your website <span style="color:var(--text-faint)">· optional</span></label><div class="in ph">company.com</div><div class="hint">Highly recommended — it helps us know your company.</div></div>
+      <button class="btn-primary">Create my account</button>
+      <div class="foot">Already have an account? <a href="#">Sign in</a></div>
+    </div></div>
+  </div></div>
+</section>
+<!-- ===================== b7 ===================== -->
+<section class="cv-frame" id="b7">
+  <div class="cv-label"><span class="t">7 · The onboarding walk, three screens</span><span class="s">720 × 1240</span></div>
+  <p class="cv-note">Screen 1 is the website card when a site was given — the read proposes the company name, what they do and the addresses it found; nothing is written until "Yes, that's us"; "Let me fix it" turns each line into a box. With no website, screen 1 asks the one thing still missing: the main site's address (the name came from signup). Screen 2 is the Dashboard's question card, three times. Screen 3 is done. Every screen can be left; the Dashboard's own card continues the questions another day.</p>
+  <div class="scaler"><div class="board narrow" style="height:1240px">
+    <div class="stack">
+      <div><div class="cap">1 · after signup, if a website was given — one read, nothing written until you say so</div>
+      <div class="doorcard" style="margin-top:6px"><div class="steps"><span class="on"></span><span></span><span></span></div>
+        <h1>Here's what we found</h1><p class="lede">From willamettevinegar.com. Fix anything that's wrong, then confirm.</p>
+        <div class="found"><b>Willamette Vinegar Works</b> makes vinegar and specialty ferments for food makers and restaurants.<br>Sites: <b>2140 NW Yeon Ave, Portland, OR</b> · <b>5800 NE 88th St, Vancouver, WA</b><div class="q">Is this right?</div></div>
+        <div class="choices" style="margin-top:14px"><button class="btn-primary">Yes, that's us</button><button class="btn-text">Let me fix it</button></div>
+      </div></div>
+      <div><div class="cap">1 · the same screen with no website — ask instead of read</div>
+      <div class="doorcard" style="margin-top:6px"><div class="steps"><span class="on"></span><span></span><span></span></div>
+        <h1>Where is your main site?</h1><p class="lede">One address. We can fill in the rest later.</p>
+        <div class="field"><label>Address of your main site</label><div class="in ph">Street, city, state, ZIP</div><div class="hint" style="color:var(--text-faint)">The address tells us which state and county rules apply.</div></div>
+        <button class="btn-primary">Continue</button>
+      </div></div>
+      <div><div class="cap">2 · the three questions, one at a time — the Dashboard's card, in the walk</div>
+      <div class="doorcard" style="margin-top:6px"><div class="steps"><span class="on"></span><span class="on"></span><span></span></div>
+        <div class="n" style="font-size:12px;color:var(--text-faint)">1 of 3</div>
+        <p class="q" style="margin:6px 0 0;font-family:var(--font-reading);font-size:19px;line-height:27px;color:var(--heading)">Do you have employees other than the owner?</p>
+        <p class="why" style="margin:4px 0 0;font-size:13px;color:var(--text-muted)">Anyone on payroll, full or part time. Owners who only draw a share do not count.</p>
+        <div class="choices" style="margin-top:16px"><button class="choice-btn">Yes</button><button class="choice-btn">No</button><a class="skip" href="#" style="margin-left:auto;font-size:13px;color:var(--text-muted);text-decoration:underline">I don't know yet</a></div>
+      </div></div>
+      <div><div class="cap">3 · done — and the Dashboard, with its welcome</div>
+      <div class="doorcard" style="margin-top:6px"><div class="steps"><span class="on"></span><span class="on"></span><span class="on"></span></div>
+        <h1>That's it</h1><p class="lede">Add your first document when you're ready and we'll start reading. You can leave this walk at any point and the Dashboard picks up where you stopped.</p>
+        <button class="btn-primary">Go to my Dashboard</button>
+      </div></div>
+    </div>
+  </div></div>
+</section>
+<!-- ===================== b8 ===================== -->
+<section class="cv-frame" id="b8">
+  <div class="cv-label"><span class="t">8 · After the trial, no card</span><span class="s">1280 × 720</span></div>
+  <p class="cv-note">The read-only state is one banner across the top of every page and nothing else changes: the Dashboard, the Calendar, documents, audits and checklists are all there to read, download and print. What pauses is the paid work — asking, reading a document, running an audit — each of which says so in its own box with the same button. Nothing is deleted for non-payment.</p>
+  <div class="scaler"><div class="board " style="height:720px">
+    <div class="app">
+      <div class="banner"><span><b style="font-weight:500">Your trial has ended.</b> Everything is still here to read and download. Add a card to keep asking, reading documents and auditing.</span><span class="b">Add a card</span></div><div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav active" href="#">Dashboard</a><a class="nav" href="#">Compliance Workspace</a><a class="nav" href="#">Audit Workspace</a><a class="nav" href="#">HR Workspace</a><a class="nav" href="#"><span>Calendar</span><span class="badge" style="color:var(--text-faint)">7</span></a><a class="nav" href="#">Documents</a><div style="height:1px;margin:14px 12px;background:var(--line)"></div><a class="nav" href="#">Company information</a><a class="nav" href="#">My Account</a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Welcome back, Maria</h1>
+          <p class="lede">What has been done, what is coming up, and a few quick questions.</p>
+          
+          <div class="tiles">
+            <div class="tile"><div class="k">Files read</div><div class="v">27</div></div>
+            <div class="tile"><div class="k">Questions answered</div><div class="v">31</div></div>
+            <div class="tile"><div class="k">Audits done</div><div class="v">4</div></div>
+            <div class="tile"><div class="k">Checklists created</div><div class="v">5</div></div>
+          </div>
+          <div class="sect"><h2>Upcoming in the next 30 days</h2><a class="act" href="#">Open the Calendar →</a></div>
+          <div class="rows">
+            <a class="row" href="#"><div class="text"><span class="title">Fire extinguisher annual inspection</span><div class="meta"><span>Portland plant</span><span class="dot">·</span><span>from the fire marshal's report</span></div></div><span class="when soon">in 9 days</span></a>
+            <a class="row" href="#"><div class="text"><span class="title">Air permit 26-2841 — annual report</span><div class="meta"><span class="warn">not confirmed</span><span class="dot">·</span><span>1 November 2026</span><span class="dot">·</span><span>Portland plant</span></div></div><span class="when">in 13 days</span></a>
+          </div>
+
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+<script>
+(function () {
+  var frames = Array.prototype.slice.call(document.querySelectorAll('.cv-frame'));
+  var sel = document.getElementById('goto');
+  frames.forEach(function (f) {
+    var o = document.createElement('option'); o.value = f.id; o.textContent = f.querySelector('.cv-label .t').textContent; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { var f = document.getElementById(sel.value); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); sel.value = ''; });
+  var mode = 'fit';
+  function layout() {
+    document.querySelectorAll('.scaler').forEach(function (s) {
+      var b = s.firstElementChild; var w = b.offsetWidth; var h = parseFloat(b.style.height) || b.offsetHeight;
+      var avail = s.clientWidth; var scale = mode === 'fit' ? Math.min(1, avail / w) : mode === '75' ? Math.min(0.75, avail / w) : 1;
+      b.style.transform = 'scale(' + scale + ')';
+      s.style.height = Math.ceil(h * scale) + 'px';
+      s.style.overflowX = (scale === 1 && avail < w) ? 'auto' : 'hidden';
+    });
+  }
+  ['fit', '75', '100'].forEach(function (m) {
+    document.getElementById('z-' + m).addEventListener('click', function () {
+      mode = m; ['fit', '75', '100'].forEach(function (x) { document.getElementById('z-' + x).setAttribute('aria-pressed', x === m ? 'true' : 'false'); }); layout();
+    });
+  });
+  window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  layout();
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href="#"]'); if (a) e.preventDefault(); });
+})();
+</script>
