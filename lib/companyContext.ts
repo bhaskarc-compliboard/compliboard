@@ -55,6 +55,8 @@
  * `gateContext.ts`'s own header was written about.
  */
 import { createHash } from 'node:crypto'
+// Moved out at My Account step 6b so a browser can read it too — see below.
+import { siteWhere } from './placeLine.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -194,17 +196,13 @@ const line = (xs: string[]) => (xs.length ? xs.map((x) => `  - ${x}`).join('\n')
  *
  * Exported because `lib/audit.ts` had a copy of the same join and therefore the same defect. One
  * function, two callers — the rule §3.4 states for prompts, applied to the thing a prompt renders.
+ *
+ * *** AND IT MOVED TO `lib/placeLine.ts` AT MY ACCOUNT STEP 6b, BECAUSE A THIRD COPY TURNED UP. ***
+ * `app/company-information/page.tsx` had one inline and could not import this one — this file
+ * imports `node:crypto` and never reaches a browser. The body is unchanged and is re-exported
+ * here, so every caller of `companyContext` is untouched.
  */
-export function siteWhere(s: { address: string | null; city: string | null; county: string | null; state: string | null }): string {
-  const addr = (s.address ?? '').trim()
-  const has = (v: string | null) => !!v && addr.toLowerCase().includes(v.trim().toLowerCase())
-  return [
-    addr || null,
-    has(s.city) ? null : s.city,
-    s.county && !has(s.county) ? `${s.county} County` : null,
-    has(s.state) ? null : s.state,
-  ].filter(Boolean).join(', ')
-}
+export { siteWhere }
 
 /** jsonb comes back as whatever was stored. A string stays a string; anything else is shown as
  *  JSON without the outer quotes, which is what `buildScanContext` did before this. */

@@ -36,6 +36,10 @@ import { questionLines, type QuestionLine } from '@/lib/confirmationQueue'
 // One sentence about the company name, shared with My Account's Company tab so the two
 // doors say the same thing (ACCOUNT-PLAN decision 1).
 import { NAME_NOTE } from '@/lib/accountView'
+// One site as one line, with nothing said twice. Moved to its own browser-safe file at
+// step 6b: this page had a third copy of the join inline, and it printed the city twice
+// the moment the geocoder started filling addresses.
+import { siteWhere } from '@/lib/placeLine'
 
 // ---------------------------------------------------------------------------
 // what the two reads return
@@ -471,10 +475,7 @@ function YourCompanyContent() {
   /** The company's address IS its main site's (ACCOUNT-PLAN decision 4), and as of migration 083
    *  the company row is a mirror of it. The same join the Sites list below uses. */
   const mainSite = sites.find((s) => s.primary) ?? null
-  const mainWhere = mainSite
-    ? [mainSite.address, mainSite.city, mainSite.county ? `${mainSite.county} County` : null, mainSite.state]
-        .filter(Boolean).join(', ')
-    : ''
+  const mainWhere = mainSite ? siteWhere(mainSite) : ''
   const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
@@ -742,8 +743,7 @@ function YourCompanyContent() {
                       {s.primary && <span className="ml-2 text-[12px] text-gray-400">primary</span>}
                     </p>
                     <p className="mt-0.5 text-[12px] text-gray-500">
-                      {[s.address, s.city, s.county ? `${s.county} County` : null, s.state]
-                        .filter(Boolean).join(', ') || 'no address recorded'}
+                      {siteWhere(s) || 'no address recorded'}
                     </p>
                   </div>
                 ))}
