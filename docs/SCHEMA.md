@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-21 20:28 UTC
-**Migrations applied:** 83 — `000` to `082`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-21 21:57 UTC
+**Migrations applied:** 84 — `000` to `083`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -41,7 +41,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 - `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
 - `company_switches` — 19 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
 - `switch_determinations` — 3 rows · touched by route switches/answer, script audit-data-checks, script check-live
-- `obligations` — 202 rows · touched by route account, route obligations, route switches/answer
+- `obligations` — 246 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
 - `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
 - `industry_coverage` — 56 rows · touched by script assign-agencies
@@ -74,9 +74,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 6 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +21 more
+- `companies` — 6 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +22 more
 - `profiles` — 5 rows · touched by route account/export, route account, route jobs/calendar-month, route signup, screen audits, +10 more
-- `entities` — 7 rows · touched by route audit-runs, route audits/index, route calendar, route company-information, route document-actions, +23 more
+- `entities` — 7 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +25 more
 
 **Calendar**
 
@@ -774,7 +774,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 **Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -848,13 +848,13 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, SELECT
+- `authenticated` — SELECT
 - `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **...and these column-level grants, which the line above CANNOT show** *(`has_table_privilege`
 answers false for a right held on columns rather than on the table — `CLAUDE.md` §3.6):*
 
-- `authenticated` — UPDATE (city, county, industry, naics_code, obligations_computed_at, state, website_url, what_you_do)
+- `authenticated` — UPDATE (industry, naics_code, obligations_computed_at, website_url, what_you_do)
 
 **RLS policies:**
 
@@ -1747,7 +1747,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audit-runs`, `route audits/index`, `route calendar`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route jobs/calendar-month`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen calendar`, `screen dashboard`, `screen hr`, `lib agencyScope`, `lib ask`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route audit-runs`, `route audits/index`, `route calendar`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route jobs/calendar-month`, `route sites`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen calendar`, `screen dashboard`, `screen hr`, `lib agencyScope`, `lib ask`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1813,7 +1813,7 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 | `entities_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `entities_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Triggers:** `entities_person_delete` (BEFORE → `entities_guard_person_delete`), `set_updated_at` (BEFORE → `set_updated_at`)
+**Triggers:** `entities_mirror_main_site` (AFTER → `mirror_main_site_place`), `entities_person_delete` (BEFORE → `entities_guard_person_delete`), `set_updated_at` (BEFORE → `set_updated_at`)
 
 **Indexes:** `entities_company_id_id_key`, `entities_pkey`, `idx_entities_company`, `idx_entities_jurisdiction`, `idx_entities_one_primary`, `idx_entities_parent`
 
@@ -2599,7 +2599,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 The resolved list: which library rows apply to this company. Produced by CODE, never by AI. Rows are NEVER DELETED — a requirement that stops applying gets applicable_to set and stays. CLAUDE.md §3.2.
 
-**Rows:** 202 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 246 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route obligations`, `route switches/answer`
 
@@ -3305,6 +3305,12 @@ The moves a PERSON may make on an invitation, as a pure function of the old and 
 
 **Returns** `trigger` · **security invoker**
 
+### `mirror_main_site_place()`
+
+**Returns** `trigger` · **SECURITY DEFINER**
+
+Copies the MAIN site's state, county and city onto its company's row, so the one column lib/jurisdiction.ts:93 and :99 read is always the address the customer actually gave. SECURITY DEFINER because migration 083 takes those three columns out of the person's column grant: the person editing their own site is who must cause them to change, and they may not write them directly. Cannot reach another company: entities.company_id is not in the person's UPDATE grant and entities_insert checks it against auth_company_id(). My Account step 6b.
+
 ### `profiles_guard_person_update()`
 
 **Returns** `trigger` · **security invoker**
@@ -3367,6 +3373,7 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | `company_chemicals` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `company_switches` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `document_scans` | `document_scans_count_reading` | AFTER | `document_scans_count_reading` |
+| `entities` | `entities_mirror_main_site` | AFTER | `mirror_main_site_place` |
 | `entities` | `entities_person_delete` | BEFORE | `entities_guard_person_delete` |
 | `entities` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `fact_proposals` | `set_updated_at_fact_proposals` | BEFORE | `set_updated_at` |
@@ -3471,4 +3478,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 080
 081
 082
+083
 ```

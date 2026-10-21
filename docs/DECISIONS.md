@@ -14827,3 +14827,104 @@ signed-in person's first resolution; it belongs with the service role as a named
 `docs/SCHEMA.md` — five tables gained a column-grant line. `app/api/jobs/calendar-month/route.ts:104` is unchanged and
 does not yet read `calendar_email`; step 7 adds it. Signup, the fixture scripts and `check:live` are untouched: all
 three run as the service role or SELECT only.
+
+## 208. ONE ADDRESS: THE COMPANY ROW IS A MIRROR OF ITS MAIN SITE — 21 October 2026 (My Account step 6b, migration 083)
+
+### The two truths, and the day they came apart.
+
+`ACCOUNT-PLAN.md` decision 4 says a company's address IS its main site's. Step 6 built that half:
+`/api/sites` geocodes a typed address through `lib/geocode.ts` and writes `entities.state`,
+`.county` and `.city` from the Census Bureau's answer, and the Company tab shows the main site as
+the company's address. **What step 6 deliberately did not do was move the readers**, because moving
+them changes resolution and `CLAUDE.md` §3.1 says that is discussed first.
+
+So from step 6 until this migration the product resolved jurisdiction from a column nothing kept
+current. Read from the code, with line numbers:
+
+| | |
+|---|---|
+| `lib/obligationWriter.ts:98` | selects `id, name, state, county, city, industry` from `companies` |
+| `lib/resolve.ts:283` | passes `{ state: company.state, county: company.county, city: company.city }` |
+| `lib/jurisdiction.ts:93` | the **STATE** layer compares `requirement.state` to `company.state` |
+| `lib/jurisdiction.ts:99` | the **COUNTY** layer compares `requirement.county` to `company.county` |
+
+The CITY layer at `:105` and the LOCAL layer at `:113` already read the SITE, as do
+`lib/agencyScope.ts:59-61,75` and the gate's jurisdiction block. It is the state and county layers
+alone that read the company row.
+
+**This was measured, not feared.** During step 6's own walk on staging the fixture company's main
+site was re-geocoded from Portland, Oregon to Vancouver, Washington — `entities.state` became
+`Washington` and `entities.county` `Clark` — while `companies.state` stayed `Oregon` and
+`companies.county` stayed `Multnomah`, because the page that moves a site does not write the
+company. A company that moved across a state line would have gone on resolving against the state it
+left: `CLAUDE.md` §3.2's named failure, *"serving Oregon requirements to a Texas company is a
+silent, dangerous failure"*, reached by an ordinary customer action.
+
+### The mirror, and why not the obvious fix.
+
+083 makes the column the readers read **a mirror of the main site**, kept in step by the database:
+
+1. `public.mirror_main_site_place()` — SECURITY DEFINER, `search_path = ''`, EXECUTE revoked from
+   `public`, `anon` and `authenticated` (080's shape) — on a trigger
+   `after insert or update of state, county, city on entities ... when (new.is_primary)`.
+2. A one-time backfill, so every company that already existed matches its main site.
+3. `companies.state`, `.county` and `.city` leave the person's column grant. The writable list goes
+   from eight to five: `industry`, `what_you_do`, `naics_code`, `website_url`,
+   `obligations_computed_at`. A derived column a person can also type is two sources of truth
+   wearing one name — the exact condition this migration exists to end.
+4. `revoke insert, delete on companies from authenticated` — rights `pg_default_acl` granted, that
+   nothing has ever used, and that RLS already refuses (`companies` carries only `companies_select`
+   and `companies_update`; an insert as the fixture login returns `42501 new row violates
+   row-level security policy`). No behaviour changes; the grant now says what the policies enforce.
+
+**THE READERS ARE DELIBERATELY LEFT ALONE.** `lib/obligationWriter.ts`, `lib/resolve.ts` and
+`lib/jurisdiction.ts` are untouched by this step. Changing them is the better end state and it is a
+change to RESOLUTION — §3.1's first list — which needs its own step and its own golden run. A mirror
+is reversible, is provable in one DO block, and makes the wrong answer impossible meanwhile. Nothing
+in the product has to know which of the two columns it is reading.
+
+**OWED: move the four readers onto the main site and retire the three columns.** When that lands,
+this trigger and `companies.state/county/city` go together. Until then the mirror is the contract,
+and `083`'s self-test is what holds it.
+
+### Two directions, and they are not the same rule.
+
+**The BACKFILL coalesces.** `set state = coalesce(m.state, c.state)` — where the main site has
+nothing, the company keeps what it has. Every company created before step 6 has a main site whose
+county is NULL (`app/signup/page.tsx:174` sends `county: ''` and `create_primary_site` at 010:84
+does `nullif(new.county,'')`) and no address at all. Blanking the company's typed state and city to
+match would throw away the only words anyone has ever given us about where these businesses are, in
+exchange for nothing. A null on the site today means "never asked", not "asked and there is none".
+
+**The TRIGGER does not coalesce.** It fires on a real edit, where the site's address has just
+changed and the company's old value is a claim about a place the business has left. A backfill is
+reading history; a trigger is recording a decision. 083's §5e proves both: moving a main site moves
+all three, and clearing its county clears the company's.
+
+**And the direction is site → company, never the reverse**, because the site is the only one of the
+two ever read off a real street address.
+
+### What it cost on staging, and what it proved there.
+
+The backfill changed **nothing**: all six companies already matched their main sites, because
+`create_primary_site` copies company → site at creation and nothing had since moved a site. That
+makes it a weak check, so the predicate was run where a difference does exist (§9a) and the
+migration's §5e exercises it on a throwaway company. Proved as `testgamma` afterwards: moving the
+main site to Vancouver, WA carried the company row to `Washington / Clark / Vancouver`; moving it
+back carried it to `Oregon / Multnomah / Portland`; adding a **Washington** second site left the
+company row on Oregon, which is the `when (new.is_primary)` clause doing its job.
+
+### Effects on other sections, by file.
+
+`app/company-information/page.tsx` and `app/api/company-information/route.ts:157` — `state` and
+`city` leave the draft and the field list; that block now writes `industry` and nothing else, and
+the main site's address is shown read-only with a link to `/account?tab=company`. Its Sites note no
+longer claims there is no screen for changing a site, which stopped being true at step 6.
+`app/account/page.tsx` is unchanged and was already correct: it never wrote those three.
+`app/api/signup/route.ts:37` and `app/api/account/route.ts:399` are unaffected — both run as the
+service role, which keeps all four rights, read back by §5b rather than assumed.
+`lib/placeLine.ts` is new: `siteWhere` moved out of `lib/companyContext.ts` (which imports
+`node:crypto` and cannot reach a browser) so the page could stop carrying a third copy of the join —
+see the commit, and note that the defect only became visible when the geocoder started filling
+addresses. `lib/audit.ts:314` and `lib/companyContext.ts:431` call it through the re-export and are
+byte-identical.
