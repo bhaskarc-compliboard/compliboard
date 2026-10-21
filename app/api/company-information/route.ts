@@ -17,7 +17,7 @@
 // THE WRITES are three, and each one reuses a path that already exists rather than inventing a
 // second way in (§3.2: resolution is deterministic against `company_switches`, so a second writer
 // would be a second source of truth):
-//   · `company`   — name, industry, city, state on `companies`. On the CALLER'S client: authenticated
+//   · `company`   — industry, city, state on `companies` (NOT the name: 082). On the CALLER'S client: authenticated
 //                   holds SELECT/INSERT/UPDATE on `companies` and RLS scopes it to their own row.
 //   · `declared`  — proxied to `/api/switches/answer`, exactly as `/api/to-confirm` does it. That
 //                   route writes the determination and the switch row under a composite FK, refuses
@@ -150,22 +150,28 @@ export async function POST(request: NextRequest) {
     const action = String(body?.action ?? '')
 
     // ------------------------------------------------------------------
-    // 1. THE COMPANY ROW — name, industry, city, state.
+    // 1. THE COMPANY ROW — industry, city, state. The NAME is not writable (082).
     // ------------------------------------------------------------------
     if (action === 'company') {
+      /**
+       * *** `name` LEFT THIS LIST AT MY ACCOUNT STEP 6. ***
+       * Migration 082 took `companies.name` out of `authenticated`'s column grant altogether
+       * (ACCOUNT-PLAN decision 1: the name is tied to the company id, and a wrong one is fixed by
+       * us). A patch that named it was refused WHOLE — `42501 permission denied for table
+       * companies`, which does not even say which column — and `app/company-information/page.tsx`
+       * always sent the key, so from the moment 082 was applied every save of this block failed,
+       * including one that only changed the city. The page now draws the name read-only.
+       *
+       * The old refusal for a blank name went with it: a column a person cannot write needs no
+       * sentence explaining why they must not blank it.
+       *
+       * The rest may still be emptied — blanking a city is a person telling us they do not want to
+       * say, and NULL means that honestly (§21.1's rule about '' versus null).
+       */
       const patch: Record<string, string | null> = {}
-      for (const field of ['name', 'industry', 'city', 'state'] as const) {
+      for (const field of ['industry', 'city', 'state'] as const) {
         if (body[field] === undefined) continue
-        const v = String(body[field] ?? '').trim()
-        // A NAME IS REQUIRED AND THE REST MAY BE EMPTIED. Blanking the name would leave every
-        // report and every email with nothing to head it; blanking a city is a person telling us
-        // they do not want to say, and NULL means that honestly (§21.1's rule about '' vs null).
-        if (field === 'name' && !v) {
-          return NextResponse.json(
-            { error: 'Your company needs a name — it heads every report and every email we send.' },
-            { status: 400 })
-        }
-        patch[field] = v || null
+        patch[field] = String(body[field] ?? '').trim() || null
       }
       if (!Object.keys(patch).length) {
         return NextResponse.json({ error: 'Nothing to change.' }, { status: 400 })

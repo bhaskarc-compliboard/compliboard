@@ -29,8 +29,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import DashboardSection from './DashboardSection'
 import { postSwitchAnswer } from '@/lib/switchAnswer'
+import SwitchAnswerControl from './SwitchAnswerControl'
 import {
-  answerKind, askableHere, nextQuestion, cardNumber, questionState, YES_NO, optionButtons,
+  askableHere, nextQuestion, cardNumber, questionState,
   localMidnightIso, skipKey, readSkips, writeSkip,
   QUESTIONS_HEADING, QUESTIONS_NOTE, QUESTIONS_DONE, QUESTIONS_DONE_SUB,
   ANSWER_FAILED, SKIP_WORD, QUESTIONS_PER_DAY,
@@ -38,10 +39,10 @@ import {
 } from '@/lib/dashboardView'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-const CHOICE =
-  'rounded-lg border border-gray-200 bg-white px-4 py-[7px] text-[14px] font-medium text-gray-900 ' +
-  'transition-colors hover:border-[var(--green)] hover:text-[var(--green-ink)] ' +
-  'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:text-gray-900'
+// *** THE CONTROL MOVED TO `components/SwitchAnswerControl.tsx` AT MY ACCOUNT STEP 6. *** The number
+// box, the two words and the option buttons are now one piece, because the Company tab asks these
+// same three questions and a second copy would eventually post a label where a value belongs. The
+// skip stays here: it is the Dashboard's own, and My Account shows Cancel in its place.
 const SKIP =
   'ml-auto text-[13px] text-gray-500 underline transition-colors hover:text-gray-800 ' +
   'disabled:cursor-not-allowed disabled:opacity-50'
@@ -157,38 +158,13 @@ export function DashboardQuestions({ db, companyId }: { db: SupabaseClient; comp
             <p className="mt-1 text-[13px] leading-5 text-gray-500">{current.help}</p>
           )}
 
-          {answerKind(current.value_type) === 'number' ? (
-            <div className="mt-4 flex items-center gap-2.5">
-              <input
-                type="number" inputMode="numeric" value={numberDraft} disabled={busy}
-                onChange={(e) => setNumberDraft(e.target.value)}
-                aria-label={current.question}
-                className="w-[120px] rounded-lg border border-gray-200 px-2.5 py-[7px] text-[14px] tabular-nums text-gray-900 disabled:opacity-50" />
-              <button type="button" disabled={busy || numberDraft.trim() === ''}
-                onClick={() => answer(numberDraft.trim())}
-                className="rounded-md bg-[var(--green)] px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50">
-                Save
-              </button>
+          <SwitchAnswerControl
+            question={current} busy={busy}
+            draft={numberDraft} onDraft={setNumberDraft}
+            onAnswer={answer}
+            trailing={
               <button type="button" disabled={busy} onClick={skip} className={SKIP}>{SKIP_WORD}</button>
-            </div>
-          ) : (
-            <div className="mt-4 flex flex-wrap items-center gap-2.5">
-              {/* A yes-or-no switch gets the two words; a choice gets one button per option. The
-                  button SHOWS `allowed_value_labels[value]` and POSTS the value, because the value
-                  is a key a requirement's expression compares against and the route refuses
-                  anything else (`app/api/switches/answer/route.ts:69`). */}
-              {(answerKind(current.value_type) === 'yes_no'
-                ? YES_NO
-                : optionButtons(current)
-              ).map((opt) => (
-                <button key={opt.value} type="button" disabled={busy}
-                  onClick={() => answer(opt.value)} className={CHOICE}>
-                  {opt.label}
-                </button>
-              ))}
-              <button type="button" disabled={busy} onClick={skip} className={SKIP}>{SKIP_WORD}</button>
-            </div>
-          )}
+            } />
 
           {failed && (
             <p className="mt-3 text-[13px] text-[var(--amber)]">{ANSWER_FAILED}</p>

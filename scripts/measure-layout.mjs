@@ -57,6 +57,10 @@
 // before a bubbling `input` and `change`, for the reason --select does: a plain assignment leaves
 // React's own state behind, so the field would photograph as filled and submit as empty.
 //
+// `--type "<label>=<text>"` types into the ONE field whose aria-label, <label>, placeholder or name
+// contains <label> — My Account step 6, so a form with more than one box (the site drawer's name and
+// address) can be walked. Without an `=`, it behaves exactly as it always has:
+//
 // `--type "<text>"` types into the first visible textarea — Calendar step 10b, so a question can
 // be ASKED by the harness rather than only clicked at. Set through the native setter and an
 // `input` event, for the reason --select sets a value that way: a plain assignment leaves React's
@@ -251,11 +255,32 @@ try {
 
   for (const action of actions) {
    if (action.kind === 'type') {
-    const text = action.value
+    /**
+     * *** `--type "<label>=<text>"` AIMS AT ONE FIELD — added at My Account step 6. ***
+     * `--type` has always filled the FIRST visible textarea or text input, which is enough for a
+     * composer and cannot walk a form with two boxes: the site drawer has a name AND an address,
+     * and without this the address could never be typed through the page at all. With an `=`, the
+     * part before it is matched against each field's `aria-label`, its `id`'s <label>, its
+     * placeholder and its name — first match wins, case-insensitively. Without one, the behaviour
+     * is exactly what it was, so every existing call is untouched.
+     */
+    const raw = action.value
+    const split = raw.indexOf('=')
+    const aim = split > 0 ? raw.slice(0, split) : null
+    const text = split > 0 ? raw.slice(split + 1) : raw
     const typed = await evaluate(`(() => {
       const want = ${JSON.stringify(text)}
+      const aim = ${JSON.stringify(aim)}
       const visible = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 }
-      const el = [...document.querySelectorAll('textarea, input[type=text]')].filter(visible)[0]
+      const fields = [...document.querySelectorAll('textarea, input[type=text]')].filter(visible)
+      const names = (e) => {
+        const lab = e.id ? document.querySelector('label[for="' + CSS.escape(e.id) + '"]') : null
+        return [e.getAttribute('aria-label'), lab && lab.textContent, e.placeholder, e.name]
+          .filter(Boolean).join(' | ').toLowerCase()
+      }
+      const el = aim
+        ? fields.find((f) => names(f).includes(aim.toLowerCase()))
+        : fields[0]
       if (!el) return null
       const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype
       Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, want)
@@ -263,7 +288,11 @@ try {
       el.focus()
       return want.slice(0, 60)
     })()`)
-    if (!typed) throw new Error('--type: no visible textarea or text input on the page')
+    if (!typed) {
+      throw new Error(aim
+        ? `--type: no visible field whose label, placeholder or name contains "${aim}"`
+        : '--type: no visible textarea or text input on the page')
+    }
     await new Promise((r) => setTimeout(r, 300))
     console.log(`typed: ${typed}`)
    } else if (action.kind === 'date') {

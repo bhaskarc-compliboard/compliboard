@@ -61,70 +61,32 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT updates the caller's own company and their own name.
-//
-// Any user_id or company_id in the body is ignored. Previously the body decided which
-// company got rewritten, so a caller could edit any company's details by naming a user
-// who belonged to it.
-export async function PUT(request: NextRequest) {
-  try {
-    const authed = await requireCompany(request)
-    if (!authed.ok) return authed.response
-    const { companyId, userId, db } = authed.auth
-
-    const body = await request.json()
-    const { full_name, companyName, industry, state, county, city, employeeCount } = body
-
-    if (!companyName) {
-      return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
-    }
-
-    // Headcount is a whole number or nothing. `undefined`, null and '' all mean "not
-    // told" and store as NULL; anything else that is not a non-negative integer is a
-    // client error and is refused here with a sentence rather than at the database with
-    // a type error. DECISIONS.md §21.1 — every employment threshold in the library is a
-    // number, so a band cannot be resolved and NULL is the honest answer.
-    let headcount: number | null = null
-    if (employeeCount !== undefined && employeeCount !== null && employeeCount !== '') {
-      headcount = Number(employeeCount)
-      if (!Number.isInteger(headcount) || headcount < 0) {
-        return NextResponse.json(
-          { error: 'Number of employees must be a whole number.' },
-          { status: 400 }
-        )
-      }
-    }
-
-    const { error: companyError } = await db
-      .from('companies')
-      .update({
-        name: companyName,
-        industry,
-        state,
-        county,
-        city,
-        // Integer, never a band (DECISIONS.md §21.1). Validated above rather than
-        // passed through, because this is now a typed column: a stray '26-75' from an
-        // out-of-date client would be a 400 from Postgres with an opaque message.
-        employee_count: headcount,
-      })
-      .eq('id', companyId)
-
-    if (companyError) throw companyError
-
-    const { error: profileError } = await db
-      .from('profiles')
-      .update({ full_name })
-      .eq('id', userId)
-
-    if (profileError) throw profileError
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Account update error:', error)
-    return NextResponse.json({ error: 'Failed to update account' }, { status: 500 })
-  }
-}
+/*
+ * *** THERE IS NO PUT ANY MORE, AND MIGRATION 082 IS WHY. ***
+ *
+ * It updated the caller's own company from `{ full_name, companyName, industry, state, county,
+ * city, employeeCount }`, and `app/account/page.tsx`'s Company Profile form was its only caller.
+ * Two of those columns are now out of `authenticated`'s column grant altogether — `companies.name`
+ * (ACCOUNT-PLAN decision 1: the name is tied to the company id and a wrong one is fixed by us) and
+ * `companies.employee_count` (decision 5: retired, the question is a switch) — so from the moment
+ * 082 was applied the statement could not run at all. It came back `42501 permission denied for
+ * column` and this route's catch turned that into a 500 "Failed to update account": the Save button
+ * was dead, and dead in the least informative way available.
+ *
+ * The three place fields were the other half of the same mistake. A company's address is its MAIN
+ * SITE's (decision 4), state and county are read from that address by `lib/geocode.ts` rather than
+ * typed, and `app/signup/page.tsx:174` sending `county: ''` for every account ever created is what
+ * that decision exists to end (`DECISIONS.md` §207 A).
+ *
+ * So: the form, the PUT and the six fields went together at My Account step 6. What replaced them
+ * writes through exactly what the grant allows — `what_you_do`, `naics_code` and `website_url`
+ * straight onto `companies` as the caller, a site through `/api/sites`, an answer through
+ * `/api/switches/answer`. `full_name` moves to the Sign-in tab at step 8, which is the only field
+ * here that still has nowhere to be written from; nothing wrote it between 082 and now either,
+ * because the whole statement was failing.
+ *
+ * GET (the company row) and DELETE (which needs `auth.admin.deleteUser`) are unchanged.
+ */
 
 // Lists every stored object under one company's prefix.
 //

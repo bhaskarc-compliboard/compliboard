@@ -35,7 +35,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 4 | The plan | The owner's doc; this file mirrors it | Done 21 Oct |
 | **A** | **The account page** | | |
 | 5 | Migration 082 | Company facts (`website`, `what_you_do`, `naics_code`, `library`); the company name closed to a person (both doors); sites a person may add, edit and remove (never the main one); invitations; the per-person monthly-email switch; `trial_started_at`. One stop: the migration and the county-from-address answer reviewed in the chat first | Done 21 Oct (d8c0f58, applied to staging; `DECISIONS.md` §207) |
-| 6 | The Company tab | The shared frame and tab row; the facts; "what you do" typed with suggestions; the website line; the main site; the three questions with their answers; the sites list and the site drawer | Not started |
+| 6 | The Company tab | The shared frame and tab row; the facts; "what you do" typed with suggestions; the website line; the main site; the three questions with their answers; the sites list and the site drawer; **the geocoder**; and the Company information name fix 082 made necessary | Done 21 Oct |
 | 7 | The People tab | Who can sign in; invite by email → a link; `/join` where the person sets their own password; remove; the monthly-email switch read by the job | Not started |
 | 8 | The Sign-in tab | Name; email change with confirmation; password change that asks for the current one; the shared sheet | Not started |
 | 9 | The Cancel tab | Download my data; delete the company (today's flow, the boards' words). The subscription line arrives with part C | Not started |
@@ -94,6 +94,15 @@ the trial. Three parts, built and released in order: **A the account page · B t
     main site was rejected: an air permit held by one plant is not another's. **"Closing" a site — a stamp that keeps
     every row and drops the site out of lists and resolution — is recorded as a later decision and is not built.**
     `DECISIONS.md` §207 B.
+16. **State and county come from the Census Bureau's geocoder, behind `GEOCODER_URL`.** Settled at the
+    step 5 stop and built at step 6 (`lib/geocode.ts`). One address in, state and county out, free, no
+    key, and it is the authority the FIPS codes come from. A shipped HUD ZIP-to-county table was
+    rejected: a split ZIP gives a probability rather than an answer, and picking the largest share
+    would assign a plant to the wrong county silently. **The variable set to an empty string disables
+    it and every address is "not matched", so the product never fails because the service is down** —
+    the site is saved with its name and address as typed, the person is told in one sentence, and they
+    may type the county themselves. A person never types a state or county that WAS resolved.
+    `DECISIONS.md` §207 A.
 
 ## Open questions
 
@@ -111,4 +120,5 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 21 Oct 2026 | Step 6 done: the Company tab, the site drawer and the geocoder; Company information no longer sends the name. Decision 16 added (the Census geocoder behind a variable). `lib/naicsTitles.ts` ships the 1,012 six-digit NAICS 2022 titles. |
 | 21 Oct 2026 | Step 5 done: migration 082 written, applied to staging and proved as a signed-in person. Open question 1 answered (nothing geocodes; the Census geocoder in step 6). Decision 15 added: a site with rows is refused, never reassigned; "closing a site" recorded as a later decision. |

@@ -576,6 +576,16 @@ describe('the breadcrumb is gone — step 6F', () => {
 
 const CARD = readFileSync('components/DashboardQuestions.tsx', 'utf8')
 const cardCode = code(CARD)
+/**
+ * *** THE ANSWER CONTROL MOVED OUT OF THE CARD AT MY ACCOUNT STEP 6. ***
+ * The number box, the two words and the option buttons now live in
+ * `components/SwitchAnswerControl.tsx`, because the Company tab asks these same three questions
+ * (`ACCOUNT-PLAN.md` decision 5) and a second copy of "show the label, post the value" would
+ * eventually write a label into `company_switches.value`. Every claim below is unchanged — the
+ * control is read from the file that holds it now.
+ */
+const CONTROL = readFileSync('components/SwitchAnswerControl.tsx', 'utf8')
+const controlCode = code(CONTROL)
 const ANSWER_ROUTE = readFileSync('app/api/switches/answer/route.ts', 'utf8')
 const SWITCH_ASK = readFileSync('lib/switchAsk.ts', 'utf8')
 
@@ -813,7 +823,14 @@ describe('the card: its words, its one write, and what it never says', () => {
 
   test('a second click sends nothing', () => {
     assert.ok(cardCode.includes('if (!current || busy) return'))
-    assert.equal((cardCode.match(/disabled=\{busy/g) ?? []).length >= 3, true)
+    // `busy` is passed INTO the control now, so the disabled controls are counted across both
+    // files: the skip stays on the card, the number box, its Save and every option button are in
+    // the control. The claim is what it always was — nothing on this card can be pressed twice.
+    const both = (cardCode.match(/disabled=\{busy/g) ?? []).length
+                + (controlCode.match(/disabled=\{busy/g) ?? []).length
+    assert.ok(both >= 3, `only ${both} controls are disabled while busy`)
+    assert.ok(cardCode.includes('<SwitchAnswerControl'))
+    assert.ok(cardCode.includes('busy={busy}'), 'the card must hand `busy` to the control')
   })
 
   test('"three today" is counted from what was written, not kept in a column', () => {
@@ -899,12 +916,25 @@ describe('an option shows a word and posts a key — migration 081', () => {
     assert.deepEqual(optionButtons({ allowed_values: [], allowed_value_labels: null }), [])
   })
 
-  test('the card posts opt.value, never opt.label', () => {
-    assert.ok(cardCode.includes('onClick={() => answer(opt.value)}'))
-    assert.ok(cardCode.includes('{opt.label}'))
-    assert.ok(cardCode.includes('optionButtons(current)'))
+  test('the control posts opt.value, never opt.label', () => {
+    assert.ok(controlCode.includes('onClick={() => onAnswer(opt.value)}'))
+    assert.ok(controlCode.includes('{opt.label}'))
+    assert.ok(controlCode.includes('optionButtons(question)'))
     // The route refuses anything that is not an allowed value, which is what makes this matter.
     assert.match(ANSWER_ROUTE, /!\(sw\.allowed_values as string\[\]\)\.includes\(value\)/)
+  })
+
+  test('...and the card hands it the question rather than drawing the control itself', () => {
+    // The extraction is only safe while there is exactly one copy. If the branches ever come back
+    // into the card, this fails.
+    assert.ok(cardCode.includes('<SwitchAnswerControl'))
+    assert.ok(!cardCode.includes('optionButtons('), 'the card must not draw option buttons itself')
+    assert.ok(!cardCode.includes('YES_NO'), 'nor the two words')
+    assert.ok(!cardCode.includes("type=\"number\""), 'nor the number box')
+    // And the control owns no words of its own beyond Save: the question, the help line and the
+    // skip stay with the page that asks.
+    assert.ok(!controlCode.includes('question_plain'))
+    assert.ok(!controlCode.includes("I don't know yet"))
   })
 
   test('Company information does the same, through its own helper', () => {

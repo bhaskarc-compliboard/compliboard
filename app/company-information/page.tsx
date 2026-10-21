@@ -33,6 +33,9 @@ import AppLayout, { FACTS_CHANGED } from '@/components/AppLayout'
 // The question lines and their order, in one place, because the sidebar badge counts the same lines
 // this page draws. See lib/confirmationQueue.ts for why that is a file.
 import { questionLines, type QuestionLine } from '@/lib/confirmationQueue'
+// One sentence about the company name, shared with My Account's Company tab so the two
+// doors say the same thing (ACCOUNT-PLAN decision 1).
+import { NAME_NOTE } from '@/lib/accountView'
 
 // ---------------------------------------------------------------------------
 // what the two reads return
@@ -180,7 +183,15 @@ function YourCompanyContent() {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
 
   const [editingCompany, setEditingCompany] = useState(false)
-  const [companyDraft, setCompanyDraft] = useState({ name: '', industry: '', city: '', state: '' })
+  /**
+   * *** `name` LEFT THIS DRAFT AT MY ACCOUNT STEP 6, AND MIGRATION 082 IS WHY. ***
+   * `companies.name` is out of `authenticated`'s column grant (ACCOUNT-PLAN decision 1), so a
+   * patch carrying it is refused whole — `42501 permission denied for table companies` — and
+   * because this draft ALWAYS carried the key, every save of this block failed, including one that
+   * only changed the city. The name is drawn read-only below with the same grey line My Account
+   * shows. `DECISIONS.md` §207's effects list.
+   */
+  const [companyDraft, setCompanyDraft] = useState({ industry: '', city: '', state: '' })
   const [editingLine, setEditingLine] = useState<string | null>(null)
   const [lineDraft, setLineDraft] = useState('')
   /** Which label is being renamed or merged, and into what. One at a time, in place. */
@@ -660,8 +671,11 @@ function YourCompanyContent() {
               <div className="border-b border-gray-100 py-4">
                 {editingCompany ? (
                   <div className="max-w-[520px] space-y-2">
-                    <input value={companyDraft.name} onChange={(e) => setCompanyDraft({ ...companyDraft, name: e.target.value })}
-                      placeholder="Company name" className="w-full rounded border border-gray-200 px-2 py-1.5 text-[14px]" />
+                    {/* The name, shown and not sent. Same sentence as My Account's Company tab. */}
+                    <div>
+                      <p className="text-[14px] text-gray-900">{rec.company.name || 'not recorded'}</p>
+                      <p className="mt-0.5 text-[12px] leading-5 text-gray-500">{NAME_NOTE}</p>
+                    </div>
                     <select value={companyDraft.industry} onChange={(e) => setCompanyDraft({ ...companyDraft, industry: e.target.value })}
                       className="w-full rounded border border-gray-200 px-2 py-1.5 text-[14px]">
                       <option value="">Select your industry</option>
@@ -693,7 +707,6 @@ function YourCompanyContent() {
                     <button className={`no-print shrink-0 ${ACTION_GREY}`}
                       onClick={() => {
                         setCompanyDraft({
-                          name: rec.company.name ?? '',
                           industry: rec.company.industrySlug ?? '',
                           city: (rec.company.address ?? '').split(',')[0]?.trim() ?? '',
                           state: rec.company.state ?? '',
