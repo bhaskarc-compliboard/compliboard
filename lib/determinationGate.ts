@@ -421,9 +421,23 @@ export async function gate(input: GateInput): Promise<GateResult> {
   // Found while writing golden case 003, and the spec as first written did not have it:
   // the gate read company_switches and switches only, so it could not see where the
   // worksite IS. It would then ask "where is your site?" — a fact migration 010 guarantees
-  // every company already has, and DECISIONS.md §25 says comes from GEOCODING rather than
-  // from asking. That is the persistence failure in DETERMINATION-GATE.md §7 arriving on
-  // day one, for the single most frequently determining fact in the product.
+  // every company already has a ROW for. That is the persistence failure in
+  // DETERMINATION-GATE.md §7 arriving on day one, for the single most frequently determining
+  // fact in the product.
+  //
+  // *** CORRECTED 21 OCTOBER 2026: THIS SAID THE THREE FACTS "COME FROM GEOCODING". NOTHING
+  // GEOCODES ANYTHING TODAY, AND THE COUNTY IS ALWAYS NULL. *** `DECISIONS.md` §25 says
+  // geocoding, and that is the intent, not the program: `grep -rniE "geocod|zip_?to_?county"`
+  // over app, lib, components and scripts finds comments and no code. What actually happens:
+  // `app/signup/page.tsx:357,364` asks for a STATE from a dropdown and a CITY in a text box,
+  // never a street address; `:174` sends `county: ''` for every account ever created;
+  // `app/api/signup/route.ts:37-54` writes those onto `companies`; and `create_primary_site`
+  // (migration 010:69-92) copies them to the site through `nullif(new.county,'')`, which turns
+  // that empty string into NULL. So the main site's state and city are TYPED, and its county is
+  // nothing — which is why the county branch of `siteAgencies` in lib/agencyScope.ts cannot
+  // match for any company created through signup. My Account step 6 adds the Census Geocoder
+  // behind its own variable (ACCOUNT-PLAN decision 4); until it lands, read the labels below
+  // with this paragraph in mind.
   //
   // Jurisdiction lives on entities (migration 009), not in company_switches, because it is
   // a property of a SITE rather than a company (DECISIONS.md §20). It is still the PRIMARY site's,
@@ -435,8 +449,12 @@ export async function gate(input: GateInput): Promise<GateResult> {
   const primary = ctx.parts.company.sites.find((s) => s.primary) ?? null
 
   if (primary) {
-    // source is ai_from_profile: these came from the address the company gave at signup,
-    // resolved by geocoding. Not user_set — the user gave an address, not a county.
+    // source is ai_from_profile, and TODAY THAT LABEL OVERSTATES WHAT HAPPENED: see the
+    // correction above. `state` and `city` were typed by a person at signup, `county` is NULL,
+    // and no address was ever collected or resolved. The label is left alone on purpose —
+    // changing what the gate is told a fact's provenance is would be a change to what feeds a
+    // prompt (`CLAUDE.md` §3.1), and it belongs with step 6's geocoder rather than ahead of it.
+    // When that lands, these become genuinely derived and the label becomes true.
     if (primary.state) known.push({ switch_id: null, fact: 'worksite state', value: primary.state, source: 'ai_from_profile' })
     if (primary.county) known.push({ switch_id: null, fact: 'worksite county', value: primary.county, source: 'ai_from_profile' })
     if (primary.city) known.push({ switch_id: null, fact: 'worksite city', value: primary.city, source: 'ai_from_profile' })

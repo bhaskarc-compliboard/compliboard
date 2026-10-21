@@ -14693,3 +14693,137 @@ check.
 **Effects on other sections, by file.** `components/Drawer.tsx` changes every drawer in the product (Escape).
 `app/audits/page.tsx` fixes the tab as well as the drawer. `tests/unit/dashboardView.test.ts` had one assertion
 naming the old line verbatim; it names the new shape and its claim is unchanged.
+
+## 207. MIGRATION 082: THE COMPANY'S FACTS, ITS SITES, INVITATIONS — AND THE CASCADE THAT DOES NOT ASK RLS — 21 October 2026 (My Account step 5, `ACCOUNT-PLAN.md` decisions 1, 3, 4, 5, 6)
+
+Migration 082 adds the company's own facts (`what_you_do`, `naics_code`, `library`, `trial_started_at`), closes
+`companies.name` to a person at the grant level, narrows the `entities` grants so a person may add and edit a site but
+never delete the main one, adds an `invitations` table whose token no person can read, and adds
+`profiles.calendar_email`. Three findings in it are worth more than the columns.
+
+### A. NOTHING GEOCODES ANYTHING, AND `entities.county` IS NULL FOR EVERY COMPANY EVER CREATED.
+
+`DECISIONS.md` §25 says a site's state and county "come from geocoding". **That is the intent and has never been the
+program.** `grep -rniE "geocod|mapbox|nominatim|zip_?to_?county"` over `app lib components scripts prompts config`
+returns three comments and no code. What actually happens, end to end:
+
+- `app/signup/page.tsx:357,364` asks for a **state** from a dropdown and a **city** in a text box. There is no street
+  address field anywhere in signup.
+- `app/signup/page.tsx:174` sends **`county: ''`** — a hardcoded empty string, for every account ever created.
+- `app/api/signup/route.ts:37-54` writes those three onto `companies` as the service role.
+- `create_primary_site` (migration 010:69-92) copies them to the main site through `nullif(new.county,'')`, which turns
+  that empty string into **NULL**.
+
+So the main site's `state` and `city` are **typed by a person**, its `county` is **nothing**, and `entities.address` and
+`postal_code` (migration 009:57-65) are never written by anything. **The consequence nobody had noticed:**
+`lib/agencyScope.ts`'s `county` branch matches on `s?.county`, so **every county-level agency is silently out of scope
+for every company created through signup** — not wrong output, no output. The gate meanwhile labels these three
+`ai_from_profile` (`lib/determinationGate.ts:439`), which overstates what happened.
+
+**The three comments that asserted geocoding are corrected** rather than deleted, in place, with the chain above
+written out: `lib/determinationGate.ts` (the jurisdiction block and the `source` line) and `lib/agencyScope.ts:63`.
+Behaviour is deliberately unchanged — moving `ai_from_profile` to `user_set` is a change to what feeds a prompt
+(`CLAUDE.md` §3.1) and belongs with the geocoder, not ahead of it.
+
+**The decision: the Census Bureau's own free geocoder, behind a variable, built in My Account step 6.** One address in,
+state and county FIPS out, no key, no cost, and it is the authority the FIPS codes come from. The alternative
+considered and rejected for this step was a HUD–USPS ZIP-to-county table shipped in the repository: **a split ZIP is the
+normal case, not the edge case** — HUD duplicates a ZIP once per county with four ratio columns, and ZIP 77494 spans
+three Texas counties at roughly 83/16/0.2 — so the table gives a probability, not an answer, and picking the largest
+share would assign a plant to the wrong county silently, which is the §3.2 jurisdiction failure dressed as data. It
+stays as the offline fallback. When the geocoder cannot match an address the honest behaviour is §5.1's: keep the
+site, leave state and county NULL, say so, and never assert a county we did not resolve.
+
+### B. A REFERENTIAL `ON DELETE CASCADE` DOES NOT CONSULT AN RLS POLICY, SO "REMOVE THIS SITE" WOULD HAVE DESTROYED OBLIGATIONS.
+
+Fourteen foreign keys point at `entities`. **Seven are ON DELETE CASCADE, and one of the seven is
+`obligations.entity_id`** (migration 007:379-381) — a table that has **no DELETE policy on purpose**, where 007:710-711
+raises if one ever appears, because §3.2 says obligations are marked and never deleted.
+
+| CASCADE — destroyed with the site | SET NULL — survives and detaches |
+|---|---|
+| `audit_runs` · `company_chemicals` · `company_facts` | `calendar_events` · `document_reviews` · `document_scans` |
+| `company_switches` · `obligation_evidence` | `documents` · `entities.parent_entity_id` |
+| `obligations` · `switch_determinations` | `fact_proposals` · `handbooks` |
+
+So board 1b's "Remove this site" would have deleted, in one unrecoverable click, rows that no policy in the database
+lets a person delete directly — obligations, their evidence, append-only switch determinations, and audit history.
+
+**The rule: a site may be removed only while removing it would destroy nothing.** `public.site_removal_refusal(uuid)`
+counts the seven cascade relations and returns the sentence to refuse with, naming what is attached in the customer's
+own words; a BEFORE DELETE trigger gated on `current_user <> 'authenticated'` raises it, so the service role is
+unaffected and the account-delete cascade still works (proved by the migration's own §6j). The main site is refused
+always. The seven SET NULL relations are deliberately left to detach, which is what migration 009:106 chose them for.
+
+**The function is SECURITY DEFINER, and that is the whole point.** Run as the person, each count would be filtered by
+that table's own RLS, so for exactly the rows a person cannot see the count returns 0, the guard does not fire, and the
+cascade destroys them anyway. §9a: a check that cannot see a presence looks exactly like a check that found nothing —
+and here that mistake is silent, permanent data loss.
+
+**Why NOT reassigning the rows to the main site**, which was the other candidate: an air permit held by the Vancouver
+plant is not Portland's. Reassigning compliance history makes the product assert a false fact about which site is
+covered — a lie with a database behind it. Refusing is honest; moving is not.
+
+**Recorded as a later decision: CLOSING a site rather than removing it.** The rule above makes a real second site
+effectively permanent once anything attaches to it, which is right but incomplete. A `closed_at` stamp would keep every
+row, drop the site out of lists and resolution, and match what §3.2's philosophy already says about obligations. It
+needs a column and a product decision and is not built. **Reversed if** a customer with a genuinely closed plant has no
+way to say so.
+
+### C. THE INVITATION RULE, AND A TOKEN NO PERSON CAN READ.
+
+`invitations` carries `company_id`, `email`, a 64-hex-character `token` **filled by the database**, `invited_by`,
+`expires_at` (7 days), `accepted_at` and `cancelled_at`. The token is excluded from both the SELECT and the INSERT
+column grant for `authenticated`: the person doing the inviting never learns the credential, and only the service role
+reads it, to put it in the email. `/join` has no session, so it runs with the service role.
+
+Two rules a grant cannot express, so `invitation_person_move_refusal` does, in 078's shape — a pure function plus a
+trigger: **an invitation cannot be un-cancelled** (its emailed link still works, so reviving the row would revive the
+link), and **an accepted invitation cannot be withdrawn** ("remove them from the People list instead"). A partial
+unique index on `(company_id, lower(email)) where accepted_at is null and cancelled_at is null` allows one live
+invitation per address and still allows cancel-then-re-invite. Nothing is ever deleted; "send the link again" in step 7
+inserts a new invitation rather than extending one, so what was sent and when stays true.
+
+`/api/account`'s DELETE names `invitations` in `DELETED_BY_CASCADE_OR_PARENT` in the same commit as the migration,
+because `scripts/check-schema-contracts.js` check 2 requires every relation carrying a `company_id` to be in one of its
+two lists — and it is the cascade that removes it, which is what stops an outstanding link answering after a company
+is deleted.
+
+### D. AND `docs/SCHEMA.md` WAS SAYING A WRITABLE TABLE WAS CLOSED.
+
+`has_table_privilege(role, t, 'UPDATE')` is **false** when a role holds UPDATE on columns rather than on the table. The
+generator reads only that, so after 082 the file said `authenticated` — **nothing** on `invitations`, where a person may
+read eight columns, insert four and update one; `companies` lost UPDATE, where a person may still change eight columns;
+and `profiles` had been missing 080's grant since 19 October. **A generated source of truth that says a writable table
+is closed is worse than one that says nothing**, and it is §3.6's own rule — read what the role holds — being broken by
+the tool that exists to apply it. `scripts/schema-doc.js` now prints, for each right a role does **not** hold on the
+table, the columns it does hold it on. Five tables gained the line; every table whose grants are table-wide is
+unchanged.
+
+### What the migration can and cannot prove.
+
+082's verify block is 66 `raise exception` checks over structure, defaults, both grant partitions (exhaustive against
+the live column lists), the policies, the indexes, both triggers, the refusal functions' every case, and a throwaway
+company whose site is created by `create_primary_site`, protected, attached to, released and removed. It carries **no
+throwaway person**, and that is 078:160's line rather than an omission: becoming `authenticated` would also have to
+satisfy `auth_company_id()`, which reads a `profiles` row whose id is a real login in `auth.users`, and a migration
+must not invent a session. The person's half was proved on staging as `testgamma@example.com` instead — nine writes,
+each result read from the error body and not the status.
+
+**One surprise from that run, which step 6's page must handle.** A column-grant refusal arrives as
+`42501 permission denied for table companies` — *table*, not column, and with no hint of which column was refused. A
+person shown that sentence learns nothing (§5.1), so the Company tab must not surface it raw: the name is rendered
+read-only and never sent.
+
+**Effects on other sections, by file.** `app/api/account/route.ts` — the DELETE's cascade list gains `invitations`;
+**its PUT now fails entirely** on `name` and `employee_count`, both closed by 082, so the Company Profile tab's Save
+returns 500 until step 6 replaces the page. `app/api/company-information/route.ts:157` and
+`app/company-information/page.tsx:183` — `companyDraft` always carries `name`, so **every save of that page's company
+block now fails**; the one-word fix is step 6, this release. `lib/obligationWriter.ts:164` keeps working only because
+`obligations_computed_at` is deliberately in the person's UPDATE grant — it is stamped with the caller's own client
+from `app/api/obligations/route.ts:45` and `app/api/switches/answer/route.ts:125`, and leaving it out would 500 every
+signed-in person's first resolution; it belongs with the service role as a named statement, which is owed.
+`lib/determinationGate.ts` and `lib/agencyScope.ts` — comments only, no behaviour. `scripts/schema-doc.js` and
+`docs/SCHEMA.md` — five tables gained a column-grant line. `app/api/jobs/calendar-month/route.ts:104` is unchanged and
+does not yet read `calendar_email`; step 7 adds it. Signup, the fixture scripts and `check:live` are untouched: all
+three run as the service role or SELECT only.

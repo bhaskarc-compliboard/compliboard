@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-20 17:26 UTC
-**Migrations applied:** 82 — `000` to `081`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-21 20:28 UTC
+**Migrations applied:** 83 — `000` to `082`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,7 +29,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 26 rows · touched by route calendar/topics/[id]/summarise, route chat, route checklists/from-topic, route documents, route hr/answer, +14 more
+- `topics` — 27 rows · touched by route calendar/topics/[id]/summarise, route chat, route checklists/from-topic, route documents, route hr/answer, +14 more
 - `checklists` — 3 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +7 more
 - `checklist_items` — 13 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
@@ -39,9 +39,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `requirement_templates` — 205 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
 - `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
-- `company_switches` — 16 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
-- `switch_determinations` — 0 rows · touched by route switches/answer, script audit-data-checks, script check-live
-- `obligations` — 0 rows · touched by route account, route obligations, route switches/answer
+- `company_switches` — 19 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
+- `switch_determinations` — 3 rows · touched by route switches/answer, script audit-data-checks, script check-live
+- `obligations` — 202 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
 - `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
 - `industry_coverage` — 56 rows · touched by script assign-agencies
@@ -86,7 +86,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `jobs` — 0 rows · **no code reads or writes it**
 
-**Not assigned to a module above:** `ai_calls`, `calendar_feed_tokens`, `calendar_mailings`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `handbook_check_sections`, `handbook_checks`, `handbook_dates`, `handbook_findings`, `handbook_sections`, `handbooks`, `job_runs`, `turns`, `usage_counters`
+**Not assigned to a module above:** `ai_calls`, `calendar_feed_tokens`, `calendar_mailings`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `handbook_check_sections`, `handbook_checks`, `handbook_dates`, `handbook_findings`, `handbook_sections`, `handbooks`, `invitations`, `job_runs`, `turns`, `usage_counters`
 
 ---
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 61 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 63 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -256,11 +256,11 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 **Points at:**
 
 - `closed_by_run_id` → `audit_runs` — ON DELETE SET NULL
-- `company_id` → `documents` — ON DELETE SET NULL
+- `company_id` → `document_scans` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `audit_runs` — ON DELETE CASCADE
-- `company_id` → `document_scans` — ON DELETE SET NULL
 - `company_id` → `audit_sections` — ON DELETE CASCADE
+- `company_id` → `documents` — ON DELETE SET NULL
 - `company_id` → `documents` — ON DELETE SET NULL
 - `document_b_id` → `documents` — ON DELETE SET NULL
 - `document_id` → `documents` — ON DELETE SET NULL
@@ -338,8 +338,8 @@ One audit of one company at one moment. Sections are to a run what files are to 
 **Points at:**
 
 - `company_id` → `companies` — ON DELETE CASCADE
-- `company_id` → `documents` — ON DELETE CASCADE
 - `company_id` → `entities` — ON DELETE CASCADE
+- `company_id` → `documents` — ON DELETE CASCADE
 - `created_by` → `auth.users` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE CASCADE
 - `previous_run_id` → `audit_runs` — ON DELETE SET NULL
@@ -414,8 +414,8 @@ One agency (or one template), one model call. claimed_at is the sweep's compare-
 **Points at:**
 
 - `ai_call_id` → `ai_calls` — ON DELETE SET NULL
-- `company_id` → `audit_runs` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `audit_runs` — ON DELETE CASCADE
 - `run_id` → `audit_runs` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -562,6 +562,11 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 - `authenticated` — INSERT, SELECT
 - `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
+**...and these column-level grants, which the line above CANNOT show** *(`has_table_privilege`
+answers false for a right held on columns rather than on the table — `CLAUDE.md` §3.6):*
+
+- `authenticated` — UPDATE (confirmed_at, confirmed_by, description, dismissed_at, dismissed_by, dismissed_reason, due_date, entity_id, period, replaced_by, status, withdrawn_at)
+
 **RLS policies:**
 
 | Policy | For | Roles | USING | WITH CHECK |
@@ -612,7 +617,7 @@ The secret address for the subscription feed (decision 20). GET /api/calendar/fe
 
 One row per company per month, written by the monthly email job as a CLAIM before the send (Calendar step 11). UNIQUE (company_id, month) is what stops a second email about the same month: the second attempt is refused with 23505 and skips. sent_at null means the claim was taken and the send did not finish; `error` says why. Migrations 073 and 077.
 
-**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 2 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/calendar-month`, `script check-live`
 
@@ -787,6 +792,10 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 | `scan_result` | jsonb | yes | — |
 | `pre_completed_items` | jsonb | yes | — |
 | `obligations_computed_at` | timestamp with time zone | yes | — |
+| `what_you_do` | text | yes | — |
+| `naics_code` | text | yes | — |
+| `library` | text | no | `'chemical'::text` |
+| `trial_started_at` | timestamp with time zone | yes | — |
 
 **Pointed at by:**
 
@@ -826,6 +835,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 - `handbook_sections.company_id` — ON DELETE CASCADE
 - `handbooks.company_id` — ON DELETE CASCADE
 - `hr_audits.company_id` — ON DELETE NO ACTION
+- `invitations.company_id` — ON DELETE CASCADE
 - `jobs.company_id` — ON DELETE CASCADE
 - `obligation_evidence.company_id` — ON DELETE CASCADE
 - `obligations.company_id` — ON DELETE CASCADE
@@ -838,8 +848,13 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT
 - `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**...and these column-level grants, which the line above CANNOT show** *(`has_table_privilege`
+answers false for a right held on columns rather than on the table — `CLAUDE.md` §3.6):*
+
+- `authenticated` — UPDATE (city, county, industry, naics_code, obligations_computed_at, state, website_url, what_you_do)
 
 **RLS policies:**
 
@@ -1039,7 +1054,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 ### `company_switches`
 
-**Rows:** 16 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 19 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib companyContext`, `lib obligationWriter`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
@@ -1781,19 +1796,24 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `authenticated` — DELETE, SELECT
 - `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**...and these column-level grants, which the line above CANNOT show** *(`has_table_privilege`
+answers false for a right held on columns rather than on the table — `CLAUDE.md` §3.6):*
+
+- `authenticated` — INSERT (address, city, company_id, county, entity_type, fire_authority, name, postal_code, state) · UPDATE (address, city, county, fire_authority, name, postal_code, state)
 
 **RLS policies:**
 
 | Policy | For | Roles | USING | WITH CHECK |
 |---|---|---|---|---|
 | `entities_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
-| `entities_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `entities_insert` | INSERT | authenticated | — | `((company_id = auth_company_id()) AND (entity_type = 'site':` |
 | `entities_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `entities_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Triggers:** `set_updated_at` (BEFORE → `set_updated_at`)
+**Triggers:** `entities_person_delete` (BEFORE → `entities_guard_person_delete`), `set_updated_at` (BEFORE → `set_updated_at`)
 
 **Indexes:** `entities_company_id_id_key`, `entities_pkey`, `idx_entities_company`, `idx_entities_jurisdiction`, `idx_entities_one_primary`, `idx_entities_parent`
 
@@ -1830,8 +1850,8 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 **Points at:**
 
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `entities` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `from_turn_id` → `turns` — ON DELETE SET NULL
@@ -1900,9 +1920,9 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 
 - `ai_call_id` → `ai_calls` — ON DELETE SET NULL
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
+- `company_id` → `handbook_sections` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
-- `company_id` → `handbook_sections` — ON DELETE CASCADE
 - `section_id` → `handbook_sections` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -2030,9 +2050,9 @@ Company-level dates a handbook sets; sent to the one calendar only when a person
 
 - `calendar_event_id` → `calendar_events` — ON DELETE SET NULL
 - `check_id` → `handbook_checks` — ON DELETE SET NULL
+- `company_id` → `handbooks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE SET NULL
-- `company_id` → `handbooks` — ON DELETE CASCADE
 - `handbook_id` → `handbooks` — ON DELETE CASCADE
 
 **Constraints:**
@@ -2083,8 +2103,8 @@ Every finding of a handbook check, as a row.
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
 - `check_section_id` → `handbook_check_sections` — ON DELETE CASCADE
 - `company_id` → `handbook_check_sections` — ON DELETE CASCADE
-- `company_id` → `handbook_checks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `handbook_checks` — ON DELETE CASCADE
 
 **Constraints:**
 
@@ -2132,8 +2152,8 @@ A handbook split into sections, each with its text and fingerprint. Written by t
 
 **Points at:**
 
-- `company_id` → `handbooks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `handbooks` — ON DELETE CASCADE
 - `handbook_id` → `handbooks` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -2201,9 +2221,9 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
 **Points at:**
 
-- `company_id` → `entities` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbooks` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `entities` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `uploaded_by` → `auth.users` — ON DELETE SET NULL
 - `version_of` → `handbooks` — ON DELETE SET NULL
@@ -2337,6 +2357,54 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 **Triggers:** `set_updated_at` (BEFORE → `set_updated_at`)
 
 **Indexes:** `idx_industry_coverage_agency`, `idx_industry_coverage_lookup`, `industry_coverage_pkey`, `industry_coverage_unique`
+
+### `invitations`
+
+An invitation for one email address to join one company. The token is the credential for /join, which has no session: a person may neither write it nor read it (column grants below), and only the service role sees it, to put it in the email. Cancelled, never deleted. ACCOUNT-PLAN decision 6, My Account step 5.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `company_id` | uuid | no | — |
+| `email` | text | no | — |
+| `token` | text | no | `(replace((gen_random_uuid())::text, '-':` |
+| `invited_by` | uuid | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `expires_at` | timestamp with time zone | no | `(now() + '7 days'::interval)` |
+| `accepted_at` | timestamp with time zone | yes | — |
+| `cancelled_at` | timestamp with time zone | yes | — |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+- `invited_by` → `auth.users` — ON DELETE SET NULL
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**...and these column-level grants, which the line above CANNOT show** *(`has_table_privilege`
+answers false for a right held on columns rather than on the table — `CLAUDE.md` §3.6):*
+
+- `authenticated` — INSERT (company_id, email, expires_at, invited_by) · SELECT (accepted_at, cancelled_at, company_id, created_at, email, expires_at, id, invited_by) · UPDATE (cancelled_at)
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `invitations_insert` | INSERT | authenticated | — | `((company_id = auth_company_id()) AND (invited_by = auth.uid` |
+| `invitations_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `invitations_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Triggers:** `invitations_person_update` (BEFORE → `invitations_guard_person_update`)
+
+**Indexes:** `idx_invitations_company`, `idx_invitations_company_email_live`, `invitations_pkey`, `invitations_token_key`
 
 ### `job_runs`
 
@@ -2493,8 +2561,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Points at:**
 
 - `added_by` → `auth.users` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `documents` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE CASCADE
@@ -2531,7 +2599,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 The resolved list: which library rows apply to this company. Produced by CODE, never by AI. Rows are NEVER DELETED — a requirement that stops applying gets applicable_to set and stays. CLAUDE.md §3.2.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 202 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route obligations`, `route switches/answer`
 
@@ -2599,6 +2667,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 | `full_name` | text | yes | — |
 | `created_at` | timestamp with time zone | yes | `timezone('utc'::text, now())` |
 | `welcomed_at` | timestamp with time zone | yes | — |
+| `calendar_email` | boolean | no | `true` |
 
 **Points at:**
 
@@ -2610,6 +2679,11 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 - `anon` — **nothing**
 - `authenticated` — DELETE, INSERT, SELECT
 - `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**...and these column-level grants, which the line above CANNOT show** *(`has_table_privilege`
+answers false for a right held on columns rather than on the table — `CLAUDE.md` §3.6):*
+
+- `authenticated` — UPDATE (calendar_email, full_name, welcomed_at)
 
 **RLS policies:**
 
@@ -2814,7 +2888,7 @@ document-versus-document disagreement is recorded WITHOUT reusing user_locked, w
 PERSON decided and must keep meaning only that. DECISIONS.md §24.1, §47;
 docs/SWITCH-DETERMINATION.md §7.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `script audit-data-checks`, `script check-live`
 
@@ -2939,7 +3013,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 26 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 27 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route calendar/topics/[id]/summarise`, `route chat`, `route checklists/from-topic`, `route documents`, `route hr/answer`, `route hr/topics/[id]/summarise`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen calendar`, `screen compliance`, `screen hr`, `lib ask`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
 
@@ -3006,7 +3080,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 68 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 72 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
@@ -3207,6 +3281,10 @@ Gives every new company a primary site, in the same statement that creates the c
 
 Adds one to usage_counters.files_read for each stored reading. Migration 080.
 
+### `entities_guard_person_delete()`
+
+**Returns** `trigger` · **security invoker**
+
 ### `fact_proposals_stamp_topic_title()`
 
 **Returns** `trigger` · **security invoker**
@@ -3216,6 +3294,16 @@ Adds one to usage_counters.files_read for each stored reading. Migration 080.
 **Returns** `void` · **security invoker**
 
 Atomic +1 on a usage counter. Counters record events and never go down (DECISIONS.md §125). service_role only.
+
+### `invitation_person_move_refusal(old_cancelled timestamp with time zone, new_cancelled timestamp with time zone, accepted timestamp with time zone)`
+
+**Returns** `text` · **security invoker**
+
+The moves a PERSON may make on an invitation, as a pure function of the old and new cancellation stamp and the acceptance stamp: NULL when the move is one the product offers, else the sentence to refuse with. The column grant says only `cancelled_at`; this says "from NULL, and not once it has been accepted". A function rather than a block inside the trigger so migration 082 can prove every case without a login (080's shape). My Account step 5.
+
+### `invitations_guard_person_update()`
+
+**Returns** `trigger` · **security invoker**
 
 ### `profiles_guard_person_update()`
 
@@ -3232,6 +3320,12 @@ Whether a PERSON may make this change to profiles.welcomed_at: NULL when they ma
 **Returns** `trigger` · **security invoker**
 
 Advances updated_at on UPDATE. Attached to every table carrying the column. Before this existed the column defaulted on INSERT and never moved again.
+
+### `site_removal_refusal(p_entity_id uuid)`
+
+**Returns** `text` · **SECURITY DEFINER**
+
+Whether a site may be removed: NULL when it may, else the sentence to refuse with. Refuses the MAIN site always, and any site with a row in one of the seven ON DELETE CASCADE relations that point at entities — obligations above all, which CLAUDE.md §3.2 says are never deleted and which a referential cascade would destroy without consulting an RLS policy. SECURITY DEFINER because a count filtered by the caller's own RLS would come back 0 for exactly the rows a person cannot see, and a refusal that cannot see a presence is not a refusal (§9a). A function rather than a block inside the trigger so migration 082 can prove every case without a login. My Account step 5.
 
 ### `substance_inventory(p_entity_id uuid, p_list text)`
 
@@ -3273,11 +3367,13 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | `company_chemicals` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `company_switches` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `document_scans` | `document_scans_count_reading` | AFTER | `document_scans_count_reading` |
+| `entities` | `entities_person_delete` | BEFORE | `entities_guard_person_delete` |
 | `entities` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `fact_proposals` | `set_updated_at_fact_proposals` | BEFORE | `set_updated_at` |
 | `fact_proposals` | `stamp_topic_title_fact_proposals` | BEFORE | `fact_proposals_stamp_topic_title` |
 | `handbooks` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `industry_coverage` | `set_updated_at` | BEFORE | `set_updated_at` |
+| `invitations` | `invitations_person_update` | BEFORE | `invitations_guard_person_update` |
 | `jobs` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `library_candidates` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `obligations` | `set_updated_at` | BEFORE | `set_updated_at` |
@@ -3374,4 +3470,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 079
 080
 081
+082
 ```

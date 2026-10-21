@@ -1037,12 +1037,16 @@ export type Database = {
           extra_profile: Json | null
           id: string
           industry: string | null
+          library: string
+          naics_code: string | null
           name: string
           obligations_computed_at: string | null
           pre_completed_items: Json | null
           scan_result: Json | null
           state: string | null
+          trial_started_at: string | null
           website_url: string | null
+          what_you_do: string | null
         }
         Insert: {
           chemicals?: string | null
@@ -1053,12 +1057,16 @@ export type Database = {
           extra_profile?: Json | null
           id?: string
           industry?: string | null
+          library?: string
+          naics_code?: string | null
           name: string
           obligations_computed_at?: string | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
+          trial_started_at?: string | null
           website_url?: string | null
+          what_you_do?: string | null
         }
         Update: {
           chemicals?: string | null
@@ -1069,12 +1077,16 @@ export type Database = {
           extra_profile?: Json | null
           id?: string
           industry?: string | null
+          library?: string
+          naics_code?: string | null
           name?: string
           obligations_computed_at?: string | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
+          trial_started_at?: string | null
           website_url?: string | null
+          what_you_do?: string | null
         }
         Relationships: []
       }
@@ -3130,6 +3142,50 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          cancelled_at: string | null
+          company_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          cancelled_at?: string | null
+          company_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          cancelled_at?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_runs: {
         Row: {
           counts: Json
@@ -3501,6 +3557,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          calendar_email: boolean
           company_id: string | null
           created_at: string | null
           full_name: string | null
@@ -3508,6 +3565,7 @@ export type Database = {
           welcomed_at: string | null
         }
         Insert: {
+          calendar_email?: boolean
           company_id?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -3515,6 +3573,7 @@ export type Database = {
           welcomed_at?: string | null
         }
         Update: {
+          calendar_email?: boolean
           company_id?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -4455,10 +4514,15 @@ export type Database = {
         Args: { p_company_id: string; p_field: string }
         Returns: undefined
       }
+      invitation_person_move_refusal: {
+        Args: { accepted: string; new_cancelled: string; old_cancelled: string }
+        Returns: string
+      }
       profiles_person_welcome_refusal: {
         Args: { new_welcomed: string; old_welcomed: string }
         Returns: string
       }
+      site_removal_refusal: { Args: { p_entity_id: string }; Returns: string }
       substance_inventory: {
         Args: { p_entity_id: string; p_list: string }
         Returns: boolean

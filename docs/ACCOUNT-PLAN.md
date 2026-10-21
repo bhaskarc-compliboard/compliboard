@@ -34,7 +34,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 3 | Boards | Nine boards: the five tabs, a site in the drawer, signup, the walk, the read-only state | Done 21 Oct |
 | 4 | The plan | The owner's doc; this file mirrors it | Done 21 Oct |
 | **A** | **The account page** | | |
-| 5 | Migration 082 | Company facts (`website`, `what_you_do`, `naics_code`, `library`); the company name closed to a person (both doors); sites a person may add, edit and remove (never the main one); invitations; the per-person monthly-email switch; `trial_started_at`. One stop: the migration and the county-from-address answer reviewed in the chat first | Not started |
+| 5 | Migration 082 | Company facts (`website`, `what_you_do`, `naics_code`, `library`); the company name closed to a person (both doors); sites a person may add, edit and remove (never the main one); invitations; the per-person monthly-email switch; `trial_started_at`. One stop: the migration and the county-from-address answer reviewed in the chat first | Done 21 Oct (d8c0f58, applied to staging; `DECISIONS.md` §207) |
 | 6 | The Company tab | The shared frame and tab row; the facts; "what you do" typed with suggestions; the website line; the main site; the three questions with their answers; the sites list and the site drawer | Not started |
 | 7 | The People tab | Who can sign in; invite by email → a link; `/join` where the person sets their own password; remove; the monthly-email switch read by the job | Not started |
 | 8 | The Sign-in tab | Name; email change with confirmation; password change that asks for the current one; the shared sheet | Not started |
@@ -87,11 +87,21 @@ the trial. Three parts, built and released in order: **A the account page · B t
 13. **Cancel is two different things**: stopping the subscription (the company stays, read-only) and deleting the company
     for good (typed confirmation, download first).
 14. **The sidebar and the shared frame are untouched** by this section.
+15. **A site with rows attached cannot be removed, and is not reassigned either.** Added 21 October from migration
+    082's reading of the schema: `obligations.entity_id` is ON DELETE CASCADE and a referential cascade does not consult
+    an RLS policy, so removing a site would have destroyed obligations that no policy lets a person delete. Removal is
+    refused while any of the seven cascade relations holds a row, naming what is attached. Reassigning those rows to the
+    main site was rejected: an air permit held by one plant is not another's. **"Closing" a site — a stamp that keeps
+    every row and drops the site out of lists and resolution — is recorded as a later decision and is not built.**
+    `DECISIONS.md` §207 B.
 
 ## Open questions
 
-1. **County from an address**: what the code has today, and the smallest honest source for state + county from a street
-   address. Settled at the step 5 stop.
+1. ~~**County from an address**~~ — **ANSWERED at the step 5 stop, 21 October.** Nothing geocodes anything today:
+   signup asks for a state and a city and sends `county: ''`, so **every company's main site has a NULL county** and
+   every county-level agency is silently out of scope. The source will be the **Census Bureau's own free geocoder
+   behind a variable**, built in step 6; a shipped HUD ZIP-to-county table was rejected because a split ZIP gives a
+   probability rather than an answer. `DECISIONS.md` §207 A.
 2. **"Download my data"**: does the route exist and what does it produce? Settled by the step 9 read.
 3. **The email-change and invitation emails** are sent by the login system, not by our sender; on staging they reach real
    addresses. The owner tests with his own.
@@ -101,3 +111,4 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 21 Oct 2026 | Step 5 done: migration 082 written, applied to staging and proved as a signed-in person. Open question 1 answered (nothing geocodes; the Census geocoder in step 6). Decision 15 added: a site with rows is refused, never reassigned; "closing a site" recorded as a later decision. |

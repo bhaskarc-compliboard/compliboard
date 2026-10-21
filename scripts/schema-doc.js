@@ -155,6 +155,28 @@ const grants = q(`select c.relname as tbl, r.rolname as grantee, string_agg(p.pr
    and has_table_privilege(r.rolname, c.oid, p.priv)
  group by 1, 2 order by 1, 2`)
 
+// *** AND A COLUMN-LEVEL GRANT IS INVISIBLE TO has_table_privilege, WHICH MADE THE LIST ABOVE LIE. ***
+// Added 21 October 2026, with migration 082. `has_table_privilege(role, t, 'UPDATE')` is FALSE when a
+// role holds UPDATE on some columns and not the table, so every table narrowed to a column grant read
+// "nothing" or dropped a right from the line above: `profiles` showed no UPDATE from 080's grant,
+// `invitations` read `authenticated` — **nothing** when a person may read eight columns, insert four
+// and update one, and `companies` lost UPDATE when a person may still change eight columns. A
+// generated document that says a writable table is closed is worse than one that says nothing, and
+// `CLAUDE.md` §3.6's rule — read what the role HOLDS, never what a migration granted — is exactly
+// what was being broken here. So: for each right a role does NOT hold on the table, the columns it
+// DOES hold it on. Nothing is printed when there is no such column, so the file is unchanged for
+// every table whose grants are table-wide.
+const colGrants = q(`select c.relname as tbl, r.rolname as grantee, p.priv as priv,
+       string_agg(a.attname, ', ' order by a.attname) as cols
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  join pg_attribute a on a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+  cross join (values ('anon'), ('authenticated'), ('service_role')) as r(rolname)
+  cross join (values ('INSERT'), ('REFERENCES'), ('SELECT'), ('UPDATE')) as p(priv)
+ where n.nspname = 'public' and c.relkind in ('r', 'p', 'v', 'm')
+   and not has_table_privilege(r.rolname, c.oid, p.priv)
+   and has_column_privilege(r.rolname, c.oid, a.attname, p.priv)
+ group by 1, 2, 3 order by 1, 2, 3`)
+
 const indexes = q(`select tablename as tbl, indexname as name, indexdef as def
   from pg_indexes where schemaname='public' order by 1,2`)
 
@@ -230,7 +252,7 @@ const MODULES = [
 // ---------------------------------------------------------------- render
 const by = (rows, key) => rows.reduce((m, r) => ((m[r[key]] ??= []).push(r), m), {})
 const colsBy = by(columns, 'table_name'), fkBy = by(fks, 'child'), fkTo = by(fks, 'parent')
-const ckBy = by(checks, 'tbl'), polBy = by(policies, 'tbl'), grBy = by(grants, 'tbl')
+const ckBy = by(checks, 'tbl'), polBy = by(policies, 'tbl'), grBy = by(grants, 'tbl'), cgBy = by(colGrants, 'tbl')
 const ixBy = by(indexes, 'tbl'), trBy = by(triggers, 'tbl')
 const pkBy = Object.fromEntries(pks.map(r => [r.tbl, r.cols]))
 const cntBy = Object.fromEntries(counts.map(r => [r.tbl, r.approx_rows]))
@@ -312,6 +334,7 @@ for (const t of tables) {
   if (inc.length) { p('**Pointed at by:**'); p(''); inc.forEach(f => p(`- \`${f.child}.${f.col}\` — ON DELETE ${f.on_delete}`)); p('') }
   if (ckBy[name]?.length) { p('**Constraints:**'); p(''); ckBy[name].forEach(c => p(`- \`${c.name}\` — \`${c.def}\``)); p('') }
   const g = grBy[name] ?? []
+  const cg = cgBy[name] ?? []
   p('**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*')
   p('')
   for (const role of ['anon', 'authenticated', 'service_role']) {
@@ -319,6 +342,16 @@ for (const t of tables) {
     p(`- \`${role}\` — ${r ? r.privs : '**nothing**'}`)
   }
   p('')
+  if (cg.length) {
+    p('**...and these column-level grants, which the line above CANNOT show** *(`has_table_privilege`')
+    p('answers false for a right held on columns rather than on the table — `CLAUDE.md` §3.6):*')
+    p('')
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      const rows = cg.filter(x => x.grantee === role)
+      if (rows.length) p(`- \`${role}\` — ${rows.map(x => `${x.priv} (${x.cols})`).join(' · ')}`)
+    }
+    p('')
+  }
   const pol = polBy[name] ?? []
   if (pol.length) {
     p('**RLS policies:**')

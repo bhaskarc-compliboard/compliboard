@@ -60,8 +60,18 @@ export async function agenciesInScopeFor(
       case 'county':  return !!s?.county && a.jurisdiction_county === s.county
       case 'city':    return !!s?.city && a.jurisdiction_city === s.city
       // `local` matches on state alone: which fire district or sewer authority covers an
-      // address is not derivable from the address, and is asked rather than geocoded
-      // (DECISIONS.md §25.2). A generic row is the honest state.
+      // address is not derivable from the address, and is asked (DECISIONS.md §25.2).
+      // A generic row is the honest state.
+      //
+      // *** AND CORRECTED 21 OCTOBER 2026: this used to read "asked rather than geocoded",
+      // which implied the levels above it ARE geocoded. None of them is. *** Nothing in this
+      // codebase geocodes an address; `state` and `city` are typed at signup and `county` is
+      // never asked for at all (`app/signup/page.tsx:174` sends `county: ''`, which migration
+      // 010:84 turns into NULL), so THE `county` BRANCH ABOVE CANNOT MATCH FOR ANY COMPANY
+      // CREATED THROUGH SIGNUP — every county-level agency is silently out of scope. The full
+      // chain is written out in lib/determinationGate.ts' jurisdiction block. My Account step 6
+      // adds the Census Geocoder behind its own variable; this comment says what is true until
+      // then, and the behaviour here is deliberately unchanged.
       case 'local':   return !!s?.state && a.jurisdiction_state === s.state
       default:        return false
     }
