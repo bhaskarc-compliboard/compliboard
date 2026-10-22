@@ -173,8 +173,26 @@ export function SiteDrawer({ site, db, companyName, onClose, onSaved }: {
       const saved = j?.site as SiteRow
       setRow(saved)
       setCounty('')
-      setNotFound(Boolean(j?.geocode && j.geocode.matched === false && j.geocode.ask_county))
       onSaved(saved)
+
+      /**
+       * *** THE DRAWER CLOSES ON A SAVE THAT NEEDS NOTHING MORE — the owner's walk, step 10. ***
+       * It used to stay open on every save, so after adding a site a person was left looking at
+       * the form they had just submitted with no sign anything had happened, and had to find the X
+       * to see their own new row. A drawer is for editing one thing; once the thing is saved and
+       * there is nothing left to ask, the place to be is the list.
+       *
+       * The ONE case it stays open for is the one where there IS something left to ask: the
+       * geocoder found nothing, so the sentence and the county box are the next step, and closing
+       * would throw that away. `geocode` is null when nothing was geocoded at all — a rename, or an
+       * edit that did not touch the address — and that closes like any other finished save.
+       *
+       * The "read from the address" line is not lost: it is drawn from the ROW, so re-opening the
+       * site shows it with whatever the address resolved to.
+       */
+      const needsCounty = Boolean(j?.geocode && j.geocode.matched === false && j.geocode.ask_county)
+      setNotFound(needsCounty)
+      if (!needsCounty) onClose()
     } catch {
       setError('We could not save that site just now.')
     } finally {

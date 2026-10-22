@@ -55,9 +55,7 @@ import {
   // Board 3 — the Sign-in tab (step 8).
   SIGNIN_HEADING, NAME_LABEL, NAME_NOTE_SIGNIN, EMAIL_LABEL, EMAIL_NOTE, emailSentLine,
   PASSWORD_LABEL, PASSWORD_MASK, PASSWORD_LAST_CHANGED,
-  CHANGE_PASSWORD_TITLE, CURRENT_PASSWORD_LABEL, NEW_PASSWORD_LABEL, NEW_PASSWORD_AGAIN_LABEL,
-  SAVE_NEW_PASSWORD, PASSWORD_MIN, PASSWORD_HINT, PASSWORD_TOO_SHORT, PASSWORDS_DIFFER,
-  PASSWORD_CHANGE_FAILED, PASSWORD_CHANGED, CURRENT_PASSWORD_REQUIRED,
+  passwordResetNote, SEND_RESET_LINK, RESET_SENT, RESET_FAILED,
   CHANGE_EMAIL_TITLE, NEW_EMAIL_LABEL, SEND_CONFIRMATION, EMAIL_CHANGE_FAILED,
   // Board 5 — the Cancel tab (step 9).
   CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_DISABLED,
@@ -475,7 +473,7 @@ function SignInTab() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
-  const [passwordSheet, setPasswordSheet] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
   const [emailSheet, setEmailSheet] = useState(false)
   /** Board 3's promise, shown under Email once the link is on its way. */
   const [emailSent, setEmailSent] = useState<string | null>(null)
@@ -500,6 +498,25 @@ function SignInTab() {
     if (error) { setNotice('We could not save your name just now.'); return }
     setName(nameDraft.trim())
     setEditName(false)
+  }
+
+  /**
+   * *** THE SAME CALL `/forgot-password` MAKES, FOR THE ADDRESS ON THIS ACCOUNT. ***
+   * `app/forgot-password/page.tsx:21`, with the same `redirectTo`, so there is one way to set a
+   * password in this product and one page that accepts it. The address is the session's own and is
+   * never typed here: a box would turn "change my password" into "send a reset link to an address
+   * I choose", which is a different and much worse feature.
+   */
+  async function sendResetLink() {
+    if (busy || !email) return
+    setBusy(true)
+    setNotice(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setBusy(false)
+    if (error) { setNotice(RESET_FAILED); return }
+    setResetSent(true)
   }
 
   if (!loaded) return null
@@ -553,6 +570,12 @@ function SignInTab() {
           <p className={KEY}>{PASSWORD_LABEL}</p>
           <div className="min-w-0 flex-1">
             <p className="text-[14px] tracking-[0.15em] text-gray-900">{PASSWORD_MASK}</p>
+            {/* What will happen, before it happens, naming the address it goes to. Once it has
+                gone, the row says so and stops offering the button — pressing it twice sends two
+                links, and the second one invalidates the first. */}
+            <p className="mt-0.5 text-[12.5px] leading-5 text-gray-500">
+              {resetSent ? RESET_SENT : passwordResetNote(email)}
+            </p>
             {/* Board 3 draws "Last changed ‹date›" here. The login system does not hold that fact —
                 see `lib/accountView.ts` PASSWORD_LAST_CHANGED — so nothing is drawn rather than a
                 date that means something else. */}
@@ -560,95 +583,17 @@ function SignInTab() {
               <p className="mt-0.5 text-[12.5px] leading-5 text-gray-500">{PASSWORD_LAST_CHANGED}</p>
             )}
           </div>
-          <button type="button" className={ACTION} onClick={() => setPasswordSheet(true)}>{CHANGE}</button>
+          {!resetSent && (
+            <button type="button" disabled={busy} className={ACTION}
+              onClick={sendResetLink}>{SEND_RESET_LINK}</button>
+          )}
         </div>
       </div>
-
-      {passwordSheet && <PasswordSheet onClose={() => setPasswordSheet(false)} />}
       {emailSheet && (
         <EmailSheet current={email} onClose={() => setEmailSheet(false)}
           onSent={(next) => { setEmailSent(emailSentLine(next, email)); setEmailSheet(false) }} />
       )}
     </>
-  )
-}
-
-/** Board 3's sheet. Three fields, and the current one is the reason the route exists. */
-function PasswordSheet({ onClose }: { onClose: () => void }) {
-  const [current, setCurrent] = useState('')
-  const [next, setNext] = useState('')
-  const [again, setAgain] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
-
-  async function save() {
-    if (busy) return
-    setError(null)
-    // The same three rules the route enforces, so a person is not made to wait for a round trip to
-    // be told the two do not match. The route is the boundary; this is the courtesy.
-    if (!current) { setError(CURRENT_PASSWORD_REQUIRED); return }
-    if (next.length < PASSWORD_MIN) { setError(PASSWORD_TOO_SHORT); return }
-    if (next !== again) { setError(PASSWORDS_DIFFER); return }
-    setBusy(true)
-    try {
-      const res = await fetch('/api/account/password', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ current, next, again }),
-      })
-      const j = await res.json().catch(() => null)
-      if (!res.ok) { setError(j?.error ?? PASSWORD_CHANGE_FAILED); setBusy(false); return }
-      setDone(true)
-      setBusy(false)
-    } catch {
-      setError(PASSWORD_CHANGE_FAILED)
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Sheet title={CHANGE_PASSWORD_TITLE} onClose={onClose}>
-      {done ? (
-        <>
-          <p className="text-[13px] text-[var(--green-ink)]">{PASSWORD_CHANGED}</p>
-          <div className="mt-3"><button type="button" className={PRIMARY} onClick={onClose}>Close</button></div>
-        </>
-      ) : (
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-[12px] font-medium text-gray-600" htmlFor="pw-current">
-              {CURRENT_PASSWORD_LABEL}
-            </label>
-            <input id="pw-current" type="password" value={current} disabled={busy}
-              onChange={(e) => setCurrent(e.target.value)}
-              aria-label={CURRENT_PASSWORD_LABEL} className={FIELD} />
-          </div>
-          <div>
-            <label className="mb-1 block text-[12px] font-medium text-gray-600" htmlFor="pw-new">
-              {NEW_PASSWORD_LABEL}
-            </label>
-            <input id="pw-new" type="password" value={next} disabled={busy}
-              onChange={(e) => setNext(e.target.value)}
-              placeholder={PASSWORD_HINT} aria-label={NEW_PASSWORD_LABEL} className={FIELD} />
-            <p className="mt-1 text-[12px] text-gray-500">{PASSWORD_HINT}</p>
-          </div>
-          <div>
-            <label className="mb-1 block text-[12px] font-medium text-gray-600" htmlFor="pw-again">
-              {NEW_PASSWORD_AGAIN_LABEL}
-            </label>
-            <input id="pw-again" type="password" value={again} disabled={busy}
-              onChange={(e) => setAgain(e.target.value)}
-              aria-label={NEW_PASSWORD_AGAIN_LABEL} className={FIELD} />
-          </div>
-          {error && <p className="text-[13px] text-[var(--amber)]">{error}</p>}
-          <div className="flex items-center gap-3 pt-1">
-            <button type="button" disabled={busy} className={PRIMARY} onClick={save}>{SAVE_NEW_PASSWORD}</button>
-            <button type="button" className={TEXT_ACTION} onClick={onClose}>{CANCEL}</button>
-          </div>
-        </div>
-      )}
-    </Sheet>
   )
 }
 

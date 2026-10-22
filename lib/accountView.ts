@@ -295,24 +295,34 @@ export const PASSWORD_LAST_CHANGED: string | null = null
 export const EMAIL_NOTE =
   'We send a link to the new address to confirm it. Until you click it, the old address still signs in.'
 
-export const CHANGE_PASSWORD_TITLE = 'Change your password'
-export const CURRENT_PASSWORD_LABEL = 'Current password'
-export const NEW_PASSWORD_LABEL = 'New password'
-export const NEW_PASSWORD_AGAIN_LABEL = 'New password again'
-export const SAVE_NEW_PASSWORD = 'Save the new password'
-
 /**
- * The same floor `/join` applies (`lib/peopleView.ts` JOIN_PASSWORD_MIN). Said here too, because a
- * rule a person meets at one door and not another is not a rule.
+ * *** THE PASSWORD CHANGES BY RESET LINK, NOT BY A FORM ON THIS PAGE — the owner's walk, step 10. ***
+ *
+ * Step 8 built the form board 3 draws: current password, new, again, checked server-side. It worked,
+ * and the owner's walk found it was the wrong thing to build. The product already has one way to set
+ * a password — a link to the address on the account, and a page that only accepts one
+ * (`/reset-password`, gated and floored at ten since step 8). A second way means two
+ * implementations of the most security-sensitive write in the product, two sets of rules to keep in
+ * step, and a form that asks for a password in a browser that did not need to see one.
+ *
+ * The link is also the stronger of the two. A form behind a live session trusts whoever is sitting
+ * at the machine; a link trusts whoever can read the company's email, which is what an account is.
+ *
+ * So the row sends the same thing `/forgot-password` sends, for the caller's own address, and says
+ * so before it does it. What went with the form: its sheet, `POST /api/account/password`, and the
+ * current-password check that route existed for. `/reset-password` keeps the floor and the gate.
  */
 export const PASSWORD_MIN = 10
 export const PASSWORD_HINT = `At least ${PASSWORD_MIN} characters`
 export const PASSWORD_TOO_SHORT = `Your new password needs at least ${PASSWORD_MIN} characters.`
-export const PASSWORDS_DIFFER = 'Those two do not match. Type the new password the same way twice.'
-export const WRONG_CURRENT_PASSWORD = 'That is not your current password.'
-export const PASSWORD_CHANGE_FAILED = 'We could not change your password just now. Nothing was changed.'
-export const PASSWORD_CHANGED = 'Your password has been changed.'
-export const CURRENT_PASSWORD_REQUIRED = 'Please type your current password.'
+
+/** Board 3's row, rewritten: what will happen, before it happens, naming the address. */
+export function passwordResetNote(email: string): string {
+  return `To change it, we'll send a link to ${email}.`
+}
+export const SEND_RESET_LINK = 'Send me a reset link'
+export const RESET_SENT = 'Sent. Check your inbox.'
+export const RESET_FAILED = 'We could not send that link just now. Nothing was changed.'
 
 export const CHANGE_EMAIL_TITLE = 'Change your email'
 export const NEW_EMAIL_LABEL = 'New email address'

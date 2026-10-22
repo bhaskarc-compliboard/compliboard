@@ -24,9 +24,9 @@ import {
   SITE_NAME_LABEL, SITE_ADDRESS_LABEL, ON_THIS_SITE, REMOVE_SITE, REMOVE_SITE_CONFIRM,
   NOTHING_ON_SITE,
   SIGNIN_HEADING, NAME_LABEL, NAME_NOTE_SIGNIN, EMAIL_LABEL, EMAIL_NOTE, emailSentLine,
-  PASSWORD_LABEL, PASSWORD_MASK, PASSWORD_LAST_CHANGED, CHANGE_PASSWORD_TITLE,
-  CURRENT_PASSWORD_LABEL, NEW_PASSWORD_LABEL, NEW_PASSWORD_AGAIN_LABEL, SAVE_NEW_PASSWORD,
-  PASSWORD_MIN, PASSWORD_HINT, WRONG_CURRENT_PASSWORD, NOT_A_RECOVERY,
+  PASSWORD_LABEL, PASSWORD_MASK, PASSWORD_LAST_CHANGED,
+  passwordResetNote, SEND_RESET_LINK, RESET_SENT,
+  PASSWORD_MIN, PASSWORD_HINT, NOT_A_RECOVERY,
   CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_DISABLED,
   DOWNLOAD_LABEL, DOWNLOAD_ACTION, DOWNLOAD_NOTE,
   DELETE_TITLE, deleteWarning, TYPE_TO_CONFIRM, DELETE_ACTION, deleteConfirm,
@@ -295,12 +295,24 @@ describe('*** WHAT THE PAGE MUST NEVER SEND — migration 082 ***', () => {
    BOARD 3 — THE SIGN-IN TAB (step 8, decisions 2 and 7)
    ================================================================================================= */
 describe('board 3\'s words are the board\'s', () => {
-  test('the heading, the three labels and the sheet', () => {
+  test('the heading and the three labels', () => {
     for (const w of [SIGNIN_HEADING, NAME_LABEL, NAME_NOTE_SIGNIN, EMAIL_LABEL, EMAIL_NOTE,
-                     PASSWORD_LABEL, PASSWORD_MASK, CHANGE_PASSWORD_TITLE, CURRENT_PASSWORD_LABEL,
-                     NEW_PASSWORD_LABEL, NEW_PASSWORD_AGAIN_LABEL, SAVE_NEW_PASSWORD]) {
+                     PASSWORD_LABEL, PASSWORD_MASK]) {
       assert.ok(onBoard(w), `not on board 3: ${JSON.stringify(w)}`)
     }
+  })
+
+  test('*** THE PASSWORD ROW IS NOT BOARD 3\'S FORM, AND THAT IS THE OWNER\'S CALL ***', () => {
+    // Board 3 draws a sheet with a current password. Step 8 built it; the owner's walk at step 10
+    // replaced it with a reset link, because the product already had one way to set a password and
+    // a second one means two implementations of its most security-sensitive write. So these words
+    // are deliberately NOT on the board, and the board is the thing that is now behind.
+    assert.ok(!onBoard(SEND_RESET_LINK))
+    assert.equal(SEND_RESET_LINK, 'Send me a reset link')
+    assert.equal(RESET_SENT, 'Sent. Check your inbox.')
+    assert.equal(passwordResetNote('maria@x.com'), "To change it, we'll send a link to maria@x.com.")
+    // It says what will happen BEFORE it happens, and names where it goes.
+    assert.ok(passwordResetNote('a@b.co').includes('a@b.co'))
   })
 
   test('*** THE "LAST CHANGED" LINE IS NULL, AND THAT IS A READING ***', () => {
@@ -317,39 +329,44 @@ describe('board 3\'s words are the board\'s', () => {
       'We sent a link to new@x.com. Until you click it, old@x.com still signs in.')
   })
 
-  test('ten characters, at every door', () => {
-    // The same floor /join applies. A rule met at one door and not another is not a rule.
+  test('ten characters, at both doors that set one', () => {
+    // There are exactly two now: /join and /reset-password. The same floor /join applies.
     assert.equal(PASSWORD_MIN, 10)
     assert.equal(PASSWORD_HINT, 'At least 10 characters')
     assert.equal(PASSWORD_MIN, JOIN_PASSWORD_MIN)
-    // ...including the recovery page, which used to accept six.
     const reset = code(readFileSync('app/reset-password/page.tsx', 'utf8'))
     assert.match(reset, /password\.length < PASSWORD_MIN/)
     assert.ok(!/length < 6/.test(reset), 'the six-character floor is gone')
   })
 })
 
-describe('*** THE THREE WAYS TO CHANGE A PASSWORD WITHOUT THE CURRENT ONE ***', () => {
-  // `docs/ACCOUNT-MACHINERY.md` §B2 found three. Step 8 closed the two that are not recovery.
+describe('*** HOW A PASSWORD IS SET: ONE WAY, AND ONE PAGE THAT ACCEPTS IT ***', () => {
+  // `docs/ACCOUNT-MACHINERY.md` §B2 found THREE ways to change a password, none asking for the
+  // current one. Step 8 closed two and built a form for the third. The owner's walk at step 10
+  // removed that form too: a reset link is the only way now, and /reset-password is the only page
+  // that accepts one.
   const page = code(readFileSync('app/account/page.tsx', 'utf8'))
-  const route = code(readFileSync('app/api/account/password/route.ts', 'utf8'))
   const reset = code(readFileSync('app/reset-password/page.tsx', 'utf8'))
 
-  test('1. My Account no longer calls updateUser({ password }) from the browser', () => {
+  test('1. My Account sets no password at all — it asks for a link', () => {
     assert.ok(!/updateUser\(\{\s*password/.test(page), 'the page must not set a password itself')
-    assert.match(page, /fetch\('\/api\/account\/password'/)
+    assert.ok(!/api\/account\/password/.test(page), 'and the step-8 route is gone')
+    assert.match(page, /resetPasswordForEmail\(email, \{/)
   })
 
-  test('...and the route re-checks the current one by actually signing in with it', () => {
-    assert.match(route, /signInWithPassword\(\{\s*\n?\s*email, password: current/)
-    assert.match(route, /WRONG_CURRENT_PASSWORD/)
-    assert.equal(WRONG_CURRENT_PASSWORD, 'That is not your current password.')
-    // The address comes from the verified session, never the body — otherwise this route would be
-    // "sign in as anyone whose password you can guess".
-    assert.match(route, /getUserById\(userId\)/)
-    assert.ok(!/body\?\.email/.test(route))
-    // And no admin client sets the password.
-    assert.ok(!/admin\.updateUserById/.test(route))
+  test('...for the SESSION\'S OWN address, never one that was typed', () => {
+    // A box here would turn "change my password" into "send a reset link to an address I choose",
+    // which is a different and much worse feature.
+    assert.match(page, /resetPasswordForEmail\(email,/)
+    const fn = page.slice(page.indexOf('async function sendResetLink'), page.indexOf('if (!loaded)'))
+    assert.ok(!/useState/.test(fn), 'no field feeds it')
+    assert.match(fn, /redirectTo: `\$\{window\.location\.origin\}\/reset-password`/)
+    // One press, one request: the row stops offering the button once it has gone.
+    assert.match(page, /\{!resetSent && \(/)
+  })
+
+  test('...and the step-8 route no longer exists', () => {
+    assert.throws(() => readFileSync('app/api/account/password/route.ts', 'utf8'))
   })
 
   test('2. /forgot-password STAYS — it is recovery, and that is the point', () => {
