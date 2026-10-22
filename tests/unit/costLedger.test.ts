@@ -8,6 +8,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { estimateCost, priceFor, describeCost, LEDGER_TASKS } from '../../lib/costLedger.ts'
 import { MODEL_PRICES, PRICE_PER_SEARCH, PRICE_SOURCE_URL } from '../../config/pricing.ts'
 
@@ -109,13 +110,28 @@ describe('the task list matches the CHECK constraint', () => {
     // `document_draft` beside `document_scan`. **Migration 064 owns it now** (Workspace Task 6),
     // having recreated it again to add `howto`. **Migration 066 owns it now** (HR Step 3b), having
     // recreated it to add `hr` and `hr_check`. **Migration 073 owns it now** (Calendar step 5),
-    // having recreated it to add `calendar`.
+    // having recreated it to add `calendar`. **Migration 085 owns it now** (My Account step 13),
+    // having recreated it to add `website`.
     const inMigration = [
       'research', 'checklist', 'substeps', 'convert', 'summarise',
       'gate', 'critique', 'audit', 'document_review', 'document_scan', 'document_draft', 'howto', 'other',
-      'hr', 'hr_check', 'calendar',
+      'hr', 'hr_check', 'calendar', 'website',
     ]
     assert.deepEqual([...LEDGER_TASKS].sort(), inMigration.sort())
+  })
+
+  /**
+   * …and the list above is not a second copy of the migration, it is CHECKED against it. The
+   * comment block has said "migration N owns it now" five times; a sixth that forgot to move the
+   * array would pass the test above and fail in production, which is the exact shape this file's
+   * header warns about. So the migration itself is read.
+   */
+  test('and the list is the one migration 085 actually writes', () => {
+    const sql = readFileSync('supabase/migrations/085_one_read_of_the_website.sql', 'utf8')
+    const block = sql.match(/add constraint ai_calls_task_check check \(task in \(([\s\S]*?)\)\);/)
+    assert.ok(block, 'the ai_calls_task_check block did not parse out of 085')
+    const inSql = [...block[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort()
+    assert.deepEqual([...LEDGER_TASKS].sort(), inSql)
   })
 })
 

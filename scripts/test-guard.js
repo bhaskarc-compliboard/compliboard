@@ -74,7 +74,12 @@ import { readdirSync, readFileSync } from 'node:fs'
 // step 12's 47 new tests in tests/unit/signup.test.ts (describes counted as tests, as node reports them). Raising it is the deliberate edit the
 // guard's header asks for; lowering it ever again is the same deliberate act in the other
 // direction, and it goes in writing here with its reason, as the 444 -> 426 note above does.
-const FLOOR = 1634
+// 1634 -> 1669 on 22 October 2026, My Account step 13: 34 in tests/unit/websiteRead.test.ts and
+// one in costLedger.test.ts. More than half of the 34 are the SSRF guard — which IP literals and
+// which address ranges the website read refuses to fetch — because `DECISIONS.md` §45 says a
+// compensating control must be named and tested or it is a belief, and `docs/TODO.md:1075` is the
+// assessment that named this one.
+const FLOOR = 1669
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

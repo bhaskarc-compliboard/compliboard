@@ -24,7 +24,7 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto' | 'hr' | 'hr_check' | 'calendar'
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto' | 'hr' | 'hr_check' | 'calendar' | 'website'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -149,6 +149,14 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // handbooks. So it falls back to the research tier (`prose`) unset, exactly as `howto` and `hr`
   // do: the pattern copied, not a new one. NOTHING ASKS FOR THIS TIER YET; step 10 is the caller.
   calendar: () => process.env.AI_MODEL_CALENDAR || TASK_MODELS.prose(),
+  // *** READING A COMPANY'S OWN WEBSITE — My Account step 13 (`ACCOUNT-PLAN.md` decision 9). ***
+  // One read of pages we fetched, with NO search tool, returning strict JSON: what the business
+  // does, a NAICS code, the addresses the site lists. That is extraction from a supplied document,
+  // which is what `document_scan` is, so it falls back to the JUDGEMENT tier unset — the pattern
+  // `document_scan` and `audit` already use, copied rather than invented. It is the first thing a
+  // new customer ever sees us say about them, which is the argument for pointing it somewhere
+  // expensive; `AI_MODEL_WEBSITE` is how, without moving anything else.
+  website: () => process.env.AI_MODEL_WEBSITE || TASK_MODELS.judgement(),
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 

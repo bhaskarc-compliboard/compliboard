@@ -253,6 +253,14 @@ const DELETED_BY_CASCADE_OR_PARENT = [
   // sweeping it in the tenant loop would describe it as the tenant's own row; the cascade is
   // the honest mechanism and it leaves nothing behind.
   'invitations',
+  // ...and the tenth (migration 085). One read of the company's own website, stored as a
+  // PROPOSAL and never as a fact. It is on this side of the list for the clearest reason yet:
+  // it is OUR reading of a stranger's web pages, made before the customer had told us anything,
+  // and `authenticated` holds SELECT on it and nothing else — there is no sense in which a
+  // person "deletes their website read". It cascades: company_id -> companies ON DELETE
+  // CASCADE, written in 085 itself and proved by that migration's own §9, which deletes a
+  // throwaway company and fails if the read outlives it.
+  'website_reads',
   'ai_calls',              // cascades with the company: company_id -> companies ON DELETE
                            // CASCADE, read from pg_constraint on 23 Sep rather than assumed —
                            //   conname ai_calls_company_id_fkey · confdeltype = c (cascade)

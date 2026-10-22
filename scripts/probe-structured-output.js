@@ -46,6 +46,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { modelForTask, devMaxSearches } from '../lib/ai.ts'
 import { SCAN_JSON_SCHEMA } from '../prompts/document-scan.ts'
 import { AUDIT_TEMPLATE_JSON_SCHEMA } from '../prompts/audit-agency.ts'
+import { WEBSITE_JSON_SCHEMA } from '../prompts/website-read.ts'
 
 if (!process.env.ANTHROPIC_API_KEY) { console.error('\n  ANTHROPIC_API_KEY is not set.\n'); process.exit(1) }
 const arg = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : null }
@@ -62,7 +63,14 @@ const schemaOnly = process.argv.includes('--schema-only')
  */
 const schemaIdx = process.argv.indexOf('--schema')
 const schemaName = schemaIdx >= 0 && process.argv[schemaIdx + 1] ? process.argv[schemaIdx + 1] : 'document-scan'
-const SCHEMAS = { 'document-scan': SCAN_JSON_SCHEMA, 'audit-template': AUDIT_TEMPLATE_JSON_SCHEMA }
+// `website-read` (My Account step 13): one array of objects, no nested object. Inside the margin
+// `prompts/document-scan.ts:337` measured — and measured rather than assumed, because that margin
+// is per MODEL: the scan's schema is accepted on Haiku and refused on Opus.
+const SCHEMAS = {
+  'document-scan': SCAN_JSON_SCHEMA,
+  'audit-template': AUDIT_TEMPLATE_JSON_SCHEMA,
+  'website-read': WEBSITE_JSON_SCHEMA,
+}
 const THE_SCHEMA = SCHEMAS[schemaName]
 if (!THE_SCHEMA) {
   console.error(`\n  --schema takes one of: ${Object.keys(SCHEMAS).join(', ')}; got "${schemaName}".\n`)
@@ -118,7 +126,12 @@ async function probe(label, body) {
     try { JSON.parse(text); parses = true } catch { /* reported below */ }
     console.log(`  ${label}`)
     console.log(`    OK — stop_reason ${m.stop_reason}, ${text.length} chars, raw text parses as JSON: ${parses}`)
-    console.log(`    searches billed: ${m.usage?.server_tool_use?.web_search_requests ?? 0}`)
+    // *** WHAT IT COST, PRINTED — My Account step 13. *** These calls write no `ai_calls` row (the
+    // probe passes no `ledger:`), so the only place the spend could be seen is here, and it was not
+    // being shown at all. `npm run cost` warns that an uncounted call site is "a call nobody is
+    // counting"; this one is deliberate — a probe is not product spend — but it should still say
+    // what it used.
+    console.log(`    usage: in=${m.usage?.input_tokens ?? '?'} out=${m.usage?.output_tokens ?? '?'} searches=${m.usage?.server_tool_use?.web_search_requests ?? 0}`)
     console.log(`    first 140: ${JSON.stringify(text.slice(0, 140))}\n`)
     return { ok: true, parses }
   } catch (e) {

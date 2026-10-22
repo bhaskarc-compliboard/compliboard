@@ -4206,6 +4206,59 @@ export type Database = {
           },
         ]
       }
+      website_reads: {
+        Row: {
+          accepted_at: string | null
+          company_id: string
+          finished_at: string | null
+          host: string
+          id: string
+          model: string | null
+          pages: Json | null
+          proposal: Json | null
+          raw_text: string | null
+          reason: string | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          company_id: string
+          finished_at?: string | null
+          host: string
+          id?: string
+          model?: string | null
+          pages?: Json | null
+          proposal?: Json | null
+          raw_text?: string | null
+          reason?: string | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          company_id?: string
+          finished_at?: string | null
+          host?: string
+          id?: string
+          model?: string | null
+          pages?: Json | null
+          proposal?: Json | null
+          raw_text?: string | null
+          reason?: string | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_reads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       calendar_v: {

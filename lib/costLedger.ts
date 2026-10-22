@@ -22,7 +22,7 @@ import { MODEL_PRICES, PRICE_PER_SEARCH, type ModelPrice } from '../config/prici
 export type LedgerTask =
   | 'research' | 'checklist' | 'substeps' | 'convert' | 'summarise'
   | 'gate' | 'critique' | 'audit' | 'document_review' | 'document_scan' | 'document_draft' | 'howto' | 'other'
-  | 'hr' | 'hr_check' | 'calendar'
+  | 'hr' | 'hr_check' | 'calendar' | 'website'
 
 export const LEDGER_TASKS: readonly LedgerTask[] = [
   'research', 'checklist', 'substeps', 'convert', 'summarise',
@@ -41,6 +41,11 @@ export const LEDGER_TASKS: readonly LedgerTask[] = [
   // THE CALENDAR SECTION (Calendar step 5, `docs/CALENDAR-PLAN.md` decision 4; migration 073 adds it
   // to `ai_calls_task_check`): the calendar's answer. Nothing writes it yet — step 10 is the caller.
   'calendar',
+  // THE WEBSITE READ (My Account step 13, `docs/ACCOUNT-PLAN.md` decision 9; migration 085 adds it
+  // to `ai_calls_task_check`): one read of a new customer's own website, which proposes what they
+  // do and where they are. The first money this product spends on a company, and the ledger should
+  // be able to say so — the two cards read at the step 13 stop had to be logged as `other`.
+  'website',
 ] as const
 
 export interface CallUsage {

@@ -32,7 +32,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import {
   emailLooksLikeOne, normaliseWebsite,
   SIGNUP_TITLE, SIGNUP_LEDE, EMAIL_LABEL, EMAIL_PLACEHOLDER, PASSWORD_LABEL,
@@ -93,6 +93,31 @@ export default function SignupPage() {
       // The account exists either way; if this one step fails they are simply sent to sign in.
       const { error: signInError } = await supabase.auth.signInWithPassword({ email: j.email, password })
       if (signInError) { router.push('/login'); return }
+
+      /**
+       * *** AND THE WEBSITE READ IS KICKED HERE, BEFORE THE PAGE MOVES — step 13, decision 9. ***
+       *
+       * Awaited, and only the 202 is awaited: `/api/website-read` inserts the claim row inside the
+       * request and does the fetch and the model call in `after()`. So this costs the person a few
+       * milliseconds and guarantees the row EXISTS by the time the walk's first screen asks for it
+       * — a kick fired off without awaiting would be cancelled by the navigation below, which is
+       * the whole reason it is not written that way.
+       *
+       * No website, no post. The route refuses an empty one too (it is the boundary), but a
+       * request we know the answer to is a request not worth making.
+       *
+       * A failure here is swallowed on purpose. The account exists, the person is signed in, and
+       * "we could not start reading your website" is our problem to solve, not a thing to stop
+       * somebody's first morning with. The walk shows the address screen when there is no row.
+       */
+      if (normaliseWebsite(website)) {
+        try {
+          await fetch('/api/website-read', { method: 'POST', headers: await authHeaders() })
+        } catch {
+          // Nothing to tell them: the next screen asks for the address instead.
+        }
+      }
+
       // Decision 1: a new account lands on the Dashboard, which is the page that says "Welcome"
       // rather than "Welcome back" on a first visit (`profiles.welcomed_at` is null). Step 14 moves
       // this landing to the walk.
