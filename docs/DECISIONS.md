@@ -15165,3 +15165,92 @@ call used. `app/api/scan-website/route.ts`, `prompts/scan-website.ts` and `compa
 are untouched and still read by `lib/companyContext.ts:265` and `prompts/checklist.ts:328` for
 companies that signed up before step 12; removing them is its own step. **No prompt that exists
 today was changed, and no golden set was touched.**
+
+---
+
+## 211. THE WALK: THREE SCREENS, EVERY ONE LEAVABLE, AND THE EDITED VALUES ARE WHAT IS SAVED — 22 October 2026 (My Account step 14, board 7, `ACCOUNT-PLAN.md` decision 10)
+
+**The decision.** Signup lands on `/walk`, not on `/dashboard`. Three screens — what we found,
+three questions, done — and **the Dashboard is where the walk's last button goes**. Every screen
+carries "Skip for now", nothing is written without a press, and leaving at any point writes nothing
+further.
+
+### What the first screen does with a proposal, and why it is not what the board drew.
+
+Board 7 draws a read-only summary with **"Let me fix it"**, which *"turns each line into a box"*.
+This builds the second state and not the first: every field arrives **prefilled and already
+editable**. That is the one control on board 7 the design does not need, and it is recorded here
+rather than quietly replaced with something else. Two reasons:
+
+- the card is the only moment this product asks a person to check what a model said about them,
+  and a screen that must be put into edit mode before it can be corrected is a screen most people
+  will confirm as-is;
+- "Let me fix it" implies a second state, and a second state means the saved values and the shown
+  values can differ. They cannot here: **what is in the fields IS what is saved**.
+
+The board's own note says *"nothing is written until 'Yes, that's us'"*, which is the part that
+matters, and it holds exactly as drawn.
+
+### "Yes, that's us" saves the fields, through the routes that already own them.
+
+`planSaves` (`lib/walkView.ts`) returns the steps as a VALUE, which is why a test can read the
+order rather than infer it:
+
+1. **the company's own words** — `what_you_do` and `naics_code`, through the CALLER's own client,
+   exactly as the Company tab writes them. 082's column grant is the boundary, not an `if`;
+2. **the main site's address** — `PATCH /api/sites`, so it is geocoded and 083's trigger mirrors
+   state, county and city onto the company row, which is what resolution reads;
+3. **each ticked location** — `POST /api/sites`, after the main one, so a failure late in the list
+   cannot cost the company its jurisdiction;
+4. **`POST /api/website-read/accept`** last, because it records that the rest happened. Stamping it
+   first would say so before it was true.
+
+The accept route **takes no id**: the row is found from the verified token's company, so another
+company's read is not refused, it is unreachable — the same reasoning as `/api/account` DELETE.
+Only a `ready` row, only one not already stamped, and the stamp is the service role's because
+`authenticated` holds SELECT on `website_reads` and nothing else (085).
+
+### The one behaviour that differs between the two screens that share a control.
+
+`components/NaicsField.tsx` was extracted from the Company tab so both use one. The Company tab
+renders exactly what it rendered before — the two new props are off by default. The walk turns them
+on, and the reason is a real difference and not a preference:
+
+> On the Company tab the code is there because the person **picked a suggestion**, so it is a claim
+> about those exact words, and decision 3 says editing them drops it. In the walk the code came
+> from the **website read** — it is a proposal about the business, not about the sentence — so
+> changing one word of it must not silently drop a classification the person was shown and agreed
+> with. It is only kept where the code is **drawn, with a `clear` beside it**: nothing survives
+> that cannot be seen and removed.
+
+**The risk, named:** somebody could rewrite the sentence completely and leave a code that no longer
+fits. `companies.naics_code` is read by nothing today — `grep -rn naics_code app lib components
+prompts scripts` finds only its writers and this control — so the cost is a wrong label on a card
+they confirmed, not a wrong answer downstream. If something ever reads it, that is the line to
+return to.
+
+### It is outside the app frame, as board 7 draws it.
+
+A `doorcard` on a narrow board: the frame `/login`, `/join` and `/signup` use. Decision 14 holding
+rather than being tested — the shell draws a sidebar, a company name and counts, and a person
+halfway through telling us where they are should be looking at one thing. **`welcomed_at` is still
+the Dashboard's to stamp**, so a person who skips the whole walk still gets "Welcome" rather than
+"Welcome back" on their first visit.
+
+### Proved on staging, three ways (`TESTING.md`, "My Account — the walk after signup").
+
+A website we can read: the edited sentence is what landed, the code survived the edit, the unticked
+location was not added, the address geocoded to Missouri / St. Louis and mirrored onto the company
+row, `accepted_at` stamped, three answers written. A website we cannot: the host named in the
+sentence, an address typed instead, District of Columbia both places, nothing accepted. No website
+at all: **nothing written anywhere** — no address, no read row, no determinations, no switches.
+
+### Effects on other sections, by file.
+
+`app/signup/page.tsx` pushes `WALK_PATH`; three tests that asserted it pushed `/dashboard` were
+rewritten to say what they were always about — a person who has just typed their password never
+lands on the marketing homepage. `app/account/page.tsx` now renders `NaicsField` instead of its own
+copy, with no visible change, and `tests/unit/accountView.test.ts` still passes untouched.
+`scripts/measure-layout.mjs` gained `--shot-at` (a screenshot mid-run, for a flow) and can now
+press a checkbox. **Nothing in the Dashboard, `/api/sites`, `/api/switches/*`, the sidebar or
+`AppLayout` was changed**, and no migration was written: the walk needed no table and no column.

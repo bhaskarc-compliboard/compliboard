@@ -4407,3 +4407,57 @@ reaches no model.*
 `npm run measure` and the screenshots in `shots/`; the drawer's behaviour is held by the walk recorded
 in `DECISIONS.md` §206; the migrations' rules are held by their own `DO` blocks, which run on the
 database and roll the whole migration back on failure.
+
+---
+
+## My Account — the walk after signup (step 14, board 7)
+
+Measured on staging on 22 October 2026, on an isolated copy under the Haiku guard, with
+`npm run measure`. **No model call was made by any of these three walks** — the website read runs
+on the configured tier, which the guard pinned to Haiku, and the three reads cost **$0.011 in
+all**. The screenshots are in `shots/`, named below.
+
+The walk is the first flow in this product that is more than one screen behind a button, which is
+what `--shot-at` was added for: `--shot` photographs the finished page, and a run that can only do
+that cannot show what the first screen looked like.
+
+### W-1 · A website we can read (`shots/step14-a-1-card-edited.png`, `-2-question1`, `-3-done`, `-4-dashboard`)
+
+Sign up with `jostchemical.com`. The card arrives with the company name (display only), the
+sentence, `NAICS 325180` with a `clear` beside it, the main address, and the Polish site ticked.
+**Change one word of the sentence, untick Poland, press "Yes, that's us."** Then answer the three
+questions and finish.
+
+Read back: `what_you_do` is **the edited sentence**, `naics_code` **325180** (kept through the
+edit, because the code was proposed rather than picked), the main site is `8150 Lackland, St.
+Louis, MO 63114` geocoded to **Missouri / St. Louis / Saint Louis** and **mirrored onto the company
+row** by 083's trigger, **one site** (the unticked one was not added), `accepted_at` stamped, and
+**three `switch_determinations` with `source = user_set`**. The Dashboard then says **"Welcome"**
+with four dashes and the question card in its quiet state.
+
+### W-2 · A website we cannot read (`shots/step14-b-1-could-not-read.png`, `-2-question`, `-3-done`)
+
+Sign up with a host that does not exist. The walk opens on the address screen with the host named:
+*"We couldn't read nonsense-host-that-does-not-exist.example — tell us your main address
+instead."* Type `1600 Pennsylvania Avenue NW, Washington, DC 20500` and press Continue.
+
+Read back: the site and the company row both say **District of Columbia**, the read is
+`failed / unreachable`, `accepted_at` is **not** stamped — there was nothing to accept — and
+skipping the questions leaves **no determinations**.
+
+### W-3 · No website at all (`shots/step14-c-1-address.png`, `-2-question`, `-3-done`, `-4-dashboard`)
+
+Sign up with the website box empty. **No `POST /api/website-read` is made at all**, the walk opens
+on the address screen **with no apology on it** (there is nothing to apologise for), and "Skip for
+now" is pressed on all three screens.
+
+Read back, and this is the one that proves the rule: **nothing was written.** No address, no
+`website_reads` row, no determinations, no `company_switches`, no `what_you_do`, no `naics_code`,
+no state, county or city. The company's one site is the one signup made. `welcomed_at` is set, and
+that is the Dashboard's doing, not the walk's.
+
+### What these three cannot show
+
+That the walk is leavable by closing the tab rather than by pressing Skip — a harness that only
+presses buttons cannot walk away from one. The claim rests on the same evidence as W-3: nothing is
+written without a press, so there is nothing a half-finished walk could leave behind.
