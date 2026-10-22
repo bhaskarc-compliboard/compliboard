@@ -83,7 +83,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 // against board 7, the screen the person is on, and the one that matters most, that "Yes, that's
 // us" saves THE FIELDS rather than the proposal. `planSaves` returns the steps as a value for
 // exactly that reason: an order you can read is an order a test can check.
-const FLOOR = 1715
+// 1715 -> 1742 on 22 October 2026, My Account step 15: 27 in tests/unit/websiteCompare.test.ts.
+// The one they exist for is the money line — `config/pricing.ts` prices a model it does not list
+// as NULL on purpose, and `claude-sonnet-5-5` is not in that table, so the owner's comparison has
+// to SAY it could not price the call rather than print $0.0000 beside a real bill.
+const FLOOR = 1742
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
