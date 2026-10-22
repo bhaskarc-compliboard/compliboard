@@ -43,7 +43,7 @@ import CompanyQuestions from '@/components/CompanyQuestions'
 import PeopleTab from '@/components/PeopleTab'
 import { PRIMARY, TEXT_ACTION } from '@/components/buttonStyles'
 import { createClient, authHeaders } from '@/lib/supabase'
-import { suggestNaics, keepTypedLabel, type NaicsTitle } from '@/lib/naicsTitles'
+import NaicsField from '@/components/NaicsField'
 import {
   TITLE, LEDE, TABS, asTab, type AccountTab,
   COMPANY_HEADING, COMPANY_LABEL, NAME_NOTE,
@@ -169,8 +169,6 @@ function Account() {
    */
   const [pickedCode, setPickedCode] = useState<string | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const suggestions: NaicsTitle[] = useMemo(
-    () => (showSuggestions ? suggestNaics(whatDraft) : []), [whatDraft, showSuggestions])
 
   // ── The website ────────────────────────────────────────────────────────────────────────────────
   const [editSite, setEditSite] = useState(false)
@@ -246,38 +244,18 @@ function Account() {
                 <div className="min-w-0 flex-1">
                   {editWhat ? (
                     <>
-                      <input type="text"
-                        value={whatDraft} autoFocus disabled={busy}
-                        onChange={(e) => {
-                          setWhatDraft(e.target.value)
-                          setPickedCode(null)   // the words are theirs again
-                          setShowSuggestions(true)
-                        }}
-                        placeholder={WHAT_YOU_DO_PLACEHOLDER}
-                        aria-label={WHAT_YOU_DO_LABEL}
-                        className={FIELD} />
-
-                      {/* Board 1's suggestion box: at most five, then "Keep what you typed". */}
-                      {suggestions.length > 0 && (
-                        <div data-suggestions className="mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white">
-                          {suggestions.map((s) => (
-                            <button key={s.code} type="button"
-                              onClick={() => {
-                                setWhatDraft(s.title)
-                                setPickedCode(s.code)
-                                setShowSuggestions(false)
-                              }}
-                              className="block w-full px-3 py-2 text-left text-[13.5px] text-gray-800 hover:bg-gray-50">
-                              {s.title}
-                            </button>
-                          ))}
-                          <button type="button"
-                            onClick={() => { setPickedCode(null); setShowSuggestions(false) }}
-                            className="block w-full border-t border-gray-100 px-3 py-2 text-left text-[13.5px] text-gray-500 hover:bg-gray-50">
-                            {keepTypedLabel(whatDraft)}
-                          </button>
-                        </div>
-                      )}
+                      {/* *** THE CONTROL MOVED TO `components/NaicsField.tsx` AT STEP 14. *** The
+                          walk's first screen asks this same question with the website read's answer
+                          already in the box, and a second copy of "typing clears the picked code"
+                          is the kind of small rule a copy gets subtly wrong — decision 3, and
+                          `companies.naics_code` is a join key. Nothing about this row changed:
+                          `showCode` is off here, so what is drawn is what was drawn before. */}
+                      <NaicsField
+                        value={whatDraft} onValue={setWhatDraft}
+                        picked={pickedCode} onPick={setPickedCode}
+                        showSuggestions={showSuggestions} onShowSuggestions={setShowSuggestions}
+                        busy={busy} autoFocus
+                        placeholder={WHAT_YOU_DO_PLACEHOLDER} label={WHAT_YOU_DO_LABEL} />
 
                       <div className="mt-2 flex items-center gap-3">
                         <button type="button" disabled={busy} className={PRIMARY}

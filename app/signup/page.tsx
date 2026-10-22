@@ -41,6 +41,7 @@ import {
   SIGNUP_BUTTON, SIGNUP_BUSY, HAVE_ACCOUNT, SIGN_IN,
   EMAIL_INVALID, SIGNUP_PASSWORD_SHORT, COMPANY_REQUIRED, WEBSITE_UNREADABLE, NOTHING_SAVED,
 } from '@/lib/signupView'
+import { WALK_PATH } from '@/lib/walkView'
 
 const FIELD =
   'w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 ' +
@@ -118,10 +119,20 @@ export default function SignupPage() {
         }
       }
 
-      // Decision 1: a new account lands on the Dashboard, which is the page that says "Welcome"
-      // rather than "Welcome back" on a first visit (`profiles.welcomed_at` is null). Step 14 moves
-      // this landing to the walk.
-      router.push('/dashboard')
+      /**
+       * *** AND THE LANDING IS THE WALK — step 14, decision 10. ***
+       *
+       * It was `/dashboard` from step 12 until now. The walk is three screens, every one leavable,
+       * and its last button goes to the Dashboard — which still says "Welcome" rather than
+       * "Welcome back", because `profiles.welcomed_at` is stamped by the Dashboard and by nothing
+       * here. A person who leaves the walk at the first screen gets the same Dashboard, with its
+       * own question card carrying on another day.
+       *
+       * The website read, when there is one, was kicked a moment ago and is running in `after()`;
+       * the walk's first screen asks about it. With no website there is nothing to wait for and
+       * the walk opens on the address screen.
+       */
+      router.push(WALK_PATH)
       router.refresh()
     } catch {
       setError(NOTHING_SAVED)

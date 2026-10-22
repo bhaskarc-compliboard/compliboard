@@ -296,7 +296,9 @@ describe('signup kicks the read, and only when there is one to kick', () => {
     assert.match(page, /await fetch\('\/api\/website-read', \{ method: 'POST'/)
     const signIn = page.indexOf('signInWithPassword')
     const kick = page.indexOf("'/api/website-read'")
-    const push = page.indexOf("router.push('/dashboard')")
+    // Step 14: the landing moved from /dashboard to the walk, which is the screen that ASKS about
+    // this read. The ordering this test is about is unchanged — the kick is between the two.
+    const push = page.indexOf('router.push(WALK_PATH)')
     assert.ok(signIn < kick && kick < push, 'the kick is not between the sign-in and the landing')
   })
   test('and a failure to kick never stops the person landing', () => {
@@ -307,7 +309,7 @@ describe('signup kicks the read, and only when there is one to kick', () => {
     const tryAt = page.lastIndexOf('try {', kick)
     const catchAt = page.indexOf('} catch {', kick)
     assert.ok(tryAt > 0 && tryAt < kick && catchAt > kick, 'the kick is not wrapped in its own try/catch')
-    assert.ok(page.indexOf("router.push('/dashboard')") > catchAt, 'the landing is inside the kick\u2019s try')
-    assert.equal((page.match(/router\.push\('\/dashboard'\)/g) ?? []).length, 1)
+    assert.ok(page.indexOf('router.push(WALK_PATH)') > catchAt, 'the landing is inside the kick\u2019s try')
+    assert.equal((page.match(/router\.push\(WALK_PATH\)/g) ?? []).length, 1)
   })
 })

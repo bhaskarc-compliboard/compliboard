@@ -301,8 +301,9 @@ describe('the page asks four things and nothing else', () => {
     assert.deepEqual(keys, ['companyName', 'email', 'password', 'website'])
   })
 
-  test('one way out, and it is the Dashboard', () => {
-    assert.equal((code(PAGE).match(/router\.push\('\/dashboard'\)/g) ?? []).length, 1)
+  test('one way out, and at step 14 it is the walk', () => {
+    assert.equal((code(PAGE).match(/router\.push\(WALK_PATH\)/g) ?? []).length, 1)
+    assert.equal((code(PAGE).match(/router\.push\('\/dashboard'\)/g) ?? []).length, 0)
     assert.ok(!code(PAGE).includes("router.push('/')"), 'a signup path still lands on the homepage')
   })
 

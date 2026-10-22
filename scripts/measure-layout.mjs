@@ -56,6 +56,10 @@
 // `--log <text>` prints every request whose URL contains <text>, in order, after the clicks — the
 // round trips a page makes, counted from the browser rather than from reading the code.
 //
+// `--shot-at <path>` photographs the page AT THAT POINT in the run, and may be repeated — for a
+// flow with more than one screen. `--shot` still takes one picture at the end, after the
+// measurement, which is what every page-shaped run wants.
+//
 // `--scroll "<text>"` scrolls the first visible element whose text starts with <text> to the top of
 // its scrolling box, after the clicks, before the screenshot.
 //
@@ -129,6 +133,19 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--height') height = Number(argv[++i])
   else if (a === '--print') printMedia = true
   else if (a === '--shot') shot = argv[++i]
+  /**
+   * *** `--shot-at <path>` PHOTOGRAPHS THE PAGE AT THIS POINT IN THE WALK — My Account step 14. ***
+   *
+   * `--shot` is one variable and takes its picture at the END, after the measurement. That is
+   * right for a page and useless for a FLOW: the walk is three screens behind two buttons, and a
+   * run that can only photograph the last one cannot show what the first one looked like. This
+   * one is an action, so it fires where it is written, as many times as it is written.
+   *
+   * A separate flag rather than making `--shot` positional, because every existing caller passes
+   * `--shot` wherever it reads best and means "the finished page": changing what that means would
+   * quietly re-point screenshots other sections rely on.
+   */
+  else if (a === '--shot-at') actions.push({ kind: 'shot', value: argv[++i] })
   else if (a === '--click') { const v = argv[++i]; clicks.push(v); actions.push({ kind: 'click', value: v }) }
   else if (a === '--select') actions.push({ kind: 'select', value: argv[++i] })
   else if (a === '--type') actions.push({ kind: 'type', value: argv[++i] })
@@ -319,6 +336,10 @@ try {
     }
     await new Promise((r) => setTimeout(r, 300))
     console.log(`typed: ${typed}`)
+   } else if (action.kind === 'shot') {
+    const s = await cdp(ws, 'Page.captureScreenshot', { format: 'png' })
+    writeFileSync(action.value, Buffer.from(s.data, 'base64'))
+    console.log(`shot: ${action.value}`)
    } else if (action.kind === 'date') {
     const want = action.value
     const filled = await evaluate(`(() => {
@@ -374,7 +395,13 @@ try {
     const hit = await evaluate(`(() => {
       const want = ${JSON.stringify(text)}
       const visible = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 }
-      const cands = [...document.querySelectorAll('button, a, [role=button], .group.-mx-3')].filter(visible)
+      // *** A CHECKBOX IS A CONTROL A PERSON PRESSES — My Account step 14. *** The list was
+      // buttons, links and workspace rows, so the walk's "Add as a site" boxes could not be
+      // unticked and the one screen that decides how many sites a company gets could not be
+      // walked. Matched by its aria-label, which is how a control with no words of its own is
+      // already matched below. Same lesson as input[type=email] at step 12: a thing a person can
+      // press is a thing this harness has to be able to press.
+      const cands = [...document.querySelectorAll('button, a, [role=button], input[type=checkbox], .group.-mx-3')].filter(visible)
       // Inside an open drawer first: a drawer's own button beats a row under the scrim.
       const drawer = ${VISIBLE_DRAWER}
       const order = drawer ? [...cands.filter((e) => drawer.contains(e)), ...cands.filter((e) => !drawer.contains(e))] : cands

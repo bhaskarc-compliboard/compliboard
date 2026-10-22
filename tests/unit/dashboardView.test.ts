@@ -265,14 +265,15 @@ describe('login lands on the Dashboard — decision 1', () => {
   })
 
   /**
-   * *** THERE IS ONE WAY OUT OF SIGNUP NOW, NOT TWO — My Account step 12. *** This counted two,
-   * because the old page could finish either through the form or through the industry-questions
-   * pop-up, and half of new accounts would have gone to the marketing page if they disagreed. Board
-   * 6 has four fields and no pop-up, so there is one landing and it is still the Dashboard. Step 14
-   * moves it to the walk.
+   * *** AND AT STEP 14 THAT ONE LANDING BECAME THE WALK. *** It counted two until step 12 (the
+   * form and the industry pop-up), then one, and now none: signup pushes `WALK_PATH`, and the
+   * Dashboard is where the walk's LAST button goes. The thing this test has always been about
+   * survives unchanged — a person who has just typed their password never lands on the marketing
+   * homepage — and the Dashboard's own landing is still proved by the login test above.
    */
-  test('the one way out of signup pushes /dashboard', () => {
-    assert.equal((SIGNUP.match(/router\.push\('\/dashboard'\)/g) ?? []).length, 1)
+  test('signup lands on the walk, and never on the marketing homepage', () => {
+    assert.ok(SIGNUP.includes('router.push(WALK_PATH)'))
+    assert.equal((SIGNUP.match(/router\.push\('\/dashboard'\)/g) ?? []).length, 0)
     assert.ok(!SIGNUP.includes("router.push('/')"), 'a signup path still lands on the homepage')
   })
 

@@ -79,7 +79,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 // which address ranges the website read refuses to fetch — because `DECISIONS.md` §45 says a
 // compensating control must be named and tested or it is a belief, and `docs/TODO.md:1075` is the
 // assessment that named this one.
-const FLOOR = 1669
+// 1669 -> 1715 on 22 October 2026, My Account step 14: 46 in tests/unit/walk.test.ts — the words
+// against board 7, the screen the person is on, and the one that matters most, that "Yes, that's
+// us" saves THE FIELDS rather than the proposal. `planSaves` returns the steps as a value for
+// exactly that reason: an order you can read is an order a test can check.
+const FLOOR = 1715
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
