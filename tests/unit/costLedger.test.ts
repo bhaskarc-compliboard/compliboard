@@ -180,3 +180,41 @@ describe('Opus 5.5 prices EXACTLY, and not by resembling Opus 5 — 26 September
     assert.match(PRICE_SOURCE_URL, /^https:\/\/platform\.claude\.com\/docs\/en\/about-claude\/pricing$/)
   })
 })
+
+describe('Sonnet 5.5 prices EXACTLY, and not by resembling Sonnet 5 — 22 October 2026', () => {
+  // $2 in, $10 out, read off PRICE_SOURCE_URL on 22 October 2026. It is now a LIVE candidate:
+  // `npm run website:compare` (My Account step 15) runs it against Opus 5.5 on a real website, and
+  // before today it priced as null — tokens with no money, which is the one failure mode this
+  // table exists to keep out.
+
+  test('the id prices at $2 in and $10 out per million', () => {
+    const p = priceFor('claude-sonnet-5-5')
+    assert.ok(p, 'claude-sonnet-5-5 must be in the table, or the comparison prints no cost for it')
+    assert.equal(p.inputPerM, 2)
+    assert.equal(p.outputPerM, 10)
+  })
+
+  test('a million in and a million out is $12', () => {
+    const c = estimateCost({ model: 'claude-sonnet-5-5', inputTokens: 1e6, outputTokens: 1e6, searches: 0 })
+    assert.equal(c.costUsd, 12)
+  })
+
+  test('it costs HALF of Opus 5.5, which is what the comparison is about', () => {
+    const opus = estimateCost({ model: 'claude-opus-5-5', inputTokens: 1e6, outputTokens: 1e6, searches: 0 })
+    const sonnet = estimateCost({ model: 'claude-sonnet-5-5', inputTokens: 1e6, outputTokens: 1e6, searches: 0 })
+    assert.equal((sonnet.costUsd ?? 0) * 2, opus.costUsd)
+  })
+
+  /**
+   * *** THE CASE WHERE GUESSING BY PREFIX WOULD HAVE BEEN RIGHT. *** Sonnet 5.5 and Sonnet 5 are
+   * both $2/$10, so nothing here would have caught a prefix match — which is the argument for
+   * reading the page rather than inferring, not against it. One line above in the table, the same
+   * guess is wrong by a dollar per million: Opus 5.5 is $4/$20 and Opus 5 is $5/$25.
+   */
+  test('the neighbouring spellings are still NOT it', () => {
+    assert.equal(priceFor('claude-sonnet-5-5-20260101'), null)
+    assert.equal(priceFor('claude-sonnet-55'), null)
+    assert.equal(priceFor('claude-sonnet-5.5'), null)
+    assert.equal(priceFor('claude-sonnet-5')?.inputPerM, priceFor('claude-sonnet-5-5')?.inputPerM)
+  })
+})

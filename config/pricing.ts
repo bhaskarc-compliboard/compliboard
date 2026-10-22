@@ -76,6 +76,19 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
   // table cannot express; see PRICE_SOURCE_URL's note above.)
   'claude-opus-5-5':           { inputPerM: 4, outputPerM: 20 },
   'claude-sonnet-5':           { inputPerM: 2, outputPerM: 10 },
+  // SONNET 5.5 — $2/$10, read off PRICE_SOURCE_URL on 22 OCTOBER 2026, which carries the row
+  // "Claude Sonnet 5.5 | $2 / MTok | … | $10 / MTok". Added for My Account step 15: the owner's
+  // `npm run website:compare` runs the website read on Opus 5.5 and this one side by side
+  // (ACCOUNT-PLAN decision 9), and until today an unlisted model priced as null, so one of the two
+  // cards could print tokens and no money.
+  //
+  // *** IT IS THE SAME $2/$10 AS SONNET 5, AND THAT IS EXACTLY WHY IT HAD TO BE READ. *** Two
+  // adjacent ids at identical prices is the case where guessing by prefix would have been right,
+  // and a rule that holds only when it is cheap to break is not a rule — `claude-opus-5-5` is
+  // $4/$20 against `claude-opus-5`'s $5/$25, one line above, which is the same guess going wrong.
+  // (Its cache hits are 0.05x rather than 0.1x, which this table cannot express; see the note on
+  // PRICE_SOURCE_URL above. The same footnote covers Opus 5.5.)
+  'claude-sonnet-5-5':         { inputPerM: 2, outputPerM: 10 },
   'claude-sonnet-4-5':         { inputPerM: 3, outputPerM: 15 },
   // Both spellings of Haiku 4.5 are listed. The dated id is what `lib/ai.ts` sends today and
   // the bare alias is what a person types — an id that resolves at the API and prices as null

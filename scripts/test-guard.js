@@ -87,7 +87,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 // The one they exist for is the money line — `config/pricing.ts` prices a model it does not list
 // as NULL on purpose, and `claude-sonnet-5-5` is not in that table, so the owner's comparison has
 // to SAY it could not price the call rather than print $0.0000 beside a real bill.
-const FLOOR = 1742
+// 1742 -> 1746 on 22 October 2026: four for Sonnet 5.5's price, read off the published page the
+// same day. Its row was added because `npm run website:compare` runs it against Opus 5.5 and an
+// unlisted model prices as null — tokens with no money beside a real bill.
+const FLOOR = 1746
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

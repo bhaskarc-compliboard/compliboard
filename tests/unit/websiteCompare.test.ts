@@ -95,15 +95,27 @@ describe('*** WHAT A CALL COST, OR THAT WE COULD NOT SAY ***', () => {
     assert.equal(timing(META), '9.1s · 4,023 in / 554 out · $0.0272')
   })
   test('an unpriced one says so rather than printing $0.0000', () => {
-    const line = timing({ ...META, model: 'claude-sonnet-5-5', costUsd: null })
+    // Not a model anyone runs: a made-up id, because this is about the BEHAVIOUR when a price is
+    // missing, and both models the comparison actually uses are priced now.
+    const line = timing({ ...META, model: 'claude-not-in-the-table', costUsd: null })
     assert.match(line, /cost unknown — this model is not in config\/pricing\.ts/)
     assert.ok(!line.includes('$'), 'an unpriced call printed a dollar figure')
     assert.match(line, /4,023 in \/ 554 out/)   // the tokens are still there to price by hand
   })
-  test('…and that is the state today: the second model of the two is not in the table', () => {
-    // If this starts failing, somebody added the price — good — and the compare will print it.
-    assert.ok(priceFor('claude-opus-5-5'), 'the first model lost its price')
-    assert.equal(priceFor('claude-sonnet-5-5'), null)
+  /**
+   * *** THIS TEST SAID THE OPPOSITE THIS MORNING. *** It asserted that `claude-sonnet-5-5` was NOT
+   * in `config/pricing.ts`, with a note saying that if it ever started failing somebody had added
+   * the price — which is what happened, hours later, read off the published page on 22 October
+   * 2026. So it now pins the state it was written to detect: **both models of the comparison are
+   * priced**, and neither card can print tokens with no money beside a real bill.
+   */
+  test('both models of the comparison are priced, so both cards show what they cost', () => {
+    for (const model of COMPARE_MODELS) {
+      assert.ok(priceFor(model), `${model} is not in config/pricing.ts`)
+      const line = timing({ ...META, model, costUsd: 0.0123 })
+      assert.match(line, /\$0\.0123/)
+      assert.ok(!line.includes('cost unknown'))
+    }
   })
 })
 
