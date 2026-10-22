@@ -12,7 +12,7 @@ import {
 } from '@/lib/calendarView'
 import { runName, AUDIT_RUN_ROW_COLUMNS, AUDIT_DONE, type NameableRun } from '@/lib/auditView'
 import {
-  welcomeFor, countWord, isNoCount, COUNTER_TILES, COUNTER_COLUMNS,
+  welcomeFor, greetedKey, readGreeted, writeGreeted, countWord, isNoCount, COUNTER_TILES, COUNTER_COLUMNS,
   type CounterRow, type Welcome,
   splitUpcoming, moreLine, MORE_LINK, MORE_HREF, inNext30Days, RECENT_AUDITS_MAX,
   UPCOMING_EMPTY, UPCOMING_EMPTY_LINK, UPCOMING_EMPTY_HREF,
@@ -84,15 +84,31 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      // The person's own row: the name for the greeting, and whether they have been here before.
+      // The person's own row: whether they have been here before. The NAME on the title is the
+      // company's now, not theirs (step 15) — an account made through signup has no `full_name` at
+      // all, so every new customer used to see a bare "Welcome".
       const { data: profileData } = await supabase
         .from('profiles').select('company_id, full_name, welcomed_at').eq('id', user.id).single()
 
-      const greeting = welcomeFor(profileData?.full_name, profileData?.welcomed_at)
-      setWelcome(greeting)
-
       const companyId = profileData?.company_id
       setCompanyId(companyId ?? null)
+
+      /**
+       * *** THE TAB REMEMBERS THAT IT WAS GREETED, AND THAT IS THE FIX. ***
+       * This page stamps `welcomed_at` as soon as it has drawn, so a second mount — a reload, a
+       * back-then-forward, a second press of the walk's last button — would read its own stamp and
+       * flip to "Welcome back" on what the person experiences as their first visit.
+       */
+      const store = typeof window === 'undefined' ? null : window.sessionStorage
+      const key = greetedKey(user.id)
+      const already = readGreeted(store, key)
+      const { data: companyRow } = companyId
+        ? await supabase.from('companies').select('name').eq('id', companyId).maybeSingle()
+        : { data: null }
+      const greeting = welcomeFor(companyRow?.name, profileData?.welcomed_at, already)
+      if (greeting.firstVisit) writeGreeted(store, key)
+      setWelcome(greeting)
+
       if (companyId) {
         /**
          * THE SITES AND THE NAMES, for the same reason the Calendar reads them

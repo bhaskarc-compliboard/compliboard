@@ -15,18 +15,21 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import {
   WALK_PATH, SKIP, FOUND_TITLE, foundLede, CONFIRM, ASK_TITLE, ASK_LEDE, ADDRESS_LABEL,
   ADDRESS_PLACEHOLDER, ADDRESS_HINT, CONTINUE, DONE_TITLE, DONE_LEDE, DONE_BUTTON,
   couldNotRead, readingLine, firstScreen, askNotice, stepsDone, planSaves,
-  walkQuestions, walkCounter, walkDone, categoryLine, categoryAction, sentenceRows,
-  CATEGORY_LABEL, CATEGORY_NONE, CATEGORY_CHANGE, CATEGORY_PICK,
+  walkQuestions, walkCounter, walkDone, sentenceRows,
+  WHAT_YOU_DO_LINE, INDUSTRY_LINE, CHANGE, DONE, WRITE_HINT, WRITE_IT, lineAction,
   SENTENCE_MIN_ROWS, SENTENCE_MAX_ROWS, SENTENCE_COLS,
   siteNameFor, WALK_QUESTIONS, POLL_UP_TO_MS, POLL_EVERY_MS, ADD_AS_SITE,
   type ConfirmFields,
 } from '../../lib/walkView.ts'
 import { QUESTIONS_PER_DAY, SKIP_WORD } from '../../lib/dashboardView.ts'
+import {
+  INDUSTRIES, INDUSTRY_ROLES, industryLine, parseProposal, WEBSITE_JSON_SCHEMA,
+} from '../../prompts/website-read.ts'
 
 const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 const PAGE = readFileSync('app/walk/page.tsx', 'utf8')
@@ -179,110 +182,101 @@ describe('*** THE SENTENCE IS SHOWN WHOLE — the owner\u2019s first finding ***
     assert.ok(sentenceRows(real) * SENTENCE_COLS >= real.length,
       'the box is smaller than the sentence it is meant to show')
   })
-  test('it is a textarea now, not an input', () => {
+  test('the sentence\u2019s box is a textarea that grows, and it is the only one', () => {
     const walk = code(PAGE)
-    assert.match(walk, /<textarea id="walk-what"/)
-    assert.match(walk, /rows=\{sentenceRows\(whatDraft\)\}/)
-    assert.ok(!/<input id="walk-what"/.test(walk))
+    assert.match(walk, /rows=\{sentenceRows\(value\)\}/)
+    // One textarea in the whole card: the sentence. The industry and the address are one line each.
+    assert.equal((walk.match(/<textarea/g) ?? []).length, 1)
   })
 })
 
-describe('*** THE CATEGORY IN WORDS, NOT A CODE ***', () => {
-  test('with a suggestion: the title, then the code in brackets', () => {
-    assert.equal(categoryLine('325180', 'Other Basic Inorganic Chemical Manufacturing'),
-      'Closest standard category: Other Basic Inorganic Chemical Manufacturing (325180)')
-    assert.equal(categoryAction('325180'), CATEGORY_CHANGE)
+describe('*** THREE LINES, EACH WITH ITS OWN change — docs/account-walk-card.html ***', () => {
+  const board = readFileSync('docs/account-walk-card.html', 'utf8')
+  const src = code(PAGE)
+
+  test('the board is where the words come from', () => {
+    for (const word of [WHAT_YOU_DO_LINE, INDUSTRY_LINE, CHANGE, DONE, WRITE_IT]) {
+      assert.ok(board.includes(word), `the board does not say ${JSON.stringify(word)}`)
+    }
+    // "Write it in your own words." is the hint under an open box.
+    assert.ok(board.includes(WRITE_HINT))
   })
-  test('with none: "none yet", and the word beside it starts rather than changes', () => {
-    assert.equal(categoryLine(null, null), `${CATEGORY_LABEL}: ${CATEGORY_NONE}`)
-    assert.equal(categoryLine(null, 'ignored'), `${CATEGORY_LABEL}: ${CATEGORY_NONE}`)
-    assert.equal(categoryAction(null), CATEGORY_PICK)
+
+  test('closed, a line offers `change`; empty, it offers `write it`', () => {
+    assert.equal(lineAction('Chemical manufacturing and distribution'), CHANGE)
+    assert.equal(lineAction(''), WRITE_IT)
+    assert.equal(lineAction('   '), WRITE_IT)
   })
-  test('a code we hold no title for still says something true', () => {
-    assert.equal(categoryLine('999999', null), `${CATEGORY_LABEL}: ${CATEGORY_NONE} (999999)`)
-    assert.equal(categoryLine('999999', '  '), `${CATEGORY_LABEL}: ${CATEGORY_NONE} (999999)`)
+
+  test('only one line is ever open', () => {
+    // One piece of state, not three booleans: the board draws one box at a time and says why.
+    assert.match(src, /const \[open, setOpen\] = useState<OpenLine>\(null\)/)
+    assert.equal((src.match(/open=\{open\} onOpen=\{setOpen\}/g) ?? []).length, 3)
   })
-  test('the title drawn is OURS, looked up from the code', () => {
-    const walk = code(PAGE)
-    assert.match(walk, /NAICS_TITLES\.find\(\(t\) => t\.code === pickedCode\)/)
-    assert.match(walk, /categoryLine\(pickedCode, categoryTitle\)/)
+
+  test('the three lines are the three the board draws, in its order', () => {
+    const labels = [...src.matchAll(/label=\{(\w+)\}\s+name="(\w+)"/g)].map((m) => m[2])
+    assert.deepEqual(labels, ['about', 'industry', 'address'])
   })
-  test('the picker is the shared control, over its OWN box, and never touches the sentence', () => {
-    const walk = code(PAGE)
-    assert.match(walk, /value=\{categoryDraft\} onValue=\{setCategoryDraft\}/)
-    // The sentence is `whatDraft`; the picker must not be wired to it.
-    const picker = walk.slice(walk.indexOf('{picking ?'), walk.indexOf('categoryLine('))
-    assert.ok(!/whatDraft/.test(picker.replace(/setCategoryDraft\(whatDraft[^)]*\)/g, '')),
-      'the picker writes into the sentence')
+
+  test('the sentence is the only one that grows', () => {
+    const lines = [...src.matchAll(/<Line[\s\S]{0,260}?\/>/g)].map((m) => m[0])
+    assert.equal(lines.filter((l) => l.includes('multiline')).length, 1)
+    assert.ok(lines[0].includes('multiline'), 'the growing box is not the sentence')
   })
-  test('picking one closes the picker; what is saved is still naics_code', () => {
-    const walk = code(PAGE)
-    assert.match(walk, /if \(code\) setPicking\(false\)/)
-    assert.match(walk, /naicsCode: pickedCode/)
+
+  test('no suggestions anywhere — the control and its list are gone from both doors', () => {
+    assert.ok(!/NaicsField|suggestNaics|naicsTitles/.test(src), 'the walk still offers suggestions')
+    const account = code(readFileSync('app/account/page.tsx', 'utf8'))
+    assert.ok(!/NaicsField|suggestNaics/.test(account), 'the Company tab still offers suggestions')
+    assert.ok(!existsSync('components/NaicsField.tsx'), 'the control file survives with no caller')
+  })
+
+  test('`Done` closes the box and commits nothing — the card saves on its own button', () => {
+    const line = src.slice(src.indexOf('function Line('))
+    assert.match(line, /onClick=\{\(\) => onOpen\(null\)\}/)
+    assert.ok(!/fetch\(|supabase/.test(line.slice(0, line.indexOf('function '))), 'Done writes something')
   })
 })
 
-// ─────────────────────────────────────────────────────────────────────────────────────────────────
-
-const FIELDS: ConfirmFields = {
-  whatYouDo: 'We manufacture high purity specialty chemicals.',
-  naicsCode: '325180',
-  mainAddress: '8150 Lackland, St. Louis, MO 63114',
-  mainSite: { id: 'site-1', name: 'Jost Chemical Co.' },
-  others: [{ place: { label: 'Kościan, Poland', address: 'ul. Pułaskiego 7, Kościan' }, add: true }],
-}
-
-describe('*** "YES, THAT’S US" SAVES THE FIELDS, NOT THE PROPOSAL ***', () => {
-  test('the order: the company, the main site, the others, and accept last', () => {
-    assert.deepEqual(planSaves(FIELDS).map((s) => s.kind),
-      ['company', 'main-site', 'new-site', 'accept'])
+describe('*** THE INDUSTRY LINE, FROM TWO CLOSED LISTS ***', () => {
+  test('the five and the three, and the composed line', () => {
+    assert.deepEqual([...INDUSTRIES],
+      ['chemical', 'food and beverage', 'cannabis', 'pharmaceutical', 'cosmetics and personal care'])
+    assert.deepEqual([...INDUSTRY_ROLES], ['manufacturing', 'distribution', 'manufacturing and distribution'])
+    assert.equal(industryLine('chemical', 'manufacturing and distribution'), 'Chemical manufacturing and distribution')
+    assert.equal(industryLine('food and beverage', 'distribution'), 'Food and beverage distribution')
   })
-  test('an EDITED sentence is what would be written', () => {
-    const edited = { ...FIELDS, whatYouDo: 'We manufacture high purity mineral salts.' }
-    const step = planSaves(edited)[0]
-    assert.equal(step.kind, 'company')
-    assert.equal(step.kind === 'company' && step.what_you_do, 'We manufacture high purity mineral salts.')
-  })
-  test('an unticked location is not saved', () => {
-    const unticked = { ...FIELDS, others: [{ ...FIELDS.others[0], add: false }] }
-    assert.deepEqual(planSaves(unticked).map((s) => s.kind), ['company', 'main-site', 'accept'])
-  })
-  test('the main site is PATCHED by id, with the name it already has', () => {
-    const step = planSaves(FIELDS)[1]
-    assert.equal(step.kind, 'main-site')
-    if (step.kind === 'main-site') {
-      assert.equal(step.id, 'site-1')
-      assert.equal(step.name, 'Jost Chemical Co.')
-      assert.equal(step.address, '8150 Lackland, St. Louis, MO 63114')
+  test('an industry outside the five is NOTHING, never the nearest of five', () => {
+    for (const bad of ['chemicals', 'chemical manufacturing', 'law', '', '  ', null, undefined, 42]) {
+      assert.equal(industryLine(bad as unknown, 'manufacturing'), null, String(bad))
     }
   })
-  test('nothing to say means no company write at all', () => {
-    const empty = { ...FIELDS, whatYouDo: '   ', naicsCode: null }
-    assert.deepEqual(planSaves(empty).map((s) => s.kind), ['main-site', 'new-site', 'accept'])
+  test('…and the list is closed at the schema, with case tolerated as a second lock', () => {
+    // The enum means only the lowercase words can arrive; matching case-insensitively here costs
+    // nothing and means a value from somewhere else later cannot fail silently on a capital.
+    assert.equal(industryLine('Chemical', 'Manufacturing'), 'Chemical manufacturing')
   })
-  test('a code with no words is still a code worth keeping', () => {
-    const codeOnly = { ...FIELDS, whatYouDo: '' }
-    const step = planSaves(codeOnly)[0]
-    assert.equal(step.kind === 'company' && step.what_you_do, null)
-    assert.equal(step.kind === 'company' && step.naics_code, '325180')
+  test('an industry with no role is the industry alone', () => {
+    assert.equal(industryLine('chemical', ''), 'Chemical')
+    assert.equal(industryLine('cannabis', 'growing'), 'Cannabis')
   })
-  test('no main site, or no address, and there is nothing to patch', () => {
-    assert.deepEqual(planSaves({ ...FIELDS, mainSite: null }).map((s) => s.kind),
-      ['company', 'new-site', 'accept'])
-    assert.deepEqual(planSaves({ ...FIELDS, mainAddress: '  ' }).map((s) => s.kind),
-      ['company', 'new-site', 'accept'])
+  test('the schema closes both, so a half-match cannot arrive', () => {
+    const props = (WEBSITE_JSON_SCHEMA as { properties: Record<string, { enum?: string[] }> }).properties
+    assert.deepEqual(props.industry.enum, ['', ...INDUSTRIES])
+    assert.deepEqual(props.industry_role.enum, ['', ...INDUSTRY_ROLES])
   })
-  test('accept is ALWAYS last and always there — a confirmation is a fact about the person', () => {
-    for (const f of [FIELDS, { ...FIELDS, whatYouDo: '', naicsCode: null, mainAddress: '', others: [] }]) {
-      const steps = planSaves(f)
-      assert.equal(steps[steps.length - 1].kind, 'accept')
-    }
-  })
-  test('a second location needs a name, and gets one that is the customer’s own words', () => {
-    assert.equal(siteNameFor({ label: 'Portland plant', address: '1 Main St, Portland' }), 'Portland plant')
-    // `/api/sites` refuses a site with no name, so the first part of the address is the fallback.
-    assert.equal(siteNameFor({ label: null, address: '1 Main St, Portland, OR' }), '1 Main St')
-    assert.equal(siteNameFor({ label: '  ', address: 'Somewhere' }), 'Somewhere')
+  test('and the parser puts the line on the proposal', () => {
+    const p = parseProposal({
+      name: '', what_you_do: 'We make soap.', industry: 'chemical', industry_role: 'manufacturing',
+      naics_code: '', naics_title: '', addresses: [], notes: '',
+    })
+    assert.equal(p?.industry, 'Chemical manufacturing')
+    const none = parseProposal({
+      name: '', what_you_do: 'We give legal advice.', industry: '', industry_role: '',
+      naics_code: '', naics_title: '', addresses: [], notes: '',
+    })
+    assert.equal(none?.industry, null)
   })
 })
 
@@ -337,7 +331,7 @@ describe('the walk writes nothing of its own', () => {
     const update = src.match(/from\('companies'\)\s*\n?\s*\.update\(\{([^}]*)\}\)/)
     assert.ok(update, 'the walk does not update companies at all')
     const keys = update[1].split(',').map((k) => k.split(':')[0].trim()).filter(Boolean).sort()
-    assert.deepEqual(keys, ['naics_code', 'what_you_do'])
+    assert.deepEqual(keys, ['about', 'what_you_do'])
   })
   test('the company NAME is drawn and never sent', () => {
     assert.ok(!/name: *proposal\.name|name: *\w*[Nn]ame[,}]/.test(src.replace(/step\.name/g, '')),
@@ -346,7 +340,6 @@ describe('the walk writes nothing of its own', () => {
   })
   test('it reuses the shared control rather than drawing its own', () => {
     assert.match(src, /from '@\/components\/SwitchAnswerControl'/)
-    assert.match(src, /from '@\/components\/NaicsField'/)
     assert.ok(!/allowed_value_labels/.test(src), 'the walk re-implements the option buttons')
   })
   test('and there is a way out of every screen', () => {
@@ -374,40 +367,6 @@ describe('accept stamps one row, and cannot be pointed at another', () => {
   test('it writes accepted_at and nothing else', () => {
     const updates = [...src.matchAll(/\.update\(\{([^}]*)\}\)/g)].map((m) => m[1].trim())
     assert.deepEqual(updates, ['accepted_at: at'])
-  })
-})
-
-describe('the shared control was widened, not changed', () => {
-  const field = readFileSync('components/NaicsField.tsx', 'utf8')
-  const account = code(readFileSync('app/account/page.tsx', 'utf8'))
-  test('the Company tab now uses it, and draws exactly what it drew before', () => {
-    assert.match(account, /<NaicsField/)
-    // The control has one shape again: a box, its suggestions, and "Keep what you typed". Nothing
-    // in it is conditional on which screen is drawing it, which is where step 14 had drifted.
-    assert.ok(!/showCode|clearOnType/.test(code(field)), 'the control still branches by screen')
-    assert.match(field, /suggestions\.length > 0/)
-  })
-  test('the rule a copy would have got wrong is in one place now', () => {
-    // Typing clears a PICKED code — decision 3. The Company tab takes the default and keeps it.
-    assert.match(field, /onPick\(null\) {2,}\/\/ the words are theirs again/)
-    assert.ok(!/suggestNaics\(/.test(account), 'the Company tab still has its own copy')
-  })
-
-  /**
-   * *** AND AT STEP 15 THE THREE PROPS STEP 14 ADDED WENT. *** The walk's sentence is a textarea
-   * and its category is a line of words with its own `change` link, so the control is opened over
-   * a SEARCH box of the walk's own. Editing the sentence cannot touch the code, because they are
-   * no longer the same field — which is what `clearOnType` existed to work around — and nothing
-   * reads `picked` any more. A prop nothing passes is a claim nothing checks.
-   */
-  test('and the props step 14 added are gone, because nothing passes them', () => {
-    const walk = code(PAGE)
-    const fieldCode = code(field)
-    for (const prop of ['showCode', 'clearOnType', 'picked']) {
-      assert.ok(!fieldCode.includes(prop), `${prop} survives in the shared control`)
-      assert.ok(!walk.includes(`${prop}=`), `the walk still passes ${prop}`)
-      assert.ok(!account.includes(`${prop}=`), `the Company tab now passes ${prop}`)
-    }
   })
 })
 

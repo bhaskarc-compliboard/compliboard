@@ -223,7 +223,7 @@ describe('the prompt has one anchor and asks for nothing it cannot see', () => {
   })
   test('it asks for the six fields and no switch', () => {
     const rendered = websitePrompt('example.com', [{ url: 'https://example.com/', text: 'We make soap.' }])
-    for (const field of ['"name"', '"what_you_do"', '"naics_code"', '"addresses"', '"notes"']) {
+    for (const field of ['"name"', '"what_you_do"', '"industry"', '"industry_role"', '"addresses"', '"notes"']) {
       assert.ok(rendered.includes(field), `the prompt never asks for ${field}`)
     }
     // The old scanner asked the model to decide facts that are switches a person answers.
@@ -249,7 +249,8 @@ describe('the prompt has one anchor and asks for nothing it cannot see', () => {
   test('the schema is closed, every property required, one array of objects and no nested object', () => {
     const s = WEBSITE_JSON_SCHEMA as { additionalProperties: boolean; required: string[]; properties: Record<string, { type: string; items?: { properties?: unknown } }> }
     assert.equal(s.additionalProperties, false)
-    assert.deepEqual(s.required.sort(), ['addresses', 'naics_code', 'naics_title', 'name', 'notes', 'what_you_do'])
+    assert.deepEqual(s.required.sort(),
+      ['addresses', 'industry', 'industry_role', 'naics_code', 'naics_title', 'name', 'notes', 'what_you_do'])
     const arrays = Object.values(s.properties).filter((p) => p.type === 'array')
     assert.equal(arrays.length, 1, 'a second array of objects moves this past the measured margin')
     const nested = Object.values(s.properties).filter((p) => p.type === 'object')

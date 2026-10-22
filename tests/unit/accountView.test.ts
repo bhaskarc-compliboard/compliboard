@@ -234,11 +234,21 @@ describe('*** WHAT THE PAGE MUST NEVER SEND — migration 082 ***', () => {
   const accountRoute = readFileSync('app/api/account/route.ts', 'utf8')
 
   test('My Account writes only the three columns the grant allows', () => {
-    // `grant update (industry, state, county, city, what_you_do, naics_code, website_url,
-    // obligations_computed_at) on companies to authenticated` — of those, this page owns three.
+    // *** THE THREE CHANGED AT STEP 15. *** `about` (new, 086) holds the sentence, `what_you_do`
+    // now holds the broad industry line, and `naics_code` left both doors — 086 revoked the
+    // person's UPDATE on it, so this page could not write it even if it named it.
     const patch = /writeCompany\(patch: Partial<Pick<CompanyRow, ([^>]*)>>\)/.exec(page)
     assert.ok(patch, 'the one write must be typed to the columns it may touch')
-    assert.equal(patch[1].replace(/\s|'/g, ''), 'what_you_do|naics_code|website_url')
+    assert.equal(patch[1].replace(/\s|'/g, ''), 'about|what_you_do|website_url')
+  })
+
+  test('…and naics_code is in neither door, nor in the grant any more', () => {
+    // `code()`: both pages explain in a comment that NAICS left, and a paragraph saying so is not
+    // a page that still does it — the lesson from the step 12 tests.
+    assert.ok(!/naics/i.test(code(page)), 'the Company tab still writes NAICS')
+    assert.ok(!/naics/i.test(code(ci)), 'Company information still writes NAICS')
+    const sql = readFileSync('supabase/migrations/086_what_you_do_and_what_you_are.sql', 'utf8')
+    assert.match(sql, /revoke update \(naics_code\) on table public\.companies from authenticated;/)
   })
 
   test('neither door sends the company name any more', () => {

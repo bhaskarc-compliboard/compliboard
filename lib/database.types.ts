@@ -1029,6 +1029,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          about: string | null
           chemicals: string | null
           city: string | null
           county: string | null
@@ -1049,6 +1050,7 @@ export type Database = {
           what_you_do: string | null
         }
         Insert: {
+          about?: string | null
           chemicals?: string | null
           city?: string | null
           county?: string | null
@@ -1069,6 +1071,7 @@ export type Database = {
           what_you_do?: string | null
         }
         Update: {
+          about?: string | null
           chemicals?: string | null
           city?: string | null
           county?: string | null

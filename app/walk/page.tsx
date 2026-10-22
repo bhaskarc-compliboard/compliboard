@@ -32,22 +32,19 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient, authHeaders } from '@/lib/supabase'
-import NaicsField from '@/components/NaicsField'
-import { NAICS_TITLES } from '@/lib/naicsTitles'
 import SwitchAnswerControl from '@/components/SwitchAnswerControl'
 import { postSwitchAnswer } from '@/lib/switchAnswer'
 import {
   askableHere, SKIP_WORD, ANSWER_FAILED, type CardQuestion,
 } from '@/lib/dashboardView'
-import { WHAT_YOU_DO_LABEL, WHAT_YOU_DO_PLACEHOLDER } from '@/lib/accountView'
 import {
   SKIP, FOUND_TITLE, foundLede, CONFIRM, COMPANY_NAME_LABEL, COMPANY_NAME_NOTE,
   MAIN_ADDRESS_LABEL, OTHER_PLACES_LABEL, ADD_AS_SITE, NOTE_LABEL,
   ASK_TITLE, ASK_LEDE, ADDRESS_LABEL, ADDRESS_PLACEHOLDER, ADDRESS_HINT, CONTINUE,
   readingLine, askNotice, firstScreen, stepsDone, planSaves,
   walkQuestions, walkCounter, walkDone,
-  categoryLine, categoryAction, sentenceRows, SENTENCE_COLS,
-  CATEGORY_LABEL, CATEGORY_SEARCH_PLACEHOLDER,
+  sentenceRows, SENTENCE_COLS,
+  WHAT_YOU_DO_LINE, INDUSTRY_LINE, CHANGE, DONE, WRITE_HINT, lineAction, type OpenLine,
   DONE_TITLE, DONE_LEDE, DONE_BUTTON, DASHBOARD_PATH, SAVE_FAILED,
   POLL_EVERY_MS, POLL_UP_TO_MS, WALK_STEPS,
   type ReadStatus, type ProposedPlace,
@@ -91,7 +88,10 @@ function Shell({ step, children }: { step: number; children: React.ReactNode }) 
 
 interface Proposal {
   name: string | null
+  /** The plain sentence. It lands in `companies.about` (086), despite the key's name. */
   what_you_do: string | null
+  /** The broad line, composed by the parser from the two closed lists. */
+  industry: string | null
   naics_code: string | null
   naics_title: string | null
   addresses: ProposedPlace[]
@@ -114,27 +114,15 @@ function Walk() {
   const [waited, setWaited] = useState(0)
 
   // ── The fields. Filled ONCE from the proposal; theirs from then on. ────────────────────────────
-  const [whatDraft, setWhatDraft] = useState('')
-  const [pickedCode, setPickedCode] = useState<string | null>(null)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  /**
-   * The picker's own box, and it is SEPARATE from the sentence on purpose. Typing in it searches
-   * the standard list; the sentence is the person's words and is never touched by it. That also
-   * retires the trap step 14 worked around: there is no longer any way for editing the sentence to
-   * drop a proposed code, because the two are not the same field any more.
-   */
-  const [picking, setPicking] = useState(false)
-  const [categoryDraft, setCategoryDraft] = useState('')
+  const [aboutDraft, setAboutDraft] = useState('')
+  const [industryDraft, setIndustryDraft] = useState('')
+  /** Which one line is a box. Only ever one — the board draws it that way and says why. */
+  const [open, setOpen] = useState<OpenLine>(null)
   const [addressDraft, setAddressDraft] = useState('')
   const [others, setOthers] = useState<Array<{ place: ProposedPlace; add: boolean }>>([])
   const filled = useRef(false)
   /** What this mount has already written, so a second press does not write it twice. */
   const saved = useRef<Set<string>>(new Set())
-
-  /** OUR title for whatever code is picked — `lib/naicsTitles.ts`, never the model's words. */
-  const categoryTitle = useMemo(
-    () => (pickedCode ? NAICS_TITLES.find((t) => t.code === pickedCode)?.title ?? null : null),
-    [pickedCode])
 
   // ── The company and its main site, which signup made and which has no address yet ─────────────
   const [companyId, setCompanyId] = useState<string | null>(null)
@@ -179,8 +167,8 @@ function Walk() {
   useEffect(() => {
     if (filled.current || !proposal) return
     filled.current = true
-    setWhatDraft(proposal.what_you_do ?? '')
-    setPickedCode(proposal.naics_code ?? null)
+    setAboutDraft(proposal.what_you_do ?? '')
+    setIndustryDraft(proposal.industry ?? '')
     const [first, ...rest] = proposal.addresses ?? []
     if (first) setAddressDraft(first.address)
     setOthers(rest.map((place) => ({ place, add: true })))
@@ -223,7 +211,7 @@ function Walk() {
     setBusy(true)
     setNotice(null)
     const steps = planSaves({
-      whatYouDo: whatDraft, naicsCode: pickedCode,
+      about: aboutDraft, industry: industryDraft,
       mainAddress: addressDraft, mainSite, others,
     })
     const stop: string[] = []
@@ -240,7 +228,7 @@ function Walk() {
         // the id is the one `companies_select` let us read — never one sent from anywhere.
         if (!companyId) { stop.push(SAVE_FAILED); continue }
         const { error } = await supabase.from('companies')
-          .update({ what_you_do: step.what_you_do, naics_code: step.naics_code })
+          .update({ about: step.about, what_you_do: step.what_you_do })
           .eq('id', companyId)
         if (error) { stop.push(SAVE_FAILED); continue }
       } else if (step.kind === 'main-site') {
@@ -322,58 +310,24 @@ function Walk() {
             </div>
           )}
 
-          <div>
-            <label className={LABEL} htmlFor="walk-what">{WHAT_YOU_DO_LABEL}</label>
-            {/* *** A TEXTAREA, BECAUSE THE SENTENCE IS THE THING BEING CHECKED. *** The website
-                read's sentence is routinely 140 characters and a single-line box ran it off the
-                edge, so the person was asked to confirm words they could not see. It grows from
-                two lines to four; longer than that scrolls, which is rarer than the cap. */}
-            <textarea id="walk-what" value={whatDraft} disabled={busy}
-              rows={sentenceRows(whatDraft)} cols={SENTENCE_COLS}
-              onChange={(e) => setWhatDraft(e.target.value)}
-              placeholder={WHAT_YOU_DO_PLACEHOLDER} aria-label={WHAT_YOU_DO_LABEL}
-              className={`${FIELD} resize-none leading-6`} />
+          {/* *** THREE LINES OF TEXT, EACH WITH ITS OWN `change` — `docs/account-walk-card.html`.
+              *** "Nothing on the card looks like a form until the person asks for one." Pressing
+              one turns THAT line into a box holding the current words; `Done` closes it. No
+              suggestions: if the scan did not get it, we do not guess twice. */}
+          <Line
+            label={WHAT_YOU_DO_LINE} name="about"
+            value={aboutDraft} onValue={setAboutDraft}
+            open={open} onOpen={setOpen} busy={busy} multiline />
 
-            {/* The standard category, in words. The code is what gets SAVED; the title is the
-                only part of it a person can agree or disagree with. */}
-            {picking ? (
-              <div className="mt-2">
-                <NaicsField
-                  value={categoryDraft} onValue={setCategoryDraft}
-                  onPick={(code) => {
-                    setPickedCode(code)
-                    // Picking one closes the control and the line says what was chosen. Clearing
-                    // (the list's "Keep what you typed") leaves it open to pick again.
-                    if (code) setPicking(false)
-                  }}
-                  showSuggestions={showSuggestions} onShowSuggestions={setShowSuggestions}
-                  busy={busy} autoFocus
-                  placeholder={CATEGORY_SEARCH_PLACEHOLDER} label={CATEGORY_LABEL} />
-              </div>
-            ) : (
-              <p className="mt-1.5 text-[12.5px] leading-5 text-gray-500">
-                {categoryLine(pickedCode, categoryTitle)}
-                <button type="button" disabled={busy}
-                  onClick={() => {
-                    // Seeded from the sentence, so the first list offered is about their business
-                    // rather than empty. What is typed here is a SEARCH and is never saved.
-                    setCategoryDraft(whatDraft.trim())
-                    setShowSuggestions(true)
-                    setPicking(true)
-                  }}
-                  className="ml-2 text-[var(--green-ink)] hover:underline disabled:text-gray-300">
-                  {categoryAction(pickedCode)}
-                </button>
-              </p>
-            )}
-          </div>
+          <Line
+            label={INDUSTRY_LINE} name="industry"
+            value={industryDraft} onValue={setIndustryDraft}
+            open={open} onOpen={setOpen} busy={busy} />
 
-          <div>
-            <label className={LABEL} htmlFor="walk-address">{MAIN_ADDRESS_LABEL}</label>
-            <input id="walk-address" type="text" value={addressDraft} disabled={busy}
-              onChange={(e) => setAddressDraft(e.target.value)}
-              placeholder={ADDRESS_PLACEHOLDER} aria-label={MAIN_ADDRESS_LABEL} className={FIELD} />
-          </div>
+          <Line
+            label={MAIN_ADDRESS_LABEL} name="address"
+            value={addressDraft} onValue={setAddressDraft}
+            open={open} onOpen={setOpen} busy={busy} />
 
           {others.length > 0 && (
             <div>
@@ -438,6 +392,66 @@ function Walk() {
       <button type="button" disabled={busy} className={SKIP_LINK}
         onClick={() => setScreen(2)}>{SKIP}</button>
     </Shell>
+  )
+}
+
+/**
+ * ONE LINE OF THE CARD — `docs/account-walk-card.html`, states A and B.
+ *
+ * Closed, it is the label, the words, and a small `change`. Open, it is a box holding those words,
+ * the hint "Write it in your own words." and `Done`. Only one line is ever open: the board draws it
+ * that way, and the reason is that a card showing one box is a question, while a card showing three
+ * is a form.
+ *
+ * *** WHAT IS IN THE BOX IS WHAT IS SAVED, OPEN OR CLOSED. *** `Done` closes the box; it does not
+ * commit anything, and the card can be confirmed with a line still open — the board says so in as
+ * many words. The value lives in the caller's state throughout, so there is no second copy to
+ * forget to read.
+ */
+function Line({ label, name, value, onValue, open, onOpen, busy, multiline = false }: {
+  label: string
+  name: Exclude<OpenLine, null>
+  value: string
+  onValue: (v: string) => void
+  open: OpenLine
+  onOpen: (v: OpenLine) => void
+  busy: boolean
+  multiline?: boolean
+}) {
+  const isOpen = open === name
+  return (
+    <div>
+      <p className={LABEL}>{label}</p>
+      {isOpen ? (
+        <>
+          {multiline ? (
+            <textarea value={value} disabled={busy} autoFocus
+              rows={sentenceRows(value)} cols={SENTENCE_COLS}
+              onChange={(e) => onValue(e.target.value)}
+              aria-label={label} className={`${FIELD} resize-none leading-6`} />
+          ) : (
+            <input type="text" value={value} disabled={busy} autoFocus
+              onChange={(e) => onValue(e.target.value)}
+              aria-label={label} className={FIELD} />
+          )}
+          <p className="mt-1 text-[12.5px] text-gray-500">
+            {WRITE_HINT}
+            <button type="button" disabled={busy} onClick={() => onOpen(null)}
+              className="ml-2 text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+              {DONE}
+            </button>
+          </p>
+        </>
+      ) : (
+        <p className="text-[14px] leading-6 text-gray-900">
+          {value.trim() || <span className="text-gray-400">&nbsp;</span>}
+          <button type="button" disabled={busy} onClick={() => onOpen(name)}
+            className="ml-2 align-baseline text-[13px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+            {lineAction(value)}
+          </button>
+        </p>
+      )}
+    </div>
   )
 }
 

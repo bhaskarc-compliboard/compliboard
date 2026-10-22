@@ -19,7 +19,7 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
-  welcomeFor, countWord, isNoCount, NO_COUNT, COUNTER_TILES, COUNTER_COLUMNS,
+  welcomeFor, greetedKey, readGreeted, writeGreeted, countWord, isNoCount, NO_COUNT, COUNTER_TILES, COUNTER_COLUMNS,
   LEDE_FIRST_VISIT, LEDE_RETURNING,
   splitUpcoming, moreLine, inNext30Days, RECENT_AUDITS_MAX,
   UPCOMING_EMPTY, UPCOMING_EMPTY_LINK, AUDITS_EMPTY, AUDITS_EMPTY_LINK,
@@ -45,38 +45,93 @@ const LOGIN = code(readFileSync('app/login/page.tsx', 'utf8'))
 const SIGNUP = code(readFileSync('app/signup/page.tsx', 'utf8'))
 const DOCSTATUS = readFileSync('lib/documentStatus.ts', 'utf8')
 
-describe('the welcome — decision 5, all four cases', () => {
-  test('a name and no first visit on record: "Welcome, Maria" and the day-one lede', () => {
-    const w = welcomeFor('Maria Alvarez', null)
-    assert.equal(w.title, 'Welcome, Maria')
+describe('the welcome — decision 5, and the COMPANY name since step 15', () => {
+  /**
+   * *** IT WAS THE PERSON'S FIRST NAME UNTIL 22 OCTOBER, AND FOR A NEW CUSTOMER THERE IS NONE. ***
+   * `/api/signup` writes `full_name` NULL — board 6 asks four things and a name is not one — so
+   * every account made through the front door saw a bare "Welcome". The company name is the one
+   * thing we always have: required at signup, closed to editing afterwards.
+   */
+  test('a company and no first visit on record: the day-one lede', () => {
+    const w = welcomeFor('Willamette Vinegar Works', null)
+    assert.equal(w.title, 'Welcome, Willamette Vinegar Works')
     assert.equal(w.lede, LEDE_FIRST_VISIT)
     assert.equal(w.firstVisit, true)
   })
 
-  test('a name and a first visit already recorded: "Welcome back, Maria"', () => {
-    const w = welcomeFor('Maria Alvarez', '2026-10-19T08:12:00.000Z')
-    assert.equal(w.title, 'Welcome back, Maria')
+  test('a company and a first visit already recorded', () => {
+    const w = welcomeFor('Willamette Vinegar Works', '2026-10-19T08:12:00.000Z')
+    assert.equal(w.title, 'Welcome back, Willamette Vinegar Works')
     assert.equal(w.lede, LEDE_RETURNING)
     assert.equal(w.firstVisit, false)
   })
 
-  test('no name, first visit: plain "Welcome" — not "Welcome, " with nothing after the comma', () => {
+  test('no company name, first visit: plain "Welcome" — not "Welcome, " with nothing after it', () => {
     const w = welcomeFor(null, null)
     assert.equal(w.title, 'Welcome')
     assert.equal(w.lede, LEDE_FIRST_VISIT)
     assert.equal(w.firstVisit, true)
   })
 
-  test('no name, been here before: plain "Welcome back"', () => {
+  test('no company name, been here before: plain "Welcome back"', () => {
     const w = welcomeFor(null, '2026-10-19T08:12:00.000Z')
     assert.equal(w.title, 'Welcome back')
     assert.equal(w.lede, LEDE_RETURNING)
     assert.equal(w.firstVisit, false)
   })
 
-  test('the first name is the first word, and only the first word', () => {
-    assert.equal(welcomeFor('Maria de la Cruz Alvarez', 'x').title, 'Welcome back, Maria')
-    assert.equal(welcomeFor('Maria', 'x').title, 'Welcome back, Maria')
+  test('the WHOLE company name, not its first word', () => {
+    // The opposite of the old rule: "Maria de la Cruz" became "Maria", and a company is not.
+    assert.equal(welcomeFor('Cascade Specialty Chemicals, LLC', 'x').title,
+      'Welcome back, Cascade Specialty Chemicals, LLC')
+  })
+
+  /**
+   * *** THE BUG THE OWNER SAW: "WELCOME BACK" ON A FIRST VISIT. ***
+   *
+   * The title is derived from a column the Dashboard itself writes as soon as it has drawn, so any
+   * SECOND mount after that stamp — a reload, a back-then-forward, a second press of the walk's
+   * last button — reads the stamp and flips the greeting. Five measured runs on 22 October could
+   * not reproduce which trigger he hit, and the mechanism does not depend on knowing.
+   */
+  test('a tab that has already been greeted stays greeted, even once the column is stamped', () => {
+    const w = welcomeFor('Willamette Vinegar Works', '2026-10-22T09:00:00.000Z', true)
+    assert.equal(w.title, 'Welcome, Willamette Vinegar Works')
+    assert.equal(w.lede, LEDE_FIRST_VISIT)
+    assert.equal(w.firstVisit, true)
+  })
+
+  test('…and a LATER session, with no memory of it, is "Welcome back"', () => {
+    const w = welcomeFor('Willamette Vinegar Works', '2026-10-22T09:00:00.000Z', false)
+    assert.equal(w.title, 'Welcome back, Willamette Vinegar Works')
+  })
+
+  test('the memory is per person, in sessionStorage, and survives storage being broken', () => {
+    assert.equal(greetedKey('user-1'), 'compliboard:dashboard-greeted:user-1')
+    assert.notEqual(greetedKey('user-1'), greetedKey('user-2'))
+
+    const store = new Map<string, string>()
+    const ok = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v) } }
+    assert.equal(readGreeted(ok, greetedKey('u')), false)
+    writeGreeted(ok, greetedKey('u'))
+    assert.equal(readGreeted(ok, greetedKey('u')), true)
+
+    // A browser with storage switched off: the page behaves exactly as it did before this existed.
+    const throws = {
+      getItem: () => { throw new Error('denied') },
+      setItem: () => { throw new Error('denied') },
+    }
+    assert.equal(readGreeted(throws, 'k'), false)
+    assert.doesNotThrow(() => writeGreeted(throws, 'k'))
+    assert.equal(readGreeted(null, 'k'), false)
+    assert.doesNotThrow(() => writeGreeted(null, 'k'))
+  })
+
+  test('the page reads the memory before deciding, and writes it when it greets', () => {
+    assert.match(CODE, /const already = readGreeted\(store, key\)/)
+    assert.match(CODE, /welcomeFor\(companyRow\?\.name, profileData\?\.welcomed_at, already\)/)
+    assert.match(CODE, /if \(greeting\.firstVisit\) writeGreeted\(store, key\)/)
+    assert.match(CODE, /window\.sessionStorage/)
   })
 
   /**
@@ -216,7 +271,15 @@ describe('the shell — the shared column, and what left the page', () => {
     for (const gone of ['profile?.industry', 'profile?.state', 'profile?.city', 'CompanyProfile']) {
       assert.ok(!PAGE.includes(gone), `the page still draws ${gone}`)
     }
-    assert.ok(!CODE.includes(".from('companies')"), 'the page still reads companies')
+    /**
+     * *** AND THE ONE THING IT MAY READ FROM `companies` IS THE NAME — My Account step 15. ***
+     * This asserted the page never touched that table at all, which was right when the only reason
+     * to touch it was the header this test is named for. The title is "Welcome, ‹company name›"
+     * now, so the name is read; the slug, the state and the city are still not, and that is what
+     * the rule was ever about.
+     */
+    const reads = [...CODE.matchAll(/from\('companies'\)\s*\.select\('([^']*)'\)/g)].map((m) => m[1])
+    assert.deepEqual(reads, ['name'], 'the page reads more of companies than the name')
   })
 
   test('the Recently read panel and its reads are gone', () => {

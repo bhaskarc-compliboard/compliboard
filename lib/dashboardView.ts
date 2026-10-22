@@ -38,16 +38,68 @@ export interface Welcome {
  * independent — whether we know a name, and whether this is the first visit — so there are four
  * answers, and the step 5 brief names all four. A nameless person's first visit gets "Welcome".
  */
-export function welcomeFor(fullName: string | null | undefined, welcomedAt: string | null | undefined): Welcome {
-  const firstVisit = !welcomedAt
+/**
+ * *** THE TITLE NAMES THE COMPANY, NOT THE PERSON — My Account step 15. ***
+ *
+ * It was the person's first name, and for an account made through signup there is no name at all:
+ * `/api/signup` writes `full_name` NULL (board 6 asks four things and a name is not one), so every
+ * new customer's Dashboard said a bare "Welcome". The company name is the one thing we always
+ * have — it is required at signup and closed to editing afterwards — and it is also what a person
+ * wants to see confirmed on the morning they arrive: that this is THEIR company's dashboard.
+ */
+export function welcomeFor(
+  companyName: string | null | undefined, welcomedAt: string | null | undefined,
+  greetedThisSession = false,
+): Welcome {
+  /**
+   * *** THE FIRST VISIT IS REMEMBERED FOR THE TAB, AND HERE IS WHY IT HAS TO BE. ***
+   *
+   * The title is derived from `profiles.welcomed_at`, a column THIS PAGE WRITES as soon as it has
+   * drawn. So any second mount after that stamp — a reload, a back-then-forward, a second press of
+   * the walk's last button — reads a stamped row and flips the greeting to "Welcome back" on what
+   * the person experiences as their first visit. The owner saw exactly that on 22 October; five
+   * measured runs could not reproduce which trigger, and the mechanism does not depend on knowing.
+   *
+   * So the fact is remembered where the visit is: in the tab. Once this session has been greeted,
+   * it stays greeted, however many times the page mounts. A later session reads a stamped row and
+   * says "Welcome back", which is true.
+   */
+  const firstVisit = !welcomedAt || greetedThisSession
   const greeting = firstVisit ? 'Welcome' : 'Welcome back'
-  // `trim()` before `split`, or a leading space makes the first word the empty string and the
-  // title comes out "Welcome back, " with a comma and nothing after it.
-  const first = (fullName ?? '').trim().split(/\s+/)[0] ?? ''
+  // `trim()`, or a stray space gives "Welcome back, " with a comma and nothing after it.
+  const company = (companyName ?? '').trim()
   return {
-    title: first ? `${greeting}, ${first}` : greeting,
+    title: company ? `${greeting}, ${company}` : greeting,
     lede: firstVisit ? LEDE_FIRST_VISIT : LEDE_RETURNING,
     firstVisit,
+  }
+}
+
+/** The browser-storage key for "this tab has been greeted", one per person. */
+export function greetedKey(userId: string): string {
+  return `compliboard:dashboard-greeted:${userId}`
+}
+
+/**
+ * *** A SESSION'S MEMORY OF HAVING BEEN GREETED. *** `sessionStorage`, not `localStorage`: it is
+ * about one tab's visit and must not outlive it, or a person coming back next week would be
+ * greeted as new. The same shape as `readSkips`/`writeSkip` below, including the try/catch — a
+ * browser with storage switched off must behave exactly as the page did before this existed,
+ * which is to say it reads the column and may flip on a reload.
+ */
+export function readGreeted(store: SkipStore | null, key: string): boolean {
+  try {
+    return store?.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function writeGreeted(store: SkipStore | null, key: string): void {
+  try {
+    store?.setItem(key, '1')
+  } catch {
+    // Nothing to do and nothing to say: the greeting is right for this view either way.
   }
 }
 

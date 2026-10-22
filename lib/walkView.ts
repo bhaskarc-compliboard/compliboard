@@ -49,6 +49,30 @@ export const COMPANY_NAME_LABEL = 'Company name'
 export const COMPANY_NAME_NOTE = 'From your website. We keep the name you gave us at signup.'
 export const MAIN_ADDRESS_LABEL = 'Address of your main site'
 
+// ── The three lines, each with its own `change` ──────────────────────────────────────────────────
+
+/**
+ * *** THE CARD IS THREE LINES OF TEXT, NOT A FORM — `docs/account-walk-card.html`. ***
+ *
+ * "Nothing on the card looks like a form until the person asks for one." Pressing `change` turns
+ * ONE line into a box holding the current words, with `Done` under it. No suggestions anywhere:
+ * "if the scan did not get it, we do not guess twice."
+ */
+export const WHAT_YOU_DO_LINE = 'What you do'
+export const INDUSTRY_LINE = 'Your industry'
+export const CHANGE = 'change'
+export const DONE = 'Done'
+/** Under an open box. */
+export const WRITE_HINT = 'Write it in your own words.'
+/** The industry we could not place: the line is blank and this is what opens it. */
+export const WRITE_IT = 'write it'
+
+/** Which of the three lines is open, if any. */
+export type OpenLine = 'about' | 'industry' | 'address' | null
+
+/** The word beside a line: `change` when there is something to change, `write it` when there is not. */
+export const lineAction = (value: string) => (value.trim() ? CHANGE : WRITE_IT)
+
 // ── The standard category, in words ──────────────────────────────────────────────────────────────
 
 /**
@@ -219,8 +243,10 @@ export interface ProposedPlace { label: string | null; address: string }
 
 /** What is in the fields when the button is pressed. Not the proposal — what the person left. */
 export interface ConfirmFields {
-  whatYouDo: string
-  naicsCode: string | null
+  /** The plain sentence → `companies.about` (086). */
+  about: string
+  /** The broad line → `companies.what_you_do`, which changed meaning at step 15. */
+  industry: string
   mainAddress: string
   /** The main site as it exists now: created at signup, named after the company, with no address. */
   mainSite: { id: string; name: string } | null
@@ -229,7 +255,12 @@ export interface ConfirmFields {
 }
 
 export type SaveStep =
-  | { kind: 'company'; what_you_do: string | null; naics_code: string | null }
+  /**
+   * *** TWO COLUMNS, AND `naics_code` IS NOT ONE OF THEM. *** 086 took the person's right to write
+   * it, so a step that named it would be refused by Postgres rather than by this type — which is
+   * the right order, and this type is here so a test can see it is never asked for.
+   */
+  | { kind: 'company'; about: string | null; what_you_do: string | null }
   | { kind: 'main-site'; id: string; name: string; address: string }
   | { kind: 'new-site'; name: string; address: string }
   | { kind: 'accept' }
@@ -237,7 +268,7 @@ export type SaveStep =
 /**
  * *** THE ORDER MATTERS AND IT IS THIS. ***
  *
- *   1. the company's own words, which depend on nothing;
+ *   1. the company's own words — the sentence and the industry line — which depend on nothing;
  *   2. the MAIN site's address, because 083's trigger mirrors it onto the company row and the
  *      company row is what resolution reads (`lib/jurisdiction.ts:93`);
  *   3. the other sites, each a new row, after the main one — so that if a later one fails the
@@ -251,9 +282,10 @@ export type SaveStep =
  */
 export function planSaves(f: ConfirmFields): SaveStep[] {
   const steps: SaveStep[] = []
-  const what = f.whatYouDo.trim()
-  if (what || f.naicsCode) {
-    steps.push({ kind: 'company', what_you_do: what || null, naics_code: f.naicsCode ?? null })
+  const about = f.about.trim()
+  const industry = f.industry.trim()
+  if (about || industry) {
+    steps.push({ kind: 'company', about: about || null, what_you_do: industry || null })
   }
   const main = f.mainAddress.trim()
   if (main && f.mainSite) {

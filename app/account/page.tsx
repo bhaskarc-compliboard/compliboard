@@ -16,8 +16,10 @@
  * The name is drawn with the board's grey line and is in no request body. What this page writes, it
  * writes through exactly what the grant allows:
  *
- *   `what_you_do`, `naics_code`, `website_url` — straight onto `companies` through the CALLER's own
- *                    client, so RLS and the column grant are the boundary rather than a route's `if`
+ *   `about`, `what_you_do`, `website_url` — straight onto `companies` through the CALLER's own
+ *                    client, so RLS and the column grant are the boundary rather than a route's `if`.
+ *                    `about` is the sentence and `what_you_do` the broad industry line since step
+ *                    15 (migration 086), which also revoked this page's right to `naics_code`
  *   a site         — `POST`/`PATCH /api/sites`, which geocodes server-side and writes as the caller
  *   a site removed — `site_removal_refusal` then a DELETE, both as the person (migration 082)
  *   an answer      — `lib/switchAnswer.ts` → `/api/switches/answer`, the one writer of a switch
@@ -43,11 +45,13 @@ import CompanyQuestions from '@/components/CompanyQuestions'
 import PeopleTab from '@/components/PeopleTab'
 import { PRIMARY, TEXT_ACTION } from '@/components/buttonStyles'
 import { createClient, authHeaders } from '@/lib/supabase'
-import NaicsField from '@/components/NaicsField'
+import {
+  INDUSTRY_LINE, DONE, WRITE_HINT, lineAction, sentenceRows, SENTENCE_COLS,
+} from '@/lib/walkView'
 import {
   TITLE, LEDE, TABS, asTab, type AccountTab,
   COMPANY_HEADING, COMPANY_LABEL, NAME_NOTE,
-  WHAT_YOU_DO_LABEL, WHAT_YOU_DO_PLACEHOLDER, WHAT_YOU_DO_EMPTY,
+  WHAT_YOU_DO_LABEL,
   WEBSITE_LABEL, WEBSITE_EMPTY, MAIN_SITE_LABEL, EDIT_ADDRESS,
   CHANGE, SAVE, CANCEL,
   SITES_HEADING, ADD_SITE, MAIN_PILL, EDIT, SITES_NOTE,
@@ -85,8 +89,10 @@ export default function AccountPage() {
 interface CompanyRow {
   id: string
   name: string | null
+  /** The plain sentence about the business — `companies.about`, migration 086. */
+  about: string | null
+  /** The broad industry line. It changed meaning at step 15; the sentence moved to `about`. */
   what_you_do: string | null
-  naics_code: string | null
   website_url: string | null
 }
 
@@ -97,6 +103,61 @@ const ACTION = 'shrink-0 text-[13px] text-[var(--green-ink)] hover:underline dis
 const FIELD =
   'w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px] text-gray-900 ' +
   'focus:border-[var(--green)] focus:outline-none'
+
+/**
+ * ONE LINE OF THE COMPANY TAB — the walk's card, in this page's row.
+ *
+ * `docs/account-walk-card.html` draws the walk; this is the same thing in the tab's frame: the
+ * words as text with a small `change`, and a box with `Done` when asked. The difference from the
+ * walk is that here `Done` SAVES — there is no "Yes, that's us" at the bottom of this page to do
+ * it later — and that is why the two are separate pieces rather than one component told which
+ * page it is on (the note on `components/SwitchAnswerControl.tsx` makes the same argument).
+ */
+function TabLine({ value, open, busy, label, draft, onDraft, onOpen, onDone, multiline = false }: {
+  value: string
+  open: boolean
+  busy: boolean
+  label: string
+  draft: string
+  onDraft: (v: string) => void
+  onOpen: () => void
+  onDone: () => void
+  multiline?: boolean
+}) {
+  const FIELD_CLASS =
+    'w-full rounded-lg border border-gray-200 px-3 py-2 text-[14px] text-gray-900 ' +
+    'focus:border-[var(--green)] focus:outline-none'
+  if (!open) {
+    return (
+      <p className="text-[14px] leading-6 text-gray-900">
+        {value.trim() || <span className="text-gray-400">&nbsp;</span>}
+        <button type="button" disabled={busy} onClick={onOpen}
+          className="ml-2 align-baseline text-[13px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+          {lineAction(value)}
+        </button>
+      </p>
+    )
+  }
+  return (
+    <>
+      {multiline ? (
+        <textarea value={draft} disabled={busy} autoFocus
+          rows={sentenceRows(draft)} cols={SENTENCE_COLS}
+          onChange={(e) => onDraft(e.target.value)}
+          aria-label={label} className={`${FIELD_CLASS} resize-none leading-6`} />
+      ) : (
+        <input type="text" value={draft} disabled={busy} autoFocus
+          onChange={(e) => onDraft(e.target.value)}
+          aria-label={label} className={FIELD_CLASS} />
+      )}
+      <p className="mt-1 text-[12.5px] text-gray-500">
+        {WRITE_HINT}
+        <button type="button" disabled={busy} onClick={onDone}
+          className="ml-2 text-[var(--green-ink)] hover:underline disabled:text-gray-300">{DONE}</button>
+      </p>
+    </>
+  )
+}
 
 function Account() {
   const supabase = createClient()
@@ -140,8 +201,8 @@ function Account() {
     const d = json?.data
     if (d) {
       setCompany({
-        id: d.id, name: d.name ?? null, what_you_do: d.what_you_do ?? null,
-        naics_code: d.naics_code ?? null, website_url: d.website_url ?? null,
+        id: d.id, name: d.name ?? null, about: d.about ?? null,
+        what_you_do: d.what_you_do ?? null, website_url: d.website_url ?? null,
       })
     }
     // As the person: `entities_select` scopes it, so no company is named here.
@@ -159,16 +220,15 @@ function Account() {
 
   const mainSite = useMemo(() => sites.find((s) => s.is_primary) ?? null, [sites])
 
-  // ── "What you do", with suggestions ────────────────────────────────────────────────────────────
-  const [editWhat, setEditWhat] = useState(false)
-  const [whatDraft, setWhatDraft] = useState('')
+  // ── The two lines the card shows, each openable on its own ─────────────────────────────────────
+  const [openLine, setOpenLine] = useState<'about' | 'industry' | null>(null)
+  const [aboutDraft, setAboutDraft] = useState('')
+  const [industryDraft, setIndustryDraft] = useState('')
   /**
    * The code of a suggestion the person PICKED, and nothing else. Typing again clears it, because
    * the sentence is then no longer the standard's — decision 3: the code is stored only when a
    * suggestion was taken, and a stale code on edited words would be a classification nobody chose.
    */
-  const [pickedCode, setPickedCode] = useState<string | null>(null)
-  const [showSuggestions, setShowSuggestions] = useState(false)
 
   // ── The website ────────────────────────────────────────────────────────────────────────────────
   const [editSite, setEditSite] = useState(false)
@@ -182,7 +242,7 @@ function Account() {
    * fourth would not be refused by an `if` here — it would be refused by Postgres, which is the
    * point of putting the boundary in the grant (`CLAUDE.md` §3.6).
    */
-  async function writeCompany(patch: Partial<Pick<CompanyRow, 'what_you_do' | 'naics_code' | 'website_url'>>) {
+  async function writeCompany(patch: Partial<Pick<CompanyRow, 'about' | 'what_you_do' | 'website_url'>>) {
     if (!company || busy) return
     setBusy(true)
     setNotice(null)
@@ -238,59 +298,39 @@ function Account() {
                 <span className="shrink-0 text-[13px] text-gray-300">—</span>
               </div>
 
-              {/* WHAT YOU DO, typed, with suggestions underneath. */}
+              {/* *** THE SAME TWO LINES THE WALK'S CARD SHOWS — `docs/account-walk-card.html`. ***
+                  The sentence and the broad industry line, each read as text with a small `change`
+                  that turns THAT one into a box. The NAICS control is gone from both doors: step 15
+                  took it off every screen a person sees, and 086 took the grant with it, so this
+                  page could not write `naics_code` now even if it still tried. */}
               <div className={ROW}>
                 <p className={KEY}>{WHAT_YOU_DO_LABEL}</p>
                 <div className="min-w-0 flex-1">
-                  {editWhat ? (
-                    <>
-                      {/* *** THE CONTROL MOVED TO `components/NaicsField.tsx` AT STEP 14. *** The
-                          walk uses the same one — at step 15 as a SEARCH box beside its category
-                          line — and a second copy of "typing clears the picked code" is the kind of
-                          small rule a copy gets subtly wrong (decision 3). Nothing about this row
-                          has changed since it moved. */}
-                      <NaicsField
-                        value={whatDraft} onValue={setWhatDraft}
-                        onPick={setPickedCode}
-                        showSuggestions={showSuggestions} onShowSuggestions={setShowSuggestions}
-                        busy={busy} autoFocus
-                        placeholder={WHAT_YOU_DO_PLACEHOLDER} label={WHAT_YOU_DO_LABEL} />
-
-                      <div className="mt-2 flex items-center gap-3">
-                        <button type="button" disabled={busy} className={PRIMARY}
-                          onClick={async () => {
-                            // Decision 3: the words are kept as typed, and the code is stored ONLY
-                            // when a suggestion was picked. Nothing picked writes NULL, which is
-                            // the normal case and is not a gap for anything to fill in later.
-                            await writeCompany({
-                              what_you_do: whatDraft.trim() || null,
-                              naics_code: pickedCode,
-                            })
-                            setEditWhat(false)
-                            setShowSuggestions(false)
-                          }}>{SAVE}</button>
-                        <button type="button" className={TEXT_ACTION}
-                          onClick={() => { setEditWhat(false); setShowSuggestions(false) }}>{CANCEL}</button>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-[14px] text-gray-900">
-                      {company.what_you_do
-                        ? company.what_you_do
-                        : <span className="text-gray-400">{WHAT_YOU_DO_EMPTY}</span>}
-                    </p>
-                  )}
+                  <TabLine
+                    value={company.about ?? ''} open={openLine === 'about'} busy={busy}
+                    label={WHAT_YOU_DO_LABEL} multiline
+                    draft={aboutDraft} onDraft={setAboutDraft}
+                    onOpen={() => { setAboutDraft(company.about ?? ''); setOpenLine('about') }}
+                    onDone={async () => {
+                      await writeCompany({ about: aboutDraft.trim() || null })
+                      setOpenLine(null)
+                    }} />
                 </div>
-                {!editWhat && (
-                  <button type="button" className={ACTION}
-                    onClick={() => {
-                      setWhatDraft(company.what_you_do ?? '')
-                      // An existing code was picked once; it survives until the words change.
-                      setPickedCode(company.naics_code ?? null)
-                      setShowSuggestions(false)
-                      setEditWhat(true)
-                    }}>{CHANGE}</button>
-                )}
+              </div>
+
+              <div className={ROW}>
+                <p className={KEY}>{INDUSTRY_LINE}</p>
+                <div className="min-w-0 flex-1">
+                  <TabLine
+                    value={company.what_you_do ?? ''} open={openLine === 'industry'} busy={busy}
+                    label={INDUSTRY_LINE}
+                    draft={industryDraft} onDraft={setIndustryDraft}
+                    onOpen={() => { setIndustryDraft(company.what_you_do ?? ''); setOpenLine('industry') }}
+                    onDone={async () => {
+                      await writeCompany({ what_you_do: industryDraft.trim() || null })
+                      setOpenLine(null)
+                    }} />
+                </div>
               </div>
 
               {/* THE WEBSITE. */}
