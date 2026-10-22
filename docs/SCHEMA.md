@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-21 21:57 UTC
-**Migrations applied:** 84 — `000` to `083`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-22 15:34 UTC
+**Migrations applied:** 85 — `000` to `084`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -39,9 +39,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `requirement_templates` — 205 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
 - `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
-- `company_switches` — 19 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
-- `switch_determinations` — 3 rows · touched by route switches/answer, script audit-data-checks, script check-live
-- `obligations` — 246 rows · touched by route account, route obligations, route switches/answer
+- `company_switches` — 22 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
+- `switch_determinations` — 6 rows · touched by route switches/answer, script audit-data-checks, script check-live
+- `obligations` — 463 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
 - `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
 - `industry_coverage` — 56 rows · touched by script assign-agencies
@@ -74,9 +74,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 6 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +22 more
-- `profiles` — 5 rows · touched by route account/export, route account, route jobs/calendar-month, route signup, screen audits, +10 more
-- `entities` — 7 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +25 more
+- `companies` — 6 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +23 more
+- `profiles` — 5 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
+- `entities` — 8 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +25 more
 
 **Calendar**
 
@@ -774,13 +774,13 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 **Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `screen audits`, `screen calendar`, `screen compliance`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` |
 | `name` | text | no | — |
-| `industry` | text | yes | — |
+| `industry` | text | yes | `'chemical-manufacturing'::text` |
 | `state` | text | yes | — |
 | `county` | text | yes | — |
 | `city` | text | yes | — |
@@ -1054,7 +1054,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 ### `company_switches`
 
-**Rows:** 19 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 22 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib companyContext`, `lib obligationWriter`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
@@ -1745,7 +1745,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `entities`
 
-**Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 8 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `screen account`, `route audit-runs`, `route audits/index`, `route calendar`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route jobs/calendar-month`, `route sites`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen calendar`, `screen dashboard`, `screen hr`, `lib agencyScope`, `lib ask`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -2362,9 +2362,9 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 
 An invitation for one email address to join one company. The token is the credential for /join, which has no session: a person may neither write it nor read it (column grants below), and only the service role sees it, to put it in the email. Cancelled, never deleted. ACCOUNT-PLAN decision 6, My Account step 5.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `route invitations`, `route join`, `route people`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2410,7 +2410,7 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 15 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 18 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
@@ -2599,7 +2599,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 The resolved list: which library rows apply to this company. Produced by CODE, never by AI. Rows are NEVER DELETED — a requirement that stops applying gets applicable_to set and stays. CLAUDE.md §3.2.
 
-**Rows:** 246 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 463 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route obligations`, `route switches/answer`
 
@@ -2658,7 +2658,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 
 **Rows:** 5 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route jobs/calendar-month`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route invitations`, `route jobs/calendar-month`, `route join`, `route people/[id]`, `route people`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2888,7 +2888,7 @@ document-versus-document disagreement is recorded WITHOUT reusing user_locked, w
 PERSON decided and must keep meaning only that. DECISIONS.md §24.1, §47;
 docs/SWITCH-DETERMINATION.md §7.
 
-**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `script audit-data-checks`, `script check-live`
 
@@ -3269,6 +3269,12 @@ reopened, so a repeat run writes nothing. Close runs before insert because
 idx_obligations_one_open rejects the other order. Ownership is checked in SQL: the only
 caller holds the service role and RLS will not check it for them. DECISIONS.md §47.
 
+### `create_company_for_login(p_user_id uuid, p_company_name text, p_website text)`
+
+**Returns** `uuid` · **SECURITY DEFINER**
+
+Creates a company, its main site (through create_primary_site) and the profile that puts a login in it, in ONE transaction: together or not at all (ACCOUNT-PLAN decision 8). Called only by /api/signup, which holds the service key because no session exists yet. Any failure rolls back all three rows, so the address the person typed is still free to try again. It takes no email: the login system owns the address.
+
 ### `create_primary_site()`
 
 **Returns** `trigger` · **security invoker**
@@ -3479,4 +3485,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 081
 082
 083
+084
 ```

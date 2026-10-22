@@ -10,7 +10,7 @@
  * It is left in place rather than deleted because step 13 is the step that decides whether to reuse
  * it — it already has the subpage sweep, the HTML stripping and the SSRF note below — or to replace
  * it. If step 13 writes its own, this file goes with it. `prompts/scan-website.ts` and
- * `companies.scan_result` are in the same position: read by `lib/companyContext.ts:264` and
+ * `companies.scan_result` are in the same position: read by `lib/companyContext.ts:265` and
  * `prompts/checklist.ts` for companies that signed up before today, written by nothing.
  */
 import { NextRequest, NextResponse } from 'next/server'

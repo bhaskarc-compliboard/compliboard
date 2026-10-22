@@ -171,7 +171,7 @@ if (!fromRuns && !restoreFrom && !priceFor(MODEL)) {
 // THE THREE COMPANIES, FROM THE SPECS' OWN CONTEXT LINES.
 // Copied from the "Company context to scan under:" line of each spec — nothing invented.
 //
-// *** `industry` IS THE SLUG SIGNUP WRITES, NOT THE SPEC'S PROSE — corrected Task 0, commit 1. ***
+// *** `industry` IS A SLUG, NOT THE SPEC'S PROSE — corrected Task 0, commit 1. ***
 //
 // These three carried `'chemical distribution'`, `'cannabis cultivation'` and
 // `'food manufacturing (ready-to-eat dips and spreads)'`: the specs' own descriptions, which read

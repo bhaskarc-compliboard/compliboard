@@ -62,7 +62,19 @@ import { readdirSync, readFileSync } from 'node:fs'
 // document group — including the invisible case, where the sources agree with each other and
 // contradict something already settled — and that the order is what a question unblocks rather
 // than when it arrived.
-const FLOOR = 559
+// *** 559 -> 1634 ON 22 OCTOBER 2026, MY ACCOUNT STEP 12. ***
+//
+// The floor had not been raised since Task 0, and the suite has roughly tripled since: the
+// Calendar, HR, the Dashboard and My Account all added tests and none of them moved this number,
+// because failing to raise it "costs nothing" and so nobody did. That is true of one step and
+// false of twenty — a guard set at a third of the real count would have let two thirds of the
+// suite be deleted and still said OK, which is precisely the silent shrinking it exists to catch.
+//
+// 1634 is what `npm test` reported on the day, with 0 skipped, 0 todo and 0 failing, including
+// step 12's 47 new tests in tests/unit/signup.test.ts (describes counted as tests, as node reports them). Raising it is the deliberate edit the
+// guard's header asks for; lowering it ever again is the same deliberate act in the other
+// direction, and it goes in writing here with its reason, as the 444 -> 426 note above does.
+const FLOOR = 1634
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

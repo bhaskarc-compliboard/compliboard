@@ -41,9 +41,17 @@
 // `--base <origin>` opens another server than http://localhost:3000 — Workspace Task 6, so a
 // screenshot need not touch the owner's own dev server.
 //
-// `--allow <text>` lets through the ONE request whose URL contains <text>, even a paid one. It is the
+// `--allow <text>` lets through every request whose URL contains <text>, even a paid one. It is the
 // only way this script spends money, and it exists for one real click ("How do I do this?" while it
 // researches). Every request it lets through is printed, beside the blocked list.
+//
+// *** IT MAY BE REPEATED — My Account step 12. *** It took exactly one value, and a walk through
+// signup needs two unrelated things through at once: `POST /api/signup`, and the browser's own
+// `PATCH profiles` that stamps `welcomed_at` on a first visit (`app/dashboard/page.tsx:199`).
+// Without the second, the walk photographs a Dashboard that says "Welcome" and leaves the column
+// that proves it was the first visit unset — a read-back that would then be measuring the harness
+// rather than the product. So `--allow /api/signup --allow profiles` is now two allows, and each
+// one is still printed.
 //
 // `--log <text>` prints every request whose URL contains <text>, in order, after the clicks — the
 // round trips a page makes, counted from the browser rather than from reading the code.
@@ -102,7 +110,9 @@ let height = 900
 // deliberately prints as the LIST. `Emulation.setEmulatedMedia` switches the media type for the
 // capture, which is the only honest way to check a print rule without a printer.
 let printMedia = false
-let base = 'http://localhost:3000', allow = null, logFilter = null
+let base = 'http://localhost:3000', logFilter = null
+/** Every `--allow`, in the order given. Empty means nothing is let through. */
+const allows = []
 /**
  * *** THE ACTIONS RUN IN THE ORDER THEY WERE WRITTEN — Calendar step 10b. ***
  * They used to run in three loops (every --select, then every --type, then every --click), which
@@ -126,7 +136,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
   else if (a === '--base') base = argv[++i].replace(/\/+$/, '')
-  else if (a === '--allow') allow = argv[++i]
+  else if (a === '--allow') allows.push(argv[++i])
   else if (a === '--log') logFilter = argv[++i]
   else if (a === '--scroll') scrolls.push(argv[++i])
   else if (a.startsWith('/')) path = a
@@ -171,7 +181,8 @@ const PAID = /\/api\/(chat|document-scan|document-rescan|checklists|checklist-it
 const allowed = []
 const seen = []
 const isBlocked = (u, method) => {
-  if (allow && u.includes(allow) && method !== 'OPTIONS') { allowed.push(`${method} ${u.replace(/\?.*$/, '')}`); return null }
+  const letThrough = allows.find((x) => u.includes(x))
+  if (letThrough && method !== 'OPTIONS') { allowed.push(`${method} ${u.replace(/\?.*$/, '')}`); return null }
   if (PAID.test(u)) return 'paid route'
   if (/\/api\/(audit-runs|documents)/.test(u) && method !== 'GET') return 'paid route'
   if (/\/api\//.test(u) && method !== 'GET') return 'write'
@@ -277,7 +288,12 @@ try {
       // account could not be walked at all. Included here; the ECHO is masked below, because a
       // harness that prints what it typed must not print a credential.
       // (No backticks in this comment: the whole block is inside a template literal.)
-      const fields = [...document.querySelectorAll('textarea, input[type=text], input[type=password]')].filter(visible)
+      //
+      // *** AND SO IS AN EMAIL BOX — My Account step 12. *** The same gap one input type along:
+      // signup's first field is input[type=email] (it is an address, and the keyboard a phone
+      // offers for one is the point), so the front door could not be walked either. The lesson is
+      // the harness's, not the page's: a field a person can type in is a field.
+      const fields = [...document.querySelectorAll('textarea, input[type=text], input[type=email], input[type=password]')].filter(visible)
       const names = (e) => {
         const lab = e.id ? document.querySelector('label[for="' + CSS.escape(e.id) + '"]') : null
         return [e.getAttribute('aria-label'), lab && lab.textContent, e.placeholder, e.name]
@@ -613,7 +629,7 @@ try {
     await new Promise((r) => setTimeout(r, 400))
     console.log(`scrolled to: ${hit}`)
   }
-  if (allowed.length) console.log(`  let through (--allow ${allow}): ${allowed.join(' · ')}`)
+  if (allowed.length) console.log(`  let through (--allow ${allows.join(' --allow ')}): ${allowed.join(' · ')}`)
   if (logFilter) { console.log(`  requests matching "${logFilter}": ${seen.length}`); for (const r of seen) console.log(`    ${r.slice(0, 220)}`) }
 
   if (printMedia) {

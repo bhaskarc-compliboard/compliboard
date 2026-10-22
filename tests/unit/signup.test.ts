@@ -128,25 +128,32 @@ describe('the website becomes a bare host or nothing', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** Three ports that record what they were asked, and can be told to fail. */
+/**
+ * Three ports that record what they were asked, and can be told to fail.
+ *
+ * *** THE RECORDING WRAPS THE OVERRIDE; IT IS NOT REPLACED BY IT. *** This was written as
+ * `{ ...base, ...overrides }`, which swapped the recording version out for the failing one — so
+ * `calls` lost the very step the test was about, and the undo tests failed asserting an order
+ * nothing had observed. A fake that stops recording when you make it fail cannot test a failure.
+ */
 function ports(overrides: Partial<SignupPorts> = {}) {
   const calls: string[] = []
   const seen: Record<string, unknown> = {}
-  const base: SignupPorts = {
+  const fakes: SignupPorts = {
     async createLogin(email, password) {
       calls.push('createLogin'); seen.email = email; seen.password = password
-      return { id: 'login-1' }
+      return overrides.createLogin ? overrides.createLogin(email, password) : { id: 'login-1' }
     },
     async createCompany(args) {
       calls.push('createCompany'); seen.company = args
-      return 'company-1'
+      return overrides.createCompany ? overrides.createCompany(args) : 'company-1'
     },
     async deleteLogin(id) {
       calls.push('deleteLogin'); seen.deleted = id
-      return true
+      return overrides.deleteLogin ? overrides.deleteLogin(id) : true
     },
   }
-  return { calls, seen, ports: { ...base, ...overrides } }
+  return { calls, seen, ports: fakes }
 }
 
 const GOOD = {

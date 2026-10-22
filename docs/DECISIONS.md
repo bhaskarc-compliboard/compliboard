@@ -14928,3 +14928,114 @@ service role, which keeps all four rights, read back by §5b rather than assumed
 see the commit, and note that the defect only became visible when the geocoder started filling
 addresses. `lib/audit.ts:314` and `lib/companyContext.ts:431` call it through the re-export and are
 byte-identical.
+
+---
+
+## 209. TOGETHER OR NOT AT ALL: AN ACCOUNT IN ONE TRANSACTION, AND THE UNDO THAT MAKES ITS SENTENCE TRUE — 22 October 2026 (My Account step 12, migration 084, `ACCOUNT-PLAN.md` decisions 3 and 8)
+
+**The decision.** Signup asks four things — work email, password, company name, website (optional) —
+and the company, its main site and the profile are created in **one transaction**, by one function,
+with the login deleted again if that transaction fails. The industry, state and city dropdowns are
+gone; `companies.industry` gets a column DEFAULT instead of a question.
+
+### What was wrong, read out of the code rather than assumed.
+
+`docs/ACCOUNT-MACHINERY.md` §B3 read the route. It was three writes with no transaction and a single
+`catch` returning 500 (`app/api/signup/route.ts:63`–`:68` as it was). Two of its three failure points
+left a person with an account that could never work and could never be remade:
+
+| Fails at | What was left behind |
+|---|---|
+| `createUser` | nothing — the only clean outcome |
+| the `companies` insert | a login with no profile and no company. Every page 404s at `requireCompany` (`lib/auth.ts:106`–`:111`), no route repairs it, and `createUser` refuses the address as a duplicate ever after |
+| the `profiles` insert | the same dead login, **plus** an orphaned company and an orphaned primary site that no login reaches and `/api/account` DELETE cannot find, because it is reachable only through `requireCompany` |
+
+A PostgREST client sends each `insert` as its own statement, so a route cannot have a transaction.
+A function is one statement, and Postgres makes it atomic for nothing.
+
+### The function, and who may call it.
+
+`public.create_company_for_login(p_user_id uuid, p_company_name text, p_website text) returns uuid`,
+SECURITY DEFINER with `search_path` pinned empty, EXECUTE revoked from PUBLIC, `anon` and
+`authenticated` and granted to `service_role` alone. It inserts the company (the main site arriving
+from migration 010's `create_primary_site` trigger in the same statement) and then the profile, and
+returns the company id.
+
+**It takes no email**, though the step 12 brief's signature had one: the address belongs to
+`auth.users`, `profiles` has no email column, and a second copy here would give one fact two homes —
+the mistake 082 refused for `website`/`website_url`. The route knows the address; the company row
+does not need to.
+
+### The undo, and why the sentence depends on it.
+
+`lib/signup.ts` holds the order and hands its three outside calls in as **ports**, so the route is a
+thin adapter and the failure path is a tested behaviour rather than a shape you have to read:
+
+1. check what can be checked without writing anything — the email's shape, ten characters of
+   password, a company name that is not blank. **No port is called**;
+2. create the login, because the address is the one thing that can collide;
+3. the one transaction;
+4. **if 3 fails, delete the login made in 2** before anything is said.
+
+Two sentences, and which one appears is a fact about what happened: *"Something went wrong and
+nothing was saved. Try again."* when the undo succeeded, and — when it did not — *"Something went
+wrong while setting up your company, and we could not undo the sign-in we had just created. Email
+hello@compliboard.com and we will clear it so you can try again."* `CLAUDE.md` §5.1 says never assert
+what we have not established; "nothing was saved" is an assertion, and a route that cannot keep it
+must not make it.
+
+**Proved against real auth on staging, not in a mock**: EXECUTE was revoked from `service_role`, a
+signup was walked through the page, the page said *"nothing was saved"*, and `auth.users`,
+`companies`, `entities` and `profiles` all held **zero** rows for that address. The grant was
+restored and the same address signed up successfully a moment later — which is the whole claim: the
+address was free again.
+
+### `companies.industry` gets a DEFAULT, because it is a join key and not a label.
+
+The industry dropdown was `distinct requirement_templates.industries` — a list that can only offer
+verticals already built, shown to somebody who has not yet seen the product (`docs/WORKSPACE.md:586`).
+Removing it would have left the column null, and a null is not harmless:
+`lib/agencyScope.ts:47` returns an **empty agency list**, and `lib/resolve.ts:257` skips a
+requirement only `if (company.industry !== null && …)`, so resolution would stop filtering by
+industry altogether and a chemical maker could be served cannabis rows — the same class of silent
+failure as the wrong jurisdiction (`CLAUDE.md` §3.2).
+
+So 084 sets `alter table public.companies alter column industry set default
+'chemical-manufacturing'`, the slug `supabase/seed-data/agencies.json` and
+`load-chemical-requirements.sql` actually carry, beside 082's `library not null default 'chemical'`.
+**A vertical is data, not an `if` branch** (§7), and one line of DDL says "this is what a new
+customer is today" without putting it in code. Nothing is backfilled — the six companies on staging
+and the ten on production keep what they chose, including null — and step 13's website read may
+correct it with the person's confirmation.
+
+**Reversed if** a second vertical is sold: the default then becomes wrong for some new accounts, and
+the answer is step 13's read setting it, not a bigger default.
+
+### What the migration's self-test can prove, and the one thing it cannot.
+
+`profiles.id` is a foreign key to `auth.users` (`000_baseline.sql:394`), so a successful call needs a
+real login and a migration has no business inventing one in the auth schema. **The happy path is
+therefore not tested in the migration.** Its 16 checks cover the signature, the return type, the
+definer flag and the pinned search path from the catalog; who holds EXECUTE, read back rather than
+assumed; that `create_primary_site` is still on `companies`; that a company inserted naming only its
+name gets one main site named after itself, `library = 'chemical'` and `industry =
+'chemical-manufacturing'` — the presence that makes the absence meaningful (§9a); and that a call
+which fails at the profile leaves no company and no site. The happy path is the route's test and the
+staging walk, and the migration says so in its own header.
+
+### Effects on other sections, by file.
+
+`app/api/scan-website/route.ts` has **no caller** since this step — its only one was the signup
+page's `onBlur` — and a header now says so; it, `prompts/scan-website.ts` and
+`companies.scan_result` stay until step 13 decides whether to reuse or replace them, so
+`scan_result` is read by `lib/companyContext.ts:265` and `prompts/checklist.ts:328` for older
+companies and written by nothing. `lib/companyContext.ts:84` and `:101` and
+`scripts/run-golden-docs.js:174` described what signup wrote and are corrected; the golden fixtures
+still name their own industry, and two of the three are not the default, which is why they must.
+`lib/determinationGate.ts`'s geocoding paragraph is rewritten: step 6 gave it a geocoder and step 12
+took the typed state and city away, and neither is retrospective. `tests/unit/dashboardView.test.ts`
+counted two ways out of signup and there is now one. `tests/unit/jurisdiction.test.ts` kept a test
+named after `county: ''`, which signup no longer sends; the assertion stays as a regression guard for
+rows created before today. `scripts/measure-layout.mjs` gained two things the front door needed:
+`--allow` may now be repeated, and `--type` can type into an `input[type=email]`.
+`scripts/test-guard.js`'s floor rose from 559 to 1634, the real total.

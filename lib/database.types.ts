@@ -4510,6 +4510,10 @@ export type Database = {
         Args: { p_company_id: string; p_obligations: Json }
         Returns: Json
       }
+      create_company_for_login: {
+        Args: { p_company_name: string; p_user_id: string; p_website: string }
+        Returns: string
+      }
       increment_usage_counter: {
         Args: { p_company_id: string; p_field: string }
         Returns: undefined
