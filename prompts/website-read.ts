@@ -94,6 +94,26 @@ that asks "what does your business do?". Start with "We ". Plain words, no marke
 list of values, no slogan. Say what they make or what service they provide, and for whom if the site
 says. Under 200 characters. "" if the pages do not say what the business does.
 
+"industry" — which of these five the company belongs to, exactly as written here, or "" if the
+pages fit none of them:
+  chemical
+  food and beverage
+  cannabis
+  pharmaceutical
+  cosmetics and personal care
+
+"industry_role" — what they do in that industry, exactly as written here, or "" if the pages do not
+say or "industry" is "":
+  manufacturing
+  distribution
+  manufacturing and distribution
+
+Both are deliberately broad. A company that makes industrial cleaning chemicals and a company that
+makes specialty mineral salts are both "chemical" and "manufacturing". Choose "" rather than the
+nearest of five when the business is something else entirely — a law firm, a haulier, a builders'
+merchant — because "" is shown to the person as a blank line to fill in, and a wrong industry is
+shown as a fact about them.
+
 "naics_code" — the six-digit NAICS 2022 code that best fits what they do, as digits only. Where
 several codes could fit, give the BROADEST one that covers what the pages describe rather than the
 most specific one you can defend. "" only when the pages do not say what the business does.
@@ -129,9 +149,20 @@ const obj = (properties: Record<string, unknown>) => ({
   required: Object.keys(properties),
 })
 
+/** The five, exactly as the prompt lists them. `''` is a member: "none of these" is an answer. */
+export const INDUSTRIES = [
+  'chemical', 'food and beverage', 'cannabis', 'pharmaceutical', 'cosmetics and personal care',
+] as const
+/** And what they do in it. */
+export const INDUSTRY_ROLES = ['manufacturing', 'distribution', 'manufacturing and distribution'] as const
+
 export const WEBSITE_JSON_SCHEMA: Record<string, unknown> = obj({
   name: str,
   what_you_do: str,
+  // Closed at the SCHEMA, not only in the words: `output_config.format` refuses anything else, so
+  // "chemicals" or "Chemical Manufacturing" cannot come back and be half-matched later.
+  industry: { type: 'string', enum: ['', ...INDUSTRIES] },
+  industry_role: { type: 'string', enum: ['', ...INDUSTRY_ROLES] },
   naics_code: str,
   naics_title: str,
   addresses: { type: 'array', items: obj({ label: str, address: str }) },
@@ -146,7 +177,10 @@ export interface ProposedAddress { label: string | null; address: string }
 
 export interface WebsiteProposal {
   name: string | null
+  /** The plain sentence about the business — `companies.about` from step 15. */
   what_you_do: string | null
+  /** The broad line a person reads: "Chemical manufacturing and distribution", or null. */
+  industry: string | null
   naics_code: string | null
   /** OUR title for the code, never the model's — see `validateNaics`. */
   naics_title: string | null
@@ -164,6 +198,29 @@ const text = (v: unknown, max: number): string | null => {
   if (typeof v !== 'string') return null
   const t = v.trim().replace(/\s+/g, ' ')
   return t && t.length <= max ? t : null
+}
+
+/**
+ * THE INDUSTRY LINE: "Chemical manufacturing and distribution", or nothing at all.
+ *
+ * Composed here rather than asked for as one string, because the two halves answer two questions
+ * and a later step needs them apart: the INDUSTRY is what will choose a requirement table when
+ * there is more than one, and the ROLE is a modifier. Asking for fifteen combinations would mean
+ * parsing them back apart to use either.
+ *
+ * An industry outside the five is **nothing** — not the nearest of the five. The line then shows
+ * blank with "write it" beside it, which is honest; a wrong industry would be shown to the owner
+ * of the business as a fact about them.
+ *
+ * An industry with no role is the industry alone ("Chemical"), which is thin and true. The person
+ * finishes the sentence if they want to.
+ */
+export function industryLine(industry: unknown, role: unknown): string | null {
+  const i = typeof industry === 'string' ? industry.trim().toLowerCase() : ''
+  const r = typeof role === 'string' ? role.trim().toLowerCase() : ''
+  if (!(INDUSTRIES as readonly string[]).includes(i)) return null
+  const head = i.charAt(0).toUpperCase() + i.slice(1)
+  return (INDUSTRY_ROLES as readonly string[]).includes(r) ? `${head} ${r}` : head
 }
 
 /**
@@ -208,6 +265,7 @@ export function parseProposal(raw: unknown): WebsiteProposal | null {
   return {
     name: text(r.name, NAME_MAX),
     what_you_do: text(r.what_you_do, WHAT_YOU_DO_MAX),
+    industry: industryLine(r.industry, r.industry_role),
     naics_code: naics?.code ?? null,
     naics_title: naics?.title ?? null,
     addresses,
@@ -217,5 +275,27 @@ export function parseProposal(raw: unknown): WebsiteProposal | null {
 
 /** A proposal with nothing in it: the site was readable and said nothing we can use. */
 export function isEmpty(p: WebsiteProposal): boolean {
-  return !p.what_you_do && !p.naics_code && p.addresses.length === 0 && !p.name
+  return !p.what_you_do && !p.industry && p.addresses.length === 0 && !p.name
 }
+
+/**
+ * *** WHY `naics_code` IS STILL ASKED FOR WHEN NO SCREEN SHOWS IT — step 15, and it is my call. ***
+ *
+ * The owner's decision is that NAICS leaves every screen a person sees and nothing writes
+ * `companies.naics_code` any more. The FIELD stays in this JSON, and here is the whole argument:
+ *
+ *   · it has a real reader — `npm run website:compare`, the owner's own instrument for choosing
+ *     between two models. A code that either validates against `lib/naicsTitles.ts` or does not is
+ *     an objective signal about a read, and the only one on the card that is not a matter of
+ *     taste. Dropping it would make the comparison purely a question of which sentence reads
+ *     better;
+ *   · it is kept where a proposal is kept — `website_reads.proposal`, which is our record of what
+ *     the model said, read by nobody else and written to no column;
+ *   · and `validateNaics` is what keeps the model's own invented titles out, so the 1,012-line
+ *     `lib/naicsTitles.ts` stays alive through something that uses it rather than becoming dead
+ *     weight behind a test.
+ *
+ * The risk, named: a field with no customer-facing reader is normally the shape §9a warns about.
+ * This one has a reader; it is a terminal rather than a screen. If the comparison is ever retired,
+ * this field goes with it.
+ */

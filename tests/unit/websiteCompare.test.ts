@@ -25,6 +25,7 @@ import type { WebsiteProposal } from '../../prompts/website-read.ts'
 const JOST: WebsiteProposal = {
   name: 'Jost Chemical Co.',
   what_you_do: 'We manufacture high purity specialty chemicals including mineral salts for pharmaceutical, biotech, nutritional, and specialty markets.',
+  industry: 'Chemical manufacturing',
   naics_code: '325180',
   naics_title: 'Other Basic Inorganic Chemical Manufacturing',
   addresses: [
@@ -70,7 +71,7 @@ describe('one card', () => {
   })
   test('nothing found is "(none)" and never a blank', () => {
     const empty = cardLines(
-      { name: null, what_you_do: null, naics_code: null, naics_title: null, addresses: [], notes: null },
+      { name: null, what_you_do: null, industry: null, naics_code: null, naics_title: null, addresses: [], notes: null },
       META)
     assert.equal(empty.filter((l) => l.includes('(none)')).length, 5)
     assert.match(empty.join('\n'), /Addresses \(0\)/)

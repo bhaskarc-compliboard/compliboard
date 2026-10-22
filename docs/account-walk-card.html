@@ -1,0 +1,123 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Walk card, redrawn</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@600&display=swap">
+<style>
+/* Layout: two card states side by side at real size (480px cards), notes under each; stacks at phone width. */
+:root{
+  --bg:#f4f5f3; --fg:#1d221f; --muted:#6b7570; --line:#d9ddd9; --card:#ffffff;
+  --brand:#0a6b3c; --brand-strong:#064a2a; --note:#fff8e6; --note-line:#e5cf8a;
+  --display:"Source Serif 4", Georgia, serif; --body:"IBM Plex Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#171a18; --fg:#e8ebe8; --muted:#9aa49e; --line:#343a36; --card:#202522;
+  --brand:#3fae72; --brand-strong:#7dd3a3; --note:#2a2616; --note-line:#6b5b26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171a18; --fg:#e8ebe8; --muted:#9aa49e; --line:#343a36; --card:#202522;
+  --brand:#3fae72; --brand-strong:#7dd3a3; --note:#2a2616; --note-line:#6b5b26; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px}
+h1{font:600 26px/1.2 var(--display);margin:0 0 4px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 24px;max-width:70ch}
+.row{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start}
+.col{flex:1 1 440px;min-width:0;max-width:520px}
+.state{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px 32px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.bars{display:flex;gap:6px;margin-bottom:22px}.bars i{flex:1;height:4px;border-radius:2px;background:var(--line)}.bars i.on{background:var(--brand)}
+.card h2{font:600 24px/1.2 var(--body);margin:0 0 4px}
+.card .lede{color:var(--muted);margin:0 0 22px;font-size:14px}
+.f{margin:0 0 18px}
+.lab{font-size:13px;font-weight:600;margin:0 0 6px}
+.val{margin:0}
+.hint{font-size:13px;color:var(--muted);margin:4px 0 0}
+.box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--card);font:15px/1.45 var(--body);color:var(--fg)}
+.box.focus{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 25%,transparent)}
+.kind{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.kind .k{font-size:15px}
+a.lnk{color:var(--brand);font-size:13px;text-decoration:none;font-weight:500}
+.note{background:var(--note);border:1px solid var(--note-line);border-radius:8px;padding:10px 12px;font-size:13px;margin:0 0 22px}
+.note b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+.btn{display:block;width:100%;background:var(--brand);color:#fff;border:0;border-radius:8px;padding:13px;font:600 15px var(--body);text-align:center}
+.skip{display:block;text-align:center;margin:12px 0 0;color:var(--muted);font-size:14px;text-decoration:underline}
+.sugg{border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;margin:-6px 0 0;padding:4px 0;font-size:14px;background:var(--card)}
+.sugg div{padding:7px 12px}.sugg div.sel{background:color-mix(in srgb,var(--brand) 10%,var(--card))}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;background:var(--card)}
+.chip.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand-strong);font-weight:500}
+.notes{margin:18px 0 0;padding:0 0 0 18px;color:var(--fg);font-size:14px}
+.notes li{margin:0 0 8px}
+.rule{border:0;border-top:1px solid var(--line);margin:36px 0 24px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+</style>
+
+<h1>Screen 1, redrawn</h1>
+<p class="sub">What the person sees after signing up with a website. Left: the card as it arrives. Right: after pressing <em>change</em> on the industry line. No code, no "NAICS", no "All Other" anywhere a customer can see; no suggestions, either.</p>
+
+<div class="row">
+<div class="col">
+<p class="state">A · As it arrives</p>
+<div class="card">
+  <div class="bars"><i class="on"></i><i></i><i></i></div>
+  <h2>Here's what we found</h2>
+  <p class="lede">From highpurityproducts.com. Fix anything that's wrong, then confirm.</p>
+
+  <div class="f"><p class="lab">Company name</p><p class="val">High Purity Products</p>
+    <p class="hint">From your website. We keep the name you gave us at signup.</p></div>
+
+  <div class="f"><p class="lab">What you do</p>
+    <div class="kind"><span class="k">We manufacture and supply ultra-pure chemicals, including acids, bases, solvents and cleaning agents, for microelectronic and display manufacturers.</span> <a class="lnk" href="#a">change</a></div></div>
+
+  <div class="f"><p class="lab">Your industry</p>
+    <div class="kind"><span class="k">Chemical manufacturing and distribution</span> <a class="lnk" href="#a">change</a></div></div>
+
+  <div class="f"><p class="lab">Address of your main site</p>
+    <div class="kind"><span class="k">14546 N Lombard Street, Portland, OR 97203</span> <a class="lnk" href="#a">change</a></div></div>
+
+  <div class="note"><b>One thing we were not sure of</b>Only the homepage was available. It describes the company as both a manufacturer and a supplier.</div>
+
+  <span class="btn">Yes, that's us</span>
+  <span class="skip">Skip for now</span>
+</div>
+<ol class="notes">
+  <li>Three lines we found, each with its own small <b>change</b>. Nothing on the card looks like a form until the person asks for one.</li>
+  <li><b>Your industry</b> is deliberately broad, because the requirement tables are by industry: the industry and whether they make, distribute, or both. The model picks it from the site. A filing code is never shown.</li>
+  <li>The note stays. It is the model telling the truth about what it could and could not see.</li>
+</ol>
+</div>
+
+<div class="col">
+<p class="state">B · After pressing change on the industry</p>
+<div class="card">
+  <div class="bars"><i class="on"></i><i></i><i></i></div>
+  <h2>Here's what we found</h2>
+  <p class="lede">From highpurityproducts.com. Fix anything that's wrong, then confirm.</p>
+
+  <div class="f"><p class="lab">Company name</p><p class="val">High Purity Products</p>
+    <p class="hint">From your website. We keep the name you gave us at signup.</p></div>
+
+  <div class="f"><p class="lab">What you do</p>
+    <div class="kind"><span class="k">We manufacture and supply ultra-pure chemicals, including acids, bases, solvents and cleaning agents, for microelectronic and display manufacturers.</span> <a class="lnk" href="#a">change</a></div></div>
+
+  <div class="f"><p class="lab">Your industry</p>
+    <div class="box focus">Chemical distribution<span style="border-left:1.5px solid var(--fg)"></span></div>
+    <p class="hint">Write it in your own words. <a class="lnk" href="#b">Done</a></p></div>
+
+  <div class="f"><p class="lab">Address of your main site</p>
+    <div class="kind"><span class="k">14546 N Lombard Street, Portland, OR 97203</span> <a class="lnk" href="#a">change</a></div></div>
+
+  <div class="note"><b>One thing we were not sure of</b>Only the homepage was available. It describes the company as both a manufacturer and a supplier.</div>
+
+  <span class="btn">Yes, that's us</span>
+  <span class="skip">Skip for now</span>
+</div>
+<ol class="notes">
+  <li>Pressing <b>change</b> turns that one line into a box holding the current words. They write what is true. No list, no suggestions: if the scan did not get it, we do not guess twice.</li>
+  <li>The same for the sentence and the address: each becomes its own box when asked, and only that one.</li>
+  <li>"Done" closes the box and the line reads back as written. The card can be confirmed with any line open or closed.</li>
+</ol>
+</div>
+</div>
+
+<hr class="rule">
+<p class="sub" style="margin:0 0 8px"><b>What changes behind the card.</b> The model's answer gains the industry line, written from our short list of industries (chemical, food and beverage, cannabis, pharmaceutical, cosmetics and personal care) and roles (manufacturing, distribution, both); when the site fits none, it says so and the line is blank with "write it". We keep the sentence (<code>about</code>, new) and the industry line as the person left it (<code>what_you_do</code>, the field the Company tab already has), plus the model's structured picks, which are cleared the moment the person writes their own words. The NAICS code leaves the front door: it stays in the proposal as evidence and nothing on the walk writes it. The Company tab shows the same two lines with the same <em>change</em>. Which requirement library a company is served stays a separate, unseen column (chemical for everyone today); the industry the model found is what will choose it when there is more than one.</p>
+
