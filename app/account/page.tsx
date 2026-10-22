@@ -245,14 +245,13 @@ function Account() {
                   {editWhat ? (
                     <>
                       {/* *** THE CONTROL MOVED TO `components/NaicsField.tsx` AT STEP 14. *** The
-                          walk's first screen asks this same question with the website read's answer
-                          already in the box, and a second copy of "typing clears the picked code"
-                          is the kind of small rule a copy gets subtly wrong — decision 3, and
-                          `companies.naics_code` is a join key. Nothing about this row changed:
-                          `showCode` is off here, so what is drawn is what was drawn before. */}
+                          walk uses the same one — at step 15 as a SEARCH box beside its category
+                          line — and a second copy of "typing clears the picked code" is the kind of
+                          small rule a copy gets subtly wrong (decision 3). Nothing about this row
+                          has changed since it moved. */}
                       <NaicsField
                         value={whatDraft} onValue={setWhatDraft}
-                        picked={pickedCode} onPick={setPickedCode}
+                        onPick={setPickedCode}
                         showSuggestions={showSuggestions} onShowSuggestions={setShowSuggestions}
                         busy={busy} autoFocus
                         placeholder={WHAT_YOU_DO_PLACEHOLDER} label={WHAT_YOU_DO_LABEL} />

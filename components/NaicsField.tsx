@@ -31,15 +31,14 @@ export const NAICS_FIELD =
   'focus:border-[var(--green)] focus:outline-none'
 
 export function NaicsField({
-  value, onValue, onPick, picked, busy, placeholder, label, showSuggestions, onShowSuggestions,
-  autoFocus = false, showCode = false, clearOnType = true,
+  value, onValue, onPick, busy, placeholder, label, showSuggestions, onShowSuggestions,
+  autoFocus = false,
 }: {
   /** The words in the box. The caller holds them: they are what gets saved. */
   value: string
   onValue: (v: string) => void
   /** Called with a code when a suggestion is taken, and with null whenever the words change. */
   onPick: (code: string | null) => void
-  picked: string | null
   busy: boolean
   placeholder: string
   label: string
@@ -48,35 +47,19 @@ export function NaicsField({
   onShowSuggestions: (v: boolean) => void
   autoFocus?: boolean
   /**
-   * Draw the code that is about to be stored, with a way to drop it. OFF by default, so the
-   * Company tab renders exactly what it rendered before this file existed.
+   * *** TWO PROPS WERE REMOVED HERE AT STEP 15, AND NOTHING LOST THEM. ***
    *
-   * The walk turns it ON, and needs to: its box arrives PREFILLED from the website read with a
-   * code already picked, and the suggestion list — which carries "Keep what you typed", the
-   * normal way to drop a code — is hidden until somebody types. Without this line a person who
-   * agrees with the sentence but not with the classification has no way to say so.
+   * Step 14 added `showCode` (draw the picked code with a `clear` beside it) and `clearOnType`
+   * (keep a PROPOSED code when the words change), both for the walk and both off for the Company
+   * tab. The owner's walk replaced that design: the sentence is a textarea and the category is a
+   * line of words with its own `change` link, so the walk now opens this control as a SEARCH box
+   * over its own state. Editing the sentence can no longer touch the code, because they are not
+   * the same field — which is the thing `clearOnType` existed to work around.
+   *
+   * `picked` went with them: it was only ever read to draw that line, and a prop a component
+   * ignores is a claim nothing checks (`CLAUDE.md` §9a). The caller holds the code — it is the
+   * thing being saved — and hears about every change through `onPick`.
    */
-  showCode?: boolean
-  /**
-   * *** WHETHER TYPING DROPS THE CODE, AND THE TWO SCREENS WANT DIFFERENT ANSWERS. ***
-   *
-   * ON (the default, the Company tab): the code is there because the person PICKED a suggestion,
-   * so it is a claim about those exact words. Editing them makes it a classification nobody chose
-   * — decision 3 — and it goes.
-   *
-   * OFF (the walk): the code did not come from a suggestion, it came from the website read, and
-   * it is a PROPOSAL about the business rather than about the sentence. Changing one word of
-   * "We manufacture high purity specialty chemicals" should not silently drop a code the person
-   * was shown and agreed with. It is only off where `showCode` is on, so the code is visible with
-   * a `clear` beside it the whole time: nothing is kept that the person cannot see and remove.
-   *
-   * The risk this takes, named: somebody could rewrite the sentence completely and leave a code
-   * that no longer fits. `companies.naics_code` is read by nothing today — `grep -rn naics_code
-   * app lib components prompts scripts` finds only the writers and this control — so the cost is a
-   * wrong label on a card they confirmed, not a wrong answer downstream. If something ever reads
-   * it, this is the line to come back to.
-   */
-  clearOnType?: boolean
 }) {
   const suggestions: NaicsTitle[] = useMemo(
     () => (showSuggestions ? suggestNaics(value) : []), [value, showSuggestions])
@@ -87,7 +70,7 @@ export function NaicsField({
         value={value} autoFocus={autoFocus} disabled={busy}
         onChange={(e) => {
           onValue(e.target.value)
-          if (clearOnType) onPick(null)       // the words are theirs again
+          onPick(null)              // the words are theirs again
           onShowSuggestions(true)
         }}
         placeholder={placeholder}
@@ -114,15 +97,6 @@ export function NaicsField({
             {keepTypedLabel(value)}
           </button>
         </div>
-      )}
-      {/* What is actually going to be stored as the code, when one was taken. */}
-      {showCode && picked && (
-        <p className="mt-1 text-[12.5px] text-gray-500">
-          NAICS {picked}
-          <button type="button" disabled={busy}
-            onClick={() => onPick(null)}
-            className="ml-2 text-[var(--green-ink)] hover:underline disabled:text-gray-300">clear</button>
-        </p>
       )}
     </>
   )

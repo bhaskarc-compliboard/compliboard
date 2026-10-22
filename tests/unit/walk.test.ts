@@ -19,7 +19,10 @@ import { readFileSync } from 'node:fs'
 import {
   WALK_PATH, SKIP, FOUND_TITLE, foundLede, CONFIRM, ASK_TITLE, ASK_LEDE, ADDRESS_LABEL,
   ADDRESS_PLACEHOLDER, ADDRESS_HINT, CONTINUE, DONE_TITLE, DONE_LEDE, DONE_BUTTON,
-  couldNotRead, readingLine, firstScreen, askNotice, stepsDone, planSaves, questionsDone,
+  couldNotRead, readingLine, firstScreen, askNotice, stepsDone, planSaves,
+  walkQuestions, walkCounter, walkDone, categoryLine, categoryAction, sentenceRows,
+  CATEGORY_LABEL, CATEGORY_NONE, CATEGORY_CHANGE, CATEGORY_PICK,
+  SENTENCE_MIN_ROWS, SENTENCE_MAX_ROWS, SENTENCE_COLS,
   siteNameFor, WALK_QUESTIONS, POLL_UP_TO_MS, POLL_EVERY_MS, ADD_AS_SITE,
   type ConfirmFields,
 } from '../../lib/walkView.ts'
@@ -110,15 +113,112 @@ describe('which face screen 1 shows', () => {
   })
 })
 
-describe('the three questions end, one way or another', () => {
-  test('after three', () => {
-    assert.equal(questionsDone(0, true), false)
-    assert.equal(questionsDone(2, true), false)
-    assert.equal(questionsDone(3, true), true)
+describe('*** EXACTLY THREE QUESTIONS, WHATEVER THE ANSWERS ARE — the owner\u2019s second finding ***', () => {
+  /**
+   * The walk used to end when three had been ANSWERED, which is the Dashboard's rule: a skip is
+   * not an answer there, because the card goes quiet for the day and the question returns
+   * tomorrow. In a walk it meant "I don't know yet" cost nothing and handed over the next of the
+   * twenty-odd company-scope switches, for ever — the owner reached a SIXTH question still
+   * labelled "3 of 3". The list is now taken once and the counter is the position in it.
+   */
+  const twenty = Array.from({ length: 20 }, (_, i) => ({ switch_id: `s${i}` }))
+
+  test('three are taken from however many are askable', () => {
+    assert.equal(walkQuestions(twenty).length, 3)
+    assert.deepEqual(walkQuestions(twenty).map((q) => q.switch_id), ['s0', 's1', 's2'])
+    assert.equal(WALK_QUESTIONS, 3)
   })
-  test('…or when there is nothing left to ask, however few were answered', () => {
-    assert.equal(questionsDone(0, false), true)
-    assert.equal(questionsDone(1, false), true)
+  test('fewer than three asks what there is, and says so', () => {
+    assert.equal(walkQuestions(twenty.slice(0, 2)).length, 2)
+    assert.equal(walkCounter(0, 2), '1 of 2')
+    assert.equal(walkQuestions([]).length, 0)
+    assert.equal(walkDone(0, 0), true, 'nothing to ask must end the screen, not hang it')
+  })
+  test('the counter is the POSITION, so it reads the same whether a question was answered or skipped', () => {
+    assert.equal(walkCounter(0, 3), '1 of 3')
+    assert.equal(walkCounter(1, 3), '2 of 3')
+    assert.equal(walkCounter(2, 3), '3 of 3')
+    // …and it cannot run past the end, which is the shape the owner saw on the sixth question.
+    assert.equal(walkCounter(5, 3), '3 of 3')
+  })
+  test('three uses end the screen, by any mixture of answers and skips', () => {
+    for (let used = 0; used < 3; used++) assert.equal(walkDone(used, 3), false, `${used} used`)
+    assert.equal(walkDone(3, 3), true)
+    assert.equal(walkDone(4, 3), true)
+  })
+  test('the Dashboard\u2019s own rules are NOT what the walk uses any more', () => {
+    const walk = code(PAGE)
+    assert.ok(!/questionsDone|nextQuestion|cardNumber/.test(walk),
+      'the walk still borrows a Dashboard rule that counts answers rather than questions')
+    assert.match(walk, /walkQuestions\(askableHere\(/)
+    assert.match(walk, /walkCounter\(at, total\)/)
+    // One fetch, when the screen opens, and never again: a re-fetch is what made the list move.
+    const questions = walk.slice(walk.indexOf('function Questions'))
+    assert.equal((questions.match(/fetch\('\/api\/switches\/ask'/g) ?? []).length, 1)
+  })
+  test('a skip writes nothing and still uses one of the three', () => {
+    const walk = code(PAGE)
+    const skip = walk.slice(walk.indexOf('{SKIP_WORD}') - 400, walk.indexOf('{SKIP_WORD}'))
+    assert.match(skip, /setAt\(\(i\) => i \+ 1\)/)
+    assert.ok(!/postSwitchAnswer/.test(skip), 'the skip writes an answer')
+  })
+})
+
+describe('*** THE SENTENCE IS SHOWN WHOLE — the owner\u2019s first finding ***', () => {
+  test('the box grows from two lines to four', () => {
+    assert.equal(sentenceRows(''), SENTENCE_MIN_ROWS)
+    assert.equal(sentenceRows('We make soap.'), 2)
+    // The real one: 134 characters, which ran off a single-line box.
+    const real = 'We manufacture high purity specialty chemicals including mineral salts for pharmaceutical, biotech, nutritional, and specialty markets.'
+    assert.ok(real.length > SENTENCE_COLS * 2)
+    assert.equal(sentenceRows(real), 3)
+    assert.equal(sentenceRows('x'.repeat(1000)), SENTENCE_MAX_ROWS)
+  })
+  test('every row of the real sentence fits in the box', () => {
+    const real = 'We manufacture high purity specialty chemicals including mineral salts for pharmaceutical, biotech, nutritional, and specialty markets.'
+    assert.ok(sentenceRows(real) * SENTENCE_COLS >= real.length,
+      'the box is smaller than the sentence it is meant to show')
+  })
+  test('it is a textarea now, not an input', () => {
+    const walk = code(PAGE)
+    assert.match(walk, /<textarea id="walk-what"/)
+    assert.match(walk, /rows=\{sentenceRows\(whatDraft\)\}/)
+    assert.ok(!/<input id="walk-what"/.test(walk))
+  })
+})
+
+describe('*** THE CATEGORY IN WORDS, NOT A CODE ***', () => {
+  test('with a suggestion: the title, then the code in brackets', () => {
+    assert.equal(categoryLine('325180', 'Other Basic Inorganic Chemical Manufacturing'),
+      'Closest standard category: Other Basic Inorganic Chemical Manufacturing (325180)')
+    assert.equal(categoryAction('325180'), CATEGORY_CHANGE)
+  })
+  test('with none: "none yet", and the word beside it starts rather than changes', () => {
+    assert.equal(categoryLine(null, null), `${CATEGORY_LABEL}: ${CATEGORY_NONE}`)
+    assert.equal(categoryLine(null, 'ignored'), `${CATEGORY_LABEL}: ${CATEGORY_NONE}`)
+    assert.equal(categoryAction(null), CATEGORY_PICK)
+  })
+  test('a code we hold no title for still says something true', () => {
+    assert.equal(categoryLine('999999', null), `${CATEGORY_LABEL}: ${CATEGORY_NONE} (999999)`)
+    assert.equal(categoryLine('999999', '  '), `${CATEGORY_LABEL}: ${CATEGORY_NONE} (999999)`)
+  })
+  test('the title drawn is OURS, looked up from the code', () => {
+    const walk = code(PAGE)
+    assert.match(walk, /NAICS_TITLES\.find\(\(t\) => t\.code === pickedCode\)/)
+    assert.match(walk, /categoryLine\(pickedCode, categoryTitle\)/)
+  })
+  test('the picker is the shared control, over its OWN box, and never touches the sentence', () => {
+    const walk = code(PAGE)
+    assert.match(walk, /value=\{categoryDraft\} onValue=\{setCategoryDraft\}/)
+    // The sentence is `whatDraft`; the picker must not be wired to it.
+    const picker = walk.slice(walk.indexOf('{picking ?'), walk.indexOf('categoryLine('))
+    assert.ok(!/whatDraft/.test(picker.replace(/setCategoryDraft\(whatDraft[^)]*\)/g, '')),
+      'the picker writes into the sentence')
+  })
+  test('picking one closes the picker; what is saved is still naics_code', () => {
+    const walk = code(PAGE)
+    assert.match(walk, /if \(code\) setPicking\(false\)/)
+    assert.match(walk, /naicsCode: pickedCode/)
   })
 })
 
@@ -186,6 +286,41 @@ describe('*** "YES, THAT’S US" SAVES THE FIELDS, NOT THE PROPOSAL ***', () => 
   })
 })
 
+describe('*** A GEOCODER MISS IS NOT A REFUSAL — found on the step 15 walk ***', () => {
+  /**
+   * Jost Chemical's second site is in Poland and the Census Bureau's geocoder is American, so it
+   * answered "no match" — and the walk, which treated any sentence as a reason not to move on,
+   * left the person on screen 1 with "We could not find that address" and no way forward but to
+   * untick a site that had in fact been saved. The MAIN site still pauses (it is the address 083
+   * mirrors and `lib/jurisdiction.ts` resolves against); any other site does not.
+   */
+  const src = code(PAGE)
+  test('the two outcomes are told apart at the route\u2019s own answer', () => {
+    assert.match(src, /Promise<\{ failed\?: string; missed\?: string \}>/)
+    assert.match(src, /if \(!res\.ok\) return \{ failed:/)
+    assert.match(src, /matched === false \? \{ missed:/)
+  })
+  test('the main site pauses on a miss; a second site does not', () => {
+    // `lastIndexOf` for the new-site branch: the line that builds the retry key mentions it first.
+    const main = src.slice(src.indexOf("step.kind === 'main-site'"), src.lastIndexOf("step.kind === 'new-site'"))
+    const extra = src.slice(src.lastIndexOf("step.kind === 'new-site'"))
+    assert.match(main, /if \(r\.missed\) \{ stop\.push\(r\.missed\); continue \}/)
+    assert.ok(!/r\.missed/.test(extra.slice(0, extra.indexOf('saved.current.add'))),
+      'a second site that could not be placed still holds the walk up')
+    // Both still stop on a real refusal.
+    assert.equal((src.match(/if \(r\.failed\) \{ stop\.push\(r\.failed\); continue \}/g) ?? []).length, 2)
+  })
+  test('and the address screen keeps the pause, because that IS the main site', () => {
+    assert.match(src, /const s = r\.failed \?\? r\.missed/)
+  })
+  test('a second press does not write anything twice', () => {
+    assert.match(src, /saved\.current\.has\(key\)/)
+    assert.match(src, /saved\.current\.add\(key\)/)
+    // Keyed by address for a new site: two different second sites are two different writes.
+    assert.match(src, /`new:\$\{step\.address\}`/)
+  })
+})
+
 describe('the walk writes nothing of its own', () => {
   const src = code(PAGE)
   test('every address goes through /api/sites, and `entities` is only read', () => {
@@ -247,28 +382,32 @@ describe('the shared control was widened, not changed', () => {
   const account = code(readFileSync('app/account/page.tsx', 'utf8'))
   test('the Company tab now uses it, and draws exactly what it drew before', () => {
     assert.match(account, /<NaicsField/)
-    // `showCode` is the walk's line and the tab does not pass it.
-    assert.ok(!/showCode/.test(account), 'the Company tab gained a line it never had')
-    assert.match(field, /showCode = false/)
+    // The control has one shape again: a box, its suggestions, and "Keep what you typed". Nothing
+    // in it is conditional on which screen is drawing it, which is where step 14 had drifted.
+    assert.ok(!/showCode|clearOnType/.test(code(field)), 'the control still branches by screen')
+    assert.match(field, /suggestions\.length > 0/)
   })
   test('the rule a copy would have got wrong is in one place now', () => {
     // Typing clears a PICKED code — decision 3. The Company tab takes the default and keeps it.
-    assert.match(field, /if \(clearOnType\) onPick\(null\)/)
-    assert.match(field, /clearOnType = true/)
-    assert.ok(!/clearOnType/.test(account), 'the Company tab now passes the flag, so it changed')
+    assert.match(field, /onPick\(null\) {2,}\/\/ the words are theirs again/)
     assert.ok(!/suggestNaics\(/.test(account), 'the Company tab still has its own copy')
   })
 
   /**
-   * …and the walk turns it off, because its code came from the website read rather than from a
-   * suggestion the person picked: changing one word of the sentence must not silently drop a
-   * classification they were shown and agreed with. It is only off where the code is DRAWN, with
-   * a `clear` beside it, so nothing is kept that cannot be seen and removed.
+   * *** AND AT STEP 15 THE THREE PROPS STEP 14 ADDED WENT. *** The walk's sentence is a textarea
+   * and its category is a line of words with its own `change` link, so the control is opened over
+   * a SEARCH box of the walk's own. Editing the sentence cannot touch the code, because they are
+   * no longer the same field — which is what `clearOnType` existed to work around — and nothing
+   * reads `picked` any more. A prop nothing passes is a claim nothing checks.
    */
-  test('the walk keeps the proposed code, and shows it', () => {
+  test('and the props step 14 added are gone, because nothing passes them', () => {
     const walk = code(PAGE)
-    assert.match(walk, /showCode clearOnType=\{false\}/)
-    assert.match(field, /showCode && picked/)
+    const fieldCode = code(field)
+    for (const prop of ['showCode', 'clearOnType', 'picked']) {
+      assert.ok(!fieldCode.includes(prop), `${prop} survives in the shared control`)
+      assert.ok(!walk.includes(`${prop}=`), `the walk still passes ${prop}`)
+      assert.ok(!account.includes(`${prop}=`), `the Company tab now passes ${prop}`)
+    }
   })
 })
 

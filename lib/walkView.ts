@@ -48,6 +48,51 @@ export const COMPANY_NAME_LABEL = 'Company name'
  */
 export const COMPANY_NAME_NOTE = 'From your website. We keep the name you gave us at signup.'
 export const MAIN_ADDRESS_LABEL = 'Address of your main site'
+
+// ── The standard category, in words ──────────────────────────────────────────────────────────────
+
+/**
+ * *** THE CODE WAS SHOWN AS A CODE, AND A CODE IS NOT A THING A PERSON CAN AGREE WITH. ***
+ *
+ * Step 14 drew `NAICS 325998  clear` under the sentence. The owner's own walk found it: a
+ * six-digit number and the word "clear" tell somebody neither what we think their business is nor
+ * what pressing anything would do. It is now a sentence with the TITLE in it — the title being the
+ * only part of a NAICS code anybody can judge — and the code in brackets for the one person in a
+ * hundred who knows what it means.
+ *
+ * What is SAVED is unchanged: `companies.naics_code`, and only when a suggestion was taken.
+ */
+export const CATEGORY_LABEL = 'Closest standard category'
+export const CATEGORY_NONE = 'none yet'
+export const CATEGORY_CHANGE = 'change'
+/** What the picker's box says when it opens: it searches the standard list, it is not saved. */
+export const CATEGORY_SEARCH_PLACEHOLDER = 'Search the standard list'
+export const CATEGORY_PICK = 'pick one'
+
+/** "Closest standard category: Other Basic Inorganic Chemical Manufacturing (325180)" */
+export function categoryLine(code: string | null, title: string | null): string {
+  if (!code) return `${CATEGORY_LABEL}: ${CATEGORY_NONE}`
+  return `${CATEGORY_LABEL}: ${(title ?? '').trim() || CATEGORY_NONE} (${code})`
+}
+
+/** The word beside it: one changes an answer, the other starts one. */
+export const categoryAction = (code: string | null) => (code ? CATEGORY_CHANGE : CATEGORY_PICK)
+
+/**
+ * HOW TALL THE SENTENCE BOX IS — 2 lines to 4.
+ *
+ * It was a single-line `<input>` and the website read's sentence is routinely 140 characters, so
+ * the thing the person is being asked to check RAN OFF THE EDGE of the box. A textarea that grows
+ * is the whole fix; the clamp is here, as a number, so a test can hold it.
+ */
+export const SENTENCE_MIN_ROWS = 2
+export const SENTENCE_MAX_ROWS = 4
+/** Characters that fit on one line of the card at its width. Measured against the rendered box. */
+export const SENTENCE_COLS = 52
+export function sentenceRows(text: string): number {
+  const lines = Math.ceil((text ?? '').length / SENTENCE_COLS)
+  return Math.min(SENTENCE_MAX_ROWS, Math.max(SENTENCE_MIN_ROWS, lines))
+}
 export const OTHER_PLACES_LABEL = 'We also found these'
 /** The checkbox beside each extra location, checked by default. */
 export const ADD_AS_SITE = 'Add as a site'
@@ -134,9 +179,36 @@ export function stepsDone(screen: number): boolean[] {
 /** Three, and it is the Dashboard's three: one number, one rule, no second opinion. */
 export const WALK_QUESTIONS = QUESTIONS_PER_DAY
 
-/** Done when three have been answered, or when there is nothing left to ask. */
-export function questionsDone(answered: number, hasQuestion: boolean): boolean {
-  return answered >= WALK_QUESTIONS || !hasQuestion
+/**
+ * *** THE WALK ASKS A FIXED THREE, AND THIS IS THE BUG THE OWNER FOUND. ***
+ *
+ * Step 14 ended screen 2 when three had been ANSWERED (`answered >= WALK_QUESTIONS`), which is the
+ * Dashboard's rule, copied. On the Dashboard that is right and deliberate — `cardNumber`'s own
+ * comment says *"a skip does not advance it, because a skip is not an answer"* — because the card
+ * simply goes quiet for the day and the question comes back tomorrow. In a walk with three slots
+ * it becomes an unbounded queue: "I don't know yet" writes nothing, counts for nothing, and hands
+ * over the next of the twenty-odd company-scope switches, for ever. The counter made it worse by
+ * showing `answered + 1`, so it sat at **"3 of 3" on the sixth question**, which is exactly what
+ * the owner saw.
+ *
+ * So the walk takes its three ONCE, when the screen opens, and asks those three. A skip uses one
+ * of the three. The counter is the POSITION in that list, not a tally of answers. Fewer than three
+ * askable and it asks what there is and says so in the counter ("1 of 2").
+ *
+ * The Dashboard is untouched: `nextQuestion`, `questionState` and `cardNumber` are still its own.
+ */
+export function walkQuestions<T>(askable: readonly T[], max: number = WALK_QUESTIONS): T[] {
+  return (askable ?? []).slice(0, max)
+}
+
+/** "2 of 3" — where in the fixed list we are, counting from one. */
+export function walkCounter(index: number, total: number): string {
+  return `${Math.min(index + 1, total)} of ${total}`
+}
+
+/** Past the end of the list, or there was never anything to ask. */
+export function walkDone(index: number, total: number): boolean {
+  return total === 0 || index >= total
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────

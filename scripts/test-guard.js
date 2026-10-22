@@ -90,7 +90,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 // 1742 -> 1746 on 22 October 2026: four for Sonnet 5.5's price, read off the published page the
 // same day. Its row was added because `npm run website:compare` runs it against Opus 5.5 and an
 // unlisted model prices as null — tokens with no money beside a real bill.
-const FLOOR = 1746
+// 1746 -> 1763 on 22 October 2026, My Account step 15's two findings from the owner's own walk:
+// the sentence shown whole, the standard category in words, and — the one that matters — exactly
+// three questions however they are answered. The walk had copied the Dashboard's rule, where a
+// skip deliberately does not count, into a screen with three slots.
+const FLOOR = 1763
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

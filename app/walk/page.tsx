@@ -33,18 +33,21 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter } from 'next/navigation'
 import { createClient, authHeaders } from '@/lib/supabase'
 import NaicsField from '@/components/NaicsField'
+import { NAICS_TITLES } from '@/lib/naicsTitles'
 import SwitchAnswerControl from '@/components/SwitchAnswerControl'
 import { postSwitchAnswer } from '@/lib/switchAnswer'
 import {
-  askableHere, nextQuestion, cardNumber, SKIP_WORD, ANSWER_FAILED,
-  QUESTIONS_PER_DAY, type CardQuestion,
+  askableHere, SKIP_WORD, ANSWER_FAILED, type CardQuestion,
 } from '@/lib/dashboardView'
 import { WHAT_YOU_DO_LABEL, WHAT_YOU_DO_PLACEHOLDER } from '@/lib/accountView'
 import {
   SKIP, FOUND_TITLE, foundLede, CONFIRM, COMPANY_NAME_LABEL, COMPANY_NAME_NOTE,
   MAIN_ADDRESS_LABEL, OTHER_PLACES_LABEL, ADD_AS_SITE, NOTE_LABEL,
   ASK_TITLE, ASK_LEDE, ADDRESS_LABEL, ADDRESS_PLACEHOLDER, ADDRESS_HINT, CONTINUE,
-  readingLine, askNotice, firstScreen, stepsDone, planSaves, questionsDone,
+  readingLine, askNotice, firstScreen, stepsDone, planSaves,
+  walkQuestions, walkCounter, walkDone,
+  categoryLine, categoryAction, sentenceRows, SENTENCE_COLS,
+  CATEGORY_LABEL, CATEGORY_SEARCH_PLACEHOLDER,
   DONE_TITLE, DONE_LEDE, DONE_BUTTON, DASHBOARD_PATH, SAVE_FAILED,
   POLL_EVERY_MS, POLL_UP_TO_MS, WALK_STEPS,
   type ReadStatus, type ProposedPlace,
@@ -114,9 +117,24 @@ function Walk() {
   const [whatDraft, setWhatDraft] = useState('')
   const [pickedCode, setPickedCode] = useState<string | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  /**
+   * The picker's own box, and it is SEPARATE from the sentence on purpose. Typing in it searches
+   * the standard list; the sentence is the person's words and is never touched by it. That also
+   * retires the trap step 14 worked around: there is no longer any way for editing the sentence to
+   * drop a proposed code, because the two are not the same field any more.
+   */
+  const [picking, setPicking] = useState(false)
+  const [categoryDraft, setCategoryDraft] = useState('')
   const [addressDraft, setAddressDraft] = useState('')
   const [others, setOthers] = useState<Array<{ place: ProposedPlace; add: boolean }>>([])
   const filled = useRef(false)
+  /** What this mount has already written, so a second press does not write it twice. */
+  const saved = useRef<Set<string>>(new Set())
+
+  /** OUR title for whatever code is picked — `lib/naicsTitles.ts`, never the model's words. */
+  const categoryTitle = useMemo(
+    () => (pickedCode ? NAICS_TITLES.find((t) => t.code === pickedCode)?.title ?? null : null),
+    [pickedCode])
 
   // ── The company and its main site, which signup made and which has no address yet ─────────────
   const [companyId, setCompanyId] = useState<string | null>(null)
@@ -175,17 +193,29 @@ function Walk() {
   // SAVING
   // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-  /** One address through the route that geocodes it. Returns the sentence to show, or null. */
-  async function putSite(body: Record<string, unknown>, method: 'POST' | 'PATCH'): Promise<string | null> {
+  /**
+   * One address through the route that geocodes it.
+   *
+   * *** A REFUSAL AND A GEOCODER MISS ARE NOT THE SAME THING, AND CONFLATING THEM WEDGED THE
+   * WALK. *** Found on the step 15 walk: Jost Chemical's second site is in POLAND, the Census
+   * Bureau's geocoder is American, so it answered "no match" — and the walk, which treated any
+   * sentence as a reason not to move on, left the person on screen 1 with "We could not find that
+   * address" and no way forward but to untick a site that had in fact been saved.
+   *
+   *   · `failed`  — the write did not happen. The person must know, and must be able to try again.
+   *   · `missed`  — the row IS there, with the address exactly as typed and no state or county.
+   *                 That is the designed behaviour (decision 16) and not a failure.
+   */
+  async function putSite(body: Record<string, unknown>, method: 'POST' | 'PATCH'):
+    Promise<{ failed?: string; missed?: string }> {
     const res = await fetch('/api/sites', {
       method, headers: await authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body),
     })
     const j = await res.json().catch(() => null)
-    if (!res.ok) return (j?.error as string) ?? SAVE_FAILED
-    // The geocoder's own sentence, shown exactly as the site drawer shows it: the site was saved,
-    // and we could not work out where it is. `CLAUDE.md` §5.1 — never assert what we did not read.
-    return j?.geocode && j.geocode.matched === false ? (j.geocode.message as string) : null
+    if (!res.ok) return { failed: (j?.error as string) ?? SAVE_FAILED }
+    // The geocoder's own sentence, word for word as the site drawer shows it (§5.1).
+    return j?.geocode && j.geocode.matched === false ? { missed: j.geocode.message as string } : {}
   }
 
   async function confirm() {
@@ -196,29 +226,44 @@ function Walk() {
       whatYouDo: whatDraft, naicsCode: pickedCode,
       mainAddress: addressDraft, mainSite, others,
     })
-    const sentences: string[] = []
+    const stop: string[] = []
     for (const step of steps) {
+      // *** A STEP THAT ALREADY WENT THROUGH IS NOT DONE TWICE. *** Staying on this screen invites
+      // a second press, and a second press would POST the extra sites again — one company, two
+      // Portland plants, and nobody would know where the duplicate came from.
+      const key = step.kind === 'new-site' ? `new:${step.address}` : step.kind
+      if (saved.current.has(key)) continue
+
       if (step.kind === 'company') {
         // The Company tab's one write, through the caller's own client (`app/account/page.tsx`
         // `writeCompany`). 082's column grant is what refuses a fourth column, not this line, and
         // the id is the one `companies_select` let us read — never one sent from anywhere.
-        if (!companyId) { sentences.push(SAVE_FAILED); continue }
+        if (!companyId) { stop.push(SAVE_FAILED); continue }
         const { error } = await supabase.from('companies')
           .update({ what_you_do: step.what_you_do, naics_code: step.naics_code })
           .eq('id', companyId)
-        if (error) sentences.push(SAVE_FAILED)
+        if (error) { stop.push(SAVE_FAILED); continue }
       } else if (step.kind === 'main-site') {
-        const s = await putSite({ id: step.id, name: step.name, address: step.address }, 'PATCH')
-        if (s) sentences.push(s)
+        const r = await putSite({ id: step.id, name: step.name, address: step.address }, 'PATCH')
+        if (r.failed) { stop.push(r.failed); continue }
+        // *** THE MAIN SITE IS THE ONE ADDRESS THAT HOLDS THE WALK UP. *** It is what 083 mirrors
+        // onto the company row and what `lib/jurisdiction.ts` resolves against, so an address we
+        // could not place is worth a pause: the person can correct it and press again. Any other
+        // site's miss is not — see below.
+        if (r.missed) { stop.push(r.missed); continue }
       } else if (step.kind === 'new-site') {
-        const s = await putSite({ name: step.name, address: step.address }, 'POST')
-        if (s) sentences.push(s)
+        const r = await putSite({ name: step.name, address: step.address }, 'POST')
+        if (r.failed) { stop.push(r.failed); continue }
+        // A second site we could not place IS SAVED, with its address as typed. Holding the walk
+        // up for it would mean a company with a plant in Poland could never finish, and the county
+        // box in the site drawer is one tab away.
       } else {
         await fetch('/api/website-read/accept', { method: 'POST', headers: await authHeaders() })
       }
+      saved.current.add(key)
     }
     setBusy(false)
-    if (sentences.length) { setNotice(sentences.join(' ')); return }
+    if (stop.length) { setNotice(stop.join(' ')); return }
     setScreen(2)
   }
 
@@ -226,10 +271,13 @@ function Walk() {
     if (busy || !addressDraft.trim()) return
     setBusy(true)
     setNotice(null)
-    const s = mainSite
+    const r = mainSite
       ? await putSite({ id: mainSite.id, name: mainSite.name, address: addressDraft.trim() }, 'PATCH')
-      : SAVE_FAILED
+      : { failed: SAVE_FAILED }
     setBusy(false)
+    // The same rule as the card's: this IS the main site, so an address we could not place is
+    // worth a pause rather than a shrug.
+    const s = r.failed ?? r.missed
     if (s) { setNotice(s); return }
     setScreen(2)
   }
@@ -276,12 +324,48 @@ function Walk() {
 
           <div>
             <label className={LABEL} htmlFor="walk-what">{WHAT_YOU_DO_LABEL}</label>
-            <NaicsField
-              value={whatDraft} onValue={setWhatDraft}
-              picked={pickedCode} onPick={setPickedCode}
-              showSuggestions={showSuggestions} onShowSuggestions={setShowSuggestions}
-              busy={busy} showCode clearOnType={false}
-              placeholder={WHAT_YOU_DO_PLACEHOLDER} label={WHAT_YOU_DO_LABEL} />
+            {/* *** A TEXTAREA, BECAUSE THE SENTENCE IS THE THING BEING CHECKED. *** The website
+                read's sentence is routinely 140 characters and a single-line box ran it off the
+                edge, so the person was asked to confirm words they could not see. It grows from
+                two lines to four; longer than that scrolls, which is rarer than the cap. */}
+            <textarea id="walk-what" value={whatDraft} disabled={busy}
+              rows={sentenceRows(whatDraft)} cols={SENTENCE_COLS}
+              onChange={(e) => setWhatDraft(e.target.value)}
+              placeholder={WHAT_YOU_DO_PLACEHOLDER} aria-label={WHAT_YOU_DO_LABEL}
+              className={`${FIELD} resize-none leading-6`} />
+
+            {/* The standard category, in words. The code is what gets SAVED; the title is the
+                only part of it a person can agree or disagree with. */}
+            {picking ? (
+              <div className="mt-2">
+                <NaicsField
+                  value={categoryDraft} onValue={setCategoryDraft}
+                  onPick={(code) => {
+                    setPickedCode(code)
+                    // Picking one closes the control and the line says what was chosen. Clearing
+                    // (the list's "Keep what you typed") leaves it open to pick again.
+                    if (code) setPicking(false)
+                  }}
+                  showSuggestions={showSuggestions} onShowSuggestions={setShowSuggestions}
+                  busy={busy} autoFocus
+                  placeholder={CATEGORY_SEARCH_PLACEHOLDER} label={CATEGORY_LABEL} />
+              </div>
+            ) : (
+              <p className="mt-1.5 text-[12.5px] leading-5 text-gray-500">
+                {categoryLine(pickedCode, categoryTitle)}
+                <button type="button" disabled={busy}
+                  onClick={() => {
+                    // Seeded from the sentence, so the first list offered is about their business
+                    // rather than empty. What is typed here is a SEARCH and is never saved.
+                    setCategoryDraft(whatDraft.trim())
+                    setShowSuggestions(true)
+                    setPicking(true)
+                  }}
+                  className="ml-2 text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+                  {categoryAction(pickedCode)}
+                </button>
+              </p>
+            )}
           </div>
 
           <div>
@@ -366,32 +450,47 @@ function Walk() {
  * either (step 6's note on that file).
  */
 function Questions({ onDone, step }: { onDone: () => void; step: number }) {
-  const [asks, setAsks] = useState<CardQuestion[] | null>(null)
-  const [answered, setAnswered] = useState(0)
-  const [skips, setSkips] = useState<string[]>([])
+  /**
+   * *** THE THREE ARE TAKEN ONCE, WHEN THIS SCREEN OPENS. ***
+   *
+   * It used to re-fetch after every answer and end when three had been ANSWERED, which is the
+   * Dashboard's rule and wrong here: "I don't know yet" writes nothing and so counted for nothing,
+   * and the screen handed over the next of the twenty-odd company-scope switches, for ever. The
+   * owner's walk reached a sixth question still labelled "3 of 3". `lib/walkView.ts` `walkQuestions`
+   * carries the reasoning.
+   *
+   * So: one fetch, the first three, asked in order. Answering and skipping both use one of the
+   * three. The counter is the position in this list. The Dashboard's card is untouched.
+   */
+  const [three, setThree] = useState<CardQuestion[] | null>(null)
+  const [at, setAt] = useState(0)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const [draft, setDraft] = useState('')
 
-  const load = useCallback(async () => {
-    try {
-      // No `entity_id`: that parameter is what makes the route answer about a SITE, and this
-      // screen names none — `askableHere` drops any site-scoped row that still arrives.
-      const res = await fetch('/api/switches/ask', { headers: await authHeaders() })
-      if (!res.ok) { setAsks([]); return }
-      const j = await res.json()
-      setAsks(askableHere((j?.ready ?? []) as CardQuestion[]))
-    } catch {
-      setAsks([])
-    }
+  useEffect(() => {
+    let live = true
+    ;(async () => {
+      try {
+        // No `entity_id`: that parameter is what makes the route answer about a SITE, and this
+        // screen names none — `askableHere` drops any site-scoped row that still arrives.
+        const res = await fetch('/api/switches/ask', { headers: await authHeaders() })
+        if (!res.ok) { if (live) setThree([]); return }
+        const j = await res.json()
+        if (live) setThree(walkQuestions(askableHere((j?.ready ?? []) as CardQuestion[])))
+      } catch {
+        if (live) setThree([])
+      }
+    })()
+    return () => { live = false }
   }, [])
-  useEffect(() => { load() }, [load])
 
-  const current = useMemo(() => nextQuestion(asks ?? [], skips), [asks, skips])
+  const total = three?.length ?? 0
+  const current = three && at < total ? three[at] : null
 
   useEffect(() => {
-    if (asks !== null && questionsDone(answered, Boolean(current))) onDone()
-  }, [asks, answered, current, onDone])
+    if (three !== null && walkDone(at, total)) onDone()
+  }, [three, at, total, onDone])
 
   async function answer(value: string) {
     if (!current || busy) return
@@ -400,16 +499,15 @@ function Questions({ onDone, step }: { onDone: () => void; step: number }) {
     const res = await postSwitchAnswer({ switch_id: current.switch_id, value, entity_id: null })
     if (!res.ok) { setFailed(true); setBusy(false); return }
     setDraft('')
-    setAnswered((n) => n + 1)
-    await load()
     setBusy(false)
+    setAt((i) => i + 1)          // one of the three, used
   }
 
-  if (asks === null || !current) return <Shell step={step}><p className="text-sm text-gray-400">…</p></Shell>
+  if (three === null || !current) return <Shell step={step}><p className="text-sm text-gray-400">…</p></Shell>
 
   return (
     <Shell step={step}>
-      <p className="text-[12px] tabular-nums text-gray-400">{cardNumber(answered, QUESTIONS_PER_DAY)}</p>
+      <p className="text-[12px] tabular-nums text-gray-400">{walkCounter(at, total)}</p>
       <p className="mt-1.5 font-serif text-[19px] leading-7 text-gray-900 text-balance">{current.question}</p>
       {current.help && <p className="mt-1 text-[13px] leading-5 text-gray-500">{current.help}</p>}
 
@@ -419,7 +517,7 @@ function Questions({ onDone, step }: { onDone: () => void; step: number }) {
         onAnswer={answer}
         trailing={
           <button type="button" disabled={busy}
-            onClick={() => setSkips([...skips, current.switch_id])}
+            onClick={() => { setDraft(''); setAt((i) => i + 1) }}
             className="ml-auto text-[13px] text-gray-500 underline transition-colors hover:text-gray-800 disabled:opacity-50">
             {SKIP_WORD}
           </button>
