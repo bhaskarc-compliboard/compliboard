@@ -42,11 +42,11 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 10 | The owner's test, part A | By hand on staging; free | Done 21 Oct — two findings, both fixed (`ea0a3a6`): the site drawer closes on Save, and the password changes by reset link rather than a form |
 | 11 | Release A | The routine: backup, 082 on production, read back, push, the built-app walk, live checks | Prepared 21 Oct (`a1b5284`, `b97e1da`); **082 and 083 applied to production by the owner and read back 22 Oct** — the rest of the routine is the owner's |
 | **B** | **The front door** | | |
-| 12 | Signup | Four fields; the account, the company and its main site created together; the trial starts; lands on the Dashboard until step 14 moves it to the walk | Done 22 Oct — migration 084, applied to staging; `DECISIONS.md` §209 |
-| 13 | The website read | `AI_MODEL_WEBSITE` (Opus 5.5 to start); one read; the card proposes name, what they do, addresses; nothing written until "Yes, that's us". One stop: the prompt and two real cards reviewed first | Done 22 Oct — migration 085, applied to staging; `DECISIONS.md` §210 |
-| 14 | The walk | Three screens; every screen can be left; the Dashboard picks up | Not started |
-| 15 | The owner's test, part B | Real websites, Opus 5.5 against Sonnet 5.5, side by side | Done 22 Oct — `npm run website:compare`; five hosts read; three findings from the owner's own walk fixed, and the card redrawn (migration 086, `DECISIONS.md` §212) |
-| 16 | Release B | The routine; `AI_MODEL_WEBSITE` set on Vercel by the owner | Not started |
+| 12 | Signup | Four fields; the account, the company and its main site created together; the trial starts; lands on the walk | **Released 22 Oct** — migration 084 on production · `c767ab1`, `e091df9` · `DECISIONS.md` §209 |
+| 13 | The website read | `AI_MODEL_WEBSITE` (Opus 5.5); one read; the card proposes; nothing written until "Yes, that's us" | **Released 22 Oct** — migration 085 on production · `6983946`, `fe100e3` · `DECISIONS.md` §210 |
+| 14 | The walk | Three screens; every screen can be left; the Dashboard picks up | **Released 22 Oct** — `8c659c5`, `4c4f985` · `DECISIONS.md` §211 |
+| 15 | The owner's test, part B | Real websites, Opus 5.5 against Sonnet 5.5, side by side | **Released 22 Oct** — `npm run website:compare`, five hosts; three findings from the owner's walk fixed and the card redrawn · migration 086 on production · `cebdfed`, `922eba8`, `6c38a7b`, `6afa908`, `f9147bb`, `2440cef` · `DECISIONS.md` §212 |
+| 16 | Release B | The routine; `AI_MODEL_WEBSITE` set on Vercel by the owner | **Released 22 Oct** — four backup CSVs, the variable set before the push, 084/085/086 applied, production read back six ways, `main` fast-forwarded to `2440cef`, ten live checks passed, one measured walk against the production build. `docs/RELEASE.md` |
 | **C** | **Billing** | | |
 | 17 | Stripe, the wiring | The owner's Stripe account and keys; **migration 087** (`stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`) — the plan first called it 083, which is `one_address`; 084, 085 and 086 are taken too; checkout and portal routes; the webhook. One stop | Not started |
 | 18 | The read-only state | One rule the paid routes check; the banner; the 7-day grace; the daily job that ends trials | Not started |
@@ -174,6 +174,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 22 Oct 2026 | **Part B released.** Steps 12–16 marked Released with their commits; migrations 084, 085 and 086 on production; `main` at `2440cef`. The routine as it ran is in `docs/RELEASE.md`, including what to do when the push is refused with 403. |
 | 22 Oct 2026 | Step 15 done (migration 086): the card redrawn. Decision 3 amended — NAICS leaves every screen a person sees, `about` holds the sentence, `what_you_do` holds the broad industry line. Decision 19 added: the Dashboard greets the company, and a greeted tab stays greeted. Step 17's migration is **087**. |
 | 22 Oct 2026 | Step 13 done (migration 085): the website read. Decision 9 gains what was built and what the stop settled; step 17's migration is **086** — the plan called it 083, which is `one_address`. |
 | 22 Oct 2026 | Step 12 done (migration 084). Decision 8 gains a sentence: `companies.industry` is a join key, so it takes a DEFAULT of `chemical-manufacturing` rather than a question — `DECISIONS.md` §209. Steps 10 and 11's rows corrected: both had been done and the table still said "Not started". Step 17's row no longer calls its migration 083, which is `one_address`. |

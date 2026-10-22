@@ -848,3 +848,133 @@ only for the exact word `true`. Off, an HR answer is the baseline's; on, it is g
 **`AI_AUDIT_STRUCTURED` is deliberately NOT set, and unset means OFF** — not the scan variable's inverted convention. It exists in `lib/pipelineConfig.ts` and has never been measured against the rev 1 audit baseline; it is a switch for a later run, measured one change at a time.
 
 **`NOTIFY_TEST_TO` is confirmed ABSENT and must stay absent.** Set here, every customer's batch email goes to that address instead of to them. `DEV_MAX_SEARCHES` is likewise not set and must not be.
+
+---
+
+## MY ACCOUNT PART B'S RELEASE ROUTINE — AS IT RAN, 22 October 2026
+
+*Written after the fact, from what actually happened, so the next one can be followed rather than
+reconstructed. The branch was `account`, **12 commits ahead of `main` and 0 behind** — `main` sat at
+`b97e1da`, unmoved since the branch was cut, so step 5 was a fast-forward. The pending migrations
+were **084, 085 and 086**, and `npm run preflight` said `PENDING COUNT: 3` and named all three.*
+
+**Claude Code ran nothing against production.** Every production reading in steps 3 and 6 was
+`SELECT`-only through the Supabase CLI's own connection, with `SUPABASE_PROD_SERVICE_ROLE_KEY` and
+`SUPABASE_PROD_URL` both blank on the laptop (§3.8). The owner ran the backup, the migration, the
+variable and the push.
+
+### What goes out
+
+| | |
+|---|---|
+| **Signup, four fields** | work email, password, company name, website. The account, the company and its main site are created **together or not at all** — one SECURITY DEFINER function, and the login is deleted again if that transaction fails, so the address is free to try again (084) |
+| **The website read** | one read of the site the person gave us, on `AI_MODEL_WEBSITE`. It proposes; nothing is written on its word. The old scanner's blind SSRF is closed with it: https only, no IP literals, every resolved address checked, every redirect hop re-checked (085) |
+| **The walk** | three screens after signup, every one leavable. The card is three lines of text — the sentence, the industry, the address — each with its own `change`; "Yes, that's us" saves what is in the fields through the routes that already own those tables |
+| **086** | `companies.about` for the sentence; `what_you_do` changes meaning to the broad industry line; **`naics_code` closed to a person** — NAICS leaves every screen a customer sees |
+| **The Dashboard's greeting** | "Welcome, ‹company name›" / "Welcome back, ‹company name›", and a tab that has been greeted stays greeted |
+
+### Step 1 — the four backup CSVs
+
+**Production SQL editor → run each, Download CSV, keep the four files together with the date.**
+
+```sql
+select * from public.companies order by id;
+select * from public.entities  order by company_id, is_primary desc;
+select * from public.profiles  order by id;
+select * from public.ai_calls  order by created_at;
+```
+
+Part A took `switches` as its fourth; part B takes **`ai_calls`**, because 085 drops and recreates
+`ai_calls_task_check` on a table holding real spend. Read from production before the migration:
+**companies 10, entities 10, profiles 4, ai_calls 83.**
+
+### Step 2 — `AI_MODEL_WEBSITE`, on Vercel, BEFORE the push
+
+| Variable | Value | Why before |
+|---|---|---|
+| `AI_MODEL_WEBSITE` | `claude-opus-5-5`, visible | A variable change is itself a redeploy. Set afterwards, there is a window in which every new customer's website is read on whatever the judgement tier happens to be — which is the same model today and need not stay so. `lib/ai.ts` `TASK_MODELS.website` falls back to `judgement` unset |
+
+Nothing else. Read from the branch's own diff: the only variables any shipped file reads are the
+`AI_MODEL_*` family, `ANTHROPIC_API_KEY`, `GEOCODER_URL` (**still deliberately unset** — unset means
+the Census endpoint), `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `NODE_ENV`.
+`lib/websiteFetch.ts` and both `/api/website-read` routes read **no environment variable at all**:
+the caps, the host checks and the http fallback are constants in the file.
+
+### Step 3 — the migrations
+
+```
+npm run preflight            # PENDING COUNT: 3 — 084, 085, 086
+npm run db:migrate:prod      # typed confirmation, a human action, never automated
+```
+
+084 carries 16 self-test checks, 085 carries 15 and 086 carries 15; each runs inside the push's
+transaction, so a failure aborts and leaves nothing behind.
+
+### Step 4 — read production back
+
+Six readings, `SELECT` only, every one of them:
+
+| | |
+|---|---|
+| newest three | **086, 085, 084** |
+| `create_company_for_login` | SECURITY DEFINER, `search_path=""`, EXECUTE held by **postgres and service_role only** — anon false, authenticated false |
+| `companies` | `industry` defaults to `'chemical-manufacturing'`; `about` is nullable text; a person may write `about` and `what_you_do` and **not** `naics_code`; no table-wide UPDATE; `anon` holds none of the eight rights |
+| `website_reads` | exists, RLS on, **one** policy — `website_reads_select → (company_id = auth_company_id())`; a person may SELECT and not INSERT, UPDATE or DELETE; `anon` nothing |
+| the ledger | `ai_calls_task_check` contains `website`; **ai_calls still 83**; companies 10, profiles 4, entities 10 |
+| no row rewritten | The ten companies still read 7 × `chemical-manufacturing`, 1 × `wood-products-sawmills`, 1 × `hospice`, 1 × `food-beverage-manufacturing`. **If 084's default had touched existing rows every one would say `chemical-manufacturing`** — a default applies to inserts. `about` and `naics_code` are NULL on all ten |
+
+> **One thing that looked like a change and was not.** Comparing each company with its main site,
+> **2 of 10 differ** where Release A recorded 0 — `ZZ Throwaway Test` and `zz-test-empty`, both from
+> July, both differing in `county` alone: `''` on the company, NULL on the site. That is the old
+> signup's `county: ''`, which `create_primary_site` nullified at creation, and which **083's
+> backfill deliberately preserves** (its SET is `coalesce(m.county, c.county)`, so a NULL on a site
+> never erases a value on a company). Release A's 0 was measured with the backfill's own coalesce
+> semantics; the step 4 reading used a stricter `is distinct from`. Nothing in this release caused
+> it, and both rows are throwaway accounts.
+
+### Step 5 — the merge and the push
+
+```
+git checkout main && git merge --ff-only account && git push origin main
+```
+
+Then Vercel green before the live checks.
+
+### Step 6 — one measured walk against the BUILT app
+
+**`next build && next start`, never `next dev`** — the rule in every routine since 20 October,
+because dev does not reproduce the class of bug the audits hotfix was. It ran on an isolated copy on
+port 3998, under the Haiku guard, and is recorded in `docs/TESTING.md` under "My Account, part B".
+
+### Step 7 — the live checks on production, by hand
+
+Thirteen, listed at the step 16 pre-flight: sign in and the greeting; the Company tab's two lines
+and their `change`; **one real signup with a tagged address and the owner's own website** (paid,
+about 3¢ on Opus 5.5); the card; "Yes, that's us"; exactly three questions; the Dashboard saying
+**"Welcome, ‹company›"** and still saying it after a reload; My Account on the new account; sign out
+and in for **"Welcome back"**; then Cancel → type the company name → delete it.
+
+---
+
+### WHEN THE PUSH IS REFUSED WITH 403
+
+**What happened on 22 October.** `git push origin main` returned **403**. The laptop had **one
+GitHub login in its keychain, for a different account**, and git offered it to every host — so the
+push authenticated as somebody with no write access to this repository.
+
+**The fix, which is per-account rather than per-machine:**
+
+```
+git remote set-url origin https://bhaskarc-compliboard@github.com/bhaskarc-compliboard/compliboard.git
+```
+
+Putting the username in the remote URL makes git keep a **separate credential per account**, so the
+other login in the keychain is no longer offered for this repository. Then, at the password prompt,
+a **classic personal access token with `repo` scope** — not the account password, which GitHub has
+not accepted for git over HTTPS for years.
+
+**`gh` is not installed on this laptop**, so `gh auth login` is not the route; the token goes in at
+the prompt and the keychain remembers it against that username.
+
+*This belongs in a release routine because it stops a release dead at the last step, it looks like a
+permissions problem on GitHub's side, and the thing that is actually wrong is on the laptop.*

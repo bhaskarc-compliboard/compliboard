@@ -4500,3 +4500,40 @@ still NULL.
 **What this cannot show**: a reload, as opposed to a navigation away and back. The harness loads a
 page once per run. Both are second mounts of the same component in the same tab, which is the thing
 the fix addresses, and the unit tests hold the rule directly.
+
+### W-5 · The walk against the PRODUCTION BUILD — Release B, 22 October 2026 (`shots/relb-*`)
+
+`next build && next start` on an isolated copy, port 3998, under the Haiku guard, then
+`npm run measure` through the whole path in one run with **one `--wait`** (it is a global flag; a
+second one silently replaces the first).
+
+**Not `next dev`.** The rule in every release routine since 20 October: the dev server does not
+reproduce the class of bug the audits hotfix was, and a walk that only ever ran against it is a
+walk against something customers never see.
+
+| | |
+|---|---|
+| `relb-1-card.png` | the card: three lines, each with its own `change`, the company name above them with its grey line, the Polish site ticked |
+| `relb-2-question1.png` | screen 2, **1 of 3** |
+| `relb-3-done.png` | "That's it" |
+| `relb-4-dashboard.png` | **"Welcome, Release B Probe"** |
+
+Read back from staging: `about` saved · `what_you_do` = **"Chemical manufacturing"** · `naics_code`
+**NULL** · main site `8150 Lackland, St. Louis, MO 63114` geocoded **Missouri / St. Louis** and
+mirrored onto the company row · 2 sites · 3 answers · accepted · welcomed. The probe was deleted
+through `/api/account` afterwards.
+
+**What the production build showed that the dev server had been hiding.** Every effect fires
+**once**, where React's StrictMode had been running them twice in development:
+
+| request | dev | production build |
+|---|---|---|
+| `PATCH profiles` (the `welcomed_at` stamp) | **2** | **1** |
+| `GET profiles` on the Dashboard | 6 | 3 |
+| `GET /api/switches/ask` | 4 (two per mount) | 2 — one in the walk, one from the Dashboard's own card |
+
+Nothing behaved differently; the counts did. It is worth knowing which of the two you are reading
+when a let-through list looks like a page asking for something twice — and it is also why the
+double stamp seen while diagnosing the greeting was never production behaviour. The greeting's
+actual defect was a second MOUNT reading the page's own stamp, which the `sessionStorage` memory
+closes in both.
