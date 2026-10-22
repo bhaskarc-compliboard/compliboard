@@ -22,7 +22,10 @@ import {
   JOIN_EMAIL_TAKEN, JOIN_PASSWORD_MIN, JOIN_PASSWORD_SHORT, JOIN_BROKEN,
   inviteSubject, joinUrl, orderPeople,
 } from '../../lib/peopleView.ts'
-import { invitationEmail } from '../../lib/invitationEmail.ts'
+import {
+  invitationEmail, invitationMailBlocked, MAIL_NOT_ON,
+} from '../../lib/invitationEmail.ts'
+import { SANDBOX_FROM, SANDBOX_SENDER } from '../../lib/email.ts'
 
 /**
  * The source with its comments taken out. Every assertion about a route is about what it DOES, and
@@ -264,5 +267,62 @@ describe('*** WHAT THE ROUTES MUST NEVER DO ***', () => {
 
   test('/join is outside the app shell, because nobody there has a session', () => {
     assert.ok(!/AppLayout/.test(page))
+  })
+})
+
+
+/* =================================================================================================
+   WHEN MAIL CANNOT BE SENT — step 11 part A.
+   ================================================================================================= */
+describe('an invitation that cannot be emailed is never created', () => {
+  const ok = { from: 'CompliBoard <hello@compliboard.com>', vercelEnv: 'production',
+               resendKey: 'rs_live_x', appUrl: 'https://app.compliboard.com' }
+
+  test('everything in place: nothing blocks it', () => {
+    assert.equal(invitationMailBlocked(ok), null)
+    // ...and off production the sandbox sender is fine, which is what keeps staging working.
+    assert.equal(invitationMailBlocked({ ...ok, from: SANDBOX_FROM, vercelEnv: undefined }), null)
+    assert.equal(invitationMailBlocked({ ...ok, from: SANDBOX_FROM, vercelEnv: 'preview' }), null)
+  })
+
+  test('*** THE SANDBOX SENDER ON PRODUCTION BLOCKS IT *** — which is today', () => {
+    const b = invitationMailBlocked({ ...ok, from: SANDBOX_FROM, vercelEnv: 'production' })
+    assert.ok(b)
+    assert.equal(b!.sentence, MAIL_NOT_ON)
+    // The log says which of the three it was; the person never sees it.
+    assert.ok(b!.why.includes(SANDBOX_SENDER))
+  })
+
+  test('no key, or no app URL, blocks it too — and says the same thing to the person', () => {
+    for (const bad of [{ resendKey: '' }, { resendKey: '   ' }, { appUrl: '' }]) {
+      const b = invitationMailBlocked({ ...ok, ...bad })
+      assert.ok(b, JSON.stringify(bad))
+      assert.equal(b!.sentence, MAIL_NOT_ON)
+    }
+    // A dead link is worse than no email, so a missing app URL is a refusal and not a shrug.
+    assert.match(invitationMailBlocked({ ...ok, appUrl: '' })!.why, /dead/)
+  })
+
+  test('the sentence tells the truth and does not invite a pointless retry', () => {
+    assert.equal(MAIL_NOT_ON,
+      'Invitations by email are not switched on yet. We will let you know when they are.')
+    // "could not ... just now" would invite trying again, which fails identically.
+    assert.ok(!/just now|try again/i.test(MAIL_NOT_ON))
+  })
+
+  test('*** AND THE ROUTE ASKS BEFORE IT WRITES ANYTHING ***', () => {
+    // The whole fix is the order. It used to insert the row, read its token, build the mail and
+    // only then discover the guard — leaving a live invitation for an email nobody would receive,
+    // occupying the one-live-invitation index, and left there for good by any failure in between.
+    const route = code(readFileSync('app/api/invitations/route.ts', 'utf8'))
+    const asked = route.indexOf('invitationMailBlocked(')
+    const written = route.indexOf(".insert({ company_id")
+    assert.ok(asked > 0 && written > 0, 'both must be present')
+    assert.ok(asked < written, 'the refusal must be settled before the row is written')
+    // And the resend takes the same branch: the cancel of the OLD invitation also comes after.
+    const cancelled = route.indexOf('cancelled_at: now.toISOString()')
+    assert.ok(asked < cancelled, 'a refusal must not withdraw a working invitation first')
+    // Nothing writes a row and then cancels it for this reason any more.
+    assert.ok(!/sandboxSenderRefusal/.test(route), 'the late guard is gone from the route')
   })
 })

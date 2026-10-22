@@ -15,7 +15,7 @@
  * the plain-text twin is built by the same function rather than written twice. The shape is a pure
  * value — this file calls nothing and reads nothing — so a test can render it and read both halves.
  */
-import { type EmailShape, FOOTER_NOT_LEGAL_ADVICE } from './email.ts'
+import { type EmailShape, FOOTER_NOT_LEGAL_ADVICE, sandboxSenderRefusal } from './email.ts'
 import { inviteSubject, joinButton, joinUrl, LINK_GOOD_FOR } from './peopleView.ts'
 
 export interface InvitationMail {
@@ -67,4 +67,61 @@ export function invitationEmail(input: {
       ],
     },
   }
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * CAN AN INVITATION BE SENT AT ALL? ASKED BEFORE ANYTHING IS WRITTEN.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * *** THE ORDER IS THE WHOLE FIX, AND IT WAS WRONG. *** `POST /api/invitations` used to insert the
+ * row, read its token, build the mail and only THEN discover that the sandbox guard refuses to send
+ * on production. It cancelled the row afterwards, which is tidy but not clean: for the length of
+ * two round trips a live invitation existed for an email nobody would ever receive, the
+ * one-live-invitation index was occupied by it, and a failure between the insert and the cancel
+ * would have left it there for good — an invitation that can never be accepted and that blocks the
+ * colleague from being invited again.
+ *
+ * Nothing about "can we send mail" depends on the row, so it is asked first and nothing is written.
+ * `lib/email.ts` `sandboxSenderRefusal` is the rule for production's sandbox sender; the key and the
+ * app URL are the other two things a sendable invitation needs. **A link that does not work is
+ * worse than no email** (`lib/auditNotify.ts`'s rule), and an invitation whose entire content is a
+ * dead link is the worst version of that.
+ *
+ * *** AND THE PERSON IS TOLD THE TRUTH, WHICH IS NOT "SOMETHING WENT WRONG". *** On production
+ * today, with the Resend domain not yet verified, inviting a colleague is a thing the product
+ * genuinely cannot do. "We could not send that just now" invites them to try again, which will fail
+ * identically. The sentence says it is not switched on and that we will say when it is.
+ *
+ * A pure function of four strings, so a test can hold every branch without an environment and
+ * without a mail client — the shape `sandboxSenderRefusal` is written in, for the same reason.
+ */
+export const MAIL_NOT_ON =
+  'Invitations by email are not switched on yet. We will let you know when they are.'
+
+export interface MailBlocked {
+  /** What the person reads. One sentence, the same for every reason. */
+  sentence: string
+  /** What goes in the log. Ours, and never shown. */
+  why: string
+}
+
+export function invitationMailBlocked(input: {
+  from: string
+  vercelEnv: string | undefined
+  resendKey: string | undefined
+  appUrl: string
+}): MailBlocked | null {
+  const sandbox = sandboxSenderRefusal(input.from, input.vercelEnv)
+  if (sandbox) return { sentence: MAIL_NOT_ON, why: sandbox }
+  if (!(input.resendKey ?? '').trim()) {
+    return { sentence: MAIL_NOT_ON, why: 'RESEND_API_KEY is not set' }
+  }
+  if (!input.appUrl.trim()) {
+    return {
+      sentence: MAIL_NOT_ON,
+      why: 'NEXT_PUBLIC_APP_URL is not set, so every link in the invitation would be dead',
+    }
+  }
+  return null
 }

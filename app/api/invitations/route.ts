@@ -18,8 +18,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-import { renderEmail, SANDBOX_FROM, sandboxSenderRefusal } from '@/lib/email'
-import { invitationEmail } from '@/lib/invitationEmail'
+import { renderEmail, SANDBOX_FROM } from '@/lib/email'
+import { invitationEmail, invitationMailBlocked } from '@/lib/invitationEmail'
 import {
   looksLikeEmail, BAD_EMAIL, alreadySignsIn, alreadyInvited, INVITE_FAILED,
   isLiveInvitation, personName,
@@ -37,6 +37,30 @@ export async function POST(request: NextRequest) {
 
     if (!looksLikeEmail(email)) {
       return NextResponse.json({ error: BAD_EMAIL }, { status: 400 })
+    }
+
+    /**
+     * *** CAN WE SEND AT ALL? ASKED BEFORE ANYTHING IS WRITTEN. ***
+     * `lib/invitationEmail.ts` `invitationMailBlocked` carries the reasoning. This used to be
+     * checked AFTER the row was inserted and its token read, so on production a live invitation
+     * briefly existed for an email nobody would ever receive — occupying the one-live-invitation
+     * index, and left there for good by any failure between the insert and the cancel.
+     *
+     * It is also the branch "Send the link again" takes, and the order matters there too: the
+     * resend cancels the old invitation before writing a new one, so a refusal discovered later
+     * would have withdrawn a WORKING invitation and replaced it with nothing. Returning here
+     * leaves the existing one exactly as it was.
+     */
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
+    const blocked = invitationMailBlocked({
+      from: SANDBOX_FROM,
+      vercelEnv: process.env.VERCEL_ENV,
+      resendKey: process.env.RESEND_API_KEY,
+      appUrl,
+    })
+    if (blocked) {
+      console.error(`INVITATION NOT SENT: ${blocked.why}`)
+      return NextResponse.json({ error: blocked.sentence }, { status: 503 })
     }
 
     // ---- 1. DOES THIS ADDRESS ALREADY SIGN IN HERE? ----
@@ -96,16 +120,6 @@ export async function POST(request: NextRequest) {
     }
 
     // ---- 4. THE LINK, AND ONLY NOW THE SERVICE ROLE ----
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
-    // *** A LINK THAT DOES NOT WORK IS WORSE THAN NO EMAIL *** — `lib/auditNotify.ts`'s rule. An
-    // invitation whose only content is a dead link is the worst possible version of this email.
-    if (!appUrl) {
-      await supabaseAdmin.from('invitations')
-        .update({ cancelled_at: new Date().toISOString() }).eq('id', created.id)
-      console.error('[/api/invitations] NEXT_PUBLIC_APP_URL is not set, so the link would be dead')
-      return NextResponse.json({ error: INVITE_FAILED }, { status: 500 })
-    }
-
     const { data: withToken } = await supabaseAdmin
       .from('invitations').select('token').eq('id', created.id).single()
     const token = withToken?.token
@@ -126,24 +140,12 @@ export async function POST(request: NextRequest) {
     const mail = invitationEmail({ inviter, company, appUrl, token })
     const { html, text } = renderEmail(mail.shape)
 
-    // The same guard the monthly email carries: on production, from the sandbox sender, nothing
-    // leaves. The invitation is withdrawn rather than left live with no email behind it — an
-    // invitation nobody received is an invitation that cannot be accepted, and leaving the row
-    // would block the index for a colleague who then cannot be re-invited.
-    const sandbox = sandboxSenderRefusal(SANDBOX_FROM, process.env.VERCEL_ENV)
-    const key = process.env.RESEND_API_KEY
-    if (sandbox || !key) {
-      await supabaseAdmin.from('invitations')
-        .update({ cancelled_at: new Date().toISOString() }).eq('id', created.id)
-      console.error(`INVITATION NOT SENT: ${sandbox ?? 'RESEND_API_KEY is not set'}`)
-      return NextResponse.json({ error: INVITE_FAILED }, { status: 503 })
-    }
-
     // The To is the override on staging; who it is FOR goes in the log either way, which is how a
     // run that went to the test address is still traceable to the person it was meant for.
     const override = (process.env.NOTIFY_TEST_TO ?? '').trim()
     const to = override ? [override] : [email]
-    const sent = await new Resend(key).emails.send({
+    // The key's presence was settled before anything was written; this is the same value.
+    const sent = await new Resend(process.env.RESEND_API_KEY!).emails.send({
       from: SANDBOX_FROM, to, subject: mail.subject, html, text,
     })
     if (sent.error) {
