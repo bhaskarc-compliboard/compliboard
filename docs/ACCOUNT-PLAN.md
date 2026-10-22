@@ -43,12 +43,12 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 11 | Release A | The routine: backup, 082 on production, read back, push, the built-app walk, live checks | Prepared 21 Oct (`a1b5284`, `b97e1da`); **082 and 083 applied to production by the owner and read back 22 Oct** — the rest of the routine is the owner's |
 | **B** | **The front door** | | |
 | 12 | Signup | Four fields; the account, the company and its main site created together; the trial starts; lands on the Dashboard until step 14 moves it to the walk | Done 22 Oct — migration 084, applied to staging; `DECISIONS.md` §209 |
-| 13 | The website read | `AI_MODEL_WEBSITE` (Opus 5.5 to start); one read; the card proposes name, what they do, addresses; nothing written until "Yes, that's us". One stop: the prompt and two real cards reviewed first | Not started |
+| 13 | The website read | `AI_MODEL_WEBSITE` (Opus 5.5 to start); one read; the card proposes name, what they do, addresses; nothing written until "Yes, that's us". One stop: the prompt and two real cards reviewed first | Done 22 Oct — migration 085, applied to staging; `DECISIONS.md` §210 |
 | 14 | The walk | Three screens; every screen can be left; the Dashboard picks up | Not started |
 | 15 | The owner's test, part B | Real websites, Opus 5.5 against Sonnet 5.5, side by side | Not started |
 | 16 | Release B | The routine; `AI_MODEL_WEBSITE` set on Vercel by the owner | Not started |
 | **C** | **Billing** | | |
-| 17 | Stripe, the wiring | The owner's Stripe account and keys; a migration (`stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`) — **not 083, which is `one_address`, nor 084**; checkout and portal routes; the webhook. One stop | Not started |
+| 17 | Stripe, the wiring | The owner's Stripe account and keys; **migration 086** (`stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`) — the plan first called it 083, which is `one_address`; 084 and 085 are taken too; checkout and portal routes; the webhook. One stop | Not started |
 | 18 | The read-only state | One rule the paid routes check; the banner; the 7-day grace; the daily job that ends trials | Not started |
 | 19 | The Billing tab and the Cancel tab's subscription line | As drawn | Not started |
 | 20 | The owner's test, part C | Stripe test mode: a test card, a failing card, the trial ending | Not started |
@@ -84,6 +84,13 @@ the trial. Three parts, built and released in order: **A the account page · B t
    `lib/resolve.ts`. `DECISIONS.md` §209.
 9. **The website is the first door for information.** One read, on `AI_MODEL_WEBSITE` (Opus 5.5 to start; Sonnet 5.5
    compared at the test). It proposes; the person confirms; nothing is written on the model's word alone.
+   **Built 22 October (migration 085).** The proposal lands in `website_reads` — the pages fetched, what the model
+   said, or the reason it could not be read — and `authenticated` holds SELECT on it and nothing else. The old
+   scanner was replaced rather than reused: it was a blind SSRF (`docs/TODO.md:1075`), it asked the model to decide
+   facts that are switches, and it told the model to fall back on public directories when a site was thin. The new
+   one has one anchor and no search tool. Two things the stop settled: the NAICS ask is the BROADEST fitting code
+   rather than a confident one (the first wording returned "" on both real cards), and http is allowed only after
+   https fails to CONNECT. `DECISIONS.md` §210.
 10. **The walk is three screens and can be left at any point.** The Dashboard's own card continues the questions.
 11. **After the trial without a card, or after a failed card's 7-day grace: read-only, never locked out.** Sign in, read,
     download and print everything; asking, reading documents and auditing pause; one banner, one button. Nothing is ever
@@ -149,6 +156,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 22 Oct 2026 | Step 13 done (migration 085): the website read. Decision 9 gains what was built and what the stop settled; step 17's migration is **086** — the plan called it 083, which is `one_address`. |
 | 22 Oct 2026 | Step 12 done (migration 084). Decision 8 gains a sentence: `companies.industry` is a join key, so it takes a DEFAULT of `chemical-manufacturing` rather than a question — `DECISIONS.md` §209. Steps 10 and 11's rows corrected: both had been done and the table still said "Not started". Step 17's row no longer calls its migration 083, which is `one_address`. |
 | 21 Oct 2026 | Steps 8 and 9 done: the Sign-in tab (name, email, a password change that asks for the current one) and the Cancel tab (board 5's words, the inert subscription row, the export, the delete). Open question 2 answered. Two of the three no-current-password routes closed; /forgot-password stays, because it is recovery. |
 | 21 Oct 2026 | Step 7 done: the People tab, invitations, `/join`, remove, and the monthly-email switch read by the job. Open question 3 half answered — the invitation email is ours. |

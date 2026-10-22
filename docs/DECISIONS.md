@@ -15039,3 +15039,129 @@ named after `county: ''`, which signup no longer sends; the assertion stays as a
 rows created before today. `scripts/measure-layout.mjs` gained two things the front door needed:
 `--allow` may now be repeated, and `--type` can type into an `input[type=email]`.
 `scripts/test-guard.js`'s floor rose from 559 to 1634, the real total.
+
+---
+
+## 210. THE WEBSITE READ: ONE ANCHOR, ONE READ, AND NOTHING WRITTEN ON THE MODEL'S WORD — 22 October 2026 (My Account step 13, migration 085, `ACCOUNT-PLAN.md` decision 9)
+
+**The decision.** After signup, the website the person typed is read **once**. The model proposes
+four things — what the business does, a NAICS code, the addresses the site lists, and the name the
+site gives itself — and **none of them is written**. The proposal lands in `website_reads`, the
+walk's first screen draws it as a card, and only "Yes, that's us" sends the confirmed parts through
+the routes that already own those tables.
+
+### The old scanner was replaced, not reused, for three reasons.
+
+1. **It was a blind SSRF, and `docs/TODO.md:1075` had already said so.** `POST /api/scan-website`
+   took `url` from an unauthenticated body, prepended `https://`, and fetched it **plus sixteen
+   guessed subpaths**: *"one unauthenticated request is up to 17 outbound fetches from your
+   infrastructure to a destination the caller picks"*, with no scheme check and nothing blocking
+   private or link-local ranges. It was left open **deliberately**, because closing it meant
+   deciding an auth story for a pre-login surface. **Step 12 removed that surface** — signup no
+   longer reads anything — so this step is the first that is allowed to close it, and does.
+2. **It asked the model to decide switches.** `onsite_chemical_storage`, `hazmat_drivers` and
+   `repackaging` are rows in `supabase/seed-data/switches.json`, answered by a person through
+   `/api/switches/answer` with a recorded source. A model's guess stored beside a person's answer
+   is the omniscient-status-tracker anti-pattern §6 names.
+3. **It invited invention.** *"If the site content is thin, rely more on public directory
+   sources"*, with `web_search` enabled. §3.3 is the opposite rule: every stage must have an
+   anchor. **The new prompt has exactly one anchor — the pages we fetched — and no search tool.**
+
+### The fetch, and the caps.
+
+The homepage plus up to four pages **the homepage links to** whose path looks like about,
+locations, contact or company. Five pages, 8 seconds each and 25 in total, 400 KB off the wire per
+page, 6,000 characters kept per page and 24,000 in all, three redirects followed by hand.
+
+The guard: **https only**, no scheme ever taken from input; **no IP literals** in any form (a
+decimal `2130706433` is `127.0.0.1`, and `lib/signupView.ts`'s hostname pattern accepts
+`169.254.169.254` happily, so the check has to be here); **every** resolved address checked against
+loopback, private, link-local, CGNAT, multicast and reserved ranges; every redirect hop re-checked,
+because a public host that 302s into the metadata endpoint is the standard way round a check made
+once. Thirty-four tests hold it (`tests/unit/websiteRead.test.ts`), most of them this, because §45
+says a compensating control must be named **and tested** or it is a belief.
+
+**DNS rebinding stays open, and is written down in the file rather than left to be discovered.** A
+host can answer the resolve with a public address and the connection with a private one; `fetch`
+resolves again on its own and Node gives no supported way to pin the socket to the address we
+checked. Closing it means a custom `lookup` agent, which is its own change. The window is one
+request to a host the customer typed, with the body never returned to anyone.
+
+**http is allowed, and only in one case.** After https fails to **connect** — never after a 4xx or
+5xx, because a site that answered 403 is not a site that cannot do https, it is a site that said
+no. `thatcherco.com` is the case it exists for: measured on 22 October, it serves `http 200` and no
+https at all, and it is exactly the kind of small manufacturer this product is sold to. **The
+caveat, recorded:** an http fetch is plaintext, so anyone on the path can see which site we read
+and can change what we are shown. It is accepted because the body is never returned to anyone — it
+is summarised into a proposal a person then confirms line by line — and because the alternative is
+telling a customer we cannot read their website when their browser can. The same host and address
+checks run on every http hop, and **no https request can be redirected down into it**.
+
+### Two things measurement changed, which no amount of thinking would have.
+
+- **`www`.** `normaliseWebsite` strips a leading `www.`; some sites only serve it. An apex that
+  resolves can still refuse the connection while `www` answers. Adding the retry took the sample
+  from one site readable out of five to four out of six.
+- **The same menu on every page is not four facts.** Jost Chemical's three pages were 11,049
+  characters, of which about 2,000 per page were one navigation menu. Dropping lines already kept
+  from an earlier page took it to **6,710 (−39%)**, same pages. The comparison is against what was
+  **kept**, not what was fetched: a homepage truncated before its footer would otherwise have its
+  address stripped from page two as a "repeat" and it would be in neither.
+
+### The NAICS ask was wrong the first time, and the evidence said so.
+
+The prompt first read *"'' if you are not confident of the exact code. Do not guess a nearby
+code"*, and **both real cards came back empty** — Jost Chemical, plainly a chemical manufacturer,
+and PVS Chemicals, plainly another. A field that is empty every time is not a careful field. The
+owner's answer at the stop: ask for the **broadest** code that fits, and reserve "" for a site that
+never says what the business does. On the staging walk that produced **325180, Other Basic
+Inorganic Chemical Manufacturing** for Jost — validated against `lib/naicsTitles.ts`, with **our**
+title shown and never the model's.
+
+**The list is not in the prompt**, measured rather than assumed: 1,012 titles is 46,391 characters,
+about 11,600 input tokens, **$0.046 a read on Opus 5.5** — roughly tripling the cost of a signup
+for a field nobody has asked for yet. And there is no local fallback: `suggestNaics` given one of
+these sentences returns *Frozen Specialty Food Manufacturing* and *Industrial Launderers*, because
+it keyword-matches a short typed label and a sentence is not that. So a validated code, or nothing.
+
+### Where it lives, and why not on `companies`.
+
+`website_reads`, one row per read. Not a column on `companies` because two routes do `select('*')`
+on that table — `app/api/account/route.ts:51` on every My Account load and
+`app/api/account/export/route.ts:52` in the customer's download — so a jsonb column there would
+ship our reading of a stranger's web pages to the browser and into the export, and the only thing
+keeping the OLD `scan_result` out of the prompts is that `lib/companyContext.ts:243` happens to
+name its columns. A table also carries what a column cannot: the **claim**. The row is inserted as
+`reading` before any fetch, so a second press finds it and does nothing, and the walk can never
+arrive and find nothing at all.
+
+`authenticated` holds **SELECT and nothing else**, on the table and on every column of it, under
+`company_id = auth_company_id()`. Proved on staging rather than described: with two reads in the
+table, each person selecting with no filter saw exactly their own, and the third saw none.
+
+**No unique index on `company_id`** (the owner's answer). "Read once" is the route's rule — a POST
+while a row is `reading` or `ready` does nothing — because two of the seven sites measured at the
+stop failed for reasons that are temporary, and a person who fixes their website must not be told
+"we already tried". **A re-read button is owed and is not built.** `accepted_at` is stamped by step
+14's confirmation route as the service role, which is why nobody else may write here.
+
+**Reversed if** the proposal ever needs to be read by something other than the walk — a second
+reader is the point at which "our reading" becomes "the company's facts", and that is a different
+table with different rights, not a widened grant on this one.
+
+### Effects on other sections, by file.
+
+`lib/ai.ts` gains a 14th tier, `website`, falling back to `judgement` unset — and the Haiku guard
+covered it with no change at all, because `scripts/haiku-names.mjs` reads the `AITask` type and the
+`process.env.AI_MODEL*` occurrences out of `lib/ai.ts` rather than holding a list (`npm run
+haiku:check` went from 13 to 14 tiers by itself). `lib/costLedger.ts` `LEDGER_TASKS` gains
+`website`, and its test now reads the list **out of migration 085** rather than keeping a second
+copy of it. `app/api/account/route.ts` names `website_reads` in `DELETED_BY_CASCADE_OR_PARENT`, and
+`check:schema` CHECK 2 went red in exactly the window between naming it and regenerating the types
+— the bidirectional behaviour recorded at step 1, seen again. `app/signup/page.tsx` gains one
+awaited POST between the sign-in and the landing, and makes no request when the box was empty.
+`scripts/probe-structured-output.js` gains `--schema website-read` and now prints what each probe
+call used. `app/api/scan-website/route.ts`, `prompts/scan-website.ts` and `companies.scan_result`
+are untouched and still read by `lib/companyContext.ts:265` and `prompts/checklist.ts:328` for
+companies that signed up before step 12; removing them is its own step. **No prompt that exists
+today was changed, and no golden set was touched.**

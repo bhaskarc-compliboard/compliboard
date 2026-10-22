@@ -782,6 +782,7 @@ For a defect found on production, code only, no migration.
 > | `AI_SEARCH_MAX_HR` | **not set; the testing step decides.** Unset means no limit for an HR answer's searches, as for the workspace's research answer (HR Step 6b, `DECISIONS.md` §169) | `lib/ai.ts` `searchLimit` |
 > | `AI_MODEL_HR` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (HR Step 13, `DECISIONS.md` §181). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:144` |
 > | `AI_MODEL_HR_CHECK` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (the handbook check and the reading's outline calls). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:145` |
+> | `AI_MODEL_WEBSITE` | `claude-opus-5-5` — **to be added by the owner at RELEASE B** (My Account step 13, `ACCOUNT-PLAN.md` decision 9, `DECISIONS.md` §210). The one read of a new customer's website, after signup. **Unset it falls back to the JUDGEMENT tier**, which on production is also `claude-opus-5-5` — so leaving it out would work and would also mean the first thing this product ever says about a customer moves silently whenever the judgement tier moves. The two real cards were read on Opus 5.5 at **$0.0272 and $0.0312**; the staging walk on Haiku cost **$0.0036** | `lib/ai.ts` `TASK_MODELS.website` |
 >
 > **The 4 October correction it replaces:** the 3 October statement *"Every `AI_MODEL_*` variable set
 > on Vercel Production is `claude-opus-5-5`"* was wrong for `AI_MODEL_SUMMARY`, which was Sonnet until

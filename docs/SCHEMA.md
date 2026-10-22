@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-22 15:34 UTC
-**Migrations applied:** 85 — `000` to `084`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-22 16:25 UTC
+**Migrations applied:** 86 — `000` to `085`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -74,7 +74,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 6 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +23 more
+- `companies` — 6 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +24 more
 - `profiles` — 5 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
 - `entities` — 8 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +25 more
 
@@ -86,7 +86,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `jobs` — 0 rows · **no code reads or writes it**
 
-**Not assigned to a module above:** `ai_calls`, `calendar_feed_tokens`, `calendar_mailings`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `handbook_check_sections`, `handbook_checks`, `handbook_dates`, `handbook_findings`, `handbook_sections`, `handbooks`, `invitations`, `job_runs`, `turns`, `usage_counters`
+**Not assigned to a module above:** `ai_calls`, `calendar_feed_tokens`, `calendar_mailings`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `handbook_check_sections`, `handbook_checks`, `handbook_dates`, `handbook_findings`, `handbook_sections`, `handbooks`, `invitations`, `job_runs`, `turns`, `usage_counters`, `website_reads`
 
 ---
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 63 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 65 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -194,7 +194,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 - `ai_calls_input_tokens_check` — `CHECK ((input_tokens >= 0))`
 - `ai_calls_output_tokens_check` — `CHECK ((output_tokens >= 0))`
 - `ai_calls_searches_check` — `CHECK ((searches >= 0))`
-- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'howto'::text, 'other'::text, 'hr'::text, 'hr_check'::text, 'calendar'::text])))`
+- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'howto'::text, 'other'::text, 'hr'::text, 'hr_check'::text, 'calendar'::text, 'website'::text])))`
 - `ai_calls_wall_ms_check` — `CHECK ((wall_ms >= 0))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -337,9 +337,9 @@ One audit of one company at one moment. Sections are to a run what files are to 
 
 **Points at:**
 
-- `company_id` → `companies` — ON DELETE CASCADE
-- `company_id` → `entities` — ON DELETE CASCADE
 - `company_id` → `documents` — ON DELETE CASCADE
+- `company_id` → `entities` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `created_by` → `auth.users` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE CASCADE
 - `previous_run_id` → `audit_runs` — ON DELETE SET NULL
@@ -532,8 +532,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 - `added_by` → `auth.users` — ON DELETE SET NULL
 - `audit_finding_id` → `audit_findings` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `audit_findings` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbooks` — ON DELETE SET NULL
 - `confirmed_by` → `auth.users` — ON DELETE SET NULL
 - `deadline_id` → `document_deadlines` — ON DELETE SET NULL
@@ -774,7 +774,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 **Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `screen audits`, `screen calendar`, `screen compliance`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -844,6 +844,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 - `topics.company_id` — ON DELETE CASCADE
 - `turns.company_id` — ON DELETE CASCADE
 - `usage_counters.company_id` — ON DELETE CASCADE
+- `website_reads.company_id` — ON DELETE CASCADE
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -948,8 +949,8 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 **Points at:**
 
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `entities` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `confirmed_by` → `auth.users` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE CASCADE
 - `source_document_id` → `documents` — ON DELETE SET NULL
@@ -1920,9 +1921,9 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 
 - `ai_call_id` → `ai_calls` — ON DELETE SET NULL
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_sections` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE CASCADE
-- `company_id` → `companies` — ON DELETE CASCADE
 - `section_id` → `handbook_sections` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -2050,9 +2051,9 @@ Company-level dates a handbook sets; sent to the one calendar only when a person
 
 - `calendar_event_id` → `calendar_events` — ON DELETE SET NULL
 - `check_id` → `handbook_checks` — ON DELETE SET NULL
-- `company_id` → `handbooks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE SET NULL
+- `company_id` → `handbooks` — ON DELETE CASCADE
 - `handbook_id` → `handbooks` — ON DELETE CASCADE
 
 **Constraints:**
@@ -2102,9 +2103,9 @@ Every finding of a handbook check, as a row.
 
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
 - `check_section_id` → `handbook_check_sections` — ON DELETE CASCADE
-- `company_id` → `handbook_check_sections` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE CASCADE
+- `company_id` → `handbook_check_sections` — ON DELETE CASCADE
 
 **Constraints:**
 
@@ -2222,8 +2223,8 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 **Points at:**
 
 - `company_id` → `handbooks` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `entities` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `uploaded_by` → `auth.users` — ON DELETE SET NULL
 - `version_of` → `handbooks` — ON DELETE SET NULL
@@ -2410,7 +2411,7 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 18 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 21 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
@@ -3173,6 +3174,53 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 
 **Indexes:** `usage_counters_pkey`
 
+### `website_reads`
+
+One read of a company's own website: the pages fetched, what the model proposed from them, and whether it worked. A PROPOSAL and never a fact — nothing here is written to companies or entities until a person presses "Yes, that's us" in the walk, and then it goes through the routes that own those tables. Written by the service role only. ACCOUNT-PLAN decision 9, My Account step 13.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by:** `route website-read`
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `company_id` | uuid | no | — |
+| `host` | text | no | — |
+| `status` | text | no | `'reading'::text` |
+| `reason` | text | yes | — |
+| `pages` | jsonb | yes | — |
+| `proposal` | jsonb | yes | — |
+| `raw_text` | text | yes | — |
+| `model` | text | yes | — |
+| `started_at` | timestamp with time zone | no | `now()` |
+| `finished_at` | timestamp with time zone | yes | — |
+| `accepted_at` | timestamp with time zone | yes | — |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `website_reads_failed_has_a_reason` — `CHECK (((status = 'failed'::text) = (reason IS NOT NULL)))`
+- `website_reads_reason_check` — `CHECK ((reason = ANY (ARRAY['blocked_host'::text, 'unreachable'::text, 'not_found'::text, 'nothing_readable'::text, 'too_slow'::text, 'bad_shape'::text, 'model_refused'::text])))`
+- `website_reads_status_check` — `CHECK ((status = ANY (ARRAY['reading'::text, 'ready'::text, 'failed'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `website_reads_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+
+**Indexes:** `idx_website_reads_company`, `website_reads_pkey`
+
 ---
 
 ## Enums
@@ -3486,4 +3534,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 082
 083
 084
+085
 ```

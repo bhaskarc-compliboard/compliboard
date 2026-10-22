@@ -2,7 +2,10 @@
 
 # CompliBoard — Project Rules for Claude Code
 
-**Updated:** 20 October 2026 — §3.4a: the owner's laptop runs **Opus 5**, not Opus 5.5 (corrected at the Dashboard's
+**Updated:** 22 October 2026 — §3.4a: the owner's laptop runs **`claude-opus-5-5`** on all 14 tiers, read from
+`npm run haiku:check` at My Account step 13. The 20 October line below said Opus 5; the value has moved again,
+which is why this one is recorded with the command that produced it.
+20 October 2026 — §3.4a: the owner's laptop runs **Opus 5**, not Opus 5.5 (corrected at the Dashboard's
 close-out; the 15 October reading said 5.5 and the model is `claude-opus-5`).
 16 October 2026 — §3.4a: the owner's `.env.local` runs Opus on all thirteen tiers, so the guard is the only thing keeping Claude Code's runs cheap (corrected at Calendar step 6b; `DECISIONS.md` §189).
 7 October 2026 — §3.4a: the guard, `npm run haiku -- <command>` (§168).
@@ -235,11 +238,16 @@ when the question is **"is this answer any good"**, and not before.
 > **Every model-capable command of Claude Code's goes through it** — the isolated server
 > (`env HR_PREVIEW=1 node scripts/haiku.mjs npx next dev -p 3998` in the copy), `check:live`, any script.
 >
-> **CORRECTED 20 OCTOBER 2026 (the owner, at the Dashboard's close-out): the laptop runs OPUS 5, not Opus 5.5.**
-> The paragraph below was written on 15 October and said 5.5 throughout; the model is `claude-opus-5`. Everything
-> else about it holds — every tier resolves to the same one model locally, and the guard is still the only thing
-> keeping Claude Code's own runs on Haiku. **`docs/RELEASE.md`'s variable table remains the authoritative record of
-> what VERCEL holds** (§136: the dashboard wins); this paragraph is about the laptop.
+> **CORRECTED 22 OCTOBER 2026 (My Account step 13): THE LAPTOP RUNS `claude-opus-5-5`.**
+> Read rather than recalled: `npm run haiku:check` with no guard — which asks `modelForTask()` itself, for every
+> tier in `lib/ai.ts` — printed **`claude-opus-5-5` on all 14 tiers** on 22 October. The 20 October correction
+> below said `claude-opus-5`, and the 15 October paragraph before it said 5.5; the value has moved under both.
+> Everything else about it holds — every tier resolves to the same one model locally, and the guard is still the
+> only thing keeping Claude Code's own runs on Haiku. **`docs/RELEASE.md`'s variable table remains the
+> authoritative record of what VERCEL holds** (§136: the dashboard wins); this paragraph is about the laptop.
+>
+> *(The superseded 20 October line, kept because the history of this one value is the whole point of the box:
+> "the laptop runs OPUS 5, not Opus 5.5… the model is `claude-opus-5`.")*
 >
 > **As read on 15 October 2026, the owner's `.env.local` is on Opus (`claude-opus-5`).** `AI_MODEL_PROSE`,
 > `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_MODEL_HR`, `AI_MODEL_HR_CHECK` and the bare
