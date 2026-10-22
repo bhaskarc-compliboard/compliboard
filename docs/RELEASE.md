@@ -538,6 +538,182 @@ closure reaches `lib/ai.ts`.
   `docs/HANDOFF-CODE.md` §7. Site questions are asked nowhere yet, so nothing on production shows
   them.
 
+## MY ACCOUNT PART A'S RELEASE ROUTINE — written 21 October 2026 at step 11
+
+*Every command below is one the owner pastes, in this order. **Claude Code has run none of them
+against production and pushes nothing.** The branch is `account`, **12 commits ahead of `main` and 0
+behind** — read 21 October: `main` is at `c22025b`, unmoved since the branch was cut, and
+`git merge-base --is-ancestor main account` passes, so step 4 is a fast-forward. The pending
+migrations are **082 and 083**, two of them, and `npm run preflight` says `PENDING COUNT: 2` and
+names both.*
+
+**There is no step 0 and no gate.** Nothing in part A calls a model: `npm run cost` read **$3.45 / 63
+calls at the start and the end of every step from 5 to 10**. Every live check at step 5 is free.
+
+> ### ONE THING IS KNOWN TO BE OFF ON PRODUCTION, AND IT IS NOT A DEFECT.
+> Inviting a colleague **will not send an email** while the `from:` is `onboarding@resend.dev`. The
+> route asks before it writes anything, so no invitation row is created, and the card says
+> *"Invitations by email are not switched on yet. We will let you know when they are."* Check 8
+> below expects exactly that sentence. It changes the day the Resend domain is verified, and
+> `docs/TEST-AT-FINISH-LINE.md` → "My Account, part A" → B is the list to run then.
+
+### What goes out
+
+| | |
+|---|---|
+| **The Company tab** | the company's own facts, the name read-only, "What you do" typed with NAICS suggestions, the website, the main site, the three questions, the sites list and the site drawer |
+| **The geocoder** | `lib/geocode.ts` — an address to the U.S. Census Bureau, back a state and a county in the formats the columns hold. Free, no key, and it is the authority the FIPS codes come from |
+| **The People tab** | who can sign in, an invitation by email, `/join` where a colleague sets their own password, remove, and the per-person monthly-email switch the Calendar's job now reads |
+| **Sign-in and Cancel** | your name, your email, a password changed by reset link; and board 5's two different things kept apart |
+| **082** | `what_you_do`, `naics_code`, `library`, `trial_started_at`; the company NAME closed to a person at the grant level; the `entities` grants narrowed so a person may add and edit a site but never delete the main one; the `invitations` table; `profiles.calendar_email` |
+| **083** | the main site's state, county and city mirrored onto the company row by a trigger, backfilled once, and those three columns closed to a person — plus `INSERT`/`DELETE` on `companies` revoked from `authenticated` |
+| **Four shared files move with it** | `components/DashboardQuestions.tsx` (its answer control moved to a shared piece — the Dashboard renders identically); `app/api/jobs/calendar-month/route.ts` (sends only to people who still want it); `app/reset-password/page.tsx` (**gated on a real recovery, and its floor 6 → 10**); `app/company-information/page.tsx` + its route (the name, state and city leave its company block) |
+
+### Step 1 — the backup
+
+**Production SQL editor → run each, Download CSV, keep the four files together with the date.**
+These are the four tables 082 and 083 change — by column, by grant, or by row.
+
+```sql
+select * from public.companies order by id;
+select * from public.entities  order by company_id, is_primary desc;
+select * from public.profiles  order by id;
+select * from public.switches  order by id;
+```
+
+Read from production on 21 October 2026, so you know what to expect: **companies 10 rows,
+entities 10 (every one of them a main site, 8 with a county, and **not one with an address**),
+profiles 4.** `switches` is 95 rows of reference data and neither migration touches it — it is in
+the list because it is the only table here whose rows are not versioned, so a CSV is the only copy
+if anything ever goes wrong beside it.
+
+**What the CSVs are actually for.** 083 rewrites `companies.state/county/city` from the main site.
+Previewed against production the same day, **it would change 0 of the 10 rows** — every company
+already matches its main site, because `create_primary_site` copied company → site at creation and
+nothing on production has ever moved a site. So the backfill should be a no-op, and the
+`companies` CSV is what proves it was.
+
+### Step 2 — preflight, and read the pending list
+
+```
+npm run preflight
+```
+
+**Expect `PENDING COUNT: 2`**, with `082_the_company_its_sites_and_who_can_sign_in.sql` and
+`083_one_address.sql` named in `INPUT 1 minus INPUT 2`, and `INPUT 2 minus INPUT 1` empty. On
+21 October it read 84 files on disk against 82 rows on production. If it says anything else, stop:
+both lists are printed, so the subtraction is checkable without trusting the script.
+
+### Step 3 — the migrations
+
+```
+npm run db:migrate:prod
+```
+
+It asks you to type **PRODUCTION**. Both migrations carry their own self-test — 082 has 66 checks
+and 083 has 21 — and each runs inside the push's transaction, so a failure aborts and leaves no
+version row.
+
+### Step 4 — read back, from the database and not from the exit code
+
+**Production SQL editor.** `CLAUDE.md` §3.7: twice in September a migration command appeared to run
+and did nothing, and the only way to tell was to ask the database afterwards.
+
+```sql
+-- 1. both are recorded
+select version, name from supabase_migrations.schema_migrations order by version desc limit 3;
+
+-- 2. the five columns a person may still write on companies, and the thirteen they may not
+select c.column_name,
+       has_column_privilege('authenticated','public.companies',c.column_name,'UPDATE') as may
+  from information_schema.columns c
+ where c.table_schema='public' and c.table_name='companies' order by 2 desc, 1;
+
+-- 3. INSERT and DELETE are gone for a person; the service role keeps everything
+select r.rolname, p.p, has_table_privilege(r.rolname,'public.companies',p.p) as holds
+  from (values ('anon'),('authenticated'),('service_role')) r(rolname)
+  cross join (values ('SELECT'),('INSERT'),('UPDATE'),('DELETE')) p(p) order by 1,2;
+
+-- 4. the mirror is in place and aimed at the right columns
+select t.tgname, pg_get_triggerdef(t.oid)
+  from pg_trigger t join pg_class c on c.oid=t.tgrelid
+ where c.relname='entities' and t.tgname='entities_mirror_main_site';
+
+-- 5. and every company still matches its main site (the backfill's own test, after the fact)
+select count(*) as rows_that_differ
+  from public.companies c join public.entities m on m.company_id=c.id and m.is_primary
+ where (m.state  is not null and m.state  is distinct from c.state)
+    or (m.county is not null and m.county is distinct from c.county)
+    or (m.city   is not null and m.city   is distinct from c.city);
+
+-- 6. invitations exists, with no DELETE for a person and no token they can read
+select has_table_privilege('authenticated','public.invitations','DELETE') as can_delete,
+       has_column_privilege('authenticated','public.invitations','token','SELECT') as can_read_token;
+```
+
+**Expect:** 083 newest · five writable columns (`industry`, `naics_code`, `obligations_computed_at`,
+`website_url`, `what_you_do`) and thirteen closed · `authenticated` holding **SELECT only** where it
+held `SELECT, INSERT, UPDATE, DELETE` that morning · the trigger `AFTER INSERT OR UPDATE OF state,
+county, city … WHEN (new.is_primary)` · **0 rows that differ** · `can_delete` **false** and
+`can_read_token` **false**.
+
+### Step 5 — merge and push (the owner)
+
+```
+git checkout main
+git merge --ff-only account
+git push origin main
+```
+
+`--ff-only` is the point: if it refuses, `main` has moved since the branch was cut and the merge
+needs looking at rather than forcing. Then watch Vercel go green before step 6.
+
+### Variables — none
+
+**Nothing new.** Read from the branch's own diff on 21 October: the only variables any changed file
+reads are `GEOCODER_URL`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, `NOTIFY_TEST_TO` and `VERCEL_ENV`
+(the rest are read by scripts that never run in a deployment).
+
+| Variable | What to do | Why |
+|---|---|---|
+| `GEOCODER_URL` | **nothing** | `lib/geocode.ts:147` is `process.env.GEOCODER_URL ?? CENSUS_ONELINE_URL`, so unset means the Census endpoint, which is what you want. Set it to an **empty string** only to switch the geocoder off — every address then reads "not matched", every site still saves, and the person is told |
+| `NEXT_PUBLIC_APP_URL` | **nothing** | already set; it is the origin of the `/join` link. `NEXT_PUBLIC_*`, so it is inlined at build time and must exist before the push that builds — it does |
+| `RESEND_API_KEY` | **nothing** | already set since June |
+| `NOTIFY_TEST_TO` | **leave ABSENT** | set here, every invitation goes to that address instead of to the person invited |
+| `VERCEL_ENV` | **nothing** | Vercel sets it. It is what makes the sandbox guard refuse on production and nowhere else |
+
+### Step 6 — one measured walk against the BUILT app
+
+The rule below this section, in every routine since 20 October. `npm run build && npx next start`,
+then the walk — **not** `next dev`, which does not reproduce the class of bug the audits hotfix was.
+
+### Step 7 — the free live checks on production
+
+Signed in as yourself. None of these costs anything.
+
+| # | Do this | Expect |
+|---|---|---|
+| 1 | Sign in | Lands on **`/dashboard`**, not the marketing homepage |
+| 2 | My Account | Title **"My Account"** on the shared 900 column, five tabs: Company · People · Sign-in · Billing · Cancel. The address carries `?tab=` and closing anything never empties it |
+| 3 | Company tab → the Company row | The name is **shown, not editable**, with *"Tied to your account and cannot be changed here. Write to us if the name is wrong."* and no control beside it |
+| 4 | Sites → **+ Add a site** → a name and a **real street address** → Save | **The drawer closes**, and the new row shows the address **and its county** — read from the address by the geocoder, never typed |
+| 5 | Open the main site in the drawer | The grey line names its state and county; **there is no "Remove this site" button at all** |
+| 6 | Open the site you just added → Remove this site → Remove it | It goes. (A site with dates or requirements attached is refused instead, with the database's own sentence naming what is attached) |
+| 7 | Three things we need to know | Three questions with their help lines; Change answers one; the Dashboard stops asking that one |
+| 8 | People tab | Your own row with the **You** pill, the monthly-email switch on it, and **no Remove on yourself**. Then **Send the invitation** → *"Invitations by email are not switched on yet. We will let you know when they are."* and **no Invited row appears** |
+| 9 | Sign-in tab | Your name, your email, and the Password row reading *"To change it, we'll send a link to ‹you›."* with **Send me a reset link**. **Do not press it** until the Resend domain is live |
+| 10 | Cancel tab | "Stop paying" present and inert (*"Available once billing is set up"*), the download row, and the red box naming your company. **Do not type the name** |
+| 11 | Cancel tab → **Download my data** | A JSON file downloads. Open it: your company, your people, your documents **described**, your dates and requirements |
+| 12 | Company information | The company block shows the name read-only AND the main site's address read-only with **"Change it on My Account"**; saving the industry still works |
+| 13 | The address line on that page | **No part is said twice** — "1221 SW 4th Ave, Portland, OR 97204, Multnomah County, Oregon", not "…, Portland, Multnomah County, Oregon" |
+
+### After
+
+`docs/ACCOUNT-PLAN.md` step 11 ticked, `main`'s new hash recorded here, and the morning-after
+`job_runs` check. Part B (the front door) and part C (billing) are separate releases.
+
+---
+
 ## ⚡ ONE WALK PER RELEASE AGAINST A PRODUCTION BUILD — every routine, from 20 October 2026
 
 **`npm run build && npx next start`, not `npm run dev`.** In an isolated copy of the tree when the

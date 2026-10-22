@@ -567,3 +567,119 @@ judge, and the things that need a second company, a second day, or a database re
 - **Shared, and changed by this section**: `lib/calendarView.ts` `metaParts` (the Calendar's list changes with it),
   `components/Drawer.tsx` (Escape, every drawer in the product), `lib/auditView.ts` (the Audits page's own words),
   `scripts/measure-layout.mjs` (the sidebar, the top bar, a column on a page that does not print).
+
+---
+
+## My Account, part A
+
+*Written 21 October 2026 by the My Account chat at the step 11 preparation (`docs/ACCOUNT-PLAN.md` steps 5–10).
+Same shape as the parts above; this one does not edit theirs.*
+
+### A. Where My Account part A stands (21 October 2026)
+
+- **Built through step 10, NOT released.** `main` is at `c22025b`; `account` is ahead of it and fast-forwards.
+- **Migrations 082 and 083 are on STAGING only.** `npm run preflight` against production lists exactly those two.
+- **The record:** `docs/ACCOUNT-PLAN.md` (22 steps, 17 decisions), `docs/account-boards.html` (boards 1, 1b, 2, 3, 5),
+  `DECISIONS.md` §207 and §208, and `docs/ACCOUNT-MACHINERY.md` for what the page was before.
+- **Everything in part A is free.** No step of it calls a model: the Company tab, the site drawer, the geocoder,
+  People, `/join`, Sign-in and Cancel between them make zero `lib/ai.ts` calls, and `npm run cost` read **$3.45 / 63
+  calls at the start and the end of every one of steps 5 to 10**. So this part has **no C section and no D or E**:
+  there is no paid path to run on Opus and nothing for the yardstick to measure. The website read at step 13 is part
+  B's, and it is the first paid thing My Account does.
+- **One gate is shut and it is the same one the Calendar is waiting on:** the Resend sending domain. Everything
+  below marked ✉ is deferred for that reason and for no other.
+
+### B. ✉ THE EMAIL TESTS, DEFERRED UNTIL RESEND IS LIVE
+
+While `from:` is `onboarding@resend.dev`, `lib/email.ts` `sandboxSenderRefusal` refuses every send on production.
+Each of these is **do this, see that**. Run them on production once the domain is verified, signed in as yourself,
+using a tagged address you own (`you+cb1@…`, `you+cb2@…` — a fresh tag per test, because an address that already
+has a login takes a different path).
+
+| # | Do this | See that |
+|---|---|---|
+| **B1** | My Account → People → Invite someone → `you+cb1@yourdomain` → Send the invitation | The row appears as **Invited**, *"invited ‹today› · the link is good for 7 days"*. **No** "not switched on" sentence |
+| **B2** | Open your inbox | One mail, subject **"‹your name› invited you to CompliBoard"**, one button **"Join ‹company›"**, the footer saying the link is good for 7 days and that ignoring it costs nothing. **The token is in the link and nowhere else in the mail** |
+| **B3** | Click the button | `/join` shows *"‹you› invited you to join ‹company›"*, the invited address **read-only**, Your name, Password (at least 10) |
+| **B4** | Fill them in → Join ‹company› | Lands on `/dashboard` with **"Welcome, ‹first name›"**. People now shows two rows, the new one with **You** |
+| **B5** | Open the same link again | *"This link has already been used. If that was you, sign in instead."* with a sign-in link |
+| **B6** | As the first person: invite `you+cb1@…` again | *"‹address› can already sign in."* |
+| **B7** | Invite `you+cb2@…`, then **Send the link again** | A second mail arrives. The first link, opened, says the invitation was withdrawn |
+| **B8** | **Cancel** that invitation, then remove the B4 person | The Invited row goes; the person's row goes after the sheet (*"Remove ‹name›? They will no longer be able to sign in. What they did here stays."*), and their login no longer signs in |
+| **B9** | Sign-in tab → Change (Email) → `you+cb3@…` → Send a confirmation | The row's grey line reads *"We sent a link to ‹new›. Until you click it, ‹old› still signs in."* **Then check: did ONE mail arrive or TWO?** See G |
+| **B10** | Click the confirmation link, then sign out and sign in with the NEW address | It signs in. **Then sign in with the old one** — it should not |
+| **B11** | Sign-in tab → **Send me a reset link** | The row reads *"Sent. Check your inbox."*; the mail arrives; its link opens `/reset-password` with a working form |
+| **B12** | On that page set a password of **9** characters, then 10 | 9 is refused (*"Your new password needs at least 10 characters."*), 10 is accepted and signs you in |
+| **B13** | Open `/reset-password` directly, signed in, with no link | The form is **not** drawn: *"This page sets a new password from a reset link, and this is not one…"* with a link to ask for one. **This is the step-8 hole; it must stay shut** |
+| **B14** | People: switch **one** person's monthly calendar email off, leave another on. Wait for the 1st, or run the job by hand | The mail goes to the person who left it on and not to the other. `calendar_mailings.sent_to` names only the first |
+| **B15** | Switch **every** person's off, run the job | No mail. The `calendar_mailings` row's `error` reads **"everyone here has the monthly email switched off"** — not "nobody to send to", which is the different fact of a company with no logins |
+
+### C. ✉ THE OTHER SECTIONS' EMAILS, WHICH THE SAME DOMAIN UNBLOCKS
+
+Six senders exist. Read from the code on 21 October 2026:
+
+| Sender | File | Deferred test |
+|---|---|---|
+| Monthly calendar email | `app/api/jobs/calendar-month/route.ts:202` | B14, B15 above — and it is the only one that already carries the guard |
+| Audit finished | `lib/auditNotify.ts:185` | Run an audit on production; the notice arrives and `notified_at` is stamped only on a send that succeeded |
+| Document batch read | `lib/documentBatch.ts:214` | Upload two files; one notice summarises both |
+| Handbook check finished | `lib/handbookCheckNotify.ts:103` | Run an HR handbook check; the notice arrives |
+| Invitation | `app/api/invitations/route.ts:148` | B1–B8 above |
+| Feedback | `app/api/feedback/route.ts:10` | Send feedback from the top bar; it reaches the inbox |
+
+> **AND THE THREE THAT DO NOT YET CARRY THE GUARD.** `lib/auditNotify.ts`, `lib/documentBatch.ts` and
+> `lib/handbookCheckNotify.ts` send from `onboarding@resend.dev` on production **today**, with no
+> `sandboxSenderRefusal` check — `lib/email.ts`'s own header says they take it in the same commit that moves all
+> four `from:` lines to the verified domain, "where it is inert from the moment it lands". **That commit is the one
+> this section is waiting for**, and it is the right moment to give them the guard.
+
+### D–F. Nothing held
+
+No paid path (A), so no Opus run, no yardstick, no switches. The manual sets for part A are the live checks in
+`docs/RELEASE.md`'s My Account part A routine, and they are free.
+
+### G. ✉ ONE SETTING TO READ AND RECORD
+
+**Authentication → Providers → Email → "Secure email change"**, in the Supabase dashboard, for **both** projects.
+
+It could not be read from here: `GET /auth/v1/settings` returns `mailer_autoconfirm: false` and **does not expose
+it**, and the Management API needs a personal access token this session does not have and should not use. So it is
+a dashboard reading, and it decides one sentence:
+
+- **If ON** — a change of address mails **both** the old address and the new one, and both links must be clicked.
+  Board 3's line then needs one more sentence saying so, and B9 should see two mails.
+- **If OFF** — only the new address is mailed, and the line as written is complete.
+
+**Write the answer into `docs/ACCOUNT-PLAN.md` open question 3** when you have it; that question is half answered
+and this is its other half.
+
+### H. What is NOT deferred, and was proved on staging
+
+Everything else. For the record, so nobody runs it twice: the Company tab and its NAICS suggestions; the geocoder
+against the real Census endpoint (Portland → Oregon/Multnomah, Vancouver WA → Washington/Clark, a nonsense address
+→ the sentence and the county box); the site drawer, including that removing a site with rows attached is refused
+by the database and that the main site has no Remove at all; the company row mirroring its main site (083);
+`/join` walked end to end with a real 24-character password; remove, with its two refusals and a cross-tenant 404;
+the export (200, 336.6 KB); and both `?tab=` tabs measured identical to `/calendar`.
+
+### I. The morning after
+
+`job_runs` for `calendar_month`. And on the 1st of the month following the domain going live, check that the
+monthly email actually went — the guard means **a refused month leaves a row saying why**, so a missing row is a
+different and worse fact than a refused one.
+
+### J. Shared files this section changed
+
+A section that changes one of these re-runs the free checks of every section that uses it.
+
+| File | What changed | Who else uses it |
+|---|---|---|
+| `components/DashboardQuestions.tsx` | the answer control moved out | the Dashboard |
+| `components/SwitchAnswerControl.tsx` | **new**, shared | the Dashboard and My Account |
+| `lib/calendarEmail.ts` | `monthlyRecipients` added | the Calendar's monthly job |
+| `app/api/jobs/calendar-month/route.ts` | reads `calendar_email` | the Calendar |
+| `lib/companyContext.ts` → `lib/placeLine.ts` | `siteWhere` moved, body unchanged | `lib/audit.ts`, every prompt that renders a site |
+| `scripts/schema-doc.js` | prints column-level grants | every section's `docs/SCHEMA.md` |
+| `scripts/measure-layout.mjs` | `--type "<label>=<text>"`, password fields, masked echo | every section's measured walks |
+| `app/reset-password/page.tsx` | gated on a real recovery; floor 6 → 10 | the whole product's password recovery |
+| `app/company-information/page.tsx` + its route | the name, state and city left its company block | Company information |
