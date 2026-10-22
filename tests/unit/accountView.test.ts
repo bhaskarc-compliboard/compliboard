@@ -23,9 +23,18 @@ import {
   SITES_HEADING, ADD_SITE, MAIN_PILL, EDIT, SITES_NOTE,
   SITE_NAME_LABEL, SITE_ADDRESS_LABEL, ON_THIS_SITE, REMOVE_SITE, REMOVE_SITE_CONFIRM,
   NOTHING_ON_SITE,
+  SIGNIN_HEADING, NAME_LABEL, NAME_NOTE_SIGNIN, EMAIL_LABEL, EMAIL_NOTE, emailSentLine,
+  PASSWORD_LABEL, PASSWORD_MASK, PASSWORD_LAST_CHANGED, CHANGE_PASSWORD_TITLE,
+  CURRENT_PASSWORD_LABEL, NEW_PASSWORD_LABEL, NEW_PASSWORD_AGAIN_LABEL, SAVE_NEW_PASSWORD,
+  PASSWORD_MIN, PASSWORD_HINT, WRONG_CURRENT_PASSWORD, NOT_A_RECOVERY,
+  CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_DISABLED,
+  DOWNLOAD_LABEL, DOWNLOAD_ACTION, DOWNLOAD_NOTE,
+  DELETE_TITLE, deleteWarning, TYPE_TO_CONFIRM, DELETE_ACTION, deleteConfirm,
   addressLine, countyLine, siteSubLine, sitePlaceLine, siteDrawerSub, addedLine,
   siteCountLines, siteIsEmpty, answerWord, type SiteRow, type SiteCounts,
 } from '../../lib/accountView.ts'
+// The floor is the same at every door; the other one lives with /join.
+import { JOIN_PASSWORD_MIN } from '../../lib/peopleView.ts'
 
 /**
  * The source with its comments taken out. Every assertion below is about what the page DOES, and a
@@ -278,5 +287,145 @@ describe('*** WHAT THE PAGE MUST NEVER SEND — migration 082 ***', () => {
     // The delete IS direct, as the person — the trigger is what decides (migration 082).
     assert.match(drawer, /from\('entities'\)\.delete\(\)/)
     assert.match(drawer, /rpc\('site_removal_refusal'/)
+  })
+})
+
+
+/* =================================================================================================
+   BOARD 3 — THE SIGN-IN TAB (step 8, decisions 2 and 7)
+   ================================================================================================= */
+describe('board 3\'s words are the board\'s', () => {
+  test('the heading, the three labels and the sheet', () => {
+    for (const w of [SIGNIN_HEADING, NAME_LABEL, NAME_NOTE_SIGNIN, EMAIL_LABEL, EMAIL_NOTE,
+                     PASSWORD_LABEL, PASSWORD_MASK, CHANGE_PASSWORD_TITLE, CURRENT_PASSWORD_LABEL,
+                     NEW_PASSWORD_LABEL, NEW_PASSWORD_AGAIN_LABEL, SAVE_NEW_PASSWORD]) {
+      assert.ok(onBoard(w), `not on board 3: ${JSON.stringify(w)}`)
+    }
+  })
+
+  test('*** THE "LAST CHANGED" LINE IS NULL, AND THAT IS A READING ***', () => {
+    // Board 3 draws one. The login system holds no such fact — the fields on a real login are
+    // confirmed_at, email_confirmed_at, last_sign_in_at and updated_at, and updated_at moves on
+    // every sign-in. Drawing it would put a date in front of a person that means something else.
+    assert.equal(PASSWORD_LAST_CHANGED, null)
+    const page = code(readFileSync('app/account/page.tsx', 'utf8'))
+    assert.match(page, /PASSWORD_LAST_CHANGED &&/, 'and the page draws it only if it ever exists')
+  })
+
+  test('the sent line names both addresses', () => {
+    assert.equal(emailSentLine('new@x.com', 'old@x.com'),
+      'We sent a link to new@x.com. Until you click it, old@x.com still signs in.')
+  })
+
+  test('ten characters, at every door', () => {
+    // The same floor /join applies. A rule met at one door and not another is not a rule.
+    assert.equal(PASSWORD_MIN, 10)
+    assert.equal(PASSWORD_HINT, 'At least 10 characters')
+    assert.equal(PASSWORD_MIN, JOIN_PASSWORD_MIN)
+    // ...including the recovery page, which used to accept six.
+    const reset = code(readFileSync('app/reset-password/page.tsx', 'utf8'))
+    assert.match(reset, /password\.length < PASSWORD_MIN/)
+    assert.ok(!/length < 6/.test(reset), 'the six-character floor is gone')
+  })
+})
+
+describe('*** THE THREE WAYS TO CHANGE A PASSWORD WITHOUT THE CURRENT ONE ***', () => {
+  // `docs/ACCOUNT-MACHINERY.md` §B2 found three. Step 8 closed the two that are not recovery.
+  const page = code(readFileSync('app/account/page.tsx', 'utf8'))
+  const route = code(readFileSync('app/api/account/password/route.ts', 'utf8'))
+  const reset = code(readFileSync('app/reset-password/page.tsx', 'utf8'))
+
+  test('1. My Account no longer calls updateUser({ password }) from the browser', () => {
+    assert.ok(!/updateUser\(\{\s*password/.test(page), 'the page must not set a password itself')
+    assert.match(page, /fetch\('\/api\/account\/password'/)
+  })
+
+  test('...and the route re-checks the current one by actually signing in with it', () => {
+    assert.match(route, /signInWithPassword\(\{\s*\n?\s*email, password: current/)
+    assert.match(route, /WRONG_CURRENT_PASSWORD/)
+    assert.equal(WRONG_CURRENT_PASSWORD, 'That is not your current password.')
+    // The address comes from the verified session, never the body — otherwise this route would be
+    // "sign in as anyone whose password you can guess".
+    assert.match(route, /getUserById\(userId\)/)
+    assert.ok(!/body\?\.email/.test(route))
+    // And no admin client sets the password.
+    assert.ok(!/admin\.updateUserById/.test(route))
+  })
+
+  test('2. /forgot-password STAYS — it is recovery, and that is the point', () => {
+    // Somebody who has forgotten their password cannot be asked for it. Removing this would lock
+    // out every customer who forgets, which is a worse failure than the one being fixed.
+    const forgot = readFileSync('app/forgot-password/page.tsx', 'utf8')
+    assert.match(forgot, /resetPasswordForEmail/)
+  })
+
+  test('3. /reset-password is gated on a real recovery, and the gate is finally READ', () => {
+    // `ready` was set and used nowhere: the form rendered unconditionally, so a signed-in person
+    // who typed the URL could set a new password with no current one.
+    assert.match(reset, /if \(!ready\) \{/, 'handleUpdate must refuse when this is not a recovery')
+    assert.match(reset, /\{!ready \? \(/, 'and the form must not render either')
+    assert.match(reset, /NOT_A_RECOVERY/)
+    // The URL is checked as well as the event, or the people it is FOR would be locked out when
+    // the client consumes the token before the listener attaches.
+    assert.match(reset, /type'\) === 'recovery'/)
+  })
+
+  test('the refusal says what to do next and blames nobody', () => {
+    assert.ok(NOT_A_RECOVERY.includes('My Account'))
+    assert.ok(NOT_A_RECOVERY.includes('reset link'))
+    assert.ok(!/error|invalid|denied/i.test(NOT_A_RECOVERY))
+  })
+})
+
+/* =================================================================================================
+   BOARD 5 — THE CANCEL TAB (step 9, decision 13)
+   ================================================================================================= */
+describe('board 5\'s words are the board\'s', () => {
+  test('both rows and the red box', () => {
+    for (const w of [CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION,
+                     DOWNLOAD_LABEL, DOWNLOAD_ACTION, DELETE_TITLE, TYPE_TO_CONFIRM, DELETE_ACTION]) {
+      assert.ok(onBoard(w), `not on board 5: ${JSON.stringify(w)}`)
+    }
+    assert.ok(onBoard(deleteWarning('Willamette Vinegar Works')))
+  })
+
+  test('two different things, kept apart (decision 13)', () => {
+    assert.ok(STOP_PAYING_NOTE.includes('company stays'))
+    assert.ok(deleteWarning('X').includes('cannot be undone'))
+    // The subscription row is inert until part C and says so rather than offering a dead control.
+    assert.equal(STOP_PAYING_DISABLED, 'Available once billing is set up')
+    const page = code(readFileSync('app/account/page.tsx', 'utf8'))
+    assert.ok(!/href=[^>]*stripe/i.test(page), 'nothing links to billing yet')
+  })
+
+  test('*** THE DOWNLOAD LINE SAYS WHAT THE EXPORT ACTUALLY PRODUCES ***', () => {
+    // Board 5 says "Every document, report, checklist, date and conversation, as files." The route
+    // returns ONE JSON file, describes documents rather than embedding them, and reads no topics
+    // and no turns — so the conversations are not in it. The line must not promise either.
+    const exportRoute = readFileSync('app/api/account/export/route.ts', 'utf8')
+    assert.ok(!/byCompany\('topics'\)/.test(exportRoute), 'if topics are ever added, update this line')
+    assert.ok(!/byCompany\('turns'\)/.test(exportRoute))
+    assert.ok(!/conversation/i.test(DOWNLOAD_NOTE), 'so the line must not claim conversations')
+    assert.ok(DOWNLOAD_NOTE.includes('One file'))
+    assert.ok(/listed, not included/.test(DOWNLOAD_NOTE), 'and must say the files are not in it')
+  })
+
+  test('the confirming button never repeats the one that opened it', () => {
+    // The house rule, written down at step 9 after it bit twice (the site drawer, then the remove
+    // sheet). The last thing a person reads names what is about to be destroyed.
+    assert.equal(DELETE_ACTION, 'Delete for good')
+    assert.equal(deleteConfirm('Acme Ltd'), 'Yes, delete Acme Ltd')
+    assert.notEqual(deleteConfirm('Acme Ltd') as string, DELETE_ACTION as string)
+  })
+
+  test('the delete route is not touched by this step', () => {
+    const route = code(readFileSync('app/api/account/route.ts', 'utf8'))
+    // Children, then the company, then the logins LAST so a failure leaves the account reachable.
+    // Read from the CODE: the header comment names `auth.admin.deleteUser` long before the
+    // statement does, and a test that searched the raw file would compare a comment to a call.
+    const order = route.indexOf("from('companies').delete()")
+    const logins = route.indexOf('auth.admin.deleteUser')
+    assert.ok(order > 0 && logins > order, 'the logins must still go last')
+    assert.match(route, /COMPANY_SCOPED_TABLES/)
   })
 })

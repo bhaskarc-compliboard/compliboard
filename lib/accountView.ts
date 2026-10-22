@@ -266,3 +266,121 @@ export function answerWord(
   }
   return labels?.[value] ?? value
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+// THE SIGN-IN TAB — step 8, board 3 (`ACCOUNT-PLAN.md` decisions 2 and 7).
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+
+export const SIGNIN_HEADING = 'You'
+export const NAME_LABEL = 'Your name'
+export const NAME_NOTE_SIGNIN = 'The Dashboard greets you by your first name.'
+export const EMAIL_LABEL = 'Email'
+export const PASSWORD_LABEL = 'Password'
+export const PASSWORD_MASK = '••••••••••'
+
+/**
+ * *** THERE IS NO "LAST CHANGED ‹date›" LINE, AND THAT IS A READING, NOT AN OMISSION. ***
+ * Board 3 draws one. **The login system does not expose when a password was last changed** — read
+ * from a real login on 21 October 2026, the fields it carries are `confirmed_at`,
+ * `email_confirmed_at`, `last_sign_in_at` and `updated_at`, and nothing matching /password/.
+ * `updated_at` moves on EVERY update including a sign-in (it read 22:58 for a login whose password
+ * had never changed), so drawing it under "Password" would put a date in front of a person that
+ * means something else entirely — the omniscient-tracker anti-pattern in miniature (`CLAUDE.md` §6).
+ * So the row shows the mask and nothing else. If Supabase ever exposes the fact, the line is one
+ * value away.
+ */
+export const PASSWORD_LAST_CHANGED: string | null = null
+
+/** Board 3's own sentence under Email. True whether the system mails one address or both. */
+export const EMAIL_NOTE =
+  'We send a link to the new address to confirm it. Until you click it, the old address still signs in.'
+
+export const CHANGE_PASSWORD_TITLE = 'Change your password'
+export const CURRENT_PASSWORD_LABEL = 'Current password'
+export const NEW_PASSWORD_LABEL = 'New password'
+export const NEW_PASSWORD_AGAIN_LABEL = 'New password again'
+export const SAVE_NEW_PASSWORD = 'Save the new password'
+
+/**
+ * The same floor `/join` applies (`lib/peopleView.ts` JOIN_PASSWORD_MIN). Said here too, because a
+ * rule a person meets at one door and not another is not a rule.
+ */
+export const PASSWORD_MIN = 10
+export const PASSWORD_HINT = `At least ${PASSWORD_MIN} characters`
+export const PASSWORD_TOO_SHORT = `Your new password needs at least ${PASSWORD_MIN} characters.`
+export const PASSWORDS_DIFFER = 'Those two do not match. Type the new password the same way twice.'
+export const WRONG_CURRENT_PASSWORD = 'That is not your current password.'
+export const PASSWORD_CHANGE_FAILED = 'We could not change your password just now. Nothing was changed.'
+export const PASSWORD_CHANGED = 'Your password has been changed.'
+export const CURRENT_PASSWORD_REQUIRED = 'Please type your current password.'
+
+export const CHANGE_EMAIL_TITLE = 'Change your email'
+export const NEW_EMAIL_LABEL = 'New email address'
+export const SEND_CONFIRMATION = 'Send a confirmation'
+export const EMAIL_CHANGE_FAILED = 'We could not send that confirmation just now. Nothing was changed.'
+
+/** After the link is on its way: board 3's promise, with both addresses named. */
+export function emailSentLine(next: string, current: string): string {
+  return `We sent a link to ${next}. Until you click it, ${current} still signs in.`
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+// THE CANCEL TAB — step 9, board 5 (`ACCOUNT-PLAN.md` decision 13).
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+
+export const CANCEL_HEADING = 'Cancel and delete'
+
+/** Decision 13: stopping the subscription and deleting the company are two different things. */
+export const STOP_PAYING_LABEL = 'Stop paying'
+export const STOP_PAYING_NOTE =
+  'Cancels the subscription at the end of the month you have paid for. Your company stays, ' +
+  'read-only, and you can come back any time.'
+export const STOP_PAYING_ACTION = 'Cancel the subscription'
+/** Part C fills it. Until then the row says what is true rather than offering a dead control. */
+export const STOP_PAYING_DISABLED = 'Available once billing is set up'
+
+export const DOWNLOAD_LABEL = 'Download everything'
+export const DOWNLOAD_ACTION = 'Download my data'
+
+/**
+ * *** BOARD 5 SAYS "Every document, report, checklist, date and conversation, as files." AND THE
+ * EXPORT DOES NOT DO THAT. *** Read from `app/api/account/export/route.ts` at step 9: it returns
+ * ONE JSON file, it describes documents rather than embedding them, and it reads no `topics` and no
+ * `turns` — so the CONVERSATIONS are not in it, and "as files" is not what arrives. A line that
+ * promised either would be the product asserting something about a file nobody had opened
+ * (`CLAUDE.md` §6). This is what it actually produces; the gap is recorded as owed.
+ */
+export const DOWNLOAD_NOTE =
+  'One file with your company\'s records: documents and where they live, reports, checklists, ' +
+  'requirements, dates and your people. The uploaded files themselves are listed, not included — ' +
+  'save those from Company Documents.'
+
+export const DELETE_TITLE = 'Delete the company for good'
+export function deleteWarning(company: string): string {
+  return `This deletes ${company} from CompliBoard: every document, report, date, conversation ` +
+    'and login, for everyone here. It cannot be undone. Download your data first.'
+}
+export const TYPE_TO_CONFIRM = 'Type the company name to confirm'
+export const DELETE_ACTION = 'Delete for good'
+
+/**
+ * *** THE CONFIRMING BUTTON NEVER REPEATS THE ONE THAT OPENED IT — the house rule, written down at
+ * step 9 after it bit twice. *** `REMOVE_SITE` / `REMOVE_SITE_CONFIRM` at step 6b was the first
+ * time: two buttons reading "Remove this site", and no way for a person — or the measuring harness
+ * — to tell which one commits. Step 7's remove sheet was the second. Here the box says "Delete for
+ * good" and the sheet that follows names the company, so the last thing a person reads before the
+ * irreversible act is the name of the thing being destroyed.
+ */
+export function deleteConfirm(company: string): string {
+  return `Yes, delete ${company}`
+}
+export const DELETE_FAILED = 'We could not delete the company just now. Nothing was deleted.'
+
+/**
+ * `/reset-password` reached without a recovery link. Step 8 closed that page's ungated form; this
+ * is what it says instead — the fact, and the way to get a real link.
+ */
+export const NOT_A_RECOVERY =
+  'This page sets a new password from a reset link, and this is not one. ' +
+  'If you want to change your password, My Account → Sign-in asks for your current one. ' +
+  'If you have forgotten it, ask for a reset link.'

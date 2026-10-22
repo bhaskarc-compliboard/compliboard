@@ -52,7 +52,21 @@ import {
   CHANGE, SAVE, CANCEL,
   SITES_HEADING, ADD_SITE, MAIN_PILL, EDIT, SITES_NOTE,
   siteSubLine, countyLine, addedLine, type SiteRow,
+  // Board 3 — the Sign-in tab (step 8).
+  SIGNIN_HEADING, NAME_LABEL, NAME_NOTE_SIGNIN, EMAIL_LABEL, EMAIL_NOTE, emailSentLine,
+  PASSWORD_LABEL, PASSWORD_MASK, PASSWORD_LAST_CHANGED,
+  CHANGE_PASSWORD_TITLE, CURRENT_PASSWORD_LABEL, NEW_PASSWORD_LABEL, NEW_PASSWORD_AGAIN_LABEL,
+  SAVE_NEW_PASSWORD, PASSWORD_MIN, PASSWORD_HINT, PASSWORD_TOO_SHORT, PASSWORDS_DIFFER,
+  PASSWORD_CHANGE_FAILED, PASSWORD_CHANGED, CURRENT_PASSWORD_REQUIRED,
+  CHANGE_EMAIL_TITLE, NEW_EMAIL_LABEL, SEND_CONFIRMATION, EMAIL_CHANGE_FAILED,
+  // Board 5 — the Cancel tab (step 9).
+  CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_DISABLED,
+  DOWNLOAD_LABEL, DOWNLOAD_NOTE, DOWNLOAD_ACTION,
+  DELETE_TITLE, deleteWarning, TYPE_TO_CONFIRM, DELETE_ACTION, deleteConfirm, DELETE_FAILED,
 } from '@/lib/accountView'
+// The one loose email check the product has, shared with the invite box (step 7).
+import { looksLikeEmail, BAD_EMAIL } from '@/lib/peopleView'
+import { Sheet } from '@/components/Sheet'
 
 export default function AccountPage() {
   // `useSearchParams` suspends on a prerendered route, which is the whole point of the Calendar's
@@ -428,58 +442,259 @@ function Account() {
 }
 
 /* =================================================================================================
-   THE OTHER THREE TABS — today's content, under the new names, until steps 8, 9 and part C.
-   Moved, not rewritten: the fields, the words and the rules are what `/account` shipped with. The
-   boards for them (3, 4 and 5) arrive with their own steps.
+   THE OTHER THREE TABS.
+
+   Sign-in and Cancel are boards 3 and 5, built at steps 8 and 9. Billing is still today's
+   placeholder and arrives properly with part C.
    ================================================================================================= */
 
+/**
+ * BOARD 3 — your name, your email, your password.
+ *
+ * *** EACH OF THE THREE IS WRITTEN A DIFFERENT WAY, AND THE DIFFERENCE IS THE POINT. ***
+ *   · the NAME goes straight onto `profiles` as the caller — `full_name` is in the column grant
+ *     (080) and the UPDATE policy is `auth.uid() = profiles.id`, so a person can only ever write
+ *     their own row and no route is needed to say so.
+ *   · the EMAIL goes through the caller's OWN session — `supabase.auth.updateUser({ email })` in
+ *     the browser — because the login system has to send the confirmation and bind it to that
+ *     session. No admin call: a route that could change anybody's address is not a thing to build
+ *     for a form a person fills in about themselves.
+ *   · the PASSWORD goes through `POST /api/account/password`, which re-checks the current one
+ *     SERVER-SIDE. That cannot be done in the browser, because nothing would stop a caller
+ *     skipping the check.
+ */
 function SignInTab() {
   const supabase = createClient()
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState('')
-  const [done, setDone] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
-  async function change() {
-    setError('')
-    setDone(false)
-    if (!newPassword || !confirmPassword) { setError('Please fill in all fields'); return }
-    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return }
-    if (newPassword !== confirmPassword) { setError('Passwords do not match'); return }
+  const [editName, setEditName] = useState(false)
+  const [nameDraft, setNameDraft] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const [passwordSheet, setPasswordSheet] = useState(false)
+  const [emailSheet, setEmailSheet] = useState(false)
+  /** Board 3's promise, shown under Email once the link is on its way. */
+  const [emailSent, setEmailSent] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    setUserId(user.id)
+    setEmail(user.email ?? '')
+    const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+    setName(data?.full_name ?? '')
+    setLoaded(true)
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  async function saveName() {
+    if (!userId || busy) return
+    setBusy(true)
+    setNotice(null)
+    const { error } = await supabase.from('profiles').update({ full_name: nameDraft.trim() }).eq('id', userId)
+    setBusy(false)
+    if (error) { setNotice('We could not save your name just now.'); return }
+    setName(nameDraft.trim())
+    setEditName(false)
+  }
+
+  if (!loaded) return null
+
+  return (
+    <>
+      <DashboardSection heading={SIGNIN_HEADING} />
+      {notice && <p className="mb-3 text-[13px] text-[var(--amber)]">{notice}</p>}
+
+      <div className="rounded-xl border border-gray-200 bg-white">
+        {/* ---- Your name ---- */}
+        <div className={ROW}>
+          <p className={KEY}>{NAME_LABEL}</p>
+          <div className="min-w-0 flex-1">
+            {editName ? (
+              <>
+                <input type="text" value={nameDraft} autoFocus disabled={busy}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  aria-label={NAME_LABEL} className={FIELD} />
+                <div className="mt-2 flex items-center gap-3">
+                  <button type="button" disabled={busy} className={PRIMARY} onClick={saveName}>{SAVE}</button>
+                  <button type="button" className={TEXT_ACTION}
+                    onClick={() => setEditName(false)}>{CANCEL}</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-[14px] text-gray-900">{name || <span className="text-gray-400">Not given</span>}</p>
+                <p className="mt-0.5 text-[12.5px] leading-5 text-gray-500">{NAME_NOTE_SIGNIN}</p>
+              </>
+            )}
+          </div>
+          {!editName && (
+            <button type="button" className={ACTION}
+              onClick={() => { setNameDraft(name); setEditName(true) }}>{CHANGE}</button>
+          )}
+        </div>
+
+        {/* ---- Email ---- */}
+        <div className={ROW}>
+          <p className={KEY}>{EMAIL_LABEL}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] text-gray-900">{email}</p>
+            <p className="mt-0.5 text-[12.5px] leading-5 text-gray-500">{emailSent ?? EMAIL_NOTE}</p>
+          </div>
+          <button type="button" className={ACTION} onClick={() => setEmailSheet(true)}>{CHANGE}</button>
+        </div>
+
+        {/* ---- Password ---- */}
+        <div className={ROW_LAST}>
+          <p className={KEY}>{PASSWORD_LABEL}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] tracking-[0.15em] text-gray-900">{PASSWORD_MASK}</p>
+            {/* Board 3 draws "Last changed ‹date›" here. The login system does not hold that fact —
+                see `lib/accountView.ts` PASSWORD_LAST_CHANGED — so nothing is drawn rather than a
+                date that means something else. */}
+            {PASSWORD_LAST_CHANGED && (
+              <p className="mt-0.5 text-[12.5px] leading-5 text-gray-500">{PASSWORD_LAST_CHANGED}</p>
+            )}
+          </div>
+          <button type="button" className={ACTION} onClick={() => setPasswordSheet(true)}>{CHANGE}</button>
+        </div>
+      </div>
+
+      {passwordSheet && <PasswordSheet onClose={() => setPasswordSheet(false)} />}
+      {emailSheet && (
+        <EmailSheet current={email} onClose={() => setEmailSheet(false)}
+          onSent={(next) => { setEmailSent(emailSentLine(next, email)); setEmailSheet(false) }} />
+      )}
+    </>
+  )
+}
+
+/** Board 3's sheet. Three fields, and the current one is the reason the route exists. */
+function PasswordSheet({ onClose }: { onClose: () => void }) {
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [again, setAgain] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+
+  async function save() {
+    if (busy) return
+    setError(null)
+    // The same three rules the route enforces, so a person is not made to wait for a round trip to
+    // be told the two do not match. The route is the boundary; this is the courtesy.
+    if (!current) { setError(CURRENT_PASSWORD_REQUIRED); return }
+    if (next.length < PASSWORD_MIN) { setError(PASSWORD_TOO_SHORT); return }
+    if (next !== again) { setError(PASSWORDS_DIFFER); return }
     setBusy(true)
     try {
-      const { error: e } = await supabase.auth.updateUser({ password: newPassword })
-      if (e) throw e
+      const res = await fetch('/api/account/password', {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ current, next, again }),
+      })
+      const j = await res.json().catch(() => null)
+      if (!res.ok) { setError(j?.error ?? PASSWORD_CHANGE_FAILED); setBusy(false); return }
       setDone(true)
-      setNewPassword('')
-      setConfirmPassword('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password')
-    } finally {
+      setBusy(false)
+    } catch {
+      setError(PASSWORD_CHANGE_FAILED)
       setBusy(false)
     }
   }
 
   return (
-    <>
-      <DashboardSection heading="You" />
-      <div className="max-w-[420px] rounded-xl border border-gray-200 bg-white p-5">
-        <p className="text-[14px] font-medium text-gray-900">Change your password</p>
-        <div className="mt-3 space-y-3">
-          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="New password" aria-label="New password" className={FIELD} />
-          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="New password again" aria-label="New password again" className={FIELD} />
+    <Sheet title={CHANGE_PASSWORD_TITLE} onClose={onClose}>
+      {done ? (
+        <>
+          <p className="text-[13px] text-[var(--green-ink)]">{PASSWORD_CHANGED}</p>
+          <div className="mt-3"><button type="button" className={PRIMARY} onClick={onClose}>Close</button></div>
+        </>
+      ) : (
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[12px] font-medium text-gray-600" htmlFor="pw-current">
+              {CURRENT_PASSWORD_LABEL}
+            </label>
+            <input id="pw-current" type="password" value={current} disabled={busy}
+              onChange={(e) => setCurrent(e.target.value)}
+              aria-label={CURRENT_PASSWORD_LABEL} className={FIELD} />
+          </div>
+          <div>
+            <label className="mb-1 block text-[12px] font-medium text-gray-600" htmlFor="pw-new">
+              {NEW_PASSWORD_LABEL}
+            </label>
+            <input id="pw-new" type="password" value={next} disabled={busy}
+              onChange={(e) => setNext(e.target.value)}
+              placeholder={PASSWORD_HINT} aria-label={NEW_PASSWORD_LABEL} className={FIELD} />
+            <p className="mt-1 text-[12px] text-gray-500">{PASSWORD_HINT}</p>
+          </div>
+          <div>
+            <label className="mb-1 block text-[12px] font-medium text-gray-600" htmlFor="pw-again">
+              {NEW_PASSWORD_AGAIN_LABEL}
+            </label>
+            <input id="pw-again" type="password" value={again} disabled={busy}
+              onChange={(e) => setAgain(e.target.value)}
+              aria-label={NEW_PASSWORD_AGAIN_LABEL} className={FIELD} />
+          </div>
           {error && <p className="text-[13px] text-[var(--amber)]">{error}</p>}
-          {done && <p className="text-[13px] text-[var(--green-ink)]">Your password has been changed.</p>}
-          <button type="button" disabled={busy} onClick={change} className={PRIMARY}>
-            {busy ? 'Changing…' : 'Save the new password'}
-          </button>
+          <div className="flex items-center gap-3 pt-1">
+            <button type="button" disabled={busy} className={PRIMARY} onClick={save}>{SAVE_NEW_PASSWORD}</button>
+            <button type="button" className={TEXT_ACTION} onClick={onClose}>{CANCEL}</button>
+          </div>
         </div>
-        {/* Step 8 asks for the current password and moves the email change here. Not claimed yet. */}
+      )}
+    </Sheet>
+  )
+}
+
+/**
+ * The email change, on the caller's own session. `updateUser({ email })` is what makes the login
+ * system send the confirmation and bind it to this person; there is no admin call here and no
+ * route, because the thing being changed is the identity of the session making the request.
+ */
+function EmailSheet({ current, onClose, onSent }: {
+  current: string; onClose: () => void; onSent: (next: string) => void
+}) {
+  const supabase = createClient()
+  const [next, setNext] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function send() {
+    if (busy) return
+    setError(null)
+    if (!looksLikeEmail(next)) { setError(BAD_EMAIL); return }
+    setBusy(true)
+    const { error: e } = await supabase.auth.updateUser({ email: next.trim() })
+    setBusy(false)
+    if (e) { setError(e.message || EMAIL_CHANGE_FAILED); return }
+    onSent(next.trim())
+  }
+
+  return (
+    <Sheet title={CHANGE_EMAIL_TITLE} lede={EMAIL_NOTE} onClose={onClose}>
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-[12px] font-medium text-gray-600" htmlFor="new-email">
+            {NEW_EMAIL_LABEL}
+          </label>
+          <input id="new-email" type="text" value={next} disabled={busy}
+            onChange={(e) => setNext(e.target.value)}
+            placeholder={current} aria-label={NEW_EMAIL_LABEL} className={FIELD} />
+        </div>
+        {error && <p className="text-[13px] text-[var(--amber)]">{error}</p>}
+        <div className="flex items-center gap-3 pt-1">
+          <button type="button" disabled={busy || !next.trim()} className={PRIMARY}
+            onClick={send}>{SEND_CONFIRMATION}</button>
+          <button type="button" className={TEXT_ACTION} onClick={onClose}>{CANCEL}</button>
+        </div>
       </div>
-    </>
+    </Sheet>
   )
 }
 
@@ -500,13 +715,21 @@ function BillingTab() {
   )
 }
 
+/**
+ * BOARD 5 — two different things, kept apart (decision 13): stopping the subscription, and deleting
+ * the company for good. The delete is what the page does today with its words tidied; the
+ * subscription row is new and is deliberately inert until part C.
+ *
+ * *** THE ROUTE IS NOT TOUCHED. *** `/api/account` DELETE's order — children, then the company,
+ * then the logins last so a failure leaves the account still reachable — is exactly as it was.
+ */
 function CancelTab({ companyName }: { companyName: string }) {
   const supabase = createClient()
   const router = useRouter()
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState('')
-  const [confirming, setConfirming] = useState(false)
   const [typed, setTyped] = useState('')
+  const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -550,82 +773,93 @@ function CancelTab({ companyName }: { companyName: string }) {
       })
       if (!res.ok) {
         const j = await res.json().catch(() => ({}))
-        throw new Error(j.error || 'Could not delete your account')
+        throw new Error(j.error || DELETE_FAILED)
       }
       await supabase.auth.signOut()
       router.push('/')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete your account')
+      setError(err instanceof Error ? err.message : DELETE_FAILED)
       setBusy(false)
+      setConfirming(false)
     }
   }
 
+  const matches = typed.trim() === companyName && companyName.length > 0
+
   return (
     <>
-      <DashboardSection heading="Cancel and delete" />
-      <div className="space-y-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <p className="text-[14px] font-medium text-gray-900">Take your records first</p>
-          <p className="mt-1 text-[13px] leading-5 text-gray-600">
-            Download everything we hold on your company as a single file. Your uploaded files are
-            not included — save those from Company Documents separately, because deleting the
-            account deletes them too.
-          </p>
-          <button type="button" onClick={download} disabled={downloading}
-            className={`mt-3 ${PRIMARY}`}>
-            {downloading ? 'Preparing your file…' : 'Download my data'}
-          </button>
-          {downloadError && <p className="mt-2 text-[13px] text-[var(--amber)]">{downloadError}</p>}
+      <DashboardSection heading={CANCEL_HEADING} />
+
+      <div className="rounded-xl border border-gray-200 bg-white">
+        {/* ---- Stop paying. Present, with its sentence, and inert until part C. ---- */}
+        <div className={ROW}>
+          <p className={KEY}>{STOP_PAYING_LABEL}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] leading-5 text-gray-600">{STOP_PAYING_NOTE}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            {/* Not a link, because there is nowhere for it to go yet. A control that did nothing
+                would be the page promising a screen that does not exist. */}
+            <p className="text-[13px] text-gray-300">{STOP_PAYING_ACTION}</p>
+            <p className="mt-0.5 text-[12px] text-gray-400">{STOP_PAYING_DISABLED}</p>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-          <p className="text-[14px] font-medium text-red-800">
-            Deleting the company is permanent and cannot be undone
-          </p>
-          <p className="mt-1 text-[13px] leading-5 text-red-700">
-            There is no way to restore it afterwards and we do not keep a copy. Everything below is
-            destroyed for <span className="font-medium">everyone</span> at your company, not only
-            for you:
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-red-700">
-            <li>Every uploaded file, and the folders holding them</li>
-            <li>Every document review, audit, and HR handbook audit</li>
-            <li>Every checklist and checklist item</li>
-            <li>Every calendar date and reminder</li>
-            <li>Your requirements and the evidence linked to them</li>
-            <li>Your company&apos;s facts, its sites and its saved audit templates</li>
-            <li>Every login on this company account, including yours</li>
-          </ul>
-
-          {!confirming ? (
-            <button type="button" onClick={() => setConfirming(true)}
-              className="mt-4 rounded-md border border-red-300 px-4 py-2 text-[14px] font-medium text-red-700 hover:bg-red-100">
-              Delete the company
-            </button>
-          ) : (
-            <div className="mt-4 space-y-2">
-              <p className="text-[13px] text-red-800">
-                To confirm, type your company name exactly as we hold it:{' '}
-                <span className="font-medium">{companyName}</span>
-              </p>
-              <input type="text" value={typed} onChange={(e) => setTyped(e.target.value)}
-                aria-label="Type your company name to confirm"
-                placeholder="Type your company name to confirm"
-                className="w-full max-w-[420px] rounded-lg border border-red-200 px-3 py-2 text-[14px]" />
-              {error && <p className="text-[13px] text-red-700">{error}</p>}
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={destroy}
-                  disabled={busy || !companyName || typed.trim() !== companyName}
-                  className="rounded-md bg-red-600 px-4 py-2 text-[14px] font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
-                  {busy ? 'Deleting…' : 'Permanently delete the company'}
-                </button>
-                <button type="button" onClick={() => { setConfirming(false); setTyped(''); setError('') }}
-                  className={TEXT_ACTION}>Keep my account</button>
-              </div>
-            </div>
-          )}
+        {/* ---- Download everything ---- */}
+        <div className={ROW_LAST}>
+          <p className={KEY}>{DOWNLOAD_LABEL}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] leading-5 text-gray-600">{DOWNLOAD_NOTE}</p>
+            {downloadError && <p className="mt-1 text-[13px] text-[var(--amber)]">{downloadError}</p>}
+          </div>
+          <button type="button" onClick={download} disabled={downloading}
+            className={`shrink-0 whitespace-nowrap ${PRIMARY}`}>
+            {downloading ? 'Preparing your file…' : DOWNLOAD_ACTION}
+          </button>
         </div>
       </div>
+
+      {/* ---- Delete the company for good ---- */}
+      <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-5">
+        <p className="text-[14px] font-medium text-red-800">{DELETE_TITLE}</p>
+        <p className="mt-1 text-[13px] leading-5 text-red-700">{deleteWarning(companyName || 'this company')}</p>
+
+        <label className="mt-4 block text-[12px] font-medium text-red-800" htmlFor="delete-confirm">
+          {TYPE_TO_CONFIRM}
+        </label>
+        <input id="delete-confirm" type="text" value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          placeholder={companyName} aria-label={TYPE_TO_CONFIRM}
+          className="mt-1 w-full max-w-[420px] rounded-lg border border-red-200 bg-white px-3 py-2 text-[14px]" />
+
+        {error && <p className="mt-2 text-[13px] text-red-700">{error}</p>}
+
+        <div className="mt-3 flex items-center gap-3">
+          <button type="button" disabled={!matches}
+            onClick={() => setConfirming(true)}
+            className="rounded-md bg-red-600 px-4 py-2 text-[14px] font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {DELETE_ACTION}
+          </button>
+          <button type="button" className={TEXT_ACTION}
+            onClick={() => { setTyped(''); setError('') }}>{CANCEL}</button>
+        </div>
+      </div>
+
+      {confirming && (
+        <Sheet title={DELETE_TITLE}
+          lede={deleteWarning(companyName)}
+          onClose={() => setConfirming(false)}>
+          <div className="flex items-center gap-2">
+            {/* The house rule: the confirming button never repeats the one that opened it, and the
+                last thing a person reads names what is about to be destroyed. */}
+            <button type="button" disabled={busy} onClick={destroy}
+              className="rounded-md bg-red-600 px-4 py-2 text-[14px] font-medium text-white hover:bg-red-700 disabled:opacity-50">
+              {busy ? 'Deleting…' : deleteConfirm(companyName)}
+            </button>
+            <button type="button" className={TEXT_ACTION} onClick={() => setConfirming(false)}>{CANCEL}</button>
+          </div>
+        </Sheet>
+      )}
     </>
   )
 }

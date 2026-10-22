@@ -37,8 +37,8 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 5 | Migration 082 | Company facts (`website`, `what_you_do`, `naics_code`, `library`); the company name closed to a person (both doors); sites a person may add, edit and remove (never the main one); invitations; the per-person monthly-email switch; `trial_started_at`. One stop: the migration and the county-from-address answer reviewed in the chat first | Done 21 Oct (d8c0f58, applied to staging; `DECISIONS.md` §207) |
 | 6 | The Company tab | The shared frame and tab row; the facts; "what you do" typed with suggestions; the website line; the main site; the three questions with their answers; the sites list and the site drawer; **the geocoder**; and the Company information name fix 082 made necessary | Done 21 Oct |
 | 7 | The People tab | Who can sign in; invite by email → a link; `/join` where the person sets their own password; remove; the monthly-email switch read by the job | Done 21 Oct |
-| 8 | The Sign-in tab | Name; email change with confirmation; password change that asks for the current one; the shared sheet | Not started |
-| 9 | The Cancel tab | Download my data; delete the company (today's flow, the boards' words). The subscription line arrives with part C | Not started |
+| 8 | The Sign-in tab | Name; email change with confirmation; password change that asks for the current one; the shared sheet | Done 21 Oct |
+| 9 | The Cancel tab | Download my data; delete the company (today's flow, the boards' words). The subscription line arrives with part C | Done 21 Oct |
 | 10 | The owner's test, part A | By hand on staging; free | Not started |
 | 11 | Release A | The routine: backup, 082 on production, read back, push, the built-app walk, live checks | Not started |
 | **B** | **The front door** | | |
@@ -122,7 +122,15 @@ the trial. Three parts, built and released in order: **A the account page · B t
    every county-level agency is silently out of scope. The source will be the **Census Bureau's own free geocoder
    behind a variable**, built in step 6; a shipped HUD ZIP-to-county table was rejected because a split ZIP gives a
    probability rather than an answer. `DECISIONS.md` §207 A.
-2. **"Download my data"**: does the route exist and what does it produce? Settled by the step 9 read.
+2. ~~**"Download my data"**~~ — **ANSWERED at step 9, 21 October.** The route exists
+   (`app/api/account/export/route.ts`) and still runs green after 082 and 083 — measured as
+   `testgamma`: **HTTP 200, 336.6 KB, 25 top-level keys**. It returns **ONE JSON file**, not files:
+   the company row, its people (names and ids, nothing from `auth`), documents DESCRIBED rather than
+   embedded, folders, reviews, audits, HR audits, checklists and their items, calendar events and
+   mailings, obligations and their evidence, sites, corrections, templates and HR's six tables, plus
+   a summary. **It reads no `topics` and no `turns`, so the CONVERSATIONS are not in it** — board 5's
+   "and conversation, as files" overstates it on two counts, and the page's line says what the file
+   actually holds. Adding conversations to the export is owed.
 3. **The email-change and invitation emails** — **half answered at step 7, 21 October.** The INVITATION email is
    **ours**, not the login system's: `lib/invitationEmail.ts` through `lib/email.ts`'s template and Resend, so the first
    thing a new colleague reads from this product is in the product's own voice, and because the token is ours — 082
@@ -135,6 +143,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 21 Oct 2026 | Steps 8 and 9 done: the Sign-in tab (name, email, a password change that asks for the current one) and the Cancel tab (board 5's words, the inert subscription row, the export, the delete). Open question 2 answered. Two of the three no-current-password routes closed; /forgot-password stays, because it is recovery. |
 | 21 Oct 2026 | Step 7 done: the People tab, invitations, `/join`, remove, and the monthly-email switch read by the job. Open question 3 half answered — the invitation email is ours. |
 | 21 Oct 2026 | Step 6b: migration 083 written (not run). Decision 17 added: the company row is a mirror of its main site; state, county and city leave the person's grant, and so do INSERT and DELETE on companies. Company information's company block is down to `industry`. |
 | 21 Oct 2026 | Step 6 done: the Company tab, the site drawer and the geocoder; Company information no longer sends the name. Decision 16 added (the Census geocoder behind a variable). `lib/naicsTitles.ts` ships the 1,012 six-digit NAICS 2022 titles. |
