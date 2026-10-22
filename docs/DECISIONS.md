@@ -15254,3 +15254,93 @@ copy, with no visible change, and `tests/unit/accountView.test.ts` still passes 
 `scripts/measure-layout.mjs` gained `--shot-at` (a screenshot mid-run, for a flow) and can now
 press a checkbox. **Nothing in the Dashboard, `/api/sites`, `/api/switches/*`, the sidebar or
 `AppLayout` was changed**, and no migration was written: the walk needed no table and no column.
+
+---
+
+## 212. NAICS LEAVES THE DOORS: TWO PLAIN LINES, AND A GREETING THAT DOES NOT FLIP — 22 October 2026 (My Account step 15, migration 086, `docs/account-walk-card.html`)
+
+**The decision.** The walk's card and the Company tab show **three lines of text**, each with a
+small `change` that turns that one line into a box. No standard list, no code, no suggestions. The
+sentence about the business is `companies.about` (new); the broad industry line is
+`companies.what_you_do`, which changed meaning; `companies.naics_code` stays, unwritten, with the
+person's right to write it revoked.
+
+### Why the code went, and it is not a question of drawing.
+
+It was drawn twice — "NAICS 325998 · clear" at step 14, then "Closest standard category: … ·
+change" at step 15 — and the owner's own walk rejected both. The reasons are underneath the
+drawing:
+
+- **nothing read it.** `grep -rn naics_code app lib components prompts scripts` found two writers,
+  one control, and no reader at all. A claim with no consequence is the shape §9a warns about;
+- **the thing that will have a consequence is coarser.** When there is more than one requirement
+  table, what chooses one is "a chemical manufacturer" or "a food and beverage distributor" — not
+  325998 against 325199. A six-digit code is a finer answer to a question nobody asked;
+- **a person cannot check it.** "All Other Miscellaneous Chemical Product and Preparation
+  Manufacturing" is not a sentence anybody recognises as their own business, and the card exists to
+  be checked.
+
+So the model now picks from **five industries** (chemical · food and beverage · cannabis ·
+pharmaceutical · cosmetics and personal care) and **three roles** (manufacturing · distribution ·
+manufacturing and distribution), both closed **at the JSON schema** so a half-match cannot arrive,
+and the parser composes the line. **An industry outside the five is nothing, never the nearest of
+five** — the line is then blank with "write it", because a blank is honest and a wrong industry is
+shown to the owner of a business as a fact about them.
+
+`naics_code` is still asked for in the JSON and written to no column. Its reader is
+`npm run website:compare`, where a code that either validates against `lib/naicsTitles.ts` or does
+not is the one signal on a card that is not a matter of taste. That is a terminal, not a screen.
+
+### What 086 does, and the one right it takes.
+
+`companies.about`, nullable text, with the person's column grant — and
+`revoke update (naics_code) … from authenticated`, on the owner's answer at the stop. A column a
+person may still write and nothing writes is a loose end: the next screen wanting a classification
+could fill it without anybody deciding to. 15 checks, including that `service_role` keeps it and
+that the column was not dropped. **`companies.industry` — the engine's join key, defaulted by
+084 — is untouched by all of this**, which the self-test reads back rather than asserts.
+
+### The card is three lines, not a form.
+
+The board's words: *"Nothing on the card looks like a form until the person asks for one."* Only one
+line is ever open — one piece of state, not three booleans. `Done` closes the box and commits
+nothing; the card's own button saves, and it can be confirmed with a line still open. **What is in
+the box is what is saved**, which is the same rule step 14 set for the whole card.
+
+### And the greeting, which was two defects at once.
+
+**It named the person, and a new customer has no name.** `/api/signup` writes `full_name` NULL —
+board 6 asks four things and a name is not one — so every account made through the front door saw a
+bare "Welcome". It is the company name now: required at signup, closed to editing, and the thing a
+person actually wants confirmed on the morning they arrive.
+
+**And it flipped to "Welcome back" on a first visit.** The title was derived from
+`profiles.welcomed_at`, a column the Dashboard itself writes as soon as it has drawn, so **any
+second mount after that stamp reads the stamp** — a reload, a back-then-forward, a second press of
+the walk's last button. The owner saw it. Five measured runs on 22 October could not reproduce
+which trigger he hit, and three candidates were ruled out from the code rather than guessed at: the
+stamp happens after the title is computed (`app/dashboard/page.tsx`); the walk's last control is a
+`<button>` with `router.push`, so nothing is prefetched and a prefetch runs no effects; and
+StrictMode's double mount produces two reads that both precede the first stamp. **The mechanism
+does not depend on knowing the trigger**, so the fix does not either: the first visit is remembered
+in `sessionStorage`, beside the question skips, and a tab that has been greeted stays greeted. A
+later session reads a stamped row and says "Welcome back", which is true. With storage unavailable
+the page behaves exactly as it did before.
+
+**Proved on staging** (`shots/step15-card-*`): first mount with the column null → "Welcome, Step 15
+Probe Co" and the column stamped; away to Company information and back **in the same tab**, column
+now stamped → **still "Welcome, Step 15 Probe Co"**; a fresh browser → **"Welcome back, Step 15
+Probe Co"**.
+
+### Effects on other sections, by file.
+
+`components/NaicsField.tsx` is **deleted**: its only two users were the walk and the Company tab and
+neither offers suggestions now. `lib/naicsTitles.ts` stays, used by `validateNaics` in
+`prompts/website-read.ts` and by `npm run website:compare`. `app/account/page.tsx` draws the two
+lines and its header no longer claims it writes `naics_code`; `tests/unit/accountView.test.ts`
+pins the three columns its one write may touch, which changed. `app/dashboard/page.tsx` now reads
+`companies.select('name')` — the one thing it may read from that table, which
+`tests/unit/dashboardView.test.ts` narrowed from "it reads nothing there" to exactly that.
+`lib/dashboardView.ts` gains `greetedKey`/`readGreeted`/`writeGreeted` beside the skip helpers they
+copy. **No change to `/api/sites`, `/api/switches/*`, the sidebar or `AppLayout`**, and
+`companies.industry`, `library` and the resolution path are untouched.

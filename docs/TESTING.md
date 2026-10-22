@@ -4461,3 +4461,42 @@ that is the Dashboard's doing, not the walk's.
 That the walk is leavable by closing the tab rather than by pressing Skip — a harness that only
 presses buttons cannot walk away from one. The claim rests on the same evidence as W-3: nothing is
 written without a press, so there is nothing a half-finished walk could leave behind.
+
+### W-4 · The card redrawn, and the greeting that stopped flipping (step 15, `shots/step15-card-*`)
+
+Measured on staging on 22 October 2026, isolated copy, under the Haiku guard.
+
+**The card** (`-1-three-lines.png`): three lines of text — the sentence, **Your industry**, the
+address — each with its own lowercase `change`, and no code, no list and no suggestion anywhere.
+`-2-box-open.png` is the board's state B: one line turned into a box holding its current words,
+with *"Write it in your own words. Done"* under it, and the other two still read as text.
+
+**The walk**: change the industry to "Chemical distribution", change the address by one digit, press
+"Yes, that's us", answer three, finish (`-3-edited.png`, `-4-welcome.png`). Read back:
+
+| | |
+|---|---|
+| `about` | the sentence the read proposed, unedited |
+| `what_you_do` | **"Chemical distribution"** — the edited line |
+| `naics_code` | **NULL** |
+| main site | `8151 Lackland…` — the edited digit — geocoded **Missouri / St. Louis** and mirrored onto the company row |
+| sites · answers · accepted | 2 · 3 · 1 |
+
+**The greeting**, which is the part worth the trouble:
+
+1. first mount with `welcomed_at` null → **"Welcome, Step 15 Probe Co"**, and the column is stamped
+   (read back: `20:25:35`);
+2. away to Company information and back **in the same tab**, column now stamped
+   (`-5-still-welcome.png`) → **still "Welcome, Step 15 Probe Co"**;
+3. a fresh browser session (`-6-welcome-back.png`) → **"Welcome back, Step 15 Probe Co"**.
+
+Step 2 is the bug: before the `sessionStorage` memory, that second mount read the page's own stamp
+and flipped the greeting on what the person experiences as their first visit.
+
+**The Company tab** (`-7-company-tab.png`, `-8-company-tab-saved.png`): the same two lines with the
+same `change`. Each edited and read back — `about` and `what_you_do` both as typed, `naics_code`
+still NULL.
+
+**What this cannot show**: a reload, as opposed to a navigation away and back. The harness loads a
+page once per run. Both are second mounts of the same component in the same tab, which is the thing
+the fix addresses, and the unit tests hold the rule directly.

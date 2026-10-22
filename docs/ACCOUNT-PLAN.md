@@ -45,10 +45,10 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 12 | Signup | Four fields; the account, the company and its main site created together; the trial starts; lands on the Dashboard until step 14 moves it to the walk | Done 22 Oct — migration 084, applied to staging; `DECISIONS.md` §209 |
 | 13 | The website read | `AI_MODEL_WEBSITE` (Opus 5.5 to start); one read; the card proposes name, what they do, addresses; nothing written until "Yes, that's us". One stop: the prompt and two real cards reviewed first | Done 22 Oct — migration 085, applied to staging; `DECISIONS.md` §210 |
 | 14 | The walk | Three screens; every screen can be left; the Dashboard picks up | Not started |
-| 15 | The owner's test, part B | Real websites, Opus 5.5 against Sonnet 5.5, side by side | Not started |
+| 15 | The owner's test, part B | Real websites, Opus 5.5 against Sonnet 5.5, side by side | Done 22 Oct — `npm run website:compare`; five hosts read; three findings from the owner's own walk fixed, and the card redrawn (migration 086, `DECISIONS.md` §212) |
 | 16 | Release B | The routine; `AI_MODEL_WEBSITE` set on Vercel by the owner | Not started |
 | **C** | **Billing** | | |
-| 17 | Stripe, the wiring | The owner's Stripe account and keys; **migration 086** (`stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`) — the plan first called it 083, which is `one_address`; 084 and 085 are taken too; checkout and portal routes; the webhook. One stop | Not started |
+| 17 | Stripe, the wiring | The owner's Stripe account and keys; **migration 087** (`stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`) — the plan first called it 083, which is `one_address`; 084, 085 and 086 are taken too; checkout and portal routes; the webhook. One stop | Not started |
 | 18 | The read-only state | One rule the paid routes check; the banner; the 7-day grace; the daily job that ends trials | Not started |
 | 19 | The Billing tab and the Cancel tab's subscription line | As drawn | Not started |
 | 20 | The owner's test, part C | Stripe test mode: a test card, a failing card, the trial ending | Not started |
@@ -60,9 +60,16 @@ the trial. Three parts, built and released in order: **A the account page · B t
 1. **The company name is not editable by a person**, from either door (My Account and Company information). It is tied
    to the company id and everything hangs on it. A wrong name is fixed by us.
 2. **Email is editable**, with a confirmation link to the new address; the old address keeps working until it is clicked.
-3. **"What you do" is typed, with suggestions** from a standard list (the NAICS titles); anything typed is kept, and the
-   standard code is stored when a suggestion was picked. Never a dropdown. Which requirements library a company gets is
-   a separate, unseen column (`chemical` for everyone today).
+3. ~~**"What you do" is typed, with suggestions** from a standard list (the NAICS titles)~~ — **AMENDED 22 October at
+   step 15, after the owner's own walk.** The card was asking a person to agree with a six-digit code, and nothing read
+   it: `grep -rn naics_code app lib components prompts scripts` found two writers and no reader. **NAICS leaves every
+   screen a person sees.** What a person reads and writes is now two plain lines — a sentence about the business
+   (`companies.about`, migration 086) and a broad industry line (`companies.what_you_do`, which changed meaning) — each
+   as text with a small `change` that turns that one line into a box. No suggestions anywhere. The industry line is
+   proposed by the website read from a closed list of five industries and three roles and is what will choose a
+   requirement table when there is more than one; `companies.naics_code` stays, unwritten, with the person's UPDATE
+   revoked by 086. Which requirements library a company gets is still a separate, unseen column (`chemical` for
+   everyone today). `DECISIONS.md` §212.
 4. **One address per site; the company's address is its main site's.** State and county are read from the address,
    never typed. Adding a site is a name and an address, nothing else. The main site cannot be removed.
 5. **The three questions on the Company tab are the top three switches** (has employees, how many, what the business
@@ -116,6 +123,17 @@ the trial. Three parts, built and released in order: **A the account page · B t
     the site is saved with its name and address as typed, the person is told in one sentence, and they
     may type the county themselves. A person never types a state or county that WAS resolved.
     `DECISIONS.md` §207 A.
+19. **The Dashboard greets the COMPANY, and a tab that has been greeted stays greeted.** Added 22 October at step 15.
+    The title was the person's first name, and an account made through signup has none — `/api/signup` writes
+    `full_name` NULL, because board 6 asks four things and a name is not one — so every new customer saw a bare
+    "Welcome". It is the company name now, which is required at signup and closed to editing. And the first visit is
+    remembered in `sessionStorage` beside the question skips: the title is derived from `profiles.welcomed_at`, a
+    column the Dashboard itself writes as soon as it has drawn, so any second mount after that stamp — a reload, a
+    back-then-forward, a second press of the walk's last button — read its own stamp and flipped to "Welcome back" on
+    what the person experienced as their first visit. The owner saw it on 22 October; five measured runs could not
+    reproduce which trigger, and the mechanism does not depend on knowing. With storage unavailable the page behaves
+    exactly as it did before. `DECISIONS.md` §212.
+
 17. **A company has ONE address, and the company row is a mirror of its main site.** Added 21 October
     at step 6b (migration 083). Step 6 made `entities.state/county/city` the geocoded truth, but
     `lib/jurisdiction.ts:93` and `:99` resolve the STATE and COUNTY layers against
@@ -156,6 +174,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 22 Oct 2026 | Step 15 done (migration 086): the card redrawn. Decision 3 amended — NAICS leaves every screen a person sees, `about` holds the sentence, `what_you_do` holds the broad industry line. Decision 19 added: the Dashboard greets the company, and a greeted tab stays greeted. Step 17's migration is **087**. |
 | 22 Oct 2026 | Step 13 done (migration 085): the website read. Decision 9 gains what was built and what the stop settled; step 17's migration is **086** — the plan called it 083, which is `one_address`. |
 | 22 Oct 2026 | Step 12 done (migration 084). Decision 8 gains a sentence: `companies.industry` is a join key, so it takes a DEFAULT of `chemical-manufacturing` rather than a question — `DECISIONS.md` §209. Steps 10 and 11's rows corrected: both had been done and the table still said "Not started". Step 17's row no longer calls its migration 083, which is `one_address`. |
 | 21 Oct 2026 | Steps 8 and 9 done: the Sign-in tab (name, email, a password change that asks for the current one) and the Cancel tab (board 5's words, the inert subscription row, the export, the delete). Open question 2 answered. Two of the three no-current-password routes closed; /forgot-password stays, because it is recovery. |
