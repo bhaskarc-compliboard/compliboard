@@ -1,70 +1,51 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { createClient } from '@/lib/supabase'
+/**
+ * /signup — THE FRONT DOOR. Board 6, My Account step 12, decision 8.
+ *
+ * *** FOUR FIELDS. *** A work email, a password, the company name, and a website that is optional
+ * and worth asking for. Nothing else: the account and the 14-day trial exist the moment the button
+ * is pressed, and everything else about the company is asked by the walk (board 7) or on the
+ * Company tab, where the person can already see what the answers are for.
+ *
+ * *** WHAT WENT, AND WHY — the three fields this page used to collect. ***
+ *   · the INDUSTRY dropdown, which was `distinct requirement_templates.industries`: a list that can
+ *     only offer verticals we have already built, shown to somebody who has not yet seen the
+ *     product (`docs/WORKSPACE.md:586`). Decision 3 replaces it with what the person types about
+ *     themselves, with the NAICS titles as suggestions.
+ *   · the STATE dropdown and the CITY box, which made a company's place something a person typed.
+ *     A county — which half the library's agencies are keyed on — cannot come out of a dropdown at
+ *     all, which is why `entities.county` is NULL for every account ever created (migration 082's
+ *     header). The main site's street address and the Census geocoder are the source now
+ *     (decisions 16 and 17).
+ *   · the WEBSITE SCAN. The box stays and the model call goes: the website is STORED here and read
+ *     once, with the person's confirmation, at step 13. Pressing a button that quietly spends money
+ *     on a stranger's URL before they have an account was never a good trade.
+ *
+ * *** IT IS OUTSIDE `AppLayout`, LIKE `/login` AND `/join`. *** The shell reads a session to draw
+ * the sidebar and the company name, and nobody here has one yet. The frame is the one this page
+ * already had.
+ *
+ * The words are `lib/signupView.ts`'s, so this page, the route and the tests cannot disagree about
+ * them; the rules are checked here for speed and again in the route, which is the boundary.
+ */
+
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
+import {
+  emailLooksLikeOne, normaliseWebsite,
+  SIGNUP_TITLE, SIGNUP_LEDE, EMAIL_LABEL, EMAIL_PLACEHOLDER, PASSWORD_LABEL,
+  SIGNUP_PASSWORD_HINT, SIGNUP_PASSWORD_MIN, COMPANY_LABEL, COMPANY_PLACEHOLDER,
+  WEBSITE_LABEL, WEBSITE_OPTIONAL, WEBSITE_PLACEHOLDER, WEBSITE_GREEN,
+  SIGNUP_BUTTON, SIGNUP_BUSY, HAVE_ACCOUNT, SIGN_IN,
+  EMAIL_INVALID, SIGNUP_PASSWORD_SHORT, COMPANY_REQUIRED, WEBSITE_UNREADABLE, NOTHING_SAVED,
+} from '@/lib/signupView'
 
-// Industries now come from the database (/api/industries), not a hardcoded list.
-
-const US_STATES = [
-  'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
-  'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
-  'Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan',
-  'Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
-  'New Hampshire','New Jersey','New Mexico','New York','North Carolina',
-  'North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island',
-  'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont',
-  'Virginia','Washington','West Virginia','Wisconsin','Wyoming'
-]
-
-const INDUSTRY_QUESTIONS: Record<string, { key: string; label: string }[]> = {
-  'chemical-manufacturing': [
-    { key: 'repackaging', label: 'Do you manufacture, repackage, or bottle products?' },
-    { key: 'hazmat_drivers', label: 'Do you have drivers who transport hazardous materials?' },
-    { key: 'onsite_chemical_storage', label: 'Do you store chemicals on site in large quantities?' },
-  ],
-  'restaurant': [
-    { key: 'liquor_license', label: 'Do you have a liquor license?' },
-    { key: 'food_truck', label: 'Do you operate a food truck or catering operation?' },
-  ],
-  'food-beverage-manufacturing': [
-    { key: 'fda_manufacturing', label: 'Do you manufacture under FDA oversight?' },
-    { key: 'onsite_chemical_storage', label: 'Do you store chemicals or cleaning agents on site?' },
-  ],
-  'cannabis': [
-    { key: 'repackaging', label: 'Do you process or repackage cannabis products?' },
-    { key: 'onsite_chemical_storage', label: 'Do you use pesticides or chemical inputs?' },
-  ],
-  'auto-body-dry-cleaners': [
-    { key: 'perc_solvents', label: 'Do you use perc or other chlorinated solvents?' },
-    { key: 'onsite_chemical_storage', label: 'Do you store hazardous chemicals on site?' },
-  ],
-  'healthcare': [
-    { key: 'controlled_substances', label: 'Do you handle controlled substances?' },
-    { key: 'onsite_chemical_storage', label: 'Do you store hazardous materials or chemicals?' },
-  ],
-  'wood-products-sawmills': [
-    { key: 'own_vehicles', label: 'Do you operate your own delivery or transport vehicles?' },
-    { key: 'onsite_chemical_storage', label: 'Do you use chemical treatments or preservatives?' },
-  ],
-  'construction': [
-    { key: 'own_vehicles', label: 'Do you operate your own vehicles or heavy equipment?' },
-    { key: 'onsite_chemical_storage', label: 'Do you store hazardous materials on site?' },
-  ],
-  'other': [
-    { key: 'onsite_chemical_storage', label: 'Do you store any hazardous chemicals or materials on site?' },
-    { key: 'own_vehicles', label: 'Do you operate your own vehicles for business purposes?' },
-  ],
-}
-
-interface ScanData {
-  certifications: string[]
-  chemicals: string[]
-  operations: Record<string, boolean | null>
-  multiple_locations: boolean
-  city: string | null
-  state: string | null
-}
+const FIELD =
+  'w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 ' +
+  'focus:border-green-500 focus:outline-none disabled:opacity-60'
+const LABEL = 'mb-1 block text-xs font-medium text-gray-600'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -73,333 +54,121 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [companyName, setCompanyName] = useState('')
-  const [industry, setIndustry] = useState('')
-  const [industries, setIndustries] = useState<string[]>([])
-  useEffect(() => {
-    fetch('/api/industries')
-      .then((r) => r.json())
-      .then((d) => setIndustries(d.industries || []))
-      .catch(() => setIndustries([]))
-  }, [])
-  const [businessDescription, setBusinessDescription] = useState('')
-  const [state, setState] = useState('')
-  const [city, setCity] = useState('')
   const [website, setWebsite] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [errorLink, setErrorLink] = useState<{ label: string; href: string } | null>(null)
 
-  // Scan state
-  const [scanning, setScanning] = useState(false)
-  const [scanData, setScanData] = useState<ScanData | null>(null)
-  const scanResultRef = useRef<ScanData | null>(null)
+  async function signUp() {
+    if (busy) return
+    setError(null)
+    setErrorLink(null)
 
-  // Pop-up state
-  const [showPopup, setShowPopup] = useState(false)
-  const [confirmedCerts, setConfirmedCerts] = useState<string[]>([])
-  const [operations, setOperations] = useState<Record<string, boolean | null>>({})
+    // The same three rules the route enforces, in the order the fields are drawn, so a person is
+    // not made to wait for a round trip to be told their password is short.
+    if (!emailLooksLikeOne(email)) { setError(EMAIL_INVALID); return }
+    if (password.length < SIGNUP_PASSWORD_MIN) { setError(SIGNUP_PASSWORD_SHORT); return }
+    if (!companyName.trim()) { setError(COMPANY_REQUIRED); return }
+    // The route never refuses over the website — it is optional, and an optional field must not be
+    // able to stop an account. But it would store nothing, and dropping what somebody typed without
+    // telling them is its own small dishonesty, so it is said here where they can still fix it.
+    if (website.trim() && !normaliseWebsite(website)) { setError(WEBSITE_UNREADABLE); return }
 
-  async function handleWebsiteBlur() {
-    if (!website || website.trim().length < 4) return
-    if (scanning || scanData) return
-    setScanning(true)
+    setBusy(true)
     try {
-      const res = await fetch('/api/scan-website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: website, industry: industry || 'other' }),
-      })
-      const json = await res.json()
-      if (json.success && json.data) {
-        const data = json.data as ScanData
-        scanResultRef.current = data
-        setScanData(data)
-        setConfirmedCerts(data.certifications || [])
-        setOperations(data.operations || {})
-      }
-    } catch {
-      // Silent failure
-    } finally {
-      setScanning(false)
-    }
-  }
-
-  function toggleCert(cert: string) {
-    setConfirmedCerts(prev =>
-      prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert]
-    )
-  }
-
-  function toggleOperation(key: string, value: boolean) {
-    setOperations(prev => ({ ...prev, [key]: prev[key] === value ? null : value }))
-  }
-
-  async function handleSignup() {
-    if (!email || !password || !companyName || !industry || !state || !city) {
-      setError('Please fill in all required fields')
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-    setLoading(true)
-    setError('')
-    try {
-      const currentScanData = scanResultRef.current
-      const scanResult = currentScanData ? {
-        ...currentScanData,
-        certifications: confirmedCerts,
-        operations: { ...currentScanData.operations, ...operations },
-        custom_industry: industry === 'other' && businessDescription ? businessDescription : null,
-      } : (industry === 'other' && businessDescription ? {
-        certifications: [],
-        chemicals: [],
-        customers: [],
-        multiple_locations: false,
-        city: null,
-        state: null,
-        operations: {},
-        custom_industry: businessDescription,
-      } : null)
-
       const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          companyName,
-          industry,
-          state,
-          county: '',
-          city,
-          // Not asked at signup. Sent as null rather than '' so the column holds
-          // "not told yet" instead of a value nobody chose (DECISIONS.md §21.1).
-          employeeCount: null,
-          websiteUrl: website || null,
-          scanResult,
-        }),
+        body: JSON.stringify({ email: email.trim(), password, companyName: companyName.trim(), website }),
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Signup failed')
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (signInError) throw signInError
-
-      if (currentScanData && (confirmedCerts.length > 0 || INDUSTRY_QUESTIONS[industry]?.length > 0)) {
-        setShowPopup(true)
-        setLoading(false)
-      } else {
-        // Decision 1: a new account lands on the Dashboard, not the marketing homepage. Its
-        // first visit is the one that says "Welcome, <name>" rather than "Welcome back".
-        router.push('/dashboard')
-        router.refresh()
+      const j = await res.json().catch(() => null)
+      if (!res.ok || !j?.ok) {
+        setError(j?.error ?? NOTHING_SAVED)
+        setErrorLink(j?.link ?? null)
+        setBusy(false)
+        return
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-      setLoading(false)
+
+      // Signed in with the password they just typed — the same call `app/login/page.tsx:24` makes.
+      // The account exists either way; if this one step fails they are simply sent to sign in.
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: j.email, password })
+      if (signInError) { router.push('/login'); return }
+      // Decision 1: a new account lands on the Dashboard, which is the page that says "Welcome"
+      // rather than "Welcome back" on a first visit (`profiles.welcomed_at` is null). Step 14 moves
+      // this landing to the walk.
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setError(NOTHING_SAVED)
+      setBusy(false)
     }
   }
 
-  async function handlePopupConfirm() {
-    // The other way out of signup — the industry-questions pop-up — and it lands in the same
-    // place, or half of new accounts would go to the marketing page and half to the Dashboard.
-    router.push('/dashboard')
-    router.refresh()
-  }
-
-  const industryQuestions = INDUSTRY_QUESTIONS[industry] || []
-
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
 
-      {/* Confirmation Pop-up */}
-      {showPopup && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl border border-gray-200 w-full max-w-lg p-8 shadow-xl">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-1">One last thing</h2>
-              <p className="text-sm text-gray-500">Help us tailor CompliBoard to your business. Takes 30 seconds.</p>
-            </div>
-
-            {confirmedCerts.length > 0 && (
-              <div className="mb-6">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                  We found these certifications on your website
-                </p>
-                <div className="space-y-2">
-                  {confirmedCerts.map(cert => (
-                    <label key={cert} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50">
-                      <input
-                        type="checkbox"
-                        checked={confirmedCerts.includes(cert)}
-                        onChange={() => toggleCert(cert)}
-                        className="w-4 h-4 accent-green-700"
-                      />
-                      <span className="text-sm text-gray-800">{cert}</span>
-                    </label>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-400 mt-2">Uncheck anything that doesn&apos;t apply</p>
-              </div>
-            )}
-
-            {industryQuestions.length > 0 && (
-              <div className="mb-6">
-                {confirmedCerts.length > 0 && <div className="border-t border-gray-100 mb-6" />}
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                  A few quick questions
-                </p>
-                <div className="space-y-3">
-                  {industryQuestions.map(q => (
-                    <div key={q.key} className="p-3 rounded-xl border border-gray-200">
-                      <p className="text-sm text-gray-800 mb-2">{q.label}</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => toggleOperation(q.key, true)}
-                          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            operations[q.key] === true
-                              ? 'bg-green-700 text-white'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}>
-                          Yes
-                        </button>
-                        <button
-                          onClick={() => toggleOperation(q.key, false)}
-                          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            operations[q.key] === false
-                              ? 'bg-gray-700 text-white'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}>
-                          No
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={handlePopupConfirm}
-              className="w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-              Set up my CompliBoard →
-            </button>
-            <p className="text-center text-xs text-gray-400 mt-3 cursor-pointer hover:text-gray-600"
-              onClick={handlePopupConfirm}>
-              Skip for now
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Signup Form */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-lg p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Create your account</h1>
-          <p className="text-gray-500 text-sm">Set up CompliBoard for your business</p>
+          <h1 className="mb-1 text-2xl font-semibold text-gray-900">{SIGNUP_TITLE}</h1>
+          <p className="text-sm text-gray-500">{SIGNUP_LEDE}</p>
         </div>
 
-        <div className="space-y-3">
-
-          <input type="text"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-            placeholder="Company name *"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-          />
-
-          <div className="relative">
-            <input type="text"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 pr-10"
-              placeholder="Website — highly recommended for a personalised setup"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              onBlur={handleWebsiteBlur}
-            />
-            {scanning && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-            {!scanning && scanData && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 text-sm">✓</div>
-            )}
-          </div>
-          {!scanning && scanData && (
-            <p className="text-xs text-green-700 -mt-1 px-1">
-              Website scanned — we&apos;ll personalise your setup based on what we found
-            </p>
-          )}
-
-          <select
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-            value={industry}
-            onChange={(e) => setIndustry(e.target.value)}>
-            <option value="">Select your industry *</option>
-            {industries.map(slug => <option key={slug} value={slug}>{slug}</option>)}
-            <option value="other">Don&apos;t see your industry?</option>
-          </select>
-
-          {industry === 'other' && (
-            <input type="text"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-              placeholder="What does your business do, or what industry are you in?"
-              value={businessDescription}
-              onChange={(e) => setBusinessDescription(e.target.value)}
-              autoFocus
-            />
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <select
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-              value={state}
-              onChange={(e) => setState(e.target.value)}>
-              <option value="">Select state *</option>
-              {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <input type="text"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-              placeholder="City *"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-            />
-          </div>
-
-          <div className="pt-2 border-t border-gray-100 space-y-3">
-            <input type="email"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-              placeholder="Email *"
-              value={email}
+        <div className="space-y-4">
+          <div>
+            <label className={LABEL} htmlFor="signup-email">{EMAIL_LABEL}</label>
+            <input id="signup-email" type="email" value={email} disabled={busy}
               onChange={(e) => setEmail(e.target.value)}
-            />
-            <input type="password"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-              placeholder="Password (min. 6 characters) *"
-              value={password}
+              onKeyDown={(e) => e.key === 'Enter' && signUp()}
+              placeholder={EMAIL_PLACEHOLDER} className={FIELD} aria-label={EMAIL_LABEL} />
+          </div>
+
+          <div>
+            <label className={LABEL} htmlFor="signup-password">{PASSWORD_LABEL}</label>
+            <input id="signup-password" type="password" value={password} disabled={busy}
               onChange={(e) => setPassword(e.target.value)}
-            />
+              onKeyDown={(e) => e.key === 'Enter' && signUp()}
+              placeholder={SIGNUP_PASSWORD_HINT} className={FIELD} aria-label={PASSWORD_LABEL} />
+          </div>
+
+          <div>
+            <label className={LABEL} htmlFor="signup-company">{COMPANY_LABEL}</label>
+            <input id="signup-company" type="text" value={companyName} disabled={busy}
+              onChange={(e) => setCompanyName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && signUp()}
+              placeholder={COMPANY_PLACEHOLDER} className={FIELD} aria-label={COMPANY_LABEL} />
+          </div>
+
+          <div>
+            <label className={LABEL} htmlFor="signup-website">
+              {WEBSITE_LABEL} <span className="text-gray-400">{WEBSITE_OPTIONAL}</span>
+            </label>
+            <input id="signup-website" type="text" value={website} disabled={busy}
+              onChange={(e) => setWebsite(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && signUp()}
+              placeholder={WEBSITE_PLACEHOLDER} className={FIELD} aria-label={WEBSITE_LABEL} />
+            <p className="mt-1 text-xs text-green-700">{WEBSITE_GREEN}</p>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+            <div>
               <p className="text-sm text-red-600">{error}</p>
+              {errorLink && (
+                <a href={errorLink.href} className="mt-1 inline-block text-sm font-medium text-green-700 hover:underline">
+                  {errorLink.label}
+                </a>
+              )}
             </div>
           )}
 
-          <button
-            onClick={handleSignup}
-            disabled={loading}
-            className="w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-            {loading ? 'Creating your account...' : 'Create account →'}
+          <button type="button" onClick={signUp} disabled={busy}
+            className="w-full rounded-xl bg-green-700 py-3 text-sm font-medium text-white transition-colors hover:bg-green-800 disabled:opacity-50">
+            {busy ? SIGNUP_BUSY : SIGNUP_BUTTON}
           </button>
 
           <p className="text-center text-sm text-gray-500">
-            Already have an account?{' '}
-            <a href="/login" className="text-green-700 hover:text-green-800 font-medium">Log in</a>
+            {HAVE_ACCOUNT}{' '}
+            <a href="/login" className="font-medium text-green-700 hover:text-green-800">{SIGN_IN}</a>
           </p>
-
         </div>
       </div>
     </main>

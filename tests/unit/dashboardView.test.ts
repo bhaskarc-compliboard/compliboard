@@ -264,8 +264,15 @@ describe('login lands on the Dashboard — decision 1', () => {
     assert.ok(!LOGIN.includes("router.push('/')"), 'login still lands on the marketing homepage')
   })
 
-  test('both ways out of signup push /dashboard', () => {
-    assert.equal((SIGNUP.match(/router\.push\('\/dashboard'\)/g) ?? []).length, 2)
+  /**
+   * *** THERE IS ONE WAY OUT OF SIGNUP NOW, NOT TWO — My Account step 12. *** This counted two,
+   * because the old page could finish either through the form or through the industry-questions
+   * pop-up, and half of new accounts would have gone to the marketing page if they disagreed. Board
+   * 6 has four fields and no pop-up, so there is one landing and it is still the Dashboard. Step 14
+   * moves it to the walk.
+   */
+  test('the one way out of signup pushes /dashboard', () => {
+    assert.equal((SIGNUP.match(/router\.push\('\/dashboard'\)/g) ?? []).length, 1)
     assert.ok(!SIGNUP.includes("router.push('/')"), 'a signup path still lands on the homepage')
   })
 

@@ -81,17 +81,29 @@ export interface ContextSite {
 export interface ContextCompany {
   name: string
   /**
-   * What `companies.industry` holds. `/api/signup` writes the value the dropdown supplied, and
-   * that dropdown is `distinct requirement_templates.industries` — so this is the SLUG that
-   * `agencies.industries` and `requirement_templates.industries` join on, not a description.
+   * What `companies.industry` holds: the SLUG that `agencies.industries` and
+   * `requirement_templates.industries` join on, not a description.
+   *
+   * *** CORRECTED AT MY ACCOUNT STEP 12: SIGNUP NO LONGER ASKS, SO THE DATABASE ANSWERS. *** It
+   * used to be the value the industry dropdown supplied, and that dropdown was `distinct
+   * requirement_templates.industries` — a list that can only offer verticals already built. Board 6
+   * asks four things and the dropdown is gone (decision 3), so **migration 084 gives the column a
+   * default of `chemical-manufacturing`**, the slug the seeded agencies and requirements carry.
+   * A null would not have been harmless: `lib/agencyScope.ts:47` returns an empty agency list for
+   * one, and `lib/resolve.ts:257` skips a requirement only when the industry is non-null, so
+   * resolution would stop filtering by industry altogether. Rows created before today keep
+   * whatever they chose, including null; step 13's website read may correct a new one.
    */
   industrySlug: string | null
   /**
    * The industry in words, when the slug is not already words.
    *
    * Two sources, in this order. **What the person typed**, when they chose "Don't see your
-   * industry?" at signup — `companies.scan_result.custom_industry`, written by
-   * `app/signup/page.tsx` and inserted by `/api/signup` as part of `scan_result`. Otherwise the
+   * industry?" at signup — `companies.scan_result.custom_industry`. *** THAT BOX WENT AT MY ACCOUNT
+   * STEP 12, AND SO DID THE WEBSITE SCAN THAT FILLED THE REST OF `scan_result`. *** Nothing writes
+   * the column now, so it is null on every company created from today; companies created before
+   * keep theirs and this still reads it. What a business does is typed on the Company tab instead
+   * (`companies.what_you_do`, decision 3), which nothing in this file reads yet. Otherwise the
    * slug with its hyphens and underscores turned into spaces, which is all `wordsFor` can do.
    *
    * *** AND THIS IS WHY IT MATTERS, NOT A TIDINESS POINT — Audits Run 7a, item 2. ***

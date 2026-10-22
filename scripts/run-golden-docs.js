@@ -175,11 +175,15 @@ if (!fromRuns && !restoreFrom && !priceFor(MODEL)) {
 //
 // These three carried `'chemical distribution'`, `'cannabis cultivation'` and
 // `'food manufacturing (ready-to-eat dips and spreads)'`: the specs' own descriptions, which read
-// well and match nothing. `companies.industry` is a JOIN KEY. `/api/signup` writes whatever the
-// dropdown supplied (`app/api/signup/route.ts:41`), that dropdown is
-// `distinct requirement_templates.industries` (`/api/industries`), and the page names the variable
-// `slug`. So the column holds a slug, and `agencies.industries` and `requirement_templates.industries`
-// hold the same slugs.
+// well and match nothing. `companies.industry` is a JOIN KEY: `agencies.industries` and
+// `requirement_templates.industries` hold slugs, so the column must hold one too.
+//
+// *** THE SLUG USED TO COME FROM SIGNUP'S DROPDOWN; AT MY ACCOUNT STEP 12 IT STOPPED. *** The
+// dropdown was `distinct requirement_templates.industries` (`/api/industries`) and board 6 removed
+// it, so `/api/signup` names no industry at all now and migration 084 gives the column a default of
+// `chemical-manufacturing` instead. These three fixtures still set it THEMSELVES, which they always
+// did — two of them to something other than the default, which is exactly why they must keep
+// naming it rather than relying on what a new account happens to get.
 //
 // The cost of the mismatch, measured before this change: `agenciesInScopeFor` returned an EMPTY
 // LIST for all three golden companies, because `.contains('industries', ['chemical distribution'])`

@@ -425,19 +425,24 @@ export async function gate(input: GateInput): Promise<GateResult> {
   // DETERMINATION-GATE.md §7 arriving on day one, for the single most frequently determining
   // fact in the product.
   //
-  // *** CORRECTED 21 OCTOBER 2026: THIS SAID THE THREE FACTS "COME FROM GEOCODING". NOTHING
-  // GEOCODES ANYTHING TODAY, AND THE COUNTY IS ALWAYS NULL. *** `DECISIONS.md` §25 says
-  // geocoding, and that is the intent, not the program: `grep -rniE "geocod|zip_?to_?county"`
-  // over app, lib, components and scripts finds comments and no code. What actually happens:
-  // `app/signup/page.tsx:357,364` asks for a STATE from a dropdown and a CITY in a text box,
-  // never a street address; `:174` sends `county: ''` for every account ever created;
-  // `app/api/signup/route.ts:37-54` writes those onto `companies`; and `create_primary_site`
-  // (migration 010:69-92) copies them to the site through `nullif(new.county,'')`, which turns
-  // that empty string into NULL. So the main site's state and city are TYPED, and its county is
-  // nothing — which is why the county branch of `siteAgencies` in lib/agencyScope.ts cannot
-  // match for any company created through signup. My Account step 6 adds the Census Geocoder
-  // behind its own variable (ACCOUNT-PLAN decision 4); until it lands, read the labels below
-  // with this paragraph in mind.
+  // *** THE HISTORY OF THESE THREE LABELS, BECAUSE IT DECIDES WHAT THEY MEAN. ***
+  //
+  // Until 21 October this paragraph said the three facts "come from GEOCODING", and nothing in the
+  // repository geocoded anything: `DECISIONS.md` §25 said geocoding, and that was the intent, not
+  // the program. What actually happened was that signup asked for a STATE from a dropdown and a
+  // CITY in a text box, never a street address, and sent `county: ''` for every account ever
+  // created — so every main site's state and city were TYPED and its county was nothing, which is
+  // why the county branch of `siteAgencies` in lib/agencyScope.ts could not match for any company
+  // created through signup.
+  //
+  // *** BOTH HALVES OF THAT ARE NOW FIXED, AND NEITHER IS RETROSPECTIVE. *** My Account step 6
+  // added the Census geocoder behind `GEOCODER_URL` (`lib/geocode.ts`, decision 16): a site's
+  // address is resolved to a state, county and city, and `/api/sites` refuses to carry an old
+  // county onto a new address. Step 12 then took the state and city boxes off signup altogether
+  // (board 6, migration 084) — a new company and its main site are created with NO place at all,
+  // and the walk asks for one street address. So for a site created from today these three facts
+  // are GEOCODED or absent; for a site created before, they are still typed, and the county is
+  // still `''` or NULL until somebody edits the address. Read the labels below with that in mind.
   //
   // Jurisdiction lives on entities (migration 009), not in company_switches, because it is
   // a property of a SITE rather than a company (DECISIONS.md §20). It is still the PRIMARY site's,

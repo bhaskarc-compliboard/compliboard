@@ -78,9 +78,16 @@ describe('case 3 — county, against the company (zero live rows today)', () => 
   test('different county is false', () => {
     assert.equal(jurisdictionMatch(countyRow, { ...ALPHA, county: 'Multnomah' }, ALPHA_SITE), false)
   })
-  test('signup hardcodes county to the empty string — that must be unknown', () => {
-    // TODO 4.1 inherits this: `/api/signup` writes `county: ''` and never asks. If `''`
-    // compared as a real value, every county row would answer `false` for every customer.
+  test('an empty-string county must be unknown, never a value that compares', () => {
+    // *** CORRECTED AT MY ACCOUNT STEP 12: SIGNUP NO LONGER SENDS `county: ''`. *** It used to
+    // (`county: ''` at the old `app/signup/page.tsx:174`), and this test said so. Signup now asks
+    // four things and writes no place at all (migration 084), so a new company's county is NULL
+    // until the walk geocodes its main site's address. The rule still has to hold: every row
+    // created before today carries `''`. If `''` ever compared as a real value, every county row
+    // would answer `false` for those companies instead of admitting it does not know. (A site the
+    // geocoder cannot match is saved with county NULL unless the person types one —
+    // `app/api/sites/route.ts:81` — so the empty string is now only history, and history is
+    // exactly what a regression test is for.)
     assert.equal(jurisdictionMatch(countyRow, { ...ALPHA, county: '' }, ALPHA_SITE), 'unknown')
   })
 })
