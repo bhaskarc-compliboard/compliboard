@@ -15501,6 +15501,47 @@ inside it (`2026-09-30.endive`) must not move on an `npm install`.
    so being kind there would be full access for ever to a company Stripe has given up collecting
    from. The two differ in one fact and reach opposite verdicts; it could not have been guessed.
 
+> ### ⚡ 5. AND THE FIFTH, WHICH IS THE ONE THAT REACHED THE DATABASE: 087's BACKFILL WAS A NO-OP. MIGRATION 088.
+>
+> **Found at the step 17 read-back, after the commits, by reading a line that did not add up:** the
+> fixture company's trial STARTED on 14 October and its `trial_ends_at` said **6 November**. Fourteen
+> days from 14 October is 28 October. All eleven companies on staging were wrong, all in the same
+> direction, all to the same date — 6 November, which is fourteen days from **the moment 087 ran**.
+>
+> **The cause, read from the catalog rather than guessed.** 087 §1 added the column *with* its
+> default and §2 then backfilled `where trial_ends_at is null`. Since PostgreSQL 11, `ADD COLUMN`
+> with a **non-volatile** default stores ONE value that every pre-existing row reads, and `now()` is
+> STABLE, not volatile — so it was folded once during the ALTER. `pg_attribute` afterwards:
+> `atthasmissing = true`, `attmissingval = {"2026-11-06 22:29:47.114886+00"}`. A single constant for
+> all eleven rows. By the time the UPDATE ran there was no NULL left to match, so it touched nothing
+> — and `set not null` then succeeded **for the wrong reason**, on a column already made total by one
+> timestamp.
+>
+> **AND 087's CHECK 10 PASSED, CORRECTLY, WHILE BEING BLIND TO IT.** It compared `trial_ends_at`
+> against `trial_started_at + 14 days` on a probe row it had just **inserted** — where the default
+> genuinely is right, because `trial_started_at` is also `now()`. *** Nothing in it looked at a row
+> that existed before the migration. *** That is §9a's rule arriving from an unfamiliar direction:
+> the check could see a presence, and proved one, and **the presence it proved was not the claim the
+> migration was making.** A backfill is only tested by looking at a row that needed backfilling. 088's
+> check 2 is the check 087 did not have — it writes a deliberately wrong value and requires check 1's
+> query to FIND it.
+>
+> **The repair is scoped so it cannot point the mirror the wrong way.** 088's UPDATE touches only
+> rows with no subscription at all, because once a card exists Stripe owns that date (B above) and
+> recomputing it from `trial_started_at` would overwrite Stripe with our arithmetic. Check 4 proves a
+> Stripe-owned row survives untouched. On staging that scope excluded nothing — 11 companies, 0 with
+> a subscription — which is exactly why the guard went in before it was load-bearing.
+>
+> **The order that would have been right, for the next person:**
+> `add column (NO default)` → `backfill per row` → `set default` → `set not null`.
+> The default itself was never the bug: `084:95` names `trial_started_at = now()` and not
+> `trial_ends_at`, so a NEW company wants `now() + 14 days` and still gets it (088's check 3).
+>
+> **Nothing was at risk on production — 087 has not been applied there.** Every affected row was on
+> staging, and the error was generous rather than restrictive: eleven companies held a *longer* trial
+> than they were owed, by nine days and by one. Nobody would have been refused. It would still have
+> been a product that says "14-day trial" over data that says otherwise, which is §6's whole subject.
+
 ### J. WHAT WAS PROVED, AND WHERE
 
 Against **Stripe's sandbox** from the laptop, with **nothing stubbed** — the brief allowed the

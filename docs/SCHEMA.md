@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-23 22:30 UTC
-**Migrations applied:** 88 — `000` to `087`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-23 22:58 UTC
+**Migrations applied:** 89 — `000` to `088`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -74,7 +74,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 11 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +26 more
+- `companies` — 11 rows · touched by screen account, route account/export, route account, route audit-runs, route billing/checkout, +29 more
 - `profiles` — 10 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
 - `entities` — 15 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +26 more
 
@@ -774,7 +774,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 **Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route billing/checkout`, `route billing/portal`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `lib stripeWebhook`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2901,7 +2901,7 @@ Every event /api/stripe/webhook accepted from Stripe, keyed by STRIPE'S OWN EVEN
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `lib stripeWebhook`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -3584,4 +3584,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 085
 086
 087
+088
 ```
