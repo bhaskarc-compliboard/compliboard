@@ -15344,3 +15344,188 @@ pins the three columns its one write may touch, which changed. `app/dashboard/pa
 `lib/dashboardView.ts` gains `greetedKey`/`readGreeted`/`writeGreeted` beside the skip helpers they
 copy. **No change to `/api/sites`, `/api/switches/*`, the sidebar or `AppLayout`**, and
 `companies.industry`, `library` and the resolution path are untouched.
+
+---
+
+## 213. WHAT STRIPE TELLS US, MIRRORED: ONE PLAN, A 48-HOUR FLOOR, AND NO DAILY JOB — 23 October 2026 (My Account step 17, migration 087, `ACCOUNT-PLAN.md` decisions 11 and 12)
+
+**The decision.** Billing is a **mirror of Stripe**, eight columns on `companies` written only by
+`/api/stripe/webhook` as the service role; three routes (`checkout`, `portal`, `webhook`) and no
+card page of our own; one plan at $199 a month, monthly only; and **the access rule is computed
+from timestamps at request time, so there is no daily job and no new cron.** The owner's decisions
+of 23 October, and his three answers at the step 17 stop: `stripe_events` stays, `trial_ends_at` is
+a mirrored column, and the daily trial job is struck from step 18.
+
+### A. THE DIRECTION IS STRIPE → US, AND NEVER THE REVERSE
+
+The same shape as §208's site → company mirror, and for the same reason: there are two places that
+could answer *"is this company paying"*, and only one of them is ever told the truth first. Stripe
+is where the card is charged, the retry attempted and the coupon applied. We keep a copy so a page
+can be drawn and the access rule evaluated without a network call on every request. **When the two
+disagree, Stripe is right and the webhook is the bug.**
+
+So the webhook **does not trust the payload's numbers**. It re-reads the subscription from Stripe
+and writes its *present* state. That is what makes out-of-order delivery harmless — a
+`customer.subscription.updated` arriving after a `…deleted` cannot resurrect a dead subscription,
+because both converge on what Stripe says now. **Proved rather than argued:** at the sandbox run a
+payload saying `active` was posted for a subscription Stripe held as `trialing`, and the column
+holds `trialing`. A payload-trusting webhook has to reason about event ordering; this one does not.
+
+### B. ⚡ THE 48-HOUR FLOOR, WHICH TURNED A TWO-WAY BRANCH INTO A THREE-WAY ONE
+
+`subscription_data.trial_end` on a Checkout Session **"Has to be at least 48 hours in the future"**
+(`docs.stripe.com/api/checkout/sessions/create`). The brief said "trial_end set to the company's
+trial end while the trial is running". Done literally, **a person adding a card on day 13 of 14
+gets a 400 from Stripe and cannot add a card at all** — at the moment they most want to.
+
+| the company's `trial_ends_at` | what Stripe is told | why |
+|---|---|---|
+| more than 48h away | that timestamp | no charge before day 15 |
+| inside 48h, not yet over | `now + 48h` | no charge before day 15; up to two days free |
+| already over | **no `trial_end`** | charged at once, access back the same second |
+
+Sending `now + 48h` rather than omitting `trial_end` is the choice that keeps the owner's own
+promise: **omitting it would charge them on day 13.** `lib/billing.ts` `trialEndFor` owns the
+arithmetic and is unit-tested on all three cases and both boundaries.
+
+**And the floor was proved by Stripe refusing it, not by reading about it.** At the sandbox run the
+un-floored value was sent deliberately, and Stripe answered: *"The `trial_end` date has to be at
+least 2 days in the future."* A floor nobody has tried to breach is a comment.
+
+### C. `trial_ends_at` IS A COLUMN, AND MIGRATION `082:65`'s PLAN IS SUPERSEDED
+
+`082:65` wrote: *"`trial_started_at` is when the clock started, and it is NOT `created_at` … part
+C's billing has to be able to extend a trial without lying about when the account was made."* That
+reasoning is **still right about `created_at` and is now wrong about the trial end**, because of B:
+the floor makes a real trial end up to two days later than ours, and an extension typed into the
+Stripe Dashboard moves it again. A computed `trial_started_at + 14 days` can hold neither, and the
+only way to make it would be to move `trial_started_at` to a day the trial did not start — **which
+is the exact lie 082 refused one column over.**
+
+So `trial_started_at` goes on truthfully saying when the clock STARTED; `trial_ends_at` says when it
+stops, seeded at 14 days, NOT NULL, and thereafter whatever Stripe says. The number 14 now lives in
+two places and **two checks hold them together**: migration 087's check 10 from inside the database,
+and `tests/unit/billing.test.ts` reading the migration's own default from outside it, offline.
+
+### D. `subscription_status` IS `text` AND NOT AN ENUM — A FLAGGED DEPARTURE FROM `CLAUDE.md` §3.7
+
+§3.7 is right about OUR vocabularies: an ENUM makes a wrong value a loud error. This column does
+not hold ours. It holds **Stripe's, verbatim** — and Stripe has added to it before (`paused`). The
+day Stripe adds a ninth, an ENUM would make the webhook's write **fail on a payment event**, which
+is the worst possible moment to drop a fact. `text` records what we were told; `lib/billing.ts`
+reads an unrecognised status as "not paying" **and names it**, so the refusal can say which word it
+did not know rather than going quiet. Migration 087's check 13 writes all eight words and a ninth
+that does not exist.
+
+### E. THE DATABASE REFUSES A CARD NUMBER
+
+Decision 12 — *Stripe hosts the card page and the portal, we hold no card number* — is written into
+the schema rather than trusted to care: `card_last4` carries `check (card_last4 ~ '^[0-9]{4}$')`,
+and migration 087 **proves it by violating it three ways** (a full PAN, too few digits, non-digits).
+`lib/stripe.ts` `cardLineFrom` refuses the same values one layer earlier, so a surprising shape is
+dropped rather than raising a constraint violation inside the webhook — where the failure would be a
+payment fact we could not record. NULL passes the CHECK by design: no card is a state, and it is the
+state every company is in from day one.
+
+### F. `stripe_events` — NOT ASKED FOR, AND THE OWNER KEPT IT
+
+Every event we accepted, keyed by **Stripe's own event id**, so a redelivery is a primary-key
+conflict and a two-line exit. Two jobs: it makes the webhook idempotent *cheaply* (the real defence
+is A), and it is the only record of what Stripe told us — the thing you need when a customer says
+they were charged and the product disagrees (§5). A row left `handled = false` with an `error` is a
+payment fact we received and did not apply. `company_id` is nullable on purpose: an event for a
+customer we cannot map must still be recorded **with its reason**, and the route answers **200**,
+because a 4xx makes Stripe retry something that can never succeed. Closed entirely to a person —
+RLS on, zero policies, no grant to `anon` or `authenticated`.
+
+### G. NO NEW CRON, AND `ACCOUNT-PLAN.md` STEP 18's DAILY JOB IS STRUCK
+
+`accessFor()` is computed from three timestamps at request time, so **there is no flag to flip**: a
+trial that ends at 14:03 ends at 14:03, not at the next morning's sweep. A daily job would mean up
+to 24 hours of wrong state, a second thing that can be down, and a second source of truth about one
+fact — the shape of problem §208 was written to remove. `vercel.json` is unchanged.
+
+> ### ⚡ AND THE FINDING BEHIND THAT, WHICH IS STEP 18's REAL WORK.
+> **Five of the seven crons call a model on a company's behalf with no person in the request** —
+> `jobs/summarise`, `jobs/scan-documents`, `jobs/audit-sections`, `jobs/handbook-queue`,
+> `jobs/handbook-checks` (classified by reading each route for `@/lib/ai`; `jobs/calendar-month` and
+> `jobs/delete` call no model). A request-time rule guarded on the session **does not reach them.**
+> Left alone, a read-only company's queued work still runs and still costs us money: the paid work
+> simply moves from the person's click to the cron's sweep, and the gate is silently bypassed. So
+> step 18 must apply the rule **per work item, by company**, inside all five — not only at the 14
+> person-triggered routes. That is the difference between a gate and the appearance of one.
+
+### H. NO PUBLISHABLE KEY. THREE VARIABLES, NONE OF THEM PUBLIC
+
+With Stripe-**hosted** Checkout the server creates the session and the browser is sent to
+`session.url`: no Stripe.js, no `@stripe/stripe-js`, nothing Stripe-shaped in the client bundle. A
+publishable key is for the embedded and Elements modes, which this product does not use. So:
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, each of which **refuses the
+request when unset** rather than passing an empty string to Stripe — `lib/cronSecret.ts:17`'s
+argument, and it matters more here, because a missing secret otherwise produces a 401 that reads
+like a Stripe outage. `stripe` is pinned **exactly** at `23.0.0`: an SDK that carries an API version
+inside it (`2026-09-30.endive`) must not move on an `npm install`.
+
+### I. FOUR THINGS THIS RUN GOT WRONG FIRST, EACH CAUGHT BY SOMETHING REFUSING IT
+
+1. **Migration 087 refused itself**, on a check that was wrong rather than a grant that was. The
+   check demanded `service_role` hold no TRUNCATE/TRIGGER/REFERENCES/MAINTAIN on `stripe_events`,
+   on the strength of §3.6's line that 067 and 068 *"took [them] off every existing table"*. Read
+   from `docs/SCHEMA.md`, which `scripts/schema-doc.js` regenerates from the live catalog:
+   `service_role` on `companies` holds **all eight**, and so does every other table —
+   `supabase_admin`'s defaults grant them and `postgres` may not change those (§165), and
+   `tests/unit/schemaGrants.test.ts:46` **asserts** a `service_role` TRUNCATE is visible so its
+   parser can see the word it guards against. The clause would have made `stripe_events` the only
+   table in the schema held to a rule nothing else is, and bought nothing: `service_role` bypasses
+   RLS, and a role that can `delete from` a table needs no TRUNCATE to empty it.
+2. **A proof check reported an absence it could not have seen.** "Stripe holds exactly one customer
+   for this company" used `customers.search` and got **0** — which looked like the customer was
+   never created. `docs.stripe.com/search`, Data freshness: *"Don't use search for read-after-write
+   flows … Under normal operating conditions, data is searchable in under 1 minute … For
+   read-after-write flows that require immediate data availability, use the various list APIs …
+   These APIs aren't subject to the availability delays."* The same query returned **1** a minute
+   later with no write in between. Rewritten on `customers.list`, and §9a's rule earns its place
+   again: **a check that cannot see anything looks exactly like a check that found nothing.**
+3. **A TypeScript shorthand that `tsc` accepts and the test runner cannot run.**
+   `constructor(public readonly variable: string)` passed `npm run typecheck` and then broke
+   `node --test` with *"TypeScript parameter property is not supported in strip-only mode"* — so it
+   would have compiled, passed typecheck, and broken the **whole** unit suite the first time any
+   test imported `lib/stripe.ts`. Written out long instead, with the reason in the file.
+4. **`past_due` and `unpaid` are not the same state**, and the access rule turns on the difference.
+   Read from `docs.stripe.com/api/subscriptions/object`: `past_due` — *"Once Stripe has exhausted
+   all payment retry attempts, the subscription will become `canceled` or `unpaid`"* (**still
+   retrying**); `unpaid` — *"no subsequent invoices will be attempted"* (**stopped**). So a
+   `past_due` with no `payment_failed_at` means our mirror dropped an event, another
+   `invoice.payment_failed` is still coming to set the anchor, and the customer gets the benefit of
+   our bug — **bounded** by Stripe's retry schedule. An `unpaid` with no anchor will never get one,
+   so being kind there would be full access for ever to a company Stripe has given up collecting
+   from. The two differ in one fact and reach opposite verdicts; it could not have been guessed.
+
+### J. WHAT WAS PROVED, AND WHERE
+
+Against **Stripe's sandbox** from the laptop, with **nothing stubbed** — the brief allowed the
+subscription read to be stubbed at the port boundary and it did not need to be, because a real
+trialing sandbox subscription was created through the API with **no card typed by anybody**. The
+event *envelopes* were built and signed with `stripe.webhooks.generateTestHeaderString`; everything
+else — the signature check, the route, the `stripe_events` row and its primary key, the customer →
+company lookup, the Stripe-side subscription read and every write — was real. 20 checks on
+checkout and the portal, 32 on the webhook, all passing; `$0` of model spend, start to finish.
+
+**And the two moved fields were confirmed from the live API, not from documentation:** a real
+sandbox subscription returned **`undefined`** for a top-level `current_period_end` and
+**`1794005208`** for `items.data[0].current_period_end`. The invoice's subscription is at
+`parent.subscription_details.subscription`; a grep for a top-level `subscription:` field on the
+Invoice in the installed SDK's own declarations returns **nothing**. Written from memory, either
+would have stored nothing for ever with nothing failing.
+
+### WHAT WOULD REVERSE ANY OF IT
+
+- **The mirror (A):** a second plan, or per-seat pricing. One plan per company is what makes one
+  status column enough; a company with two subscriptions needs a table, not columns.
+- **The floor (B):** Stripe dropping or changing the 48-hour minimum. `trialEndFor`'s middle case
+  then becomes dead code, and its tests say so.
+- **`trial_ends_at` as a column (C):** nothing short of Stripe stopping owning the trial end — i.e.
+  trials ending before a card can be added at all, which contradicts decision 11.
+- **`text` over an ENUM (D):** Stripe freezing its status vocabulary, which it has not done.
+- **No daily job (G):** a rule that cannot be computed from a timestamp — a usage allowance, say,
+  that has to be counted and reset. Then the cron is the mechanism, not a second source of truth.

@@ -819,6 +819,40 @@ only for the exact word `true`. Off, an HR answer is the baseline's; on, it is g
 
 **Added 4 Oct, with the Workspace Task 6 release (owner), all visible:** `AI_MODEL_HOWTO = claude-opus-5-5`, `AI_SEARCH_MAX_HOWTO = 6`, `AI_SEARCH_MAX_COMPLETE = 8`. `AI_EFFORT_HOWTO` is deliberately **not** set, so it falls back to `AI_EFFORT`. Migration 064 was applied first (`npm run preflight` afterwards: 65 on disk, 65 on production, `PENDING COUNT: 0`).
 
+> ### ⚡ STRIPE — THREE VARIABLES, **NOT YET ON PRODUCTION**, ADDED TO THE CODE AT MY ACCOUNT STEP 17 (23 OCTOBER 2026).
+>
+> **None of these three is set on Vercel Production yet, and the code is written so that nothing
+> breaks until they are:** `/api/billing/checkout` and `/api/billing/portal` answer **503** with
+> "Card payment is not set up on this server yet. Nothing was charged.", and
+> `/api/stripe/webhook` refuses every request. The Billing tab is still step 19's work, so no
+> customer can reach any of them. Nothing is charged to anybody by this release.
+>
+> The owner holds **sandbox** values in `.env.local` as of 23 October 2026. Live values are step
+> 20's by-hand list, together with the live product, the live price, the live webhook endpoint and
+> the Billing Portal's default configuration saved in live mode.
+>
+> | Variable | Who reads it | What it must be |
+> |---|---|---|
+> | `STRIPE_SECRET_KEY` | `lib/stripe.ts` `getStripe()` | `sk_test_…` on a laptop, `sk_live_…` on Vercel and nowhere else. **Sensitive, never visible** — unlike the `AI_MODEL_*` rows above, this one is a credential and the read-back argument of §136 does not apply to it. Server-only: `tests/unit/clientImports.test.ts` holds `lib/stripe.ts` in the same forbidden list as `lib/auth.ts` |
+> | `STRIPE_WEBHOOK_SECRET` | `lib/stripe.ts` `stripeWebhookSecret()`, via `/api/stripe/webhook` | The signing secret of the **live Dashboard endpoint** pointed at `https://<domain>/api/stripe/webhook`, subscribed to the six event types below. ***This is NOT the same value as the laptop's***, and the laptop's is new every time `stripe listen` starts |
+> | `STRIPE_PRICE_ID` | `lib/stripe.ts` `stripePriceId()`, via `/api/billing/checkout` | The **live** `price_…` for the one $199/month recurring price. ***Test mode and live mode have different price ids***, and this is the variable most easily carried across by mistake — a wrong one is a Checkout session for the wrong amount, which is the worst kind of silent bug in this release |
+>
+> **The six events the live endpoint must be subscribed to**, each mapped to a column in
+> `lib/stripeWebhook.ts`: `checkout.session.completed`, `customer.subscription.created`,
+> `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`,
+> `invoice.payment_failed`. Anything else is acknowledged, recorded in `stripe_events`, and ignored.
+>
+> **And no publishable key appears in this table, which is not an omission.** With Stripe-hosted
+> Checkout the server makes the session and the browser is sent to `session.url`; there is no
+> Stripe.js and nothing Stripe-shaped in the client bundle. A `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+> is needed for the embedded and Elements modes, which this product does not use. *(Stripe's own
+> Next.js quickstart lists one because the same sample also covers those modes.)*
+>
+> **`NEXT_PUBLIC_APP_URL` gains a second reader** and is already set (the row below). It is where
+> Checkout and the portal send the person back to — `/account?tab=billing`. `lib/stripe.ts`
+> `appBaseUrl()` **refuses** rather than building a relative URL Stripe would reject, which would
+> have surfaced as an error about Stripe instead of about a variable nobody set.
+
 **Added 26 Sep, with Documents rev 1 — values given, because these four decide what a customer's document costs and who reads it:**
 
 | Variable | Value | |

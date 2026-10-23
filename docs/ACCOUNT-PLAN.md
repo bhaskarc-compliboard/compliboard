@@ -48,8 +48,8 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 15 | The owner's test, part B | Real websites, Opus 5.5 against Sonnet 5.5, side by side | **Released 22 Oct** — `npm run website:compare`, five hosts; three findings from the owner's walk fixed and the card redrawn · migration 086 on production · `cebdfed`, `922eba8`, `6c38a7b`, `6afa908`, `f9147bb`, `2440cef` · `DECISIONS.md` §212 |
 | 16 | Release B | The routine; `AI_MODEL_WEBSITE` set on Vercel by the owner | **Released 22 Oct** — four backup CSVs, the variable set before the push, 084/085/086 applied, production read back six ways, `main` fast-forwarded to `2440cef`, ten live checks passed, one measured walk against the production build. `docs/RELEASE.md` |
 | **C** | **Billing** | | |
-| 17 | Stripe, the wiring | The owner's Stripe account and keys; **migration 087** (`stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`) — the plan first called it 083, which is `one_address`; 084, 085 and 086 are taken too; checkout and portal routes; the webhook. One stop | Not started |
-| 18 | The read-only state | One rule the paid routes check; the banner; the 7-day grace; the daily job that ends trials | Not started |
+| 17 | Stripe, the wiring | **Migration 087** — EIGHT columns, not four: the plan named `stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`, and the stop added `stripe_subscription_id`, `payment_failed_at` (the grace anchor) and `card_brand`/`card_last4` (the Billing tab's one line, and the database refuses a card number). Plus `stripe_events`. `lib/billing.ts`, `lib/stripe.ts`, `lib/stripeWebhook.ts`; `/api/billing/checkout`, `/api/billing/portal`, `/api/stripe/webhook`. One stop, taken | **Done 23 Oct** — 087 on staging, proved against Stripe's sandbox with nothing stubbed (20 + 32 checks, $0 model spend), 40 unit tests. `DECISIONS.md` §213 |
+| 18 | The read-only state | One rule the paid routes check (`lib/billing.ts` `accessFor`, **built and tested at step 17**); the banner; the 7-day grace. ~~the daily job that ends trials~~ — **STRUCK at the step 17 stop (the owner, 23 Oct).** The rule is computed from timestamps at request time, so there is nothing to flip and no 24-hour window of wrong state. **AND THE WORK THE STRUCK JOB HID: five of the seven crons call a model with no person in the request** (`jobs/summarise`, `scan-documents`, `audit-sections`, `handbook-queue`, `handbook-checks`), so a session-guarded rule does not reach them and a read-only company's queued work would still spend money. The rule must be applied per work item, by company, inside all five as well as at the 14 person-triggered routes. `DECISIONS.md` §213 G | Not started |
 | 19 | The Billing tab and the Cancel tab's subscription line | As drawn | Not started |
 | 20 | The owner's test, part C | Stripe test mode: a test card, a failing card, the trial ending | Not started |
 | 21 | Release C | The routine | Not started |
@@ -102,8 +102,32 @@ the trial. Three parts, built and released in order: **A the account page · B t
 11. **After the trial without a card, or after a failed card's 7-day grace: read-only, never locked out.** Sign in, read,
     download and print everything; asking, reading documents and auditing pause; one banner, one button. Nothing is ever
     deleted for non-payment.
+    **The rule exists as of step 17** — `lib/billing.ts` `accessFor`, pure, 26 unit tests, reading exactly three columns:
+    `trial_ends_at`, `subscription_status`, `payment_failed_at`. **The trial is consulted FIRST**, so a person who cancels
+    on day 3 keeps every day they were promised. The grace is a WINDOW from the FIRST failure we heard about, not a flag —
+    the webhook writes `payment_failed_at` only when it is null, so Stripe's retries cannot push the deadline out, and the
+    sandbox run proved the anchor does not move on a second failure. An unrecognised Stripe status reads as "not paying"
+    **and is named**, so the refusal can say which word it did not know. `current_period_end` is NOT read by the rule: it
+    is a date to display, which means a wrong one is a cosmetic bug and a wrong `trial_ends_at` is an access bug.
+    > ### ⚡ AND `trial_ends_at` IS A REAL COLUMN, SO MIGRATION `082:65`'s PLAN IS SUPERSEDED — 23 October 2026.
+    > `082:65` reads: *"`trial_started_at` is when the clock started, and it is NOT `created_at` … part C's billing has to
+    > be able to extend a trial without lying about when the account was made."* **That is still right about `created_at`
+    > and is now wrong about the trial END.** Stripe refuses a Checkout `trial_end` less than 48 hours out ("Has to be at
+    > least 48 hours in the future" — and Stripe said it out loud at the step 17 run: *"The `trial_end` date has to be at
+    > least 2 days in the future."*), so a card added on day 13 produces a real trial end up to two days later than ours,
+    > and an extension typed in the Stripe Dashboard moves it again. A computed `trial_started_at + 14 days` can hold
+    > neither — and the only way to make it would be to move `trial_started_at` to a day the trial did not start, **which
+    > is the exact lie 082 refused one column over.** So: `trial_started_at` goes on saying truthfully when the clock
+    > STARTED; `trial_ends_at` is NOT NULL, seeded at 14 days, and thereafter whatever Stripe says. `DECISIONS.md` §213 B, C.
 12. **Stripe hosts the card page and the billing portal.** We hold a customer id and a subscription status per company,
     kept current by the webhook, and never a card number.
+    **Built at step 17, and three things the stop added.** (a) *Never a card number* is enforced by the DATABASE, not by
+    care: `companies.card_last4` carries `check (card_last4 ~ '^[0-9]{4}$')`, and migration 087 proves it by trying a full
+    PAN, three digits and `'visa 4242'`. (b) **No publishable key is needed at all** — with Stripe-hosted Checkout the
+    server makes the session and the browser is sent to `session.url`, so nothing Stripe-shaped reaches the client bundle;
+    the three variables are `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` and none of them is public.
+    (c) The portal is also "stop paying" and "see my invoices", so `lib/accountView.ts`'s Cancel-tab row becomes a LINK at
+    step 19 rather than a route we build. `DECISIONS.md` §213.
 13. **Cancel is two different things**: stopping the subscription (the company stays, read-only) and deleting the company
     for good (typed confirmation, download first).
 14. **The sidebar and the shared frame are untouched** by this section.
@@ -174,6 +198,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | Date | Change |
 |---|---|
 | 21 Oct 2026 | Plan written: 22 steps in three parts, 14 decisions, 3 open questions. Steps 1–4 done. Boards approved. |
+| 23 Oct 2026 | **Step 17 done (migration 087): Stripe, the wiring.** Decision 11 gains the rule as built and records that migration `082:65`'s plan for `trial_ends_at` is **superseded** — it is a mirrored column, not `trial_started_at + 14 days`, because Stripe's 48-hour floor and a Dashboard extension both own that date. Decision 12 gains the card CHECK, the no-publishable-key finding and the portal as "stop paying". Step 18's **daily trial job is struck** (the rule is computed at request time) and its row now carries the finding that replaces it: five of the seven crons call a model with no person in the request, so the rule must reach inside them too. `DECISIONS.md` §213. |
 | 22 Oct 2026 | **Part B released.** Steps 12–16 marked Released with their commits; migrations 084, 085 and 086 on production; `main` at `2440cef`. The routine as it ran is in `docs/RELEASE.md`, including what to do when the push is refused with 403. |
 | 22 Oct 2026 | Step 15 done (migration 086): the card redrawn. Decision 3 amended — NAICS leaves every screen a person sees, `about` holds the sentence, `what_you_do` holds the broad industry line. Decision 19 added: the Dashboard greets the company, and a greeted tab stays greeted. Step 17's migration is **087**. |
 | 22 Oct 2026 | Step 13 done (migration 085): the website read. Decision 9 gains what was built and what the stop settled; step 17's migration is **086** — the plan called it 083, which is `one_address`. |
