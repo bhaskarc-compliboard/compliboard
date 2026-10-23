@@ -303,6 +303,19 @@ const DELETED_BY_CASCADE_OR_PARENT = [
                            // system-generated quality control that happens to carry a
                            // company_id (DECISIONS.md §97), and the cascade is the honest
                            // mechanism: they go because the company they describe is gone.
+  'stripe_events',         // ...and the eleventh (migration 087). Every event Stripe sent us
+                           // about this company's money. It cascades: company_id -> companies
+                           // ON DELETE CASCADE, written in 087 itself and proved by that
+                           // migration's own check 14, which deletes a throwaway company and
+                           // fails if an event outlives it.
+                           //
+                           // IT IS ON THIS SIDE OF THE LIST FOR THE SAME REASON ai_calls IS.
+                           // This is OUR record of what a payments provider told us and what we
+                           // did with it, not a row the customer wrote — and `authenticated`
+                           // holds NOTHING on it at all (087 §5), so there is no sense in which
+                           // a person deletes their own Stripe events. Sweeping it in the tenant
+                           // loop would describe it as the tenant's own data; the cascade is the
+                           // honest mechanism and it leaves nothing behind.
 ] as const
 // ---------------------------------------------------------------------------
 

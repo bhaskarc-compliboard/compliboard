@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-22 20:28 UTC
-**Migrations applied:** 87 — `000` to `086`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-23 22:30 UTC
+**Migrations applied:** 88 — `000` to `087`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -39,9 +39,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `requirement_templates` — 205 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
 - `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
-- `company_switches` — 29 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
-- `switch_determinations` — 13 rows · touched by route switches/answer, script audit-data-checks, script check-live
-- `obligations` — 1103 rows · touched by route account, route obligations, route switches/answer
+- `company_switches` — 30 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
+- `switch_determinations` — 14 rows · touched by route switches/answer, script audit-data-checks, script check-live
+- `obligations` — 1345 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
 - `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
 - `industry_coverage` — 56 rows · touched by script assign-agencies
@@ -74,9 +74,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 10 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +26 more
-- `profiles` — 9 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
-- `entities` — 12 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +26 more
+- `companies` — 11 rows · touched by screen account, route account/export, route account, route audit-runs, route company-information, +26 more
+- `profiles` — 10 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
+- `entities` — 15 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +26 more
 
 **Calendar**
 
@@ -86,7 +86,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `jobs` — 0 rows · **no code reads or writes it**
 
-**Not assigned to a module above:** `ai_calls`, `calendar_feed_tokens`, `calendar_mailings`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `handbook_check_sections`, `handbook_checks`, `handbook_dates`, `handbook_findings`, `handbook_sections`, `handbooks`, `invitations`, `job_runs`, `turns`, `usage_counters`, `website_reads`
+**Not assigned to a module above:** `ai_calls`, `calendar_feed_tokens`, `calendar_mailings`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `handbook_check_sections`, `handbook_checks`, `handbook_dates`, `handbook_findings`, `handbook_sections`, `handbooks`, `invitations`, `job_runs`, `stripe_events`, `turns`, `usage_counters`, `website_reads`
 
 ---
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 68 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 69 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -256,12 +256,12 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 **Points at:**
 
 - `closed_by_run_id` → `audit_runs` — ON DELETE SET NULL
-- `company_id` → `document_scans` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
-- `company_id` → `audit_runs` — ON DELETE CASCADE
+- `company_id` → `documents` — ON DELETE SET NULL
+- `company_id` → `documents` — ON DELETE SET NULL
 - `company_id` → `audit_sections` — ON DELETE CASCADE
-- `company_id` → `documents` — ON DELETE SET NULL
-- `company_id` → `documents` — ON DELETE SET NULL
+- `company_id` → `audit_runs` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `document_scans` — ON DELETE SET NULL
 - `document_b_id` → `documents` — ON DELETE SET NULL
 - `document_id` → `documents` — ON DELETE SET NULL
 - `run_id` → `audit_runs` — ON DELETE CASCADE
@@ -532,9 +532,9 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 - `added_by` → `auth.users` — ON DELETE SET NULL
 - `audit_finding_id` → `audit_findings` — ON DELETE SET NULL
-- `company_id` → `audit_findings` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbooks` — ON DELETE SET NULL
+- `company_id` → `audit_findings` — ON DELETE SET NULL
 - `confirmed_by` → `auth.users` — ON DELETE SET NULL
 - `deadline_id` → `document_deadlines` — ON DELETE SET NULL
 - `dismissed_by` → `auth.users` — ON DELETE SET NULL
@@ -772,7 +772,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 ### `companies`
 
-**Rows:** 10 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -797,6 +797,14 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 | `library` | text | no | `'chemical'::text` |
 | `trial_started_at` | timestamp with time zone | yes | — |
 | `about` | text | yes | — |
+| `stripe_customer_id` | text | yes | — |
+| `stripe_subscription_id` | text | yes | — |
+| `subscription_status` | text | yes | — |
+| `current_period_end` | timestamp with time zone | yes | — |
+| `payment_failed_at` | timestamp with time zone | yes | — |
+| `card_brand` | text | yes | — |
+| `card_last4` | text | yes | — |
+| `trial_ends_at` | timestamp with time zone | no | `(now() + '14 days'::interval)` |
 
 **Pointed at by:**
 
@@ -841,11 +849,16 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 - `obligation_evidence.company_id` — ON DELETE CASCADE
 - `obligations.company_id` — ON DELETE CASCADE
 - `profiles.company_id` — ON DELETE NO ACTION
+- `stripe_events.company_id` — ON DELETE CASCADE
 - `switch_determinations.company_id` — ON DELETE CASCADE
 - `topics.company_id` — ON DELETE CASCADE
 - `turns.company_id` — ON DELETE CASCADE
 - `usage_counters.company_id` — ON DELETE CASCADE
 - `website_reads.company_id` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `companies_card_last4_check` — `CHECK ((card_last4 ~ '^[0-9]{4}$'::text))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -867,7 +880,7 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 **Triggers:** `create_primary_site` (AFTER → `create_primary_site`)
 
-**Indexes:** `companies_pkey`
+**Indexes:** `companies_pkey`, `idx_companies_stripe_customer_id`
 
 ### `company_chemicals`
 
@@ -1056,7 +1069,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 ### `company_switches`
 
-**Rows:** 29 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 30 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib companyContext`, `lib obligationWriter`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
@@ -1747,7 +1760,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `entities`
 
-**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 15 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `screen account`, `route audit-runs`, `route audits/index`, `route calendar`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route jobs/calendar-month`, `route sites`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen calendar`, `screen dashboard`, `screen hr`, `screen walk`, `lib agencyScope`, `lib ask`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -1852,8 +1865,8 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 **Points at:**
 
-- `company_id` → `entities` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `entities` — ON DELETE SET NULL
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `from_turn_id` → `turns` — ON DELETE SET NULL
@@ -1922,9 +1935,9 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 
 - `ai_call_id` → `ai_calls` — ON DELETE SET NULL
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
+- `company_id` → `handbook_checks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_sections` — ON DELETE CASCADE
-- `company_id` → `handbook_checks` — ON DELETE CASCADE
 - `section_id` → `handbook_sections` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -2104,9 +2117,9 @@ Every finding of a handbook check, as a row.
 
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
 - `check_section_id` → `handbook_check_sections` — ON DELETE CASCADE
+- `company_id` → `handbook_check_sections` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE CASCADE
-- `company_id` → `handbook_check_sections` — ON DELETE CASCADE
 
 **Constraints:**
 
@@ -2223,9 +2236,9 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
 **Points at:**
 
-- `company_id` → `handbooks` — ON DELETE SET NULL
-- `company_id` → `entities` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `entities` — ON DELETE SET NULL
+- `company_id` → `handbooks` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `uploaded_by` → `auth.users` — ON DELETE SET NULL
 - `version_of` → `handbooks` — ON DELETE SET NULL
@@ -2412,7 +2425,7 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 41 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 42 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
@@ -2601,7 +2614,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 The resolved list: which library rows apply to this company. Produced by CODE, never by AI. Rows are NEVER DELETED — a requirement that stops applying gets applicable_to set and stays. CLAUDE.md §3.2.
 
-**Rows:** 1103 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1345 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route obligations`, `route switches/answer`
 
@@ -2658,7 +2671,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 
 ### `profiles`
 
-**Rows:** 9 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 10 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `screen account`, `route account/export`, `route account`, `route invitations`, `route jobs/calendar-month`, `route join`, `route people/[id]`, `route people`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
 
@@ -2882,6 +2895,39 @@ Reusable, shared parsed checklist per named standard. Built once, reused by ever
 
 **Indexes:** `standard_templates_pkey`, `standard_templates_standard_name_key`
 
+### `stripe_events`
+
+Every event /api/stripe/webhook accepted from Stripe, keyed by STRIPE'S OWN EVENT ID so a redelivery is a primary-key conflict rather than a second write. Two jobs: it makes the webhook idempotent, and it is the only record of what Stripe told us — the thing you need when a customer says they were charged and the product disagrees (CLAUDE.md §5). *** OURS, NOT THE CUSTOMER'S: no grant to anon or authenticated, and RLS on with no policy, so it is closed the way library_candidates is. *** `company_id` is nullable because an event for a customer we cannot map must still be recorded with its reason. My Account step 17.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | text | no | — |
+| `type` | text | no | — |
+| `company_id` | uuid | yes | — |
+| `stripe_customer_id` | text | yes | — |
+| `payload` | jsonb | no | — |
+| `handled` | boolean | no | `false` |
+| `error` | text | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
+
+**Indexes:** `idx_stripe_events_company_id_created_at`, `stripe_events_pkey`
+
 ### `switch_determinations`
 
 Every determination ever made about a company's switches, append-only. company_switches
@@ -2890,7 +2936,7 @@ document-versus-document disagreement is recorded WITHOUT reusing user_locked, w
 PERSON decided and must keep meaning only that. DECISIONS.md §24.1, §47;
 docs/SWITCH-DETERMINATION.md §7.
 
-**Rows:** 13 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 14 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `script audit-data-checks`, `script check-live`
 
@@ -3179,7 +3225,7 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 
 One read of a company's own website: the pages fetched, what the model proposed from them, and whether it worked. A PROPOSAL and never a fact — nothing here is written to companies or entities until a person presses "Yes, that's us" in the walk, and then it goes through the routes that own those tables. Written by the service role only. ACCOUNT-PLAN decision 9, My Account step 13.
 
-**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 4 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route website-read/accept`, `route website-read`
 
@@ -3537,4 +3583,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 084
 085
 086
+087
 ```

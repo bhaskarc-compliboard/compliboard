@@ -1030,10 +1030,13 @@ export type Database = {
       companies: {
         Row: {
           about: string | null
+          card_brand: string | null
+          card_last4: string | null
           chemicals: string | null
           city: string | null
           county: string | null
           created_at: string | null
+          current_period_end: string | null
           employee_count: number | null
           extra_profile: Json | null
           id: string
@@ -1042,19 +1045,27 @@ export type Database = {
           naics_code: string | null
           name: string
           obligations_computed_at: string | null
+          payment_failed_at: string | null
           pre_completed_items: Json | null
           scan_result: Json | null
           state: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
+          trial_ends_at: string
           trial_started_at: string | null
           website_url: string | null
           what_you_do: string | null
         }
         Insert: {
           about?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           chemicals?: string | null
           city?: string | null
           county?: string | null
           created_at?: string | null
+          current_period_end?: string | null
           employee_count?: number | null
           extra_profile?: Json | null
           id?: string
@@ -1063,19 +1074,27 @@ export type Database = {
           naics_code?: string | null
           name: string
           obligations_computed_at?: string | null
+          payment_failed_at?: string | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string
           trial_started_at?: string | null
           website_url?: string | null
           what_you_do?: string | null
         }
         Update: {
           about?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           chemicals?: string | null
           city?: string | null
           county?: string | null
           created_at?: string | null
+          current_period_end?: string | null
           employee_count?: number | null
           extra_profile?: Json | null
           id?: string
@@ -1084,9 +1103,14 @@ export type Database = {
           naics_code?: string | null
           name?: string
           obligations_computed_at?: string | null
+          payment_failed_at?: string | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string
           trial_started_at?: string | null
           website_url?: string | null
           what_you_do?: string | null
@@ -3851,6 +3875,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      stripe_events: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          error: string | null
+          handled: boolean
+          id: string
+          payload: Json
+          stripe_customer_id: string | null
+          type: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          error?: string | null
+          handled?: boolean
+          id: string
+          payload: Json
+          stripe_customer_id?: string | null
+          type: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          error?: string | null
+          handled?: boolean
+          id?: string
+          payload?: Json
+          stripe_customer_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       switch_determinations: {
         Row: {

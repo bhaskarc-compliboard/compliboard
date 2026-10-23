@@ -94,7 +94,26 @@ import { readdirSync, readFileSync } from 'node:fs'
 // the sentence shown whole, the standard category in words, and — the one that matters — exactly
 // three questions however they are answered. The walk had copied the Dashboard's rule, where a
 // skip deliberately does not count, into a screen with three slots.
-const FLOOR = 1763
+// *** 1763 -> 1803 on 23 October 2026, My Account step 17 (Stripe): 26 in billing.test.ts and 14 in
+// stripeWebhook.test.ts. *** The ones they exist for are the places this would have gone wrong
+// quietly rather than loudly:
+//   - trialEndFor's MIDDLE case. Stripe refuses a Checkout `trial_end` under 48 hours out ("The
+//     `trial_end` date has to be at least 2 days in the future", said by Stripe itself at the step
+//     17 sandbox run), so a person adding a card on day 13 of 14 gets a 400 and cannot add a card
+//     AT ALL — at the moment they most want to. Three tests pin the floor and one pins the reason
+//     it is a floor and not an omission: omitting `trial_end` there would charge them on day 13.
+//   - accessFor on `past_due` versus `unpaid` with no `payment_failed_at`. The two differ in one
+//     fact and they are the opposite verdicts, and the fact is Stripe's: past_due is still being
+//     retried, unpaid is "no subsequent invoices will be attempted". Being kind to the second
+//     would be full access for ever to a company Stripe has given up collecting from.
+//   - every status word reaching a branch, and a NINTH word Stripe has not invented yet being
+//     refused BY NAME. Migration 087 keeps the column `text` and not an ENUM so such a value can
+//     be recorded; these say it must also be safe.
+//   - the three Stripe fields that are not where an older memory of that API puts them: the invoice
+//     has no top-level `subscription`, the subscription has no top-level `current_period_end`, and
+//     an unexpanded payment method is an id string. Each would have stored nothing, for ever, with
+//     nothing failing.
+const FLOOR = 1803
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
