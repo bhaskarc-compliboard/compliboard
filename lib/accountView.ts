@@ -361,6 +361,19 @@ export const STOP_PAYING_ACTION = 'Cancel the subscription'
  * pressing it would reach a portal with nothing in it. `STOP_PAYING_NOTE` describes what the
  * cancellation does; this one describes when the row exists at all.
  */
+/**
+ * When Stripe already has a cancellation scheduled. My Account step 20, §219.
+ *
+ * Offering "Cancel the subscription" to somebody who has already cancelled is the page failing to
+ * know what it has been told — and pressing it again would do nothing, which teaches a person that
+ * the control is broken. `{date}` is replaced with Stripe's own scheduled end.
+ */
+export const STOP_PAYING_SCHEDULED = (date: string) =>
+  `You cancelled. The subscription ends on ${date} and nothing further will be charged. `
+  + 'Everything stays until then, and your company stays afterwards — read-only.'
+/** What the control says once a cancellation is scheduled: the only thing left to do is undo it. */
+export const STOP_PAYING_SCHEDULED_ACTION = 'Change it in Stripe'
+
 export const STOP_PAYING_NONE =
   'You have no subscription yet, so there is nothing to stop. Your trial runs on its own.'
 

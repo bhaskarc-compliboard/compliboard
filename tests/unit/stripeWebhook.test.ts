@@ -22,7 +22,10 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { customerIdOf, subscriptionIdOfInvoice } from '../../lib/stripeWebhook.ts'
+import {
+  customerIdOf, subscriptionIdOfInvoice, receiveStripeEvent, type SubscriptionFacts,
+} from '../../lib/stripeWebhook.ts'
+import { makeDb } from './fakeSupabase.ts'
 import { cardLineFrom } from '../../lib/stripe.ts'
 
 /** Only the fields each function reads; the rest of a real event is noise to it. */
@@ -172,5 +175,109 @@ describe('cardLineFrom — a brand and four digits, and NEVER anything longer (d
     assert.equal(cardLineFrom(null, null), null)
     assert.equal(cardLineFrom(undefined, undefined), null)
     assert.equal(cardLineFrom({}, 'pm_1'), null)
+  })
+})
+
+/* =================================================================================================
+ * THE MAPPING ITSELF — `receiveStripeEvent`, driven with a stub port and a fake database.
+ *
+ * Until step 20 this file tested only the pure helpers; the mapping had never been exercised. It
+ * can be now because `tests/unit/resolveNextServer.mjs` lets Node load the modules at all and
+ * `EventResult.written` hands back the exact patch.
+ * ============================================================================================== */
+
+describe('*** A SCHEDULED CANCELLATION IS MIRRORED, AND CLEARED — §219 ***', () => {
+  const COMPANY = 'co-1'
+  const facts = (over: Partial<SubscriptionFacts> = {}): SubscriptionFacts => ({
+    id: 'sub_1', status: 'trialing',
+    currentPeriodEnd: '2026-11-07T00:00:00.000Z',
+    trialEnd: '2026-11-07T00:00:00.000Z',
+    cancelAt: null, card: null, ...over,
+  })
+  const portOf = (f: SubscriptionFacts) => ({ readSubscription: async () => f })
+  const subEvent = (type: string) => ({
+    id: `evt_${Math.random().toString(36).slice(2)}`, type,
+    data: { object: { id: 'sub_1', customer: 'cus_1', object: 'subscription' } },
+  }) as never
+
+  const dbWith = () => makeDb({
+    companies: [{ id: COMPANY, stripe_customer_id: 'cus_1', cancel_at: null }],
+    stripe_events: [],
+  })
+
+  test('cancel_at is WRITTEN when Stripe has scheduled one', async () => {
+    const db = dbWith()
+    const r = await receiveStripeEvent({
+      event: subEvent('customer.subscription.updated'), db: db as never,
+      port: portOf(facts({ cancelAt: '2026-11-07T00:00:00.000Z' })) as never,
+    })
+    assert.equal(r.status, 200)
+    assert.equal(r.companyId, COMPANY)
+    assert.equal(r.written?.cancel_at, '2026-11-07T00:00:00.000Z')
+    assert.equal(db.tables.companies[0].cancel_at, '2026-11-07T00:00:00.000Z')
+  })
+
+  test('*** AND CLEARED TO NULL WHEN IT IS NOT — the "Don\'t cancel subscription" path. ***', async () => {
+    // This is the half that a conditional write would have broken. `cancel_at` is null on a
+    // subscription that is not cancelling, so the absence must reach the column. If it did not, a
+    // person who changed their mind in the portal would read "Cancels on 7 November" for ever —
+    // the same false statement about money the column exists to prevent.
+    const db = dbWith()
+    db.tables.companies[0].cancel_at = '2026-11-07T00:00:00.000Z'   // already cancelling
+    const r = await receiveStripeEvent({
+      event: subEvent('customer.subscription.updated'), db: db as never,
+      port: portOf(facts({ cancelAt: null })) as never,
+    })
+    assert.equal(r.status, 200)
+    assert.ok('cancel_at' in (r.written ?? {}), 'the patch left cancel_at out entirely, so a cleared cancellation never reaches the page')
+    assert.equal(r.written?.cancel_at, null)
+    assert.equal(db.tables.companies[0].cancel_at, null)
+  })
+
+  test('…on `created` as well as `updated`', async () => {
+    const db = dbWith()
+    const r = await receiveStripeEvent({
+      event: subEvent('customer.subscription.created'), db: db as never,
+      port: portOf(facts({ cancelAt: '2026-12-01T00:00:00.000Z' })) as never,
+    })
+    assert.equal(db.tables.companies[0].cancel_at, '2026-12-01T00:00:00.000Z')
+    assert.equal(r.written?.subscription_status, 'trialing')
+  })
+
+  test('…and cleared on `deleted`, because the date has ARRIVED', async () => {
+    // Leaving it set would have the tab say "Cancels on 7 November" on 8 November, beside a
+    // status that already reads canceled.
+    const db = dbWith()
+    db.tables.companies[0].cancel_at = '2026-11-07T00:00:00.000Z'
+    const r = await receiveStripeEvent({
+      event: subEvent('customer.subscription.deleted'), db: db as never,
+      port: portOf(facts()) as never,
+    })
+    assert.equal(r.written?.subscription_status, 'canceled')
+    assert.equal(r.written?.stripe_subscription_id, null)
+    assert.equal(r.written?.cancel_at, null)
+    assert.equal(db.tables.companies[0].cancel_at, null)
+  })
+
+  test('the status is NOT changed by a scheduled cancellation — Stripe keeps trialing', async () => {
+    // The finding this whole section exists for. Proved against the sandbox on 24 October:
+    // setting `cancel_at_period_end` leaves `status` exactly as it was. A page reading only the
+    // status cannot tell a cancelling company from a happy one.
+    const db = dbWith()
+    const r = await receiveStripeEvent({
+      event: subEvent('customer.subscription.updated'), db: db as never,
+      port: portOf(facts({ status: 'trialing', cancelAt: '2026-11-07T00:00:00.000Z' })) as never,
+    })
+    assert.equal(r.written?.subscription_status, 'trialing')
+    assert.equal(r.written?.cancel_at, '2026-11-07T00:00:00.000Z')
+  })
+
+  test('the port reads `cancel_at`, never `canceled_at`', () => {
+    const src = readFileSync('lib/stripeWebhook.ts', 'utf8')
+    assert.match(src, /cancelAt: iso\(sub\.cancel_at\)/)
+    // `canceled_at` is the time the button was pressed, not the end of the period — the SDK says
+    // so in its own declaration. Using it would put a PAST date on the page.
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    assert.ok(!/canceled_at/.test(code), 'the port reads canceled_at, which is the request time')
   })
 })

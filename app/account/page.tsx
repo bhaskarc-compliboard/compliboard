@@ -43,10 +43,10 @@ import DashboardSection from '@/components/DashboardSection'
 import SiteDrawer from '@/components/SiteDrawer'
 import CompanyQuestions from '@/components/CompanyQuestions'
 import PeopleTab from '@/components/PeopleTab'
-import { PRIMARY, TEXT_ACTION } from '@/components/buttonStyles'
+import { PRIMARY, TEXT_ACTION, OUTLINE } from '@/components/buttonStyles'
 import {
-  billingTabView, PLAN_PRICE, PLAN_PERIOD, PLAN_NOTE, STRIPE_NOTE, MANAGE_LINK, AFTER_THE_TRIAL,
-  type StatusTone,
+  billingTabView, plainDate, PLAN_PRICE, PLAN_PERIOD, PLAN_NOTE, STRIPE_NOTE, MANAGE_LINK,
+  AFTER_THE_TRIAL, type StatusTone,
 } from '@/lib/billingView'
 import { createClient, authHeaders } from '@/lib/supabase'
 import {
@@ -67,6 +67,7 @@ import {
   CHANGE_EMAIL_TITLE, NEW_EMAIL_LABEL, SEND_CONFIRMATION, EMAIL_CHANGE_FAILED,
   // Board 5 — the Cancel tab (step 9).
   CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_NONE,
+  STOP_PAYING_SCHEDULED, STOP_PAYING_SCHEDULED_ACTION,
   DOWNLOAD_LABEL, DOWNLOAD_NOTE, DOWNLOAD_ACTION,
   DELETE_TITLE, deleteWarning, TYPE_TO_CONFIRM, DELETE_ACTION, deleteConfirm, DELETE_FAILED,
 } from '@/lib/accountView'
@@ -110,6 +111,8 @@ interface CompanyRow {
   card_last4: string | null
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
+  /** Stripe's scheduled end (migration 089). */
+  cancel_at: string | null
 }
 
 const ROW = 'flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4'
@@ -229,6 +232,7 @@ function Account() {
         card_last4: d.card_last4 ?? null,
         stripe_customer_id: d.stripe_customer_id ?? null,
         stripe_subscription_id: d.stripe_subscription_id ?? null,
+        cancel_at: d.cancel_at ?? null,
       })
     }
     // As the person: `entities_select` scopes it, so no company is named here.
@@ -855,6 +859,9 @@ function CancelTab({ companyName, company }: { companyName: string; company: Com
   // is created the moment somebody opens checkout, even if they abandon it, so it would offer
   // cancellation to a person who never subscribed.
   const hasSubscription = Boolean(company?.stripe_subscription_id)
+  // Stripe keeps the status as `trialing`/`active` until the date arrives, so this is the only
+  // thing that says a cancellation is already scheduled (§219).
+  const cancelScheduled = Boolean(company?.cancel_at)
 
   async function stopPaying() {
     if (stopBusy) return
@@ -950,14 +957,24 @@ function CancelTab({ companyName, company }: { companyName: string; company: Com
           <p className={KEY}>{STOP_PAYING_LABEL}</p>
           <div className="min-w-0 flex-1">
             <p className="text-[13px] leading-5 text-gray-600">
-              {hasSubscription ? STOP_PAYING_NOTE : STOP_PAYING_NONE}
+              {!hasSubscription
+                ? STOP_PAYING_NONE
+                : cancelScheduled
+                  ? STOP_PAYING_SCHEDULED(plainDate(company?.cancel_at ?? null))
+                  : STOP_PAYING_NOTE}
             </p>
             {stopError && <p className="mt-1 text-[13px] text-[var(--amber)]">{stopError}</p>}
           </div>
           {hasSubscription && (
+            // *** `OUTLINE`, NOT `ACTION`. *** The owner could not find this control on his own
+            // walk: as plain underlined text beside a prominent green "Download my data" button it
+            // read as a LABEL for the sentence, not as the thing to press. `OUTLINE` is the house's
+            // own bordered control (`components/buttonStyles.ts`, used by AuditReport's footer and
+            // HR's "Check now") — a button at a smaller weight than the primary beside it. Nothing
+            // moves and nothing else is restyled: it is one class on one element.
             <button type="button" data-testid="stop-paying" onClick={stopPaying}
-              disabled={stopBusy} className={ACTION}>
-              {stopBusy ? 'Opening…' : STOP_PAYING_ACTION}
+              disabled={stopBusy} className={`shrink-0 whitespace-nowrap ${OUTLINE}`}>
+              {stopBusy ? 'Opening…' : cancelScheduled ? STOP_PAYING_SCHEDULED_ACTION : STOP_PAYING_ACTION}
             </button>
           )}
         </div>

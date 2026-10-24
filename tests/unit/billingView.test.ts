@@ -142,6 +142,18 @@ describe('board 4, the card — both states, and which door each opens', () => {
     assert.equal(v.card.door, 'checkout')
   })
 
+  test('*** STRIPE SENDS THE BRAND LOWER CASE, AND THE BOARD SAYS "Visa". ***', () => {
+    // Noticed on the staging run: the tab read "visa ending 4242". The mirror stores Stripe's own
+    // value verbatim and must keep doing so, so the capital belongs here, in the words.
+    const v = billingTabView(row({ card_brand: 'visa', card_last4: '4242', stripe_subscription_id: 'sub_1' }), NOW)
+    assert.equal(v.card.text, 'Visa ending 4242')
+    assert.equal(billingTabView(row({ card_brand: 'mastercard', card_last4: '4444', stripe_subscription_id: 'sub_1' }), NOW).card.text,
+      'Mastercard ending 4444')
+    // Only the first letter: "amex" does not become "American Express", which is not ours to invent.
+    assert.equal(billingTabView(row({ card_brand: 'amex', card_last4: '0005', stripe_subscription_id: 'sub_1' }), NOW).card.text,
+      'Amex ending 0005')
+  })
+
   test('a card on file → "Visa ending 4242", and that is the PORTAL', () => {
     const v = billingTabView(row({ card_brand: 'Visa', card_last4: '4242', stripe_subscription_id: 'sub_1' }), NOW)
     assert.equal(v.card.text, 'Visa ending 4242')
@@ -200,6 +212,75 @@ describe('board 4, the card — both states, and which door each opens', () => {
   })
 })
 
+describe('*** A SCHEDULED CANCELLATION, WHICH THE STATUS DOES NOT SHOW — §219 ***', () => {
+  // Cancelling in the portal sets `cancel_at_period_end`; Stripe keeps `status` as `trialing` or
+  // `active` until the date arrives (sandbox, 24 October). So a tab reading only the status told
+  // somebody who had just cancelled — and already had a card — "Trial · 14 days left · Add a card
+  // before then and nothing changes on the day". Three untruths in one row, about money.
+  const CANCELS = '2026-11-07T00:00:00Z'
+
+  test('1. no subscription — nothing scheduled, and the trial advice stands', () => {
+    const v = billingTabView(row(), NOW)
+    assert.equal(v.cancelScheduled, false)
+    assert.match(v.status.detail, /Add a card before then/)
+  })
+
+  test('2. subscribed, not cancelling — the next payment date stands', () => {
+    const v = billingTabView(row({ trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'active', current_period_end: CANCELS, stripe_subscription_id: 'sub_1' }), NOW)
+    assert.equal(v.cancelScheduled, false)
+    assert.match(v.status.headline, /Next payment/)
+  })
+
+  test('3. *** CANCELLING DURING A TRIAL — the owner\'s own state. ***', () => {
+    const v = billingTabView(row({ stripe_subscription_id: 'sub_1', card_brand: 'Visa', card_last4: '4242', cancel_at: CANCELS }), NOW)
+    assert.equal(v.cancelScheduled, true)
+    assert.equal(v.status.pill, 'Trial')
+    assert.equal(v.status.headline, '9 days left · Cancels on 7 November 2026')
+    assert.equal(v.status.detail,
+      'You cancelled. You keep everything until then, and nothing further will be charged. '
+      + 'Change your mind in Stripe.')
+    // THE ADVICE LINE IS REPLACED, NOT JOINED. Two sentences, one saying "add a card" and one
+    // saying "you cancelled", is worse than either — and the first is simply false here.
+    assert.ok(!/Add a card before then/.test(v.status.detail), 'the contradicting advice survived')
+    // They already have a card; the control must not offer to add one at Checkout.
+    assert.equal(v.card.action, 'Change')
+    assert.equal(v.card.door, 'portal')
+  })
+
+  test('4. cancelling while ACTIVE — and no "next payment", because there is not one', () => {
+    const v = billingTabView(row({ trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'active', current_period_end: CANCELS, stripe_subscription_id: 'sub_1', cancel_at: CANCELS }), NOW)
+    assert.equal(v.status.pill, 'Active')
+    assert.equal(v.status.headline, 'Cancels on 7 November 2026')
+    assert.ok(!/Next payment/.test(v.status.headline), 'it still promises a payment that will not happen')
+    assert.ok(!/charged to the card below/.test(v.status.detail))
+  })
+
+  test('5. *** CLEARED AGAIN — "Don\'t cancel subscription" in the portal. ***', () => {
+    // The webhook writes `cancel_at: null` on the next event, and the page must go straight back
+    // to its ordinary words. A person who changed their mind must not read "Cancels on…" for ever.
+    const v = billingTabView(row({ stripe_subscription_id: 'sub_1', card_brand: 'Visa', card_last4: '4242', cancel_at: null }), NOW)
+    assert.equal(v.cancelScheduled, false)
+    assert.match(v.status.detail, /Add a card before then/)
+    assert.ok(!/You cancelled/.test(v.status.detail))
+  })
+
+  test('the pill goes amber while a cancellation is pending, in both states', () => {
+    const t = billingTabView(row({ stripe_subscription_id: 'sub_1', cancel_at: CANCELS }), NOW)
+    const a = billingTabView(row({ trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'active', stripe_subscription_id: 'sub_1', cancel_at: CANCELS }), NOW)
+    assert.equal(t.status.tone, 'warn')
+    assert.equal(a.status.tone, 'warn')
+  })
+
+  test('⚠ the card-failure states keep THEIR words, and that is a decision', () => {
+    // A company that cancelled AND whose card then failed is told about the card, because that is
+    // the urgent and actionable fact — "update it to keep everything running" is still true of the
+    // period they have paid for. Recorded here so the omission is deliberate rather than missed.
+    const v = billingTabView(row({ trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'past_due', payment_failed_at: '2026-10-18T12:00:00Z', stripe_subscription_id: 'sub_1', cancel_at: CANCELS }), NOW)
+    assert.equal(v.status.pill, 'Payment failed')
+    assert.equal(v.cancelScheduled, true, 'the flag is still set, so the Cancel tab still knows')
+  })
+})
+
 describe("board 4's fixed words are the board's", () => {
   test('the plan line', () => {
     assert.equal(PLAN_PRICE, '$199')
@@ -249,8 +330,26 @@ describe("the Cancel tab's subscription line", () => {
     // on it would offer cancellation to a person who has never subscribed.
     assert.match(page, /const hasSubscription = Boolean\(company\?\.stripe_subscription_id\)/)
   })
-  test('without one, the row says what is true instead of hiding silently', () => {
-    assert.match(page, /\{hasSubscription \? STOP_PAYING_NOTE : STOP_PAYING_NONE\}/)
+  test('the row has THREE wordings, not two — §219', () => {
+    // no subscription · subscribed · a cancellation already scheduled. Offering "Cancel the
+    // subscription" to somebody who has already cancelled is the page failing to know what it has
+    // been told, and pressing it again would do nothing.
+    assert.match(page, /\? STOP_PAYING_NONE/)
+    assert.match(page, /STOP_PAYING_SCHEDULED\(plainDate\(company\?\.cancel_at \?\? null\)\)/)
+    assert.match(page, /: STOP_PAYING_NOTE/)
+  })
+
+  test('*** AND THE CONTROL LOOKS LIKE A CONTROL. ***', () => {
+    // The owner could not find it on his own walk: plain underlined text beside a prominent green
+    // "Download my data" reads as a LABEL for the sentence. `OUTLINE` is the house's own bordered
+    // button (`components/buttonStyles.ts`), one class on one element — nothing moved.
+    assert.match(page, /data-testid="stop-paying"[\s\S]{0,160}\$\{OUTLINE\}/)
+    assert.ok(!/data-testid="stop-paying"[\s\S]{0,160}className=\{ACTION\}/.test(page),
+      'the cancel control is back to plain text and will be missed again')
+  })
+
+  test('…and its words change once a cancellation is scheduled', () => {
+    assert.match(page, /cancelScheduled \? STOP_PAYING_SCHEDULED_ACTION : STOP_PAYING_ACTION/)
   })
   test('it opens the portal — Stripe hosts cancellation', () => {
     assert.match(page, /stopPaying/)

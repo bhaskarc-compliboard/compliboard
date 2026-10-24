@@ -49,6 +49,8 @@ export const AFTER_THE_TRIAL: ReadonlyArray<{ key: string; text: string }> = [
 export type StatusTone = 'trial' | 'good' | 'warn' | 'paused'
 
 export type BillingTabView = {
+  /** True when Stripe has a cancellation scheduled. The Cancel tab reads it too. */
+  cancelScheduled: boolean
   /**
    * Whether there is a subscription to manage at all. The page uses it to decide whether to offer
    * "Manage billing and invoices", which goes to the portal unconditionally — and a portal opened
@@ -75,6 +77,11 @@ export type BillingTabView = {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
+
+/** "visa" → "Visa". Only the first letter: "American Express" is not ours to invent from "amex". */
+function titleCase(v: string): string {
+  return v ? v.charAt(0).toUpperCase() + v.slice(1) : v
+}
 
 /** "30 October 2026" — the shape every other date in this product uses (`lib/checklistView.ts`). */
 export function plainDate(v: string | Date | null | undefined): string {
@@ -117,6 +124,8 @@ export type BillingViewColumns = BillingColumns & {
   card_last4?: string | null
   /** Which door the card control opens. NOT the customer id — see below. */
   stripe_subscription_id?: string | null
+  /** Stripe's scheduled end (migration 089). Set = a cancellation is pending; null = none. */
+  cancel_at?: string | Date | null
 }
 
 /**
@@ -155,9 +164,32 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
   // written out beside it. This now matches it.
   const hasSubscription = Boolean(c.stripe_subscription_id)
   const hasCard = Boolean(c.card_brand && c.card_last4)
+
+  /**
+   * *** A SCHEDULED CANCELLATION DOES NOT SHOW IN THE STATUS, SO IT HAS TO SHOW HERE. ***
+   *
+   * Cancelling in the portal sets `cancel_at_period_end`; Stripe keeps `status` as `trialing` or
+   * `active` until the date arrives (read from the sandbox, 24 October — migration 089's header
+   * has the three lines). So before step 20 this tab told somebody who had just cancelled, and
+   * already had a card, "Trial · 14 days left · Add a card before then and nothing changes on the
+   * day" — three separate untruths in one row, about money.
+   *
+   * Where it applies, the cancellation sentence REPLACES the advice line rather than joining it.
+   * Two sentences, one saying "add a card" and one saying "you cancelled", is worse than either.
+   */
+  const cancelScheduled = Boolean(c.cancel_at)
+  const cancelsOn = cancelScheduled ? plainDate(c.cancel_at ?? null) : ''
+  const CANCELLED_DETAIL =
+    'You cancelled. You keep everything until then, and nothing further will be charged. '
+    + 'Change your mind in Stripe.'
   const door: 'checkout' | 'portal' = c.stripe_subscription_id ? 'portal' : 'checkout'
   const card: BillingTabView['card'] = hasCard
-    ? { text: `${c.card_brand} ending ${c.card_last4}`, action: 'Change', door }
+    // *** THE BRAND IS CAPITALISED HERE, BECAUSE STRIPE SENDS IT LOWER CASE. ***
+    // `card.brand` comes back as `visa`, `mastercard`, `amex`. The mirror stores Stripe's own
+    // value verbatim (migration 087's rule, and the webhook must not translate), so the one place
+    // that can fix the sentence is the one that writes the sentence. Board 4 and the step 19 brief
+    // both say "Visa ending 4242"; the staging run showed "visa ending 4242".
+    ? { text: `${titleCase(c.card_brand ?? '')} ending ${c.card_last4}`, action: 'Change', door }
     : { text: 'No card yet', action: 'Add a card', door }
 
   // ---- THE STATUS. Driven by the gate's own reason. ----
@@ -165,18 +197,33 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'trial': {
       const n = daysUntil(c.trial_ends_at, now)
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
-          pill: 'Trial', tone: 'trial', headline: daysLeftPhrase(n),
-          detail: `Your trial ends ${plainDate(c.trial_ends_at)}. `
-                + 'Add a card before then and nothing changes on the day.',
+          pill: 'Trial', tone: cancelScheduled ? 'warn' : 'trial',
+          headline: cancelScheduled
+            ? `${daysLeftPhrase(n)} · Cancels on ${cancelsOn}`
+            : daysLeftPhrase(n),
+          detail: cancelScheduled
+            ? CANCELLED_DETAIL
+            : `Your trial ends ${plainDate(c.trial_ends_at)}. `
+              + 'Add a card before then and nothing changes on the day.',
         },
       }
     }
 
     case 'subscribed':
+      if (cancelScheduled) {
+        return {
+          card, hasSubscription, cancelScheduled,
+          status: {
+            pill: 'Active', tone: 'warn', headline: `Cancels on ${cancelsOn}`,
+            // No "next payment" line: there isn't one. That was the other false statement.
+            detail: CANCELLED_DETAIL,
+          },
+        }
+      }
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
           pill: 'Active', tone: 'good',
           headline: c.current_period_end ? `Next payment ${plainDate(c.current_period_end)}` : '',
@@ -192,7 +239,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'payment_failed_in_grace': {
       const n = c.payment_failed_at === null ? GRACE_DAYS : Math.max(1, graceDaysLeft(c.payment_failed_at, now))
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
           pill: 'Payment failed', tone: 'warn', headline: `${n} day${n === 1 ? '' : 's'} left`,
           detail: `We couldn't charge your card. We'll try again for ${n} more day${n === 1 ? '' : 's'} `
@@ -204,7 +251,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     // `past_due` with no anchor: Stripe is still retrying and we have no date to quote.
     case 'payment_failed_retrying':
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
           pill: 'Payment failed', tone: 'warn', headline: '',
           detail: "We couldn't charge your card and we're trying again. Nothing has stopped "
@@ -214,7 +261,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
 
     case 'payment_failed_grace_over':
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `We couldn't charge your card and the ${GRACE_DAYS} days are up. Everything is `
@@ -224,7 +271,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
 
     case 'trial_over_no_subscription':
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `Your trial ended ${plainDate(c.trial_ends_at)}. Everything is still here to read `
@@ -237,7 +284,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
       // `incomplete_expired` — are states a person did not choose, so they read as Read-only.
       if (status === 'canceled') {
         return {
-          card, hasSubscription,
+          card, hasSubscription, cancelScheduled,
           status: {
             pill: 'Canceled', tone: 'paused', headline: '',
             detail: 'Your subscription is canceled. Everything is still here to read and download, '
@@ -246,7 +293,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
         }
       }
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: "Your subscription isn't active. Everything is still here to read and download. "
@@ -258,7 +305,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'status_not_recognised':
     default:
       return {
-        card, hasSubscription,
+        card, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `Your subscription is in a state we don't recognise${status ? ` (${status})` : ''}. `

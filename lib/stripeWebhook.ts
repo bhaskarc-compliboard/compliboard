@@ -46,6 +46,15 @@ export type SubscriptionFacts = {
   currentPeriodEnd: string | null
   /** Stripe's `trial_end`. Once a card exists, Stripe OWNS the trial end and we mirror it. */
   trialEnd: string | null
+  /**
+   * Stripe's `cancel_at` — "a date in the future at which the subscription will automatically get
+   * canceled" (the SDK's own words). **ISO, or null when no cancellation is scheduled**, and that
+   * null is load-bearing: it is how "Don't cancel subscription" in the portal clears the mirror.
+   *
+   * NOT `canceled_at`, which the SDK warns is "the time of the most recent update request, not the
+   * end of the subscription period" — the moment the button was pressed, of no use to anybody.
+   */
+  cancelAt: string | null
   card: CardLine | null
 }
 
@@ -101,6 +110,15 @@ export function realStripePort(stripe: Stripe): StripePort {
         status: sub.status,
         currentPeriodEnd: iso(item?.current_period_end),
         trialEnd: iso(sub.trial_end),
+        // *** `sub.cancel_at` DIRECTLY, NOT `sub.cancel_at_period_end`. ***
+        // Read from the sandbox on 24 October rather than assumed: setting `cancel_at_period_end`
+        // POPULATES `cancel_at` with the period end, and clearing it returns `cancel_at` to null.
+        // So this one field already carries both directions, and no branch on the boolean is
+        // needed. It is also strictly MORE correct than the boolean would be: a cancellation can
+        // be scheduled for a FIXED future date (`cancel_at: <ts>` on update), which leaves
+        // `cancel_at_period_end` false while a cancellation is very much scheduled. Keying on the
+        // boolean would show that company nothing at all.
+        cancelAt: iso(sub.cancel_at),
         card: cardLineFrom(sub.default_payment_method, customer?.invoice_settings?.default_payment_method),
       }
     },
@@ -278,6 +296,14 @@ async function applyToCompany(args: {
     // the 48-hour floor can have moved it later than ours, and an extension typed into the Stripe
     // Dashboard moves it again. Migration 087's header is the long form of why it is a column.
     if (facts.trialEnd) patch.trial_ends_at = facts.trialEnd
+    // *** WRITTEN EVEN WHEN NULL, WHICH IS THE OPPOSITE OF THE CARD RULE BELOW, ON PURPOSE. ***
+    // A card line is only ever ADDED, because a shape we failed to read must not erase a card
+    // somebody really has. A scheduled cancellation is the reverse: the absence is a fact Stripe
+    // is telling us, and it is the only way "Don't cancel subscription" reaches the page. If this
+    // were conditional, a person who changed their mind would read "Cancels on 7 November" for
+    // ever — the same class of false statement about money that this whole column exists to stop.
+    patch.cancel_at = facts.cancelAt
+
     // Only written when a card actually resolved — never cleared on a shape we did not expect, or
     // a customer who does have a card would be shown as having none (§6).
     if (facts.card) {
@@ -312,7 +338,10 @@ async function applyToCompany(args: {
     // ---- GONE. `trial_ends_at` and `stripe_customer_id` are LEFT ALONE: the first is history, and
     // the second is how this company is recognised if they ever come back.
     case 'customer.subscription.deleted': {
-      return write({ subscription_status: 'canceled', stripe_subscription_id: null })
+      // `cancel_at` is cleared too: the scheduled end has ARRIVED, so there is no longer a future
+      // date to tell anybody about. Leaving it set would have the tab say "Cancels on 7 November"
+      // on 8 November, beside a status that already says canceled.
+      return write({ subscription_status: 'canceled', stripe_subscription_id: null, cancel_at: null })
     }
 
     // ---- PAID: the grace is over, and the period end has moved.

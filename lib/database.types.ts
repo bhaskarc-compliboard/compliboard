@@ -1030,6 +1030,7 @@ export type Database = {
       companies: {
         Row: {
           about: string | null
+          cancel_at: string | null
           card_brand: string | null
           card_last4: string | null
           chemicals: string | null
@@ -1059,6 +1060,7 @@ export type Database = {
         }
         Insert: {
           about?: string | null
+          cancel_at?: string | null
           card_brand?: string | null
           card_last4?: string | null
           chemicals?: string | null
@@ -1088,6 +1090,7 @@ export type Database = {
         }
         Update: {
           about?: string | null
+          cancel_at?: string | null
           card_brand?: string | null
           card_last4?: string | null
           chemicals?: string | null

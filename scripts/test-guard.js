@@ -174,7 +174,20 @@ import { readdirSync, readFileSync } from 'node:fs'
 // names that: "a company with no subscription is being sent to the portal: it can add a card
 // there that nothing will charge and no webhook reports, and it can never actually subscribe."
 // `DECISIONS.md` §218.
-const FLOOR = 1944
+// *** 1944 -> 1959 on 24 October 2026, My Account step 20, third finding from the walk. ***
+// The five states of a scheduled cancellation, the webhook mapping BOTH ways, and the Cancel tab's
+// three wordings. The ones they exist for:
+//   - CLEARING. `cancel_at` is written even when null, which is the opposite of the card rule
+//     beside it: a card line is only ever added (a shape we failed to read must not erase a real
+//     card), but a cancellation's ABSENCE is a fact Stripe is telling us, and it is the only way
+//     "Don't cancel subscription" reaches the page. A conditional write would leave somebody who
+//     changed their mind reading "Cancels on 7 November" for ever.
+//   - that the STATUS does not move. Stripe keeps `trialing` while a cancellation is scheduled, so
+//     a page reading only the status cannot tell a cancelling company from a happy one — which is
+//     how it came to tell a cancelled customer with a card on file to add a card.
+//   - and `receiveStripeEvent` itself, driven for the first time with a stub port and a fake
+//     database. Before this the webhook's MAPPING had no test at all; only its pure helpers did.
+const FLOOR = 1959
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
