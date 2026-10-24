@@ -16181,3 +16181,131 @@ genuinely be attached first and the subscription minutes later.
   nothing. Then the portal is a valid door for a customer without one, and the rule becomes a
   preference rather than a correctness matter.
 - **The answer in (D):** subscriptions being created outside this application.
+
+---
+
+## 219. WHEN STRIPE WILL STOP: A SCHEDULED CANCELLATION IS NOT A STATUS — 24 October 2026 (My Account step 20, migration 089, the owner's card walk)
+
+### A. THE PAGE WAS TELLING A CANCELLED CUSTOMER TO ADD A CARD HE ALREADY HAD
+
+Cancelling through Stripe's billing portal sets `cancel_at_period_end`. **Stripe then keeps `status`
+exactly as it was** — `trialing`, or `active` — until the date arrives. Read from the sandbox on
+24 October rather than assumed:
+
+```
+1. created (trialing)      status=trialing  cancel_at_period_end=false  cancel_at=null   canceled_at=null
+2. cancel at period end    status=trialing  cancel_at_period_end=true   cancel_at=1794028134  canceled_at=1792818536
+3. cleared again           status=trialing  cancel_at_period_end=false  cancel_at=null   canceled_at=null
+```
+
+The mirror held none of it, and the Billing tab reads the status. So a person who had just
+cancelled, and who already had a card on file, was told:
+
+> **Trial · 14 days left** — *"Your trial ends 7 November 2026. Add a card before then and nothing
+> changes on the day."*
+
+Three untruths in one row. He had cancelled; he had a card; and something very much changes on the
+day. **A page asserting something false about money is the one thing this mirror exists to
+prevent** (§6) — and it was wrong in the direction that costs the customer trust rather than us
+money, which is worse.
+
+### B. ONE COLUMN, AND IT IS A DATE
+
+Migration 089 adds `companies.cancel_at`, nullable `timestamptz`, no default, no backfill, no grant
+change — a column added to an existing table inherits the table's privileges, read back from the
+catalog rather than reasoned: `authenticated` SELECT yes / UPDATE no, `service_role` UPDATE yes,
+`anon` nothing, and **0 rows carrying a value**.
+
+A boolean would have changed the wording and not been able to say **when**, and "you keep everything
+until then" is the whole of what the person needs to read.
+
+> ### ⚠ AND IT DECIDES NOTHING ABOUT ACCESS.
+> `accessFor` does not read it and must not. A company that has scheduled a cancellation keeps
+> everything it was promised until the date arrives; what it may do until then is still decided by
+> `trial_ends_at` and `subscription_status`, exactly as before (decision 11). When the date arrives
+> Stripe moves the status to `canceled` and fires `customer.subscription.deleted`, and **that** is
+> what ends access. This column is for the words on the page, not for the gate.
+
+### C. `sub.cancel_at`, AND WHY NOT THE BOOLEAN OR `canceled_at`
+
+The port reads **`sub.cancel_at`** — the SDK's own words, "a date in the future at which the
+subscription will automatically get canceled".
+
+- **Not `canceled_at`**, which the SDK's declaration warns is "the time of the most recent update
+  request, not the end of the subscription period". That is the moment the button was pressed, which
+  would put a **past** date on the page.
+- **Not `cancel_at_period_end`.** Reading `cancel_at` directly is strictly more correct: setting the
+  boolean populates `cancel_at`, and clearing it returns `cancel_at` to null, so one field carries
+  both directions with no branch. And a cancellation can be scheduled for a **fixed future date**
+  (`cancel_at: <ts>` on update), which leaves the boolean `false` while a cancellation is very much
+  scheduled — keying on the boolean would show that company nothing at all.
+
+**It is written even when null, which is the opposite of the card rule beside it, deliberately.** A
+card line is only ever added, because a shape we failed to read must not erase a card somebody
+really has. A scheduled cancellation is the reverse: **the absence is a fact Stripe is telling us**,
+and writing it is the only way "Don't cancel subscription" reaches the page. A conditional write
+would leave somebody who changed their mind reading "Cancels on 7 November" for ever. Cleared on
+`deleted` too, because by then the date has arrived and there is no future to describe.
+
+### D. THE WORDS, AND THE ONE THEY REPLACE
+
+| state | the row says |
+|---|---|
+| cancelling during a trial | **Trial · 14 days left · Cancels on 7 November 2026** |
+| cancelling while active | **Active · Cancels on 7 November 2026** — and **no "next payment"**, because there is not one |
+
+with, in both: *"You cancelled. You keep everything until then, and nothing further will be charged.
+Change your mind in Stripe."*
+
+**The advice line is REPLACED, not joined.** Two sentences, one saying "add a card" and one saying
+"you cancelled", is worse than either — and the first is simply false. The pill goes amber in both.
+
+The Cancel tab now has **three** wordings, not two: no subscription · subscribed · already
+cancelling. Offering "Cancel the subscription" to somebody who has already cancelled is the page
+failing to know what it has been told, and pressing it again would do nothing — which teaches a
+person that the control is broken.
+
+> **⚠ The card-failure states keep their own words, and that is a decision.** A company that
+> cancelled and whose card then failed is told about the card, because that is the urgent and
+> actionable fact and "update it to keep everything running" is still true of the period they have
+> paid for. `cancelScheduled` is still set, so the Cancel tab still knows. Recorded so the omission
+> is deliberate rather than missed.
+
+### E. THE CONTROL THE OWNER COULD NOT FIND
+
+"Cancel the subscription" was plain underlined text beside a prominent green "Download my data"
+button, so it read as a **label for the sentence** rather than the thing to press. It is now
+`OUTLINE` — the house's own bordered control (`components/buttonStyles.ts`, already used by
+`AuditReport`'s footer and HR's "Check now"): a button at a lower weight than the primary beside it.
+**One class on one element. Nothing moved and nothing else was restyled.**
+
+A control that cannot be found is not a control, and the person who could not find it had written
+the brief for it.
+
+### F. ALSO: STRIPE SENDS THE CARD BRAND IN LOWER CASE
+
+Noticed on the staging run — the tab read "visa ending 4242" where board 4 and the step 19 brief
+both say "Visa". The mirror stores Stripe's own value verbatim and must keep doing so (087's rule),
+so the capital belongs in the words, not in the column. Only the first letter: `amex` does not
+become "American Express", which is not ours to invent.
+
+### G. PROVED BOTH WAYS THROUGH THE REAL WEBHOOK
+
+On staging, with the CLI forwarding to the app, no card typed:
+
+| | Stripe | our column | the tab |
+|---|---|---|---|
+| subscribed | `trialing` | `cancel_at` NULL, card `visa 4242` | Trial · 14 days left · *add a card* |
+| cancelled | `trialing`, `cancel_at=1794028612` | `cancel_at` 2026-11-07 | **Trial · 14 days left · Cancels on 7 November 2026** |
+| un-cancelled | `trialing`, `cancel_at=null` | `cancel_at` NULL | back to *add a card* |
+
+Screenshots `shots/step20-*`. That run was also the first time the card line has been filled from a
+real subscription read, through the expand fixed in §217 D.
+
+### WHAT WOULD REVERSE IT
+
+- **The column (B):** Stripe exposing a status that distinguishes "cancelling" from "active", which
+  would make the date a display detail rather than the only signal.
+- **Reading `cancel_at` over the boolean (C):** nothing. The boolean is strictly less informative.
+- **The failure-state decision (D):** a customer complaining they were not told their cancellation
+  stood while their card was failing.

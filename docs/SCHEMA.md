@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-23 22:58 UTC
-**Migrations applied:** 89 — `000` to `088`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-24 05:11 UTC
+**Migrations applied:** 90 — `000` to `089`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -41,7 +41,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 - `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
 - `company_switches` — 30 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
 - `switch_determinations` — 14 rows · touched by route switches/answer, script audit-data-checks, script check-live
-- `obligations` — 1345 rows · touched by route account, route obligations, route switches/answer
+- `obligations` — 1566 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
 - `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
 - `industry_coverage` — 56 rows · touched by script assign-agencies
@@ -50,7 +50,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Documents and evidence**
 
-- `documents` — 15 rows · touched by route audit-runs/[id]/documents, route audit-runs, route calendar, route chat, route document-actions, +14 more
+- `documents` — 17 rows · touched by route audit-runs/[id]/documents, route audit-runs, route calendar, route chat, route document-actions, +14 more
 - `document_reviews` — 0 rows · touched by lib attachedDocument
 - `company_folders` — 0 rows · touched by route audits/index, route documents/index, route documents, route folders, screen calendar
 - `company_templates` — 0 rows · **no code reads or writes it**
@@ -74,9 +74,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 11 rows · touched by screen account, route account/export, route account, route audit-runs, route billing/checkout, +29 more
-- `profiles` — 10 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
-- `entities` — 15 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +26 more
+- `companies` — 12 rows · touched by screen account, route account/export, route account, route audit-runs, route billing/checkout, +31 more
+- `profiles` — 11 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
+- `entities` — 16 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +26 more
 
 **Calendar**
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 69 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 84 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -772,9 +772,9 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 ### `companies`
 
-**Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route billing/checkout`, `route billing/portal`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `lib stripeWebhook`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route billing/checkout`, `route billing/portal`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib accessGate`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `lib requireAccess`, `lib stripeWebhook`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -805,6 +805,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 | `card_brand` | text | yes | — |
 | `card_last4` | text | yes | — |
 | `trial_ends_at` | timestamp with time zone | no | `(now() + '14 days'::interval)` |
+| `cancel_at` | timestamp with time zone | yes | — |
 
 **Pointed at by:**
 
@@ -1592,7 +1593,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_scans`
 
-**Rows:** 21 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 23 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib audit`, `lib auditRun`, `lib companyLabels`, `lib documentScan`, `script check-live`, `script run-golden-audit`
 
@@ -1674,7 +1675,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `documents`
 
-**Rows:** 15 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 17 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-runs/[id]/documents`, `route audit-runs`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-rescan`, `route document-scan`, `route documents`, `route folders`, `route jobs/scan-documents`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -1760,7 +1761,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `entities`
 
-**Rows:** 15 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 16 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `screen account`, `route audit-runs`, `route audits/index`, `route calendar`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route jobs/calendar-month`, `route sites`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen calendar`, `screen dashboard`, `screen hr`, `screen walk`, `lib agencyScope`, `lib ask`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -1836,7 +1837,7 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 Candidate company facts read out of a conversation overnight. PROPOSED, never written to company_switches — DECISIONS.md §108. The quote is copied because the turn it came from is cleared after 7 days.
 
-**Rows:** 85 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 86 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route to-confirm`, `screen compliance`, `screen hr`, `lib audit`, `lib companyContext`, `lib documentScan`, `lib summaryReport`, `script run-golden-audit`
 
@@ -2148,7 +2149,7 @@ Every finding of a handbook check, as a row.
 
 A handbook split into sections, each with its text and fingerprint. Written by the server.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `lib handbookCheck`, `lib handbookCheckNotify`, `lib handbookCheckView`, `lib handbookRead`, `lib hrAnswer`
 
@@ -2425,7 +2426,7 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 42 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 48 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
@@ -2614,7 +2615,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 The resolved list: which library rows apply to this company. Produced by CODE, never by AI. Rows are NEVER DELETED — a requirement that stops applying gets applicable_to set and stays. CLAUDE.md §3.2.
 
-**Rows:** 1345 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1566 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route obligations`, `route switches/answer`
 
@@ -2671,7 +2672,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 
 ### `profiles`
 
-**Rows:** 10 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `screen account`, `route account/export`, `route account`, `route invitations`, `route jobs/calendar-month`, `route join`, `route people/[id]`, `route people`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
 
@@ -2899,7 +2900,7 @@ Reusable, shared parsed checklist per named standard. Built once, reused by ever
 
 Every event /api/stripe/webhook accepted from Stripe, keyed by STRIPE'S OWN EVENT ID so a redelivery is a primary-key conflict rather than a second write. Two jobs: it makes the webhook idempotent, and it is the only record of what Stripe told us — the thing you need when a customer says they were charged and the product disagrees (CLAUDE.md §5). *** OURS, NOT THE CUSTOMER'S: no grant to anon or authenticated, and RLS on with no policy, so it is closed the way library_candidates is. *** `company_id` is nullable because an event for a customer we cannot map must still be recorded with its reason. My Account step 17.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 29 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `lib stripeWebhook`
 
@@ -3585,4 +3586,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 086
 087
 088
+089
 ```
