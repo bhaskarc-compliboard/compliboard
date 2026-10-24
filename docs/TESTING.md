@@ -125,6 +125,35 @@ two cases written. (c) is not built and is deliberately bounded.**
 
 ---
 
+## A PARAMETER THAT DECIDES WHETHER A CUSTOMER IS ASKED FOR A CARD — 23 October 2026 (My Account step 19, `DECISIONS.md` §216 B)
+
+`payment_method_collection: 'if_required'` on the Checkout session is one word, and it decides
+whether a person is stopped at a card form. Two things about how it is tested are worth copying.
+
+**1. The parameters are asserted as a VALUE, not grepped out of the route.** They moved into
+`checkoutSessionParams()` in `lib/stripe.ts`, pure, and the test reads the object. A source-text
+match on the route would have passed on a line that had been commented out — the same weakness as
+a validator that has only ever said PASS.
+
+**2. The test pins it on a TRIALLING session, where a card IS still collected.** `if_required` is
+about the amount due being zero *for ever*, not zero *today*: a trial has a real charge coming on
+day 15, so Stripe still asks. If that were ever inverted, nobody on a trial would give us a card
+and every one of them would lapse silently on day 15 — a failure with no error, no log line and no
+symptom until the month's revenue is missing. The assertion exists for that, not for the happy case.
+
+**And it was proved against Stripe, not against our own object.** The staging run created a real
+sandbox session and read it back through `stripe.checkout.sessions.list` —
+`payment_method_collection: if_required` in Stripe's own reply. A parameter we send and never read
+back is a parameter we believe in.
+
+> **The same step produced a smaller lesson worth the same care.** `daysUntil` started as
+> `ceil((then - now) / 24h)`, which is wrong in a way no reading catches: it reports the same
+> number on two consecutive days, and it made the "Ends today" branch unreachable. The test could
+> not be made to pass, which is how it was found. **Writing the assertion first is what caught a
+> date bug that a customer would have seen and nobody else would.**
+
+---
+
 ## ⚡ A ROUTE FILE AND A CRON SWEEP ARE NOW TESTABLE OFFLINE — 23 October 2026 (My Account step 18, `DECISIONS.md` §215 H)
 
 Until this step, **no test in this project had ever executed a cron sweep.** `tests/unit/handbookCheck.test.ts`

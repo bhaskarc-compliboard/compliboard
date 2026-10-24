@@ -15823,3 +15823,113 @@ counts the page had been silently failing to show came back with it.
   copy of it.
 - **The grace banner's condition (F):** the grace being removed, or becoming read-only from day one.
 - **Uploads staying open (G):** storage cost becoming the thing being abused rather than model spend.
+
+---
+
+## 216. THE BILLING TAB READS THE MIRROR AND WRITES NOTHING — 23 October 2026 (My Account step 19, boards 4 and 5)
+
+The Billing tab replaces *"Card payment is not switched on yet. Nothing is charged, and nothing is
+owed."* with board 4, and the Cancel tab's subscription line stops being inert. No migration, no new
+route, and nothing in `vercel.json`.
+
+### A. THE TAB IS A READER. THAT IS THE WHOLE DESIGN.
+
+Every line comes from the eight columns migration 087 keeps in step with Stripe, and
+`GET /api/account` already returned all of them — it does `select('*')` on `companies`, so these
+have been arriving since step 17 with nothing reading them. **No new request, no new route, no new
+column.**
+
+Nothing on this tab decides anything. The two buttons each do one thing: ask our own route for a
+Stripe URL and navigate to it. Stripe takes the card, Stripe hosts the portal, the webhook writes
+what came back, and the tab reads it on the next load. **A tab that recomputed a status would be a
+second source of truth about the one fact §213 exists to keep single** — and it would be the
+source that is wrong, because Stripe is the authority and we are the copy.
+
+The words live in **`lib/billingView.ts`**, which is pure and imports only `lib/billing.ts`. The
+status is driven by **`accessFor`'s REASON**, not by Stripe's status word, so the tab and the step
+18 gate cannot disagree about whether a company is paused: they are the same decision, read twice.
+Stripe's word is consulted for exactly one thing — telling `canceled` apart from the other
+not-paying words, which is a difference in wording and not in access.
+
+> ### ⚡ AND THE PRICE IS THE ONE THING ON THIS PAGE THAT IS NOT READ FROM ANYWHERE.
+> `$199` is a constant in `lib/billingView.ts`. The money actually charged is Stripe's, under
+> `STRIPE_PRICE_ID`, and nothing in this repository can read it without an API call. So the two can
+> disagree, and if they ever do **the page is lying about a price**. The honest options were: show
+> nothing, call Stripe on every page load, or state the number and say plainly where the truth is.
+> The owner's board shows the number, so it is stated — with the constant commented to say that
+> **a price change in Stripe must change this line in the same commit**. It is the one unguarded
+> claim on the tab, and it is named here so it is a known risk rather than a surprise.
+
+### B. `payment_method_collection: 'if_required'`
+
+Stripe's default for a subscription session is `always`: the page asks for a card even when the
+amount due is zero. `allow_promotion_codes` is on, so the owner can issue a 100%-off coupon — a
+pilot, a friend, a make-good — and that person would still have been stopped at a card form **to
+pay nothing**, which reads as a bait and switch.
+
+`if_required` asks only when there is something to charge. **Every paying session still collects a
+card**; only the genuinely free one does not.
+
+> **It does NOT weaken the trial, and that distinction is the whole reason it is safe.** A
+> trialling session has a real charge coming on day 15, so Stripe still collects a card:
+> `if_required` is about the amount due being zero **for ever**, not zero **today**. Getting this
+> backwards would mean nobody on a trial ever gives us a card and every one of them lapses on day
+> 15, silently. `tests/unit/billingView.test.ts` pins the parameter **on a trialling session**
+> for that reason, and the staging run read it back **from Stripe's own API** —
+> `payment_method_collection: if_required` on the created session — rather than from our object.
+
+The session parameters moved out of the route into `checkoutSessionParams()` in `lib/stripe.ts`,
+pure, so they can be asserted as a value. A source-text grep of the route would have passed on a
+line that had been commented out.
+
+### C. STRIPE HOSTS CANCELLATION
+
+The Cancel tab's "Stop paying" row is live and opens the billing portal. The alternative was our
+own route calling `subscriptions.update({ cancel_at_period_end: true })`.
+
+We would then own the confirmation screen, the "are you sure", the wording about what happens at the
+end of the paid period, and the reinstate path — all of which Stripe already has, localised and
+tested — **and we would have a second place a subscription can be changed.** One door, and the
+webhook tells us what happened through the mirror.
+
+**The row is shown only when a subscription EXISTS**, keyed on `stripe_subscription_id` and
+deliberately **not** on `stripe_customer_id`: a customer is created the moment somebody opens
+checkout, even if they abandon it, so keying on that would offer cancellation to a person who has
+never subscribed and send them to a portal with nothing in it. Without a subscription the row says
+so instead of vanishing silently.
+
+`lib/accountView.ts` `STOP_PAYING_DISABLED` ('Available once billing is set up') is **deleted, not
+emptied**, so nothing can render a stale reassurance; `tests/unit/accountView.test.ts` asserts the
+symbol is gone. The delete flow — typed confirmation, `DELETE /api/account`, children then company
+then logins — is untouched.
+
+### D. ⚡ A DAY COUNT THAT WAS WRONG IN A WAY ONLY A CUSTOMER WOULD SEE
+
+`daysUntil` began as `ceil((then - now) / 24h)`, which reads as obviously correct. It is not. For a
+trial ending at noon on the 30th it returns **9 on the 21st and 9 again on the 22nd**, because 8.96
+rounds up — the page would say the same number two days running and then jump. The same arithmetic
+made the `Ends today` branch **unreachable dead code**: by the time the elapsed count reached 0 the
+trial was already over and `accessFor` had moved on, so a branch that looked as though it worked
+could never run.
+
+It now floors both dates to UTC midnight and subtracts, which is what somebody counting squares on
+a calendar does. **The test found this, not a reading of the function** — the assertion for "Ends
+today" simply could not be made to pass, which is the useful kind of failure.
+
+### E. WHAT A REFUSAL LOOKS LIKE
+
+Both routes already answer in plain words, and the tab shows **the route's own sentence beside the
+control that was pressed** — including the portal's 409 for a company with no customer yet ("There
+is no card on file yet, so there is nothing to manage. Add a card first.") and the 503 for a server
+with no Stripe key. Nothing is swallowed and no button is dead (§5.1).
+
+### WHAT WOULD REVERSE ANY OF IT
+
+- **The tab as a pure reader (A):** a billing action Stripe's portal cannot do. Then that one action
+  gets a route, and the mirror is still what the tab reads.
+- **The hardcoded price (A):** a second plan, or per-seat pricing. Either makes the number a lookup,
+  and at that point it should come from Stripe rather than from a constant.
+- **`if_required` (B):** Stripe changing what "required" means, or the owner wanting a card on file
+  even from a fully-discounted customer — a reasonable thing to want, and a one-word change back.
+- **Stripe hosting cancellation (C):** needing to ask why somebody is leaving, which the portal
+  cannot do. That is a screen before the portal, not instead of it.
