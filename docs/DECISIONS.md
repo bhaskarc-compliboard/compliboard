@@ -15860,23 +15860,42 @@ not-paying words, which is a difference in wording and not in access.
 > **a price change in Stripe must change this line in the same commit**. It is the one unguarded
 > claim on the tab, and it is named here so it is a known risk rather than a surprise.
 
-### B. `payment_method_collection: 'if_required'`
+### B. `payment_method_collection` — ⚡ **THIS SECTION WAS WRONG. SUPERSEDED BY §217.**
 
-Stripe's default for a subscription session is `always`: the page asks for a card even when the
+> ### ⚡⚡ CORRECTED 24 OCTOBER 2026 BY THE OWNER'S OWN CARD WALK.
+> This section said `payment_method_collection: 'if_required'`, flat, for every session, and gave
+> the reason in the quote below — that a trial has a charge coming on day 15 so Stripe collects a
+> card anyway. **That reasoning is false.** Stripe evaluates what is due **now**, not what is
+> coming; a trialling session's amount due today is zero, so `if_required` collected **nothing**.
+> The first real checkout proved it: `amount_total=0`, `payment_method_collection=if_required`,
+> and the customer had **zero payment methods attached**.
+>
+> The rule is now **`always` whenever a `trial_end` is being sent, `if_required` only when none
+> is.** §217 carries the whole of it, including the narrow hole that remains and the rule that
+> follows from it (forever coupons only).
+>
+> *The original text is kept below, struck, because the error is the useful part: the claim read
+> as obviously correct, was written into four places, and was pinned by a test that could never
+> have caught it.*
+
+~~Stripe's default for a subscription session is `always`: the page asks for a card even when the
 amount due is zero. `allow_promotion_codes` is on, so the owner can issue a 100%-off coupon — a
 pilot, a friend, a make-good — and that person would still have been stopped at a card form **to
-pay nothing**, which reads as a bait and switch.
+pay nothing**, which reads as a bait and switch.~~ *(This half is still true, and is why
+`if_required` survives for the no-trial case.)*
 
-`if_required` asks only when there is something to charge. **Every paying session still collects a
-card**; only the genuinely free one does not.
+~~`if_required` asks only when there is something to charge. **Every paying session still collects
+a card**; only the genuinely free one does not.~~
 
-> **It does NOT weaken the trial, and that distinction is the whole reason it is safe.** A
+> ~~**It does NOT weaken the trial, and that distinction is the whole reason it is safe.** A
 > trialling session has a real charge coming on day 15, so Stripe still collects a card:
 > `if_required` is about the amount due being zero **for ever**, not zero **today**. Getting this
 > backwards would mean nobody on a trial ever gives us a card and every one of them lapses on day
-> 15, silently. `tests/unit/billingView.test.ts` pins the parameter **on a trialling session**
-> for that reason, and the staging run read it back **from Stripe's own API** —
-> `payment_method_collection: if_required` on the created session — rather than from our object.
+> 15, silently.~~ **← this is exactly what happened.** ~~`tests/unit/billingView.test.ts` pins the
+> parameter **on a trialling session** for that reason, and the staging run read it back **from
+> Stripe's own API** — `payment_method_collection: if_required` on the created session — rather
+> than from our object.~~ *(Both of those were done, and both passed: the test pinned the value
+> and the API confirmed it. Neither could tell us the value was the wrong one.)*
 
 The session parameters moved out of the route into `checkoutSessionParams()` in `lib/stripe.ts`,
 pure, so they can be asserted as a value. A source-text grep of the route would have passed on a
@@ -15933,3 +15952,114 @@ with no Stripe key. Nothing is swallowed and no button is dead (§5.1).
   even from a fully-discounted customer — a reasonable thing to want, and a one-word change back.
 - **Stripe hosting cancellation (C):** needing to ask why somebody is leaving, which the portal
   cannot do. That is a screen before the portal, not instead of it.
+
+---
+
+## 217. CHECKOUT ASKS FOR A CARD WHENEVER A CHARGE IS COMING — 24 October 2026 (My Account step 20, the owner's card walk; corrects §216 B)
+
+```ts
+payment_method_collection: opts.trialEnd === null ? 'if_required' : 'always',
+```
+
+### A. ⚡ WHAT WAS WRONG, PLAINLY
+
+Step 19 set `payment_method_collection: 'if_required'` on **every** Checkout session, with the
+reasoning that a trialling session has a real charge coming on day 15 and so Stripe would collect a
+card anyway — that `if_required` was about the amount being zero *for ever*, not zero *today*.
+
+**Stripe evaluates what is due NOW, not what is coming.** A trial's amount due today is nothing, so
+`if_required` on a trialling session collects **nothing at all**.
+
+The owner's own walk found it on the first press. The completed session, read back from Stripe:
+
+```
+status=complete  payment_status=paid  payment_method_collection=if_required  amount_total=0
+```
+
+and the company it belonged to:
+
+```
+stripe_subscription_id  sub_1UTwSzDfr228eUmOQkhBeQcY
+subscription_status     trialing
+card_brand / card_last4 NULL / NULL
+```
+
+with `subscription.default_payment_method` null, `customer.invoice_settings.default_payment_method`
+null, and **zero payment methods attached to the customer**. No card was ever collected.
+
+**What that would have cost.** Every trial customer who pressed "Add a card" would have added no
+card. On day 15 there is nothing to charge, the subscription cannot convert, and they lapse —
+having done exactly what the product asked of them, with a Stripe success page behind them and
+"No card yet" on their own Billing tab. Silent on both sides.
+
+> ### AND THE TEST PINNED THE PARAMETER, WHICH IS WHY IT CAUGHT NOTHING.
+> `tests/unit/billingView.test.ts` asserted *"it is carried on a TRIALLING session too, where a
+> card is still collected"* — and that assertion **passed**, because the parameter was indeed
+> carried. The staging run then read it back from Stripe's own API and got `if_required`, as sent.
+> Both checks did what they said. Neither could say the value was the wrong one.
+>
+> **A test that asserts a value is not a test that the value is correct.** The new test names the
+> consequence instead — "if these two are ever swapped, every trial customer lapses silently" —
+> and `TESTING.md` carries the general form.
+>
+> The commit message for `cae58f0` makes the same wrong claim in its own words ("INCLUDING A
+> TRIAL, because a trial has a real charge coming on day 15"). A commit message cannot be edited
+> without rewriting history, so it stands wrong and is named here instead.
+
+### B. THE RULE, AND THE HOLE IT LEAVES
+
+**A trial means a charge is coming, which means a card is required.** `if_required` survives only
+for the case it was added for: a session with no trial, where a 100%-off coupon leaves nothing to
+pay and nobody should be stopped at a card form to pay zero.
+
+> ### ⚠ THE NARROW HOLE, NAMED RATHER THAN DISCOVERED LATER.
+> A coupon that zeroes only the **first** charge on a **no-trial** session also skips the card, and
+> then month two has nothing to charge. The flow cannot tell the two kinds of coupon apart: the
+> code sets `payment_method_collection` when it creates the session, before any promotion code has
+> been typed on Stripe's page.
+>
+> **The rule that follows is: FOREVER COUPONS ONLY.** A time-limited discount must not be issued
+> against this flow. If one ever has to be, the parameter becomes `always` everywhere and the
+> fully-discounted customer is asked for a card they will not be charged — which is the lesser
+> harm, and a one-word change.
+
+### C. PROVED AGAINST STRIPE, BOTH WAYS, WITH NO CARD TYPED
+
+Two throwaway sessions created from `checkoutSessionParams()` and **read back** from Stripe:
+
+| fixture | we sent | Stripe reports | `amount_total` |
+|---|---|---|---|
+| trialling (`trial_end` 14 days out) | `always` | **`always`** | 0 |
+| trial over (`trial_end` null) | `if_required` | **`if_required`** | 19900 |
+
+Both sessions expired and the customer deleted afterwards. The second row is also the first
+independent confirmation of the **price**: `19900` is $199.00, which is what the Billing tab's
+constant claims (§216 A named that as the one unguarded claim on the page).
+
+### D. THE CARD-LINE FALLBACK WAS DEAD, AND IS NOW ALIVE
+
+Separate defect, same commit. `realStripePort` asked for
+`expand: ['default_payment_method', 'customer']` and passed
+`customer.invoice_settings.default_payment_method` as `cardLineFrom`'s second source. Expanding
+`customer` returns the customer — but the payment method **on** it is still an id string, which
+`cardLineFrom` refuses exactly as it refuses an unexpanded first source. **So the fallback could
+never fire**; it was one source wearing a comment that said two. Step 17 flagged it as a hypothesis
+for step 20 to settle, and step 20 settled it: false.
+
+Now `expand: ['default_payment_method', 'customer.invoice_settings.default_payment_method']`.
+Both sources read through the real port against the sandbox:
+
+| where the card is | `sub.default_payment_method` | `customer.…default_payment_method` | the port reads |
+|---|---|---|---|
+| on the **subscription** | object, visa 4242 | null | `visa 4242` — **source 1** |
+| only on the **customer** | null | object, mastercard 4444 | `mastercard 4444` — **source 2**, now reachable |
+
+Checkout normally sets the subscription's own default, so source 1 is the ordinary path and
+source 2 is the safety net it was always meant to be.
+
+### WHAT WOULD REVERSE ANY OF IT
+
+- **The rule (B):** Stripe changing what "required" means — the reason this went wrong once
+  already — or a time-limited coupon becoming necessary, which makes it `always` everywhere.
+- **The deep expand (D):** nothing. A shallower expand is simply unreadable, and
+  `tests/unit/stripeWebhook.test.ts` now fails if it comes back.

@@ -208,16 +208,42 @@ whether a person is stopped at a card form. Two things about how it is tested ar
 match on the route would have passed on a line that had been commented out — the same weakness as
 a validator that has only ever said PASS.
 
-**2. The test pins it on a TRIALLING session, where a card IS still collected.** `if_required` is
-about the amount due being zero *for ever*, not zero *today*: a trial has a real charge coming on
-day 15, so Stripe still asks. If that were ever inverted, nobody on a trial would give us a card
-and every one of them would lapse silently on day 15 — a failure with no error, no log line and no
-symptom until the month's revenue is missing. The assertion exists for that, not for the happy case.
+**2. ⚡ AND THE SECOND LESSON IS THAT BOTH OF THOSE PASSED WHILE THE VALUE WAS WRONG.**
 
-**And it was proved against Stripe, not against our own object.** The staging run created a real
-sandbox session and read it back through `stripe.checkout.sessions.list` —
-`payment_method_collection: if_required` in Stripe's own reply. A parameter we send and never read
-back is a parameter we believe in.
+This section said the test pinned `if_required` on a trialling session "where a card IS still
+collected", because "a trial has a real charge coming on day 15, so Stripe still asks". **That was
+false.** Stripe evaluates what is due *now*. A trial's amount due today is zero, so `if_required`
+collected nothing, and the owner's first real checkout produced a trialing subscription with **no
+payment method anywhere** (`DECISIONS.md` §217).
+
+Look at what the two checks above actually did:
+
+- the unit test asserted the parameter **was carried** on a trialling session — it was, and the
+  test passed;
+- the staging run **read it back from Stripe** and got `if_required` — exactly as sent, and that
+  passed too.
+
+Both checks did precisely what they claimed. Neither could say the value was the wrong one.
+
+> ### A TEST THAT ASSERTS A VALUE IS NOT A TEST THAT THE VALUE IS CORRECT.
+> This is the harness's version of §3.3's anchor problem: the assertion was written from the same
+> belief as the code, so it could only ever agree with it. Reading it back from Stripe felt like
+> independent evidence and was not — it confirmed the transmission, not the choice.
+>
+> **What catches this class is naming the CONSEQUENCE in the assertion**, so the failure message
+> describes the harm rather than the value:
+>
+>     assert.notEqual(withTrial.payment_method_collection, 'if_required',
+>       'a TRIALLING session is set to if_required: Stripe will collect no card, and every '
+>       + 'trial customer will lapse on day 15 having pressed "Add a card" and been told it worked')
+>
+> A reviewer reading that cannot nod along without deciding whether the sentence is true. A
+> reviewer reading `assert.equal(p.payment_method_collection, 'if_required')` has nothing to
+> disagree with.
+>
+> **And the thing that actually found it was a human with a card.** Not the test, not the API
+> read-back, not the test clock — which cannot reach Checkout at all. That is the whole argument
+> for keeping a by-hand pass in this document.
 
 > **The same step produced a smaller lesson worth the same care.** `daysUntil` started as
 > `ceil((then - now) / 24h)`, which is wrong in a way no reading catches: it reports the same
