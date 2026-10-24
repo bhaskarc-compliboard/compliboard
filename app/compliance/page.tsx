@@ -306,7 +306,19 @@ export default function CompliancePage() {
   // ------------------------------------------------------------------ loading
   useEffect(() => {
     (async () => {
-      const { data: prof } = await supabase.from('profiles').select('company_id').maybeSingle()
+      // *** `.eq('id', user.id)` — ADDED AT STEP 18, AND IT IS A BUG FIX, NOT A TIDY-UP. ***
+      // This read was `select('company_id').maybeSingle()` with no filter, leaning on RLS to
+      // return exactly one row. It does not: `profiles`' SELECT policy shows a person their
+      // COLLEAGUES too (`CLAUDE.md` §3.6 — several profiles share a company_id, and that is the
+      // normal state). So at any company with more than one person this returned
+      // "JSON object requested, multiple (or no) rows returned", `prof` came back null, and this
+      // whole effect bailed: no `companyId`, and no `companyName` on the printed header. Found on
+      // staging at step 18 against Test Alpha Chemical, which has two people — the read-only note
+      // never appeared because `billing` was never set either. Every other page already filters
+      // by the user's own id; this one did not.
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: prof } = await supabase.from('profiles')
+        .select('company_id').eq('id', user?.id ?? '').maybeSingle()
       if (prof?.company_id) {
         setCompanyId(prof.company_id as string)
         // The printed header names the company. An id on a page handed to an inspector is worth
