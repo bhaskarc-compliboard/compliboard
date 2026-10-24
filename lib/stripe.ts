@@ -161,19 +161,28 @@ export function checkoutSessionParams(opts: {
     line_items: [{ price: opts.priceId, quantity: 1 }],
     // The owner's coupons, made in Stripe and typed by the customer on Stripe's page.
     allow_promotion_codes: true,
-    // *** SO A 100%-OFF COUPON DOES NOT DEMAND A CARD IT WILL NEVER CHARGE. ***
-    // Stripe's default for a subscription is `always`: the page asks for a card even when the
-    // amount due is zero. With `allow_promotion_codes` on, the owner can issue a full discount —
-    // a pilot, a friend, a make-good — and the person would still have been stopped at a card
-    // form to pay nothing, which reads as a bait and switch. `if_required` asks only when there
-    // is something to charge, so EVERY PAYING SESSION STILL COLLECTS A CARD and only the
-    // genuinely free one does not.
+    // *** `always` WHENEVER A TRIAL IS BEING SENT. CORRECTED 24 OCTOBER 2026 — §217. ***
     //
-    // It does NOT weaken the trial. A trialling session has a real charge coming on day 15, so
-    // Stripe still collects a card — `if_required` is about the AMOUNT DUE being zero for ever,
-    // not about it being zero today. That distinction is the whole reason this is safe, and it
-    // is the thing to re-check if Stripe ever changes what "required" means.
-    payment_method_collection: 'if_required',
+    // This line read a flat `'if_required'` from step 19 until the owner's own card walk, with
+    // the reasoning that a trialling session has a real charge coming on day 15 so Stripe would
+    // still ask for a card. **That was wrong, and the sandbox said so:** a completed trialling
+    // checkout came back `amount_total=0`, `payment_method_collection=if_required`, and the
+    // customer had ZERO payment methods attached. STRIPE EVALUATES WHAT IS DUE NOW, NOT WHAT IS
+    // COMING. A trial's amount due today is nothing, so `if_required` collects nothing — and the
+    // person lapses on day 15 having done exactly what the product asked of them.
+    //
+    // So: a trial means a charge is coming, which means a card is required.
+    //
+    // `if_required` survives only for the case it was added for — a session with NO trial where
+    // a 100%-off coupon leaves nothing to pay, so nobody is stopped at a card form to pay zero
+    // (`allow_promotion_codes` is what makes that reachable).
+    //
+    // ⚠ THE HOLE THAT LEAVES, NAMED RATHER THAN DISCOVERED LATER: a coupon that zeroes only the
+    // FIRST charge on a no-trial session also skips the card, and then month two has nothing to
+    // charge. **The rule that follows is: forever coupons only.** A time-limited discount must
+    // not be issued against this flow until this line knows the difference, which it cannot ask
+    // Stripe at session-creation time.
+    payment_method_collection: opts.trialEnd === null ? 'if_required' : 'always',
     // So a session in the Stripe dashboard can be traced back to a company by eye.
     client_reference_id: opts.companyId,
     subscription_data: {

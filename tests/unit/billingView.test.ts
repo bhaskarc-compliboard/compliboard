@@ -237,31 +237,65 @@ describe("the Cancel tab's subscription line", () => {
   })
 })
 
-describe('*** THE CHECKOUT SESSION ASKS FOR A CARD ONLY WHEN THERE IS SOMETHING TO CHARGE ***', () => {
+describe('*** CHECKOUT ASKS FOR A CARD WHENEVER A CHARGE IS COMING ***', () => {
   const params = (trialEnd: number | null = null) => checkoutSessionParams({
     customerId: 'cus_1', priceId: 'price_1', companyId: 'co_1', trialEnd, baseUrl: 'https://x.test',
   })
+  // `trialEndFor`'s two live cases produce a number; the third produces null (§213).
+  const TRIAL_RUNNING = 1793000000   // more than 48h out: the real trial end
+  const FLOOR_APPLIED = 1792900000   // inside 48h: now + 48h
 
-  test('payment_method_collection is if_required', () => {
-    assert.equal(params().payment_method_collection, 'if_required')
+  test('A TRIAL IS BEING SENT → always, because a charge is coming on day 15', () => {
+    for (const [name, t] of [['trial running', TRIAL_RUNNING], ['floor applied', FLOOR_APPLIED]] as const) {
+      const p = params(t)
+      assert.equal(p.payment_method_collection, 'always', name)
+      assert.equal(p.subscription_data?.trial_end, t, name)
+    }
   })
 
-  test('…so a 100%-off coupon needs no card, which is why promotion codes are on at all', () => {
-    assert.equal(params().allow_promotion_codes, true)
-    assert.equal(params().payment_method_collection, 'if_required')
-  })
-
-  test('it is carried on a TRIALLING session too, where a card is still collected', () => {
-    // `if_required` is about the amount due being zero FOR EVER, not zero today: a trial has a
-    // real charge coming, so Stripe still asks. Pinned because getting this backwards would mean
-    // nobody on a trial ever gives us a card and every one of them lapses on day 15.
-    const p = params(1793000000)
+  test('NO TRIAL → if_required, so a 100%-off coupon is not stopped at a card form', () => {
+    const p = params(null)
     assert.equal(p.payment_method_collection, 'if_required')
-    assert.deepEqual(p.subscription_data?.trial_end, 1793000000)
+    assert.equal(p.allow_promotion_codes, true)
+    assert.ok(!('trial_end' in (p.subscription_data ?? {})), 'charged at once, so no trial_end')
   })
 
-  test('no trial_end key at all once the trial is over — charged at once', () => {
-    assert.ok(!('trial_end' in (params(null).subscription_data ?? {})))
+  test('*** AND IF THESE TWO ARE EVER SWAPPED, EVERY TRIAL CUSTOMER LAPSES SILENTLY. ***', () => {
+    // THIS IS THE TEST STEP 19 SHOULD HAVE WRITTEN AND DID NOT. It asserted only that the
+    // parameter was CARRIED on a trialling session — which was true, and useless, because the
+    // value it carried was `if_required`.
+    //
+    // What the sandbox then showed (§217): a completed trialling checkout came back
+    // `amount_total=0`, `payment_method_collection=if_required`, and the customer had ZERO
+    // payment methods. **Stripe evaluates what is due NOW, not what is coming.** A trial's
+    // amount due today is nothing, so `if_required` collects nothing, and on day 15 there is
+    // nothing to charge: the person lapses having done exactly what the product asked of them,
+    // with a success page behind them and "No card yet" on their Billing tab.
+    //
+    // So this names the consequence rather than the value. A trial without `always` is the bug.
+    const withTrial = params(TRIAL_RUNNING)
+    const withoutTrial = params(null)
+    assert.notEqual(withTrial.payment_method_collection, 'if_required',
+      'a TRIALLING session is set to if_required: Stripe will collect no card, and every trial '
+      + 'customer will lapse on day 15 having pressed "Add a card" and been told it worked')
+    assert.notEqual(withoutTrial.payment_method_collection, 'always',
+      'a NO-TRIAL session is set to always: a 100%-off coupon holder is stopped at a card form '
+      + 'to pay nothing, which is the bait-and-switch if_required exists to avoid')
+    assert.notDeepEqual(
+      [withTrial.payment_method_collection, withoutTrial.payment_method_collection],
+      [withoutTrial.payment_method_collection, withTrial.payment_method_collection],
+      'the two cases now agree, so one of them is wrong',
+    )
+  })
+
+  test('the hole this leaves is named, not discovered later', () => {
+    // A coupon that zeroes only the FIRST charge on a no-trial session also skips the card, and
+    // month two has nothing to charge. The rule that follows is FOREVER COUPONS ONLY, and it is
+    // written where the parameter is set rather than only in a decisions file.
+    const src = readFileSync('lib/stripe.ts', 'utf8')
+    assert.match(src, /forever coupons only/i)
+    assert.match(src, /WHAT IS DUE NOW, NOT WHAT IS/i)
+    assert.match(src, /opts\.trialEnd === null \? 'if_required' : 'always'/)
   })
 
   test('the rest of the session is unchanged by step 19', () => {

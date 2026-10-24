@@ -155,7 +155,18 @@ import { readdirSync, readFileSync } from 'node:fs'
 //     grepped out of the route — a source-text match passes on a commented-out line. It is also
 //     pinned ON A TRIALLING SESSION, where a card IS still collected: if that were ever inverted,
 //     nobody on a trial would give us a card and every one of them would lapse on day 15.
-const FLOOR = 1939
+// *** 1939 -> 1943 on 24 October 2026, My Account step 20 (the fix the owner's walk forced). ***
+// Small in count, and the most expensive four tests in the file to have been missing:
+//   - `payment_method_collection` is `always` for BOTH trial cases and `if_required` only when
+//     there is no trial, with a guard that FAILS NAMING THE CONSEQUENCE if the two are swapped
+//     ("every trial customer will lapse on day 15 having pressed Add a card and been told it
+//     worked"). Step 19's test asserted the parameter was CARRIED on a trialling session; it was,
+//     the test passed, and the value it carried was the wrong one. A test that asserts a value is
+//     not a test that the value is correct — `DECISIONS.md` §217 A, `TESTING.md`.
+//   - the card-line fallback's input. `cardLineFrom` was always right; the PORT handed it an id
+//     string, because expanding `customer` does not expand the payment method on it. The shallow
+//     expand is now asserted absent, because its return would kill the fallback again silently.
+const FLOOR = 1943
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

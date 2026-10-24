@@ -71,6 +71,15 @@ const iso = (unixSeconds: number | null | undefined): string | null =>
  *     date that never appears, with nothing failing.
  *   - `expand: ['default_payment_method']` is what makes the card line readable at all; unexpanded
  *     it is an id string, which `cardLineFrom` correctly refuses.
+ *   - *** AND THE FALLBACK NEEDED A DEEPER EXPAND THAN `'customer'`. CORRECTED 24 OCTOBER 2026. ***
+ *     This asked for `['default_payment_method', 'customer']` and passed
+ *     `customer.invoice_settings.default_payment_method` as the second source. Expanding
+ *     `customer` returns the customer — but the payment method ON it is still an ID STRING, which
+ *     `cardLineFrom` refuses exactly as it refuses the unexpanded first source. **So the fallback
+ *     could never fire.** Proved against the sandbox at step 20: with the old list that field came
+ *     back as `"pm_1UTw6K…"`; with `customer.invoice_settings.default_payment_method` expanded it
+ *     comes back as an object, `type: 'card'`, `visa 4242`. A two-source fallback where the second
+ *     source is structurally unreadable is one source wearing a comment that says two.
  */
 export function realStripePort(stripe: Stripe): StripePort {
   return {
@@ -78,7 +87,7 @@ export function realStripePort(stripe: Stripe): StripePort {
       let sub: Stripe.Subscription
       try {
         sub = await stripe.subscriptions.retrieve(id, {
-          expand: ['default_payment_method', 'customer'],
+          expand: ['default_payment_method', 'customer.invoice_settings.default_payment_method'],
         })
       } catch {
         return null

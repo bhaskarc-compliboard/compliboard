@@ -21,6 +21,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { customerIdOf, subscriptionIdOfInvoice } from '../../lib/stripeWebhook.ts'
 import { cardLineFrom } from '../../lib/stripe.ts'
 
@@ -93,6 +94,40 @@ describe('subscriptionIdOfInvoice — *** NOT invoice.subscription, WHICH DOES N
 })
 
 // =================================================================================================
+describe('*** THE EXPAND LIST IS WHAT MAKES THE SECOND SOURCE READABLE AT ALL *** — §217', () => {
+  // The real shapes, copied from a sandbox read at step 20. `cardLineFrom` was always correct;
+  // what was wrong was what the port handed it.
+  const EXPANDED_PM = { id: 'pm_1', type: 'card', card: { brand: 'visa', last4: '4242' } }
+  const UNEXPANDED_PM = 'pm_1UTw6KDfr228eUmOnNnMV0Cc'
+
+  test("with the OLD expand list, the fallback's input was an id string — so it never fired", () => {
+    // `expand: ['default_payment_method', 'customer']` returns the customer, but the payment
+    // method ON it stays an id. `cardLineFrom` refuses it, correctly, and the tab says
+    // "No card yet" for a company that has one.
+    assert.equal(cardLineFrom(null, UNEXPANDED_PM), null)
+  })
+
+  test('with the NEW expand list it is an object, and the card line appears', () => {
+    assert.deepEqual(cardLineFrom(null, EXPANDED_PM), { brand: 'visa', last4: '4242' })
+  })
+
+  test('the port asks for the deep path, not just `customer`', () => {
+    const src = readFileSync('lib/stripeWebhook.ts', 'utf8')
+    assert.match(src, /expand: \['default_payment_method', 'customer\.invoice_settings\.default_payment_method'\]/)
+    // The shallow form is the defect. If it ever comes back, the fallback is dead again and
+    // nothing fails — which is why this is asserted on the string rather than left to a comment.
+    assert.ok(!/expand: \['default_payment_method', 'customer'\]/.test(src),
+      "the port is back to expanding `customer`, so the card-line fallback cannot fire")
+  })
+
+  test('the subscription source still wins when both are readable', () => {
+    assert.deepEqual(
+      cardLineFrom({ type: 'card', card: { brand: 'amex', last4: '0005' } }, EXPANDED_PM),
+      { brand: 'amex', last4: '0005' },
+    )
+  })
+})
+
 describe('cardLineFrom — a brand and four digits, and NEVER anything longer (decision 12)', () => {
 // =================================================================================================
   const card = (brand: string, last4: string) =>

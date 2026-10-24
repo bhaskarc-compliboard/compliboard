@@ -42,17 +42,45 @@ const userOf = async () => {
   return data.users.find((u) => u.email === EMAIL) ?? null
 }
 
+/**
+ * *** DELETES BY COMPANY NAME, NOT THROUGH THE PROFILE. CORRECTED 24 OCTOBER 2026. ***
+ *
+ * This used to find the company via `profiles` for the current login. That works exactly once:
+ * `deleteUser` removes the profile, so the NEXT `--reset` could no longer reach the company the
+ * previous run had made. Three orphan "Step 20 Card Walk" rows accumulated on staging — inert,
+ * nobody able to sign into them, and invisible to the script that created them.
+ *
+ * A fixture helper that cannot clean up after itself is worse than no helper, because the mess
+ * looks like product data. The name is the handle, and the name is this script's own.
+ */
 async function destroy() {
+  let found = false
+
+  // *** THE LOGIN GOES FIRST, AND THE ORDER IS NOT A PREFERENCE. ***
+  // `profiles.company_id` has a foreign key to `companies`, so deleting the company while a
+  // profile still points at it is refused — "violates foreign key constraint
+  // profiles_company_id_fkey". The first version of this function deleted the company first and
+  // left the live one standing with its login already gone, which is a worse mess than the one
+  // it was written to clear. `/api/account` DELETE orders it the same way and for the same
+  // reason (children, then the company, then the logins) — this is the small version of that.
   const u = await userOf()
   if (u) {
-    const { data: p } = await db.from('profiles').select('company_id').eq('id', u.id).maybeSingle()
-    if (p?.company_id) {
-      await db.from('companies').delete().eq('id', p.company_id)
-      console.log('  deleted the company (its rows cascade)')
-    }
-    await db.auth.admin.deleteUser(u.id)
+    await db.auth.admin.deleteUser(u.id)   // takes its `profiles` row with it
     console.log(`  deleted the login ${EMAIL}`)
-  } else console.log('  nothing to delete')
+    found = true
+  }
+
+  // By NAME, which is this script's own handle on what it made — not through `profiles`, which
+  // the line above has just removed.
+  const { data: cos } = await db.from('companies').select('id, name').eq('name', COMPANY)
+  for (const c of cos ?? []) {
+    const { error } = await db.from('companies').delete().eq('id', c.id)
+    if (error) { console.log(`  could not delete company ${c.id}: ${error.message}`); continue }
+    console.log(`  deleted company ${c.id} (its rows cascade)`)
+    found = true
+  }
+
+  if (!found) console.log('  nothing to delete')
 }
 
 if (CLEAN || RESET) { console.log('\n  clearing the previous fixture:'); await destroy() }
