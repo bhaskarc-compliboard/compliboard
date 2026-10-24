@@ -201,9 +201,13 @@ imported nowhere else. Model and task routing are private constants inside that 
 
 Verify with: `grep -rn "@anthropic-ai" app lib components` — should return only `lib/ai.ts`.
 
-**Known exception to fix:** `app/api/scan-website/route.ts` calls the Anthropic API directly
-via `fetch` because it needs the web_search tool. `askAI()` now supports `enableWebSearch`,
-so that route should be migrated back through the pipe.
+**The one known exception is closed — 23 October 2026 (My Account step 18, `DECISIONS.md` §214).**
+This read: *"`app/api/scan-website/route.ts` calls the Anthropic API directly via `fetch` because it
+needs the web_search tool… that route should be migrated back through the pipe."* **It was deleted
+instead of migrated**, on the owner's decision: it had had no caller since step 12, `/api/website-read`
+had replaced it, and migrating a route nothing calls would have been work to keep a liability.
+**`grep -rn "@anthropic-ai\|api.anthropic.com" app lib components` now returns `lib/ai.ts` only, with
+no exception to remember** — which is the state the rule above always claimed.
 
 `askAI()` already handles: automatic retry when `stop_reason === 'max_tokens'`, web search
 as a server-side tool, and JSON extraction tolerant of narration around the object. Do not

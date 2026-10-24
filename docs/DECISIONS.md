@@ -15570,3 +15570,64 @@ would have stored nothing for ever with nothing failing.
 - **`text` over an ENUM (D):** Stripe freezing its status vocabulary, which it has not done.
 - **No daily job (G):** a rule that cannot be computed from a timestamp — a usage allowance, say,
   that has to be counted and reset. Then the cron is the mechanism, not a second source of truth.
+
+---
+
+## 214. THE SCANNER NOBODY CALLED: DELETED, NOT MIGRATED — 23 October 2026 (My Account step 18)
+
+`app/api/scan-website/route.ts` and `prompts/scan-website.ts` are deleted. The owner decided it on
+being shown what the route was, and set the condition the deletion had to meet: every reference
+listed before, every reference disproved after, the full suite, the typecheck and the build run in
+between, and the new reader named and shown still green.
+
+**What it was.** A `POST` that took a `url` from the request body, prepended `https://` if absent,
+fetched that page **plus sixteen guessed subpaths**, and sent the stripped text to
+`https://api.anthropic.com/v1/messages` with `process.env.ANTHROPIC_API_KEY` and
+`model: 'claude-sonnet-4-5'` hardcoded at `route.ts:92`.
+
+**Three things were true of it at once, and the third is why deletion beat migration:**
+
+1. **It had no session check of any kind.** No `requireCompany`, no token read, no cron secret —
+   `docs/TODO.md` §0.8b had it as a blind SSRF and the sharpest of the open routes, and
+   `STATUS.md` named it in the same terms. One unauthenticated request was up to seventeen
+   outbound fetches from our infrastructure plus a paid model call, to anyone who knew the path.
+2. **It bypassed `lib/ai.ts`.** It was the one standing exception to `CLAUDE.md` §3.4 — "the AI
+   module is the only call site" — and §3.4 carried an instruction to migrate it back through the
+   pipe once `askAI()` supported web search, which it now does. Because it called `fetch` directly
+   it was also outside the cost ledger, so its spend appeared in no figure this project reports.
+3. **Nothing called it.** Its only caller was the signup page's `onBlur`, removed at My Account
+   step 12. Step 13 then wrote `lib/websiteFetch.ts` rather than reusing it, and the route's own
+   header said what should happen next: *"step 13 is the step that decides whether to reuse it…
+   If step 13 writes its own, this file goes with it."* Step 13 wrote its own.
+
+**So the §3.4 migration item was work to keep a liability.** Migrating an uncalled route through
+`askAI()` would have produced a guarded, ledgered, uncalled route. Deleting it closes the SSRF, the
+unauthenticated model call and the §3.4 exception in one act, and `CLAUDE.md` §3.4's own
+verification — `grep -rn "@anthropic-ai\|api.anthropic.com" app lib components` — returns
+`lib/ai.ts` and nothing else for the first time since the rule was written.
+
+**What replaced it, and is untouched by this.** `/api/website-read` + `lib/websiteFetch.ts` +
+`prompts/website-read.ts`, built at step 13 (§210). It requires a session, claims its work before
+spending, writes to the ledger, and refuses private and link-local address ranges — the SSRF the
+deleted route had. `tests/unit/websiteRead.test.ts` holds 34 tests, more than half of them that
+guard. None of those four files was edited by this deletion and all 34 tests still pass.
+
+**What did NOT go with the files, and must not be assumed gone.** The column
+`companies.scan_result` survives: `lib/companyContext.ts:265` still reads
+`scan_result.custom_industry` for companies that signed up before step 12. The route's own header
+read as though the prompt file shared the column's position — *"`prompts/scan-website.ts` and
+`companies.scan_result` are in the same position: read by `lib/companyContext.ts:265` and
+`prompts/checklist.ts`"* — and that sentence was wrong about the prompt file. Grepping both its
+exports settled it: `EXTRACTION_PROMPT` was imported by the deleted route alone and `CERT_LIST` was
+used only inside its own file. **The sentence was the only reason to think the deletion was
+entangled, and it was a composed cross-reference, not a read one** — §9a's first rule, caught by
+the grep the owner required rather than by reading the comment again.
+
+### WHAT WOULD REVERSE IT
+
+- **A need for the sixteen-subpath sweep.** It is not lost: `lib/websiteFetch.ts` is a rewrite of
+  that sweep with the guard the original lacked, and §210 records why it was rewritten rather than
+  reused. Recovering the original is `git show 69e3d1c:app/api/scan-website/route.ts` — 69e3d1c is the last
+  commit that holds it, verified by running both that and its parent before writing this line.
+- **`companies.scan_result` being retired.** A separate decision with a separate reader to move,
+  still owed in `STATUS.md`. This one does not do it.

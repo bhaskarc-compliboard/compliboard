@@ -11,9 +11,13 @@
 // The security item and the functional prerequisite turned out to be the same work.
 // DECISIONS.md §4 and §34; docs/DETERMINATION-GATE.md §0.
 //
-// THIS CLOSES ONE OF §0.8b's FOUR UNDOCUMENTED ROUTES, NOT ALL FOUR. /api/extract-dates,
-// /api/feedback and /api/scan-website are unchanged — the SSRF in scan-website and the
-// unescaped HTML interpolation in feedback are still open.
+// THIS CLOSES ONE OF §0.8b's FOUR UNDOCUMENTED ROUTES, NOT ALL FOUR. /api/extract-dates and
+// /api/feedback are unchanged — the unescaped HTML interpolation in feedback is still open.
+//
+// THE FOURTH IS GONE RATHER THAN FIXED. `/api/scan-website` was DELETED on 23 October 2026
+// (My Account step 18, `DECISIONS.md` §214). It had had no caller since step 12 and had been
+// replaced by `/api/website-read`, so its blind SSRF and its unauthenticated model call are
+// closed by its absence and not by a guard. Two of §0.8b's four are now shut; two remain.
 //
 // Callers must now send the session token: `headers: await authHeaders()` from lib/supabase.
 

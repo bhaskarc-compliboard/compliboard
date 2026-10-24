@@ -1069,10 +1069,10 @@ item rather than a correction to that pass.
 |---|---|
 | `/api/chat` | a model call at `maxTokens: 6000`, **plus server-side parsing** of Excel/Word/PowerPoint since 11 Sep — the widening enlarged this surface |
 | `/api/extract-dates` | a model call at `maxTokens: 1000` |
-| `/api/scan-website` | a model call with **web search**, and up to 17 outbound fetches — see below |
+| ~~`/api/scan-website`~~ | ~~a model call with **web search**, and up to 17 outbound fetches~~ — **ROUTE DELETED 23 October 2026**, `DECISIONS.md` §214. The assessment below is kept because it is what `/api/website-read` was built against |
 | `/api/feedback` | **an email**, from your Resend account, to `FEEDBACK_EMAIL` |
 
-**⚠️ `/api/scan-website` is the one to look at first.** It takes `url` from the request body,
+**⚠️ `/api/scan-website` was the one to look at first — and on 23 October 2026 it was DELETED rather than fixed** (`DECISIONS.md` §214; it had had no caller since My Account step 12). **The paragraph below is kept in the present tense as the record of what it did**, because it is the threat `/api/website-read`'s SSRF guard was written against and tested on. It takes `url` from the request body,
 prepends `https://` if absent, and fetches it **plus 16 guessed subpaths** (`/products`,
 `/about`, …). No allowlist, no scheme check, nothing blocking private or link-local address
 ranges. One unauthenticated request is up to 17 outbound fetches from your infrastructure to
@@ -1426,8 +1426,9 @@ are interface, they live in `MODULES`, and they get built when a customer asks f
 > verified by `npm run golden`.
 > **2.3 ✅** the critic pass, live on both, acceptance met against the frozen 2.5L artifact
 > and the negative control held.
-> **2.5 🟡** task-based model routing done; token usage, the wider temperature audit and
-> `scan-website` still open.
+> **2.5 🟡** task-based model routing done; token usage and the wider temperature audit still
+> open. ***`scan-website` is off this list since 23 October 2026 — the route was deleted, not
+> migrated*** (`DECISIONS.md` §214).
 > **2.8 🟡** the runner exists as `npm run golden`; three cases.
 > **Still open: 2.4, 2.6, 2.7.** **6.2 ✅ was pulled forward** so the critic was built against
 > a gate with a real vocabulary behind it.
@@ -1612,7 +1613,7 @@ cannabis customer gets `proceed` with zero library rows behind the result.
 - ⬜ Record token usage per call
 - 🟡 **Temperature audit across every call site** — the incompatibility below is found and
   handled; the wider audit of *which* calls should carry a temperature at all is still open
-- ⬜ Migrate `scan-website` back through `askAI()` (web search is now supported)
+- ✅ ~~Migrate `scan-website` back through `askAI()`~~ — **closed by DELETION, 23 October 2026** (`DECISIONS.md` §214). It was never migrated: the route had no caller, `/api/website-read` had replaced it, and `CLAUDE.md` §3.4's `grep` now returns `lib/ai.ts` alone
 - ⬜ **Revisit the generation default when 2.4 lands.** `DECISIONS.md` §42 measures
   `claude-opus-5` as better on transport-shaped generation — case 002 clean, Sonnet blocking
   in both runs and Opus in neither — and ~3× slower. The default stays on
