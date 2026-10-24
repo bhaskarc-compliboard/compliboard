@@ -138,7 +138,24 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   - DECISION 14, as a snapshot: NAV_ITEMS and SidebarContent are pinned by length AND content
 //     hash. "Nothing else in the layout changed" is the promise step 18 made; this is what makes
 //     breaking it fail the build. Editing the sidebar later is a deliberate edit of two constants.
-const FLOOR = 1892
+// *** 1892 -> 1939 on 23 October 2026, My Account step 19 (the Billing tab): 47 in
+// billingView.test.ts. *** The ones they exist for:
+//   - EVERY status reaching a named pill, including a ninth word Stripe has not invented yet and
+//     an `active` subscription whose first `current_period_end` has not landed. Both are states
+//     nobody can produce by hand, and both would otherwise render a blank line where a customer
+//     expects to be told what they are paying.
+//   - the grace saying a NUMBER and never zero, and never saying anything has stopped: access is
+//     still FULL for decision 11's seven days, so a tab that read "Read-only" there would
+//     contradict the gate and take back days the product promised in writing.
+//   - `daysUntil` counting CALENDAR days. `ceil(elapsed / 24h)` reads as equivalent and returns 9
+//     on BOTH the 21st and the 22nd for a trial ending at noon on the 30th, and it made the
+//     "Ends today" branch unreachable dead code that looked as though it worked. Found by writing
+//     the test, not by reading the function.
+//   - `payment_method_collection: 'if_required'` asserted on the real session object rather than
+//     grepped out of the route — a source-text match passes on a commented-out line. It is also
+//     pinned ON A TRIALLING SESSION, where a card IS still collected: if that were ever inverted,
+//     nobody on a trial would give us a card and every one of them would lapse on day 15.
+const FLOOR = 1939
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

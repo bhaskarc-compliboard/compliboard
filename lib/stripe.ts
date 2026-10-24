@@ -137,3 +137,53 @@ function asCard(pm: unknown): CardLine | null {
   if (typeof c.last4 !== 'string' || !/^[0-9]{4}$/.test(c.last4)) return null
   return { brand: c.brand, last4: c.last4 }
 }
+
+
+/**
+ * THE CHECKOUT SESSION'S PARAMETERS, AS A VALUE — My Account step 19.
+ *
+ * Pulled out of `app/api/billing/checkout/route.ts` so the parameters can be ASSERTED rather than
+ * matched as source text. What this object says decides whether a person is asked for a card, how
+ * long they go unbilled, and where they land afterwards; a test that only grepped the route for a
+ * string would pass on a line that had been commented out.
+ */
+export function checkoutSessionParams(opts: {
+  customerId: string
+  priceId: string
+  companyId: string
+  /** Unix seconds from `trialEndFor`, or null for no trial at all. */
+  trialEnd: number | null
+  baseUrl: string
+}): Stripe.Checkout.SessionCreateParams {
+  return {
+    mode: 'subscription',
+    customer: opts.customerId,
+    line_items: [{ price: opts.priceId, quantity: 1 }],
+    // The owner's coupons, made in Stripe and typed by the customer on Stripe's page.
+    allow_promotion_codes: true,
+    // *** SO A 100%-OFF COUPON DOES NOT DEMAND A CARD IT WILL NEVER CHARGE. ***
+    // Stripe's default for a subscription is `always`: the page asks for a card even when the
+    // amount due is zero. With `allow_promotion_codes` on, the owner can issue a full discount —
+    // a pilot, a friend, a make-good — and the person would still have been stopped at a card
+    // form to pay nothing, which reads as a bait and switch. `if_required` asks only when there
+    // is something to charge, so EVERY PAYING SESSION STILL COLLECTS A CARD and only the
+    // genuinely free one does not.
+    //
+    // It does NOT weaken the trial. A trialling session has a real charge coming on day 15, so
+    // Stripe still collects a card — `if_required` is about the AMOUNT DUE being zero for ever,
+    // not about it being zero today. That distinction is the whole reason this is safe, and it
+    // is the thing to re-check if Stripe ever changes what "required" means.
+    payment_method_collection: 'if_required',
+    // So a session in the Stripe dashboard can be traced back to a company by eye.
+    client_reference_id: opts.companyId,
+    subscription_data: {
+      metadata: { company_id: opts.companyId },
+      // No trial once the trial has ended: charged at once, and access comes back the same second
+      // the webhook writes `active` — there is no daily job to wait for.
+      ...(opts.trialEnd === null ? {} : { trial_end: opts.trialEnd }),
+    },
+    // Both doors lead back to the Billing tab, which is where the person started.
+    success_url: `${opts.baseUrl}/account?tab=billing&card=added`,
+    cancel_url: `${opts.baseUrl}/account?tab=billing`,
+  }
+}

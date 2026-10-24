@@ -44,6 +44,10 @@ import SiteDrawer from '@/components/SiteDrawer'
 import CompanyQuestions from '@/components/CompanyQuestions'
 import PeopleTab from '@/components/PeopleTab'
 import { PRIMARY, TEXT_ACTION } from '@/components/buttonStyles'
+import {
+  billingTabView, PLAN_PRICE, PLAN_PERIOD, PLAN_NOTE, STRIPE_NOTE, MANAGE_LINK, AFTER_THE_TRIAL,
+  type StatusTone,
+} from '@/lib/billingView'
 import { createClient, authHeaders } from '@/lib/supabase'
 import {
   INDUSTRY_LINE, DONE, WRITE_HINT, lineAction, sentenceRows, SENTENCE_COLS,
@@ -62,7 +66,7 @@ import {
   passwordResetNote, SEND_RESET_LINK, RESET_SENT, RESET_FAILED,
   CHANGE_EMAIL_TITLE, NEW_EMAIL_LABEL, SEND_CONFIRMATION, EMAIL_CHANGE_FAILED,
   // Board 5 — the Cancel tab (step 9).
-  CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_DISABLED,
+  CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_NONE,
   DOWNLOAD_LABEL, DOWNLOAD_NOTE, DOWNLOAD_ACTION,
   DELETE_TITLE, deleteWarning, TYPE_TO_CONFIRM, DELETE_ACTION, deleteConfirm, DELETE_FAILED,
 } from '@/lib/accountView'
@@ -94,6 +98,18 @@ interface CompanyRow {
   /** The broad industry line. It changed meaning at step 15; the sentence moved to `about`. */
   what_you_do: string | null
   website_url: string | null
+  /* ---- THE BILLING MIRROR (migration 087), step 19. ----
+     Not a new request and not a new route: `GET /api/account` already does `select('*')` on
+     `companies`, so these eight have been coming back since step 17 and nothing was reading them.
+     They are READ here and written nowhere — Stripe owns every one of them (`DECISIONS.md` §216). */
+  trial_ends_at: string | null
+  subscription_status: string | null
+  payment_failed_at: string | null
+  current_period_end: string | null
+  card_brand: string | null
+  card_last4: string | null
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
 }
 
 const ROW = 'flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4'
@@ -203,6 +219,16 @@ function Account() {
       setCompany({
         id: d.id, name: d.name ?? null, about: d.about ?? null,
         what_you_do: d.what_you_do ?? null, website_url: d.website_url ?? null,
+        // The mirror, read. Named one by one rather than spread, so this page takes exactly what
+        // it draws and a column added to `companies` later does not arrive here by accident.
+        trial_ends_at: d.trial_ends_at ?? null,
+        subscription_status: d.subscription_status ?? null,
+        payment_failed_at: d.payment_failed_at ?? null,
+        current_period_end: d.current_period_end ?? null,
+        card_brand: d.card_brand ?? null,
+        card_last4: d.card_last4 ?? null,
+        stripe_customer_id: d.stripe_customer_id ?? null,
+        stripe_subscription_id: d.stripe_subscription_id ?? null,
       })
     }
     // As the person: `entities_select` scopes it, so no company is named here.
@@ -440,8 +466,8 @@ function Account() {
         {tab === 'people' && <PeopleTab db={supabase} />}
 
         {tab === 'signin' && <SignInTab />}
-        {tab === 'billing' && <BillingTab />}
-        {tab === 'cancel' && <CancelTab companyName={company?.name ?? ''} />}
+        {tab === 'billing' && <BillingTab company={company} />}
+        {tab === 'cancel' && <CancelTab companyName={company?.name ?? ''} company={company} />}
       </div>
 
       {drawer && (
@@ -660,18 +686,138 @@ function EmailSheet({ current, onClose, onSent }: {
   )
 }
 
-function BillingTab() {
+/** The pill's colours. The WORDS are `lib/billingView.ts`'s; only the paint is here. */
+const PILL_TONE: Record<StatusTone, string> = {
+  trial:  'bg-amber-50 text-amber-800 border-amber-200',
+  good:   'bg-green-50 text-[var(--green-ink)] border-green-200',
+  warn:   'bg-amber-50 text-amber-800 border-amber-200',
+  paused: 'bg-gray-100 text-gray-700 border-gray-200',
+}
+
+/**
+ * BOARD 4 — the Billing tab, My Account step 19.
+ *
+ * *** IT READS THE MIRROR AND WRITES NOTHING. *** Every line comes from the eight columns
+ * migration 087 keeps in step with Stripe, which `GET /api/account` already returned. The two
+ * buttons do one thing each: ask our own route for a Stripe URL and go there. Stripe takes the
+ * card, Stripe hosts the portal, the webhook writes what came back, and this tab reads it on the
+ * next load. Nothing about a subscription is decided here. `DECISIONS.md` §216.
+ *
+ * The words are all in `lib/billingView.ts`, which is pure and has every state under test —
+ * including the ones that are hard to reach by hand (a status Stripe has not invented yet, a
+ * subscription active before its first `current_period_end` has landed).
+ */
+function BillingTab({ company }: { company: CompanyRow | null }) {
+  const [busy, setBusy] = useState<'checkout' | 'portal' | null>(null)
+  const [error, setError] = useState('')
+
+  // Hand the person to Stripe. A refusal from either route is shown AS ITS SENTENCE, beside the
+  // control that was pressed — both routes already answer in plain words (§5.1), including the
+  // portal's 409 for a company with no customer yet and the 503 for a server with no key.
+  async function go(door: 'checkout' | 'portal') {
+    if (busy) return
+    setBusy(door); setError('')
+    try {
+      const res = await fetch(`/api/billing/${door}`, { method: 'POST', headers: await authHeaders() })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.url) {
+        setError(json?.error ?? "We couldn't open the payment page just now. Please try again in a moment.")
+        setBusy(null)
+        return
+      }
+      window.location.href = json.url
+    } catch {
+      setError("We couldn't open the payment page just now. Please try again in a moment.")
+      setBusy(null)
+    }
+  }
+
+  // Before the row has loaded there is nothing true to say, so nothing is said. A default of
+  // "Trial" would be this page asserting a status it has not read.
+  //
+  // `trial_ends_at` is in the condition because `billingTabView` requires it, and it requires it
+  // because migration 087 made the column NOT NULL — the rule is never allowed to guess at a
+  // missing trial end. So this branch is "the row has not arrived", not a state a company can be
+  // in, and it says the one true thing rather than rendering a plan nobody has read.
+  if (!company || !company.trial_ends_at) {
+    return (
+      <>
+        <DashboardSection heading="Your plan" />
+        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
+          <p className="text-[13px] text-gray-500">Reading your plan…</p>
+        </div>
+      </>
+    )
+  }
+
+  const view = billingTabView({ ...company, trial_ends_at: company.trial_ends_at }, new Date())
+
   return (
     <>
       <DashboardSection heading="Your plan" />
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <p className="text-[14px] font-medium text-gray-900">$199 a month</p>
-        <p className="mt-1 text-[13px] leading-5 text-gray-600">
-          Everything in CompliBoard, for everyone at your company. Cancel any time.
-        </p>
-        <p className="mt-4 text-[13px] text-gray-500">
-          Card payment is not switched on yet. Nothing is charged, and nothing is owed.
-        </p>
+
+      <div className="rounded-xl border border-gray-200 bg-white">
+        {/* ---- Plan ---- */}
+        <div className={ROW}>
+          <p className={KEY}>Plan</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] text-gray-900">
+              <span className="font-medium">{PLAN_PRICE}</span>{' '}
+              <span className="text-[13px] text-gray-500">{PLAN_PERIOD}</span>
+            </p>
+            <p className="mt-0.5 text-[13px] leading-5 text-gray-600">{PLAN_NOTE}</p>
+          </div>
+        </div>
+
+        {/* ---- Status ---- */}
+        <div className={ROW}>
+          <p className={KEY}>Status</p>
+          <div className="min-w-0 flex-1">
+            <p className="flex flex-wrap items-center gap-2">
+              <span data-testid="billing-pill"
+                className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${PILL_TONE[view.status.tone]}`}>
+                {view.status.pill}
+              </span>
+              {view.status.headline && (
+                <span className="text-[14px] text-gray-900">{view.status.headline}</span>
+              )}
+            </p>
+            <p className="mt-1 text-[13px] leading-5 text-gray-600">{view.status.detail}</p>
+          </div>
+        </div>
+
+        {/* ---- Card ---- */}
+        <div className={ROW_LAST}>
+          <p className={KEY}>Card</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] text-gray-900">{view.card.text}</p>
+            {error && <p className="mt-1 text-[13px] text-[var(--amber)]">{error}</p>}
+          </div>
+          <button type="button" data-testid="billing-card-action"
+            onClick={() => go(view.card.door)} disabled={busy !== null} className={ACTION}>
+            {busy === view.card.door ? 'Opening…' : view.card.action}
+          </button>
+        </div>
+      </div>
+
+      {/* ---- Stripe's own page, and the way back to it ---- */}
+      <p className="mt-3 text-[13px] leading-5 text-gray-500">
+        {STRIPE_NOTE}{' '}
+        <button type="button" data-testid="billing-manage" onClick={() => go('portal')} disabled={busy !== null}
+          className="text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+          {busy === 'portal' ? 'Opening…' : MANAGE_LINK}
+        </button>
+      </p>
+
+      {/* ---- After the trial — board 4's three plain paragraphs ---- */}
+      <DashboardSection heading="After the trial" />
+      <div className="rounded-xl border border-gray-200 bg-white">
+        {AFTER_THE_TRIAL.map((p, i) => (
+          <div key={p.key} className={i === AFTER_THE_TRIAL.length - 1 ? ROW_LAST : ROW}>
+            <p className={KEY}>{p.key}</p>
+            <p className="min-w-0 flex-1 text-[13px] leading-5 text-gray-600">{p.text}</p>
+          </div>
+        ))}
       </div>
     </>
   )
@@ -685,13 +831,38 @@ function BillingTab() {
  * *** THE ROUTE IS NOT TOUCHED. *** `/api/account` DELETE's order — children, then the company,
  * then the logins last so a failure leaves the account still reachable — is exactly as it was.
  */
-function CancelTab({ companyName }: { companyName: string }) {
+function CancelTab({ companyName, company }: { companyName: string; company: CompanyRow | null }) {
   const supabase = createClient()
   const router = useRouter()
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState('')
   const [typed, setTyped] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const [stopBusy, setStopBusy] = useState(false)
+  const [stopError, setStopError] = useState('')
+
+  // A subscription exists if Stripe gave us one. `stripe_customer_id` is NOT the test: a customer
+  // is created the moment somebody opens checkout, even if they abandon it, so it would offer
+  // cancellation to a person who never subscribed.
+  const hasSubscription = Boolean(company?.stripe_subscription_id)
+
+  async function stopPaying() {
+    if (stopBusy) return
+    setStopBusy(true); setStopError('')
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST', headers: await authHeaders() })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.url) {
+        setStopError(json?.error ?? "We couldn't open the billing page just now. Please try again in a moment.")
+        setStopBusy(false)
+        return
+      }
+      window.location.href = json.url
+    } catch {
+      setStopError("We couldn't open the billing page just now. Please try again in a moment.")
+      setStopBusy(false)
+    }
+  }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -753,18 +924,32 @@ function CancelTab({ companyName }: { companyName: string }) {
       <DashboardSection heading={CANCEL_HEADING} />
 
       <div className="rounded-xl border border-gray-200 bg-white">
-        {/* ---- Stop paying. Present, with its sentence, and inert until part C. ---- */}
+        {/* ---- Stop paying — LIVE since step 19, and it opens Stripe's portal. ----
+            *** STRIPE HOSTS CANCELLATION, AND THAT IS A DECISION. *** We could call
+            `subscriptions.update({ cancel_at_period_end: true })` from our own route, and then we
+            would own the confirmation screen, the "are you sure", the wording about what happens
+            at the end of the period, and the reinstate path — all of which Stripe already has,
+            localised and tested, and all of which would be a second place the subscription can be
+            changed. The portal is one door, and the webhook tells us what happened through the
+            mirror. `DECISIONS.md` §216.
+
+            The row is shown only when a subscription EXISTS. Offering "Cancel the subscription" to
+            somebody still in their trial would invent a relationship they do not have, and the
+            button would reach a portal with nothing in it. */}
         <div className={ROW}>
           <p className={KEY}>{STOP_PAYING_LABEL}</p>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] leading-5 text-gray-600">{STOP_PAYING_NOTE}</p>
+            <p className="text-[13px] leading-5 text-gray-600">
+              {hasSubscription ? STOP_PAYING_NOTE : STOP_PAYING_NONE}
+            </p>
+            {stopError && <p className="mt-1 text-[13px] text-[var(--amber)]">{stopError}</p>}
           </div>
-          <div className="shrink-0 text-right">
-            {/* Not a link, because there is nowhere for it to go yet. A control that did nothing
-                would be the page promising a screen that does not exist. */}
-            <p className="text-[13px] text-gray-300">{STOP_PAYING_ACTION}</p>
-            <p className="mt-0.5 text-[12px] text-gray-400">{STOP_PAYING_DISABLED}</p>
-          </div>
+          {hasSubscription && (
+            <button type="button" data-testid="stop-paying" onClick={stopPaying}
+              disabled={stopBusy} className={ACTION}>
+              {stopBusy ? 'Opening…' : STOP_PAYING_ACTION}
+            </button>
+          )}
         </div>
 
         {/* ---- Download everything ---- */}

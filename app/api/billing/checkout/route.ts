@@ -28,7 +28,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-import { getStripe, stripePriceId, appBaseUrl, StripeNotConfigured } from '@/lib/stripe'
+import { getStripe, stripePriceId, appBaseUrl, StripeNotConfigured, checkoutSessionParams } from '@/lib/stripe'
 import { trialEndFor } from '@/lib/billing'
 
 export const runtime = 'nodejs'
@@ -111,24 +111,9 @@ export async function POST(request: NextRequest) {
     )
 
     // ---- 3. THE SESSION. ----
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer: customerId,
-      line_items: [{ price: stripePriceId(), quantity: 1 }],
-      // The owner's coupons, made in Stripe and typed by the customer on Stripe's page.
-      allow_promotion_codes: true,
-      // So a session in the Stripe dashboard can be traced back to a company by eye.
-      client_reference_id: companyId,
-      subscription_data: {
-        metadata: { company_id: companyId },
-        // No trial once the trial has ended: charged at once, and access comes back the same
-        // second the webhook writes `active` — there is no daily job to wait for.
-        ...(trial.trialEnd === null ? {} : { trial_end: trial.trialEnd }),
-      },
-      // Both doors lead back to the Billing tab, which is where the person started.
-      success_url: `${baseUrl}/account?tab=billing&card=added`,
-      cancel_url: `${baseUrl}/account?tab=billing`,
-    })
+    const session = await stripe.checkout.sessions.create(
+      checkoutSessionParams({
+        customerId, priceId: stripePriceId(), companyId, trialEnd: trial.trialEnd, baseUrl }))
 
     if (!session.url) {
       // Stripe returned a session with nowhere to send the person. Say so plainly rather than

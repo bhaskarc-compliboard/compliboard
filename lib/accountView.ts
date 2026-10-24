@@ -346,8 +346,23 @@ export const STOP_PAYING_NOTE =
   'Cancels the subscription at the end of the month you have paid for. Your company stays, ' +
   'read-only, and you can come back any time.'
 export const STOP_PAYING_ACTION = 'Cancel the subscription'
-/** Part C fills it. Until then the row says what is true rather than offering a dead control. */
-export const STOP_PAYING_DISABLED = 'Available once billing is set up'
+
+/**
+ * *** `STOP_PAYING_DISABLED` IS RETIRED — My Account step 19, 23 October 2026. ***
+ *
+ * It read 'Available once billing is set up', and that was true for exactly as long as the control
+ * was inert. The row is live now: it opens Stripe's billing portal, which is where a subscription
+ * is cancelled. **The line is deleted rather than emptied**, so nothing can render a stale
+ * reassurance, and `tests/unit/accountView.test.ts` asserts the symbol is gone.
+ *
+ * ---- AND THE ROW IS NOT SHOWN AT ALL WITHOUT A SUBSCRIPTION ----
+ * A company still in its trial has nothing to stop paying. Offering "Cancel the subscription" to
+ * somebody who has never paid is the page inventing a relationship that does not exist — and
+ * pressing it would reach a portal with nothing in it. `STOP_PAYING_NOTE` describes what the
+ * cancellation does; this one describes when the row exists at all.
+ */
+export const STOP_PAYING_NONE =
+  'You have no subscription yet, so there is nothing to stop. Your trial runs on its own.'
 
 export const DOWNLOAD_LABEL = 'Download everything'
 export const DOWNLOAD_ACTION = 'Download my data'

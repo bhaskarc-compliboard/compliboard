@@ -27,7 +27,7 @@ import {
   PASSWORD_LABEL, PASSWORD_MASK, PASSWORD_LAST_CHANGED,
   passwordResetNote, SEND_RESET_LINK, RESET_SENT,
   PASSWORD_MIN, PASSWORD_HINT, NOT_A_RECOVERY,
-  CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_DISABLED,
+  CANCEL_HEADING, STOP_PAYING_LABEL, STOP_PAYING_NOTE, STOP_PAYING_ACTION, STOP_PAYING_NONE,
   DOWNLOAD_LABEL, DOWNLOAD_ACTION, DOWNLOAD_NOTE,
   DELETE_TITLE, deleteWarning, TYPE_TO_CONFIRM, DELETE_ACTION, deleteConfirm,
   addressLine, countyLine, siteSubLine, sitePlaceLine, siteDrawerSub, addedLine,
@@ -419,10 +419,19 @@ describe('board 5\'s words are the board\'s', () => {
   test('two different things, kept apart (decision 13)', () => {
     assert.ok(STOP_PAYING_NOTE.includes('company stays'))
     assert.ok(deleteWarning('X').includes('cannot be undone'))
-    // The subscription row is inert until part C and says so rather than offering a dead control.
-    assert.equal(STOP_PAYING_DISABLED, 'Available once billing is set up')
+    // *** THIS ASSERTED `STOP_PAYING_DISABLED === 'Available once billing is set up'` AND THAT
+    // LINE IS NOW GONE — My Account step 19. *** The row is live: it opens Stripe's billing
+    // portal, which is where a subscription is cancelled. The constant was DELETED rather than
+    // emptied, so nothing can render a stale reassurance; what replaces it is the sentence for a
+    // company that has no subscription to stop, and the row is hidden entirely in that case.
+    assert.ok(STOP_PAYING_NONE.includes('no subscription yet'))
+    assert.ok(!STOP_PAYING_NONE.includes('once billing is set up'))
     const page = code(readFileSync('app/account/page.tsx', 'utf8'))
-    assert.ok(!/href=[^>]*stripe/i.test(page), 'nothing links to billing yet')
+    // Still true, and now for a stronger reason: the page never links to Stripe BY URL. It asks
+    // our own route for one and navigates to what comes back, so no Stripe address is ever
+    // written into this codebase and the portal's return_url stays the server's business.
+    assert.ok(!/href=[^>]*stripe/i.test(page), 'the page links to Stripe directly')
+    assert.match(page, /fetch\('\/api\/billing\/portal'/)
   })
 
   test('*** THE DOWNLOAD LINE SAYS WHAT THE EXPORT ACTUALLY PRODUCES ***', () => {
