@@ -23,7 +23,7 @@ import { tmpdir } from 'node:os'
 const ROOT = process.cwd()
 // `lib/stripe.ts` joined the list at My Account step 17: it reads STRIPE_SECRET_KEY, so it is
 // server-only for exactly the reason `lib/auth.ts` is (CLAUDE.md §3.5).
-const FORBIDDEN_FILES = ['lib/ai.ts', 'lib/summaryReport.ts', 'lib/auth.ts', 'lib/stripe.ts'].map((f) => resolve(ROOT, f))
+const FORBIDDEN_FILES = ['lib/ai.ts', 'lib/summaryReport.ts', 'lib/auth.ts', 'lib/stripe.ts', 'lib/requireAccess.ts'].map((f) => resolve(ROOT, f))
 const FORBIDDEN_PACKAGES = ['@anthropic-ai/sdk']
 
 /** The code without comments, so a comment that names a module is not an import. */

@@ -27,12 +27,17 @@ import { parseDocumentToBlocks } from '@/lib/documentContent'
 import { buildCompanyContext } from '@/lib/companyContext'
 import { draftPrompt } from '@/prompts/document-draft'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 800
 const BUCKET = 'company-documents'
 
 export async function POST(request: NextRequest) {
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { companyId, db } = authed.auth
 
   let body: { document_id?: string; gap_id?: string }

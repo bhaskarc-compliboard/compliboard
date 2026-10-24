@@ -54,6 +54,7 @@ import { checkConversion, checkAddedLinks, itemColumns, type ItemGroup } from '@
 import { stripMarkers } from '@/lib/howTo'
 import { claimTopic, releaseTopic, withinClaimTime, CLAIM_WORDS } from '@/lib/topicClaim'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 800
 
 type Scope = 'discussed' | 'complete'
@@ -82,6 +83,10 @@ function sameUrl(a: string, b: string): boolean {
 export async function POST(request: NextRequest) {
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { companyId, db } = authed.auth
 
   let body: { topicId?: string; scope?: string }

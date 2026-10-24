@@ -32,6 +32,8 @@ import {
 } from '@/lib/calendarView'
 import type { Offer } from '@/lib/ask/offers'
 
+import type { Banner } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 /** The composer's hint, board 2. */
 export const COMPOSER_HINT = 'Ask about a date, or what is due…'
 /** The line under the action row, HR's, word for word — one topic per conversation. */
@@ -54,7 +56,7 @@ export interface Exchange {
   added?: Record<number, { id: string | null; already: boolean; failed?: boolean }>
 }
 
-export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, onChanged, onSummarise, summaryBusy }: {
+export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, onChanged, onSummarise, summaryBusy, paused }: {
   /** The live dates, so an offer already on the calendar says so instead of offering again. */
   rows: CalendarRow[]
   companyName: string | null
@@ -66,6 +68,8 @@ export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, on
   onChanged: () => Promise<void> | void
   onSummarise: (topicId: string) => void
   summaryBusy: boolean
+  /** Step 18, decision 11. A PROP, not a read of its own — the page already has the verdict. */
+  paused: Banner | null
 }) {
   const [exchanges, setExchanges] = useState<Exchange[]>(initial)
   const [box, setBox] = useState('')
@@ -193,7 +197,7 @@ export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, on
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5" /></svg>
             </button>
           ) : (
-            <button onClick={() => ask(box)} title="Send" aria-label="Send" disabled={!box.trim()}
+            <button onClick={() => ask(box)} title="Send" aria-label="Send" disabled={!box.trim() || Boolean(paused)}
               className="rounded-lg bg-[var(--green)] p-2 text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
@@ -220,7 +224,7 @@ export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, on
         </p>
         <div className="flex shrink-0 flex-wrap items-center gap-5">
           {docked && topicId && answered && (<>
-            <button onClick={() => onSummarise(topicId)} disabled={busy || summaryBusy}
+            <button onClick={() => onSummarise(topicId)} disabled={busy || summaryBusy || Boolean(paused)}
               className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
               {summaryBusy ? 'Writing the summary…' : 'Summarise this conversation'}
             </button>
@@ -230,12 +234,13 @@ export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, on
             </button>
           </>)}
           {!docked && (
-            <button className={PRIMARY} onClick={() => ask(box)} disabled={busy || !box.trim()}>
+            <button className={PRIMARY} onClick={() => ask(box)} disabled={busy || Boolean(paused) || !box.trim()}>
               {busy ? 'Asking…' : 'Ask'}
             </button>
           )}
         </div>
       </div>
+      <PausedNote banner={paused} />
       {docked && <p className="mt-2 text-[12px] text-gray-500">{ONE_TOPIC_LINE}</p>}
     </div>
   )

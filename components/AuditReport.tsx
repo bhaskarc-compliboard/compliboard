@@ -22,6 +22,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Drawer, printDrawer } from '@/components/Drawer'
 import { authHeaders } from '@/lib/supabase'
 
+import type { Banner } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 interface DocRef { title: string; file_name: string; kind?: string | null; display_status?: string | null }
 
 /** Documents' own words for a status, so the audit does not invent a second vocabulary for them. */
@@ -332,8 +334,10 @@ function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: str
   )
 }
 
-export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName, topLine }: {
+export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName, topLine, paused = null }: {
   runId: string; focusWord?: string | null; onClose: () => void; onChanged: () => void
+  /** Step 18, decision 11 — a prop from the page, which already holds the verdict. */
+  paused?: Banner | null
   /** On paper, top left of every page (board 10). The page reads it; this component has no session. */
   companyName?: string | null
   /**
@@ -668,7 +672,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
 
   const footer = (
     <>
-      <button disabled={busy} onClick={auditAgain}
+      <button disabled={busy || Boolean(paused)} onClick={auditAgain}
         className="rounded-md border border-[var(--green)] px-3 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-green-50 disabled:opacity-50">
         {busy ? 'Working…' : 'Audit again'}
       </button>
@@ -770,7 +774,9 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             {run.section_count === 1 ? '' : 's'} done{run.estimate ? ` · ${run.estimate}` : ''}
           </p>
         )}
-        {notice && <p className="no-print mt-2 text-[13px] text-gray-700">{notice}</p>}
+        <PausedNote banner={paused} />
+        <PausedNote banner={paused} />
+      {notice && <p className="no-print mt-2 text-[13px] text-gray-700">{notice}</p>}
 
         <p className="mt-3 font-serif text-[15px] leading-relaxed text-gray-800">
           Every line below is a line of your checklist, answered against the documents you have given
@@ -792,7 +798,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
               {sec.status === 'could_not_complete' ? (
                 <div>
                   <p className="text-[13px] text-gray-600">{sec.could_not_complete_reason}</p>
-                  <button disabled={busy} onClick={() => retry(sec.id, sec.title)}
+                  <button disabled={busy || Boolean(paused)} onClick={() => retry(sec.id, sec.title)}
                     className="no-print mt-1 text-[13px] text-[var(--green)] underline disabled:text-gray-300">
                     Run this section again
                   </button>
@@ -1161,7 +1167,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             <div key={s.id} className="border-b border-gray-100 py-2 last:border-b-0">
               <p className="text-[14px] text-gray-900">{s.title}</p>
               <p className="mt-0.5 text-[13px] text-gray-600">{s.could_not_complete_reason}</p>
-              <button disabled={busy} onClick={() => retry(s.id, s.title)}
+              <button disabled={busy || Boolean(paused)} onClick={() => retry(s.id, s.title)}
                 className="no-print mt-1 text-[13px] text-[var(--green)] underline disabled:text-gray-300">
                 Run this section again
               </button>

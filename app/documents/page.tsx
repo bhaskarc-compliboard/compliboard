@@ -46,6 +46,8 @@ import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import DocumentReport from '@/components/DocumentReport'
 import { LIVE_SCAN_MAX } from '@/lib/documentBatch'
 
+import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 interface IndexRow {
   document_id: string
   title: string
@@ -224,6 +226,10 @@ function DocumentsPageContent() {
   // the drawer at 720 (`DESIGN.md` §4), over the page rather than inside the list.
   const [openDoc, setOpenDoc] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
+  // Step 18: four more columns on a read this page already made. `paused` is null when access is
+  // full, so a paying company's screen is exactly what it was.
+  const [billing, setBilling] = useState<BillingRow | null>(null)
+  const paused = pausedFromRow(billing)
   /** Set when "Add a newer version" opened the picker, so the next upload links to this one. */
   const [versionOf, setVersionOf] = useState<string | null>(null)
   const [showAll, setShowAll] = useState<Set<string>>(new Set())
@@ -288,8 +294,12 @@ function DocumentsPageContent() {
       if (!user) return
       const { data: p } = await supabase.from('profiles').select('company_id').eq('id', user.id).single()
       if (!p?.company_id) return
-      const { data: c } = await supabase.from('companies').select('name').eq('id', p.company_id).single()
+      const { data: c } = await supabase
+        .from('companies')
+        .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+        .eq('id', p.company_id).single()
       setCompanyName(c?.name ?? null)
+      setBilling(c)
     })()
   }, [])   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -361,6 +371,19 @@ function DocumentsPageContent() {
         const { id } = await dbRes.json()
         if (id) ids.push(id)
         await load()
+      }
+
+      // *** DECISION 11: THE FILES ARE STORED, AND ONLY THE READING PAUSES. ***
+      // Uploading writes no model call, and the owner's rule for step 18 is that no non-model
+      // write is gated — a read-only company must still be able to put its records somewhere
+      // safe. The rows stay `uploaded`, which this page already draws as **Queued**, and the
+      // sweep reads them the day a card is added. Said out loud here rather than letting the
+      // scan below come back 402 and look like nothing happened (§5.1: never a silent failure).
+      if (paused) {
+        setProgress(`${files.length} file${files.length === 1 ? '' : 's'} uploaded and saved — `
+          + 'queued to be read. Add a card to start reading them.')
+        await load()
+        return
       }
 
       if (!live) {
@@ -838,6 +861,10 @@ function DocumentsPageContent() {
           </div>
         </div>
 
+        {/* The upload buttons above are deliberately NOT disabled: storing a file calls no model,
+            and decision 11 pauses spending, not the product. The note says what will happen. */}
+        <PausedNote banner={paused} />
+
         {error && <p className="mt-4 text-[13px] text-[var(--amber)]">{error}</p>}
 
         {loading ? (
@@ -960,6 +987,7 @@ function DocumentsPageContent() {
         <>
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setOpenDoc(null)} />
           <DocumentReport
+            paused={paused}
             documentId={openDoc}
             companyName={companyName}
             onClose={() => setOpenDoc(null)}

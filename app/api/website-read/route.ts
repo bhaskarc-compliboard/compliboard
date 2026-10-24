@@ -30,6 +30,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { askAI, extractJsonText } from '@/lib/ai'
 import { readSite } from '@/lib/websiteFetch'
+import { requireAccess } from '@/lib/requireAccess'
 import {
   WEBSITE_SYSTEM, websitePrompt, WEBSITE_JSON_SCHEMA, parseProposal,
 } from '@/prompts/website-read'
@@ -77,6 +78,10 @@ async function newestRead(db: { from: (t: string) => any }, companyId: string): 
 export async function POST(request: NextRequest) {
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { companyId, db } = authed.auth
 
   try {

@@ -30,6 +30,7 @@ import { askAIOpenStream, modelForTask, type OpenMessage, type OpenStreamEvent }
 import { buildCompanyContext } from './companyContext.ts'
 import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
 import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
+import { loadBilling, splitByAccess, logSkips, type Skipped } from './accessGate.ts'
 import { lazyJobRun } from './jobRun.ts'
 import { notifyCheck } from './handbookCheckNotify.ts'
 import { hrAnswerPrompt, hrAnswerMessage } from '../prompts/hr-answer.ts'
@@ -424,6 +425,8 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
   const c: SweepCounts = { companies: 0, pieces: 0, rows_done: 0, retried: 0, failed: 0, cancelled: 0, gone: 0,
     recovered: { putBack: 0, failed: 0, released: 0 }, checks_finished: 0, notified: 0, sent: [], stopped_for_time: false, wall_ms: 0 }
   const visited = new Set<string>()
+  // One line per company per run (`lib/accessGate.ts` `logSkips`), written at the end.
+  const readOnly: Array<Skipped<{ company_id: string }>> = []
   try {
     c.recovered = await recoverStuck(admin, clock())
     if (c.recovered.putBack || c.recovered.failed || c.recovered.released) await run.open()
@@ -433,8 +436,22 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
       if (opts.maxPieces != null && c.pieces >= opts.maxPieces) break
       const { data: open } = await admin.from('handbook_checks').select('id, company_id, created_at')
         .in('status', ['queued', 'checking']).order('created_at', { ascending: true }).limit(50)
+
+      // ---- DECISION 11: A READ-ONLY COMPANY'S CHECK IS LEFT QUEUED. ----
+      // `handbook_check_sections` stay `status = 'queued'` with `claimed_at` null and the parent
+      // `handbook_checks` row stays `queued`/`checking` — nothing is failed, nothing is deleted,
+      // and `recoverStuck` ignores an unclaimed row so it is never "recovered" either. The
+      // declined company goes into the SAME `visited` set the sweep already keeps, which is what
+      // stops this loop looking at it again and is why there is no stall to fix here.
+      const openRows = (open ?? []) as Array<{ id: string; company_id: string }>
+      const billing = await loadBilling(admin, openRows.map((r) => r.company_id))
+      const split = splitByAccess(openRows, billing, new Date(clock()))
+      for (const sk of split.skipped) {
+        if (!visited.has(sk.companyId)) { visited.add(sk.companyId); readOnly.push(sk) }
+      }
+
       let companyId: string | null = null
-      for (const ck of (open ?? []) as Array<{ id: string; company_id: string }>) {
+      for (const ck of split.allowed) {
         if (visited.has(ck.company_id)) continue
         const { data: q } = await admin.from('handbook_check_sections').select('id')
           .eq('check_id', ck.id).eq('status', 'queued').is('claimed_at', null).limit(1)
@@ -515,6 +532,7 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
   } catch (e) {
     errors.push({ piece: '(run)', error: e instanceof Error ? e.message : String(e) })
   }
+  logSkips('jobs/handbook-checks', readOnly, 'handbook check')
   c.wall_ms = clock() - startedAt
   await run.finish(c as unknown as Record<string, unknown>, errors)
   return { ...c, run: run.id, errors }

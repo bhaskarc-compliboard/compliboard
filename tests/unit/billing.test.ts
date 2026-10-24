@@ -13,6 +13,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   accessFor, trialEndFor, TRIAL_DAYS, GRACE_DAYS, STRIPE_TRIAL_END_FLOOR_HOURS, KNOWN_STATUSES,
+  graceDaysLeft, bannerFor, bannerFromRow, pausedFromRow,
   type BillingColumns,
 } from '../../lib/billing.ts'
 
@@ -239,5 +240,137 @@ describe('the number 14 lives in two places, and this is what stops them driftin
     assert.equal(GRACE_DAYS, 7)                       // ACCOUNT-PLAN decision 11
     assert.equal(STRIPE_TRIAL_END_FLOOR_HOURS, 48)    // Stripe's floor, not ours
     assert.equal(KNOWN_STATUSES.length, 8)            // Stripe's vocabulary as of 23 Oct 2026
+  })
+})
+
+/* =================================================================================================
+ * THE BANNER — My Account step 18, board 8, `ACCOUNT-PLAN.md` decision 11.
+ * ============================================================================================== */
+
+describe('graceDaysLeft — honest arithmetic, including the awkward numbers', () => {
+  const failed = '2026-10-16T12:00:00Z'   // GRACE_DAYS = 7, so the grace ends 2026-10-23T12:00
+  const at = (iso: string) => graceDaysLeft(failed, new Date(iso))
+
+  test('7 on the day it failed', () => { assert.equal(at('2026-10-16T12:00:00Z'), 7) })
+  test('1 on the last full day', () => { assert.equal(at('2026-10-22T12:00:00Z'), 1) })
+  test('0 at the exact moment the grace ends', () => { assert.equal(at('2026-10-23T12:00:00Z'), 0) })
+  test('negative after it, which is what makes the clamp in bannerFor visible', () => {
+    assert.equal(at('2026-10-25T12:00:00Z'), -2)
+  })
+  test('it rounds UP, so a part-day still counts as a day somebody has', () => {
+    assert.equal(at('2026-10-22T23:59:00Z'), 1)
+  })
+})
+
+describe('bannerFor — four texts, and nothing when nothing is wrong', () => {
+  const now = new Date('2026-10-23T12:00:00Z')
+  const past = '2026-10-01T00:00:00Z'
+  const future = '2026-11-30T00:00:00Z'
+  const opts = (p: string | null = null, cust = false) =>
+    ({ paymentFailedAt: p, hasStripeCustomer: cust, now })
+
+  test('1. the trial ended and no card was added — board 8\'s words, exactly', () => {
+    const b = bannerFor(accessFor({ trial_ends_at: past, subscription_status: null, payment_failed_at: null }, now), opts())
+    assert.equal(b?.kind, 'trial_over')
+    assert.equal(b?.text, 'Your trial has ended. Everything is still here to read and download. '
+      + 'Add a card to keep asking, reading documents and auditing.')
+    assert.equal(b?.button, 'Add a card')
+  })
+
+  test('2. the card failed and the grace is running — WITH N, AND ACCESS IS STILL FULL', () => {
+    const threeDaysAgo = '2026-10-20T12:00:00Z'
+    const verdict = accessFor({ trial_ends_at: past, subscription_status: 'past_due', payment_failed_at: threeDaysAgo }, now)
+    assert.equal(verdict.access, 'full', 'the grace must not take access away')
+    const b = bannerFor(verdict, opts(threeDaysAgo))
+    assert.equal(b?.kind, 'in_grace')
+    assert.equal(b?.text, "We couldn't charge your card. We'll try again for 4 more days "
+      + '— update it to keep everything running.')
+    assert.equal(b?.button, 'Update your card')
+  })
+
+  test('…and on the last day it says "1 more day", not "1 more days"', () => {
+    const sixDaysAgo = '2026-10-17T12:00:00Z'
+    const b = bannerFor(accessFor({ trial_ends_at: past, subscription_status: 'past_due', payment_failed_at: sixDaysAgo }, now), opts(sixDaysAgo))
+    assert.match(b!.text, /for 1 more day —/)
+  })
+
+  test('…and at N = 0 it is CLAMPED to 1, because "0 more days" is not a sentence', () => {
+    const exactly7 = '2026-10-16T12:00:00Z'   // graceDaysLeft is 0 at this instant
+    assert.equal(graceDaysLeft(exactly7, now), 0)
+    const verdict = accessFor({ trial_ends_at: past, subscription_status: 'past_due', payment_failed_at: exactly7 }, now)
+    assert.equal(verdict.reason, 'payment_failed_in_grace', 'the boundary is inclusive')
+    assert.match(bannerFor(verdict, opts(exactly7))!.text, /for 1 more day —/)
+  })
+
+  test('3. the grace ran out', () => {
+    const tenDaysAgo = '2026-10-13T12:00:00Z'
+    const b = bannerFor(accessFor({ trial_ends_at: past, subscription_status: 'past_due', payment_failed_at: tenDaysAgo }, now), opts(tenDaysAgo))
+    assert.equal(b?.kind, 'grace_over')
+    assert.match(b!.text, /the 7 days are up/)
+    assert.match(b!.text, /still here to read and download/)
+    assert.equal(b?.button, 'Update your card')
+  })
+
+  test('4. not paying, and a status we do not know, share one text', () => {
+    for (const status of ['canceled', 'unpaid', 'paused', 'incomplete', 'incomplete_expired', 'teleported']) {
+      const b = bannerFor(accessFor({ trial_ends_at: past, subscription_status: status, payment_failed_at: null }, now), opts())
+      assert.equal(b?.kind, 'not_active', status)
+      assert.match(b!.text, /Your subscription isn't active\./)
+    }
+  })
+
+  test('nothing at all while the trial is running, or while subscribed', () => {
+    assert.equal(bannerFor(accessFor({ trial_ends_at: future, subscription_status: null, payment_failed_at: null }, now), opts()), null)
+    assert.equal(bannerFor(accessFor({ trial_ends_at: past, subscription_status: 'active', payment_failed_at: null }, now), opts()), null)
+  })
+
+  test('…and nothing for `payment_failed_retrying`, which is the one deliberate gap', () => {
+    // `past_due` with no anchor. There is no N to quote, and `accessFor` reasons it is our mirror
+    // having dropped an event rather than their card having failed. The banner arrives when the
+    // next `invoice.payment_failed` writes the anchor. Asserted so the gap is a decision on the
+    // record rather than an omission somebody finds later.
+    const v = accessFor({ trial_ends_at: past, subscription_status: 'past_due', payment_failed_at: null }, now)
+    assert.equal(v.reason, 'payment_failed_retrying')
+    assert.equal(v.access, 'full')
+    assert.equal(bannerFor(v, opts()), null)
+  })
+
+  test('*** THE BUTTON GOES TO THE PORTAL WHEN STRIPE ALREADY KNOWS THEM. ***', () => {
+    // A card is ADDED at checkout and CHANGED in the portal. Sending somebody with a dead card
+    // to checkout would make them a second Stripe customer.
+    const v = accessFor({ trial_ends_at: past, subscription_status: 'canceled', payment_failed_at: null }, now)
+    assert.equal(bannerFor(v, opts(null, false))?.action, 'checkout')
+    assert.equal(bannerFor(v, opts(null, true))?.action, 'portal')
+  })
+})
+
+describe('bannerFromRow / pausedFromRow — the one difference between them', () => {
+  const now = new Date('2026-10-23T12:00:00Z')
+  const past = '2026-10-01T00:00:00Z'
+  const inGrace = { trial_ends_at: past, subscription_status: 'past_due', payment_failed_at: '2026-10-20T12:00:00Z' }
+
+  test('*** THE BAND SHOWS IN THE GRACE; THE CONTROLS DO NOT PAUSE. ***', () => {
+    // This is the whole reason there are two functions. A banner drawn only on `read_only` would
+    // first appear on day 8 — telling somebody about a window that has already shut. And buttons
+    // disabled during the grace would take away the seven days the banner is promising.
+    assert.equal(bannerFromRow(inGrace, now)?.kind, 'in_grace', 'the layout would show nothing')
+    assert.equal(pausedFromRow(inGrace, now), null, 'the controls were disabled inside the grace')
+  })
+
+  test('once read-only, both say the same thing', () => {
+    const lapsed = { trial_ends_at: past, subscription_status: null, payment_failed_at: null }
+    assert.equal(bannerFromRow(lapsed, now)?.kind, 'trial_over')
+    assert.equal(pausedFromRow(lapsed, now)?.kind, 'trial_over')
+  })
+
+  test('both are null for a paying company, so a paying screen is what it was', () => {
+    const paying = { trial_ends_at: past, subscription_status: 'active', payment_failed_at: null }
+    assert.equal(bannerFromRow(paying, now), null)
+    assert.equal(pausedFromRow(paying, now), null)
+  })
+
+  test('both are null before the row has loaded — no flash of a banner on every page load', () => {
+    assert.equal(bannerFromRow(null, now), null)
+    assert.equal(pausedFromRow(null, now), null)
   })
 })

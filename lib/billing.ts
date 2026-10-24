@@ -228,3 +228,154 @@ export function trialEndFor(trialEndsAt: string | Date, now: Date): TrialEndDeci
   if (ends <= floor) return { trialEnd: Math.ceil(floor / 1000), case: 'floor_applied' }
   return { trialEnd: Math.ceil(ends / 1000), case: 'trial_running' }
 }
+
+/* ===================================================================================================
+ * WHAT THE PERSON IS TOLD — My Account step 18, `ACCOUNT-PLAN.md` decision 11.
+ *
+ * These are here, in the one file with NO IMPORTS, because the browser needs them. `AppLayout` and
+ * every section page compute the verdict client-side from four columns they already read, so the
+ * banner and the note beside a control can be drawn without a round trip. Nothing below touches
+ * Stripe, the database or `next/server`.
+ * ================================================================================================= */
+
+/**
+ * HOW MANY WHOLE DAYS OF DECISION 11'S GRACE ARE LEFT.
+ *
+ * Raw arithmetic, so a test can pin it: it may return 0, and it may go negative once the grace is
+ * over. `bannerFor` is what clamps it for display — see the note there, because "0 more days" is not
+ * a sentence we show anyone.
+ */
+export function graceDaysLeft(paymentFailedAt: string | Date, now: Date): number {
+  const ends = asDate(paymentFailedAt).getTime() + GRACE_DAYS * DAY_MS
+  return Math.ceil((ends - now.getTime()) / DAY_MS)
+}
+
+/** Which door the banner's one button goes to. A card is CHANGED in the portal and ADDED at
+ *  checkout, and a company that already has a Stripe customer belongs in the portal. */
+export type BannerAction = 'checkout' | 'portal'
+
+export type Banner = {
+  text: string
+  /** The button's words. */
+  button: string
+  action: BannerAction
+  /** Which of the four texts this is, so a test names a case rather than matching a sentence. */
+  kind: 'trial_over' | 'in_grace' | 'grace_over' | 'not_active'
+}
+
+/**
+ * THE BAND ABOVE THE TOP BAR, OR NOTHING.
+ *
+ * *** READ THE SECOND CASE CAREFULLY: IT RENDERS WHILE ACCESS IS STILL `full`. ***
+ * `payment_failed_in_grace` is decision 11's seven days, and during them `accessFor` returns
+ * `full` — correctly, that is what the grace IS. So a banner drawn only on `read_only` would first
+ * appear on day 8, telling somebody about a window that has already shut. The whole point of the
+ * grace is that they are told inside it. `AppLayout` therefore renders on
+ * `access === 'read_only' || reason === 'payment_failed_in_grace'`.
+ *
+ * `payment_failed_retrying` deliberately gets NO banner, and it is the one gap here. It means
+ * `past_due` with no `payment_failed_at` — which `accessFor` reasons is our mirror having dropped
+ * an event rather than their card having failed, and it is bounded by Stripe's own retries. There
+ * is no anchor, so there is no N: any sentence would either invent a number or alarm somebody
+ * without giving them a date. When the next `invoice.payment_failed` arrives the anchor is written
+ * and the grace banner appears then.
+ */
+export function bannerFor(
+  verdict: BillingVerdict,
+  opts: { paymentFailedAt: string | Date | null; hasStripeCustomer: boolean; now: Date },
+): Banner | null {
+  const update = {
+    button: 'Update your card',
+    action: (opts.hasStripeCustomer ? 'portal' : 'checkout') as BannerAction,
+  }
+  const add = {
+    button: 'Add a card',
+    action: (opts.hasStripeCustomer ? 'portal' : 'checkout') as BannerAction,
+  }
+
+  switch (verdict.reason) {
+    // ---- 1. The ordinary end of a free trial. Board 8's words, unchanged. ----
+    case 'trial_over_no_subscription':
+      return {
+        ...add,
+        kind: 'trial_over',
+        text: 'Your trial has ended. Everything is still here to read and download. '
+            + 'Add a card to keep asking, reading documents and auditing.',
+      }
+
+    // ---- 2. Inside the grace. ACCESS IS STILL FULL — nothing has stopped working yet. ----
+    case 'payment_failed_in_grace': {
+      // The clamp. `graceDaysLeft` is honest arithmetic and reaches 0 on the last day; "0 more
+      // days" is not something to say to a person, and "1 more day" is both true and plain, so the
+      // floor is 1 for display only. The singular is handled rather than printing "1 more days".
+      const raw = opts.paymentFailedAt === null ? GRACE_DAYS : graceDaysLeft(opts.paymentFailedAt, opts.now)
+      const n = Math.max(1, raw)
+      return {
+        ...update,
+        kind: 'in_grace',
+        text: `We couldn't charge your card. We'll try again for ${n} more ${n === 1 ? 'day' : 'days'} `
+            + '— update it to keep everything running.',
+      }
+    }
+
+    // ---- 3. The seven days ran out. ----
+    case 'payment_failed_grace_over':
+      return {
+        ...update,
+        kind: 'grace_over',
+        text: `We couldn't charge your card and the ${GRACE_DAYS} days are up. Everything is still `
+            + 'here to read and download. Update your card to keep asking, reading documents and auditing.',
+      }
+
+    // ---- 4. Stripe's word says we are not being paid, including a word we do not know. ----
+    // One text for both, because the difference between `canceled` and a status invented next year
+    // is ours to act on and not theirs to read. The word itself goes in the 402 and the log.
+    case 'not_paying':
+    case 'status_not_recognised':
+      return {
+        ...add,
+        kind: 'not_active',
+        text: "Your subscription isn't active. Everything is still here to read and download. "
+            + 'Add a card to keep asking, reading documents and auditing.',
+      }
+
+    // `trial`, `subscribed`, `payment_failed_retrying` — nothing is wrong, or nothing we can date.
+    default:
+      return null
+  }
+}
+
+/** The shape every screen already reads, once its `select('name')` is widened. */
+export type BillingRow = {
+  trial_ends_at: string | Date
+  subscription_status: string | null
+  payment_failed_at: string | Date | null
+  stripe_customer_id?: string | null
+}
+
+/**
+ * THE BAND FOR `AppLayout` — read-only, OR inside the grace (where access is still full).
+ * One function so the layout and the six pages cannot drift on the condition.
+ */
+export function bannerFromRow(row: BillingRow | null, now: Date = new Date()): Banner | null {
+  if (!row) return null
+  const verdict = accessFor(row, now)
+  if (verdict.access !== 'read_only' && verdict.reason !== 'payment_failed_in_grace') return null
+  return bannerFor(verdict, {
+    paymentFailedAt: row.payment_failed_at,
+    hasStripeCustomer: Boolean(row.stripe_customer_id),
+    now,
+  })
+}
+
+/**
+ * THE NOTE BESIDE A CONTROL — `read_only` ONLY, which is the difference from `bannerFromRow`.
+ *
+ * During the grace the banner appears and **the buttons still work**, because access is still
+ * full. Disabling them then would take away seven days the product just promised in writing.
+ */
+export function pausedFromRow(row: BillingRow | null, now: Date = new Date()): Banner | null {
+  if (!row) return null
+  if (accessFor(row, now).access !== 'read_only') return null
+  return bannerFromRow(row, now)
+}

@@ -19,6 +19,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { supabaseAdmin } from '@/lib/auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { loadBilling, splitByAccess, logSkips, type Skipped } from '@/lib/accessGate'
 import { requireCronSecret } from '@/lib/jobAuth'
 // A ROW ONLY WHEN THERE WAS WORK OR AN ERROR — not one every five minutes saying nothing (`lib/jobRun.ts`).
 import { lazyJobRun } from '@/lib/jobRun'
@@ -58,10 +60,14 @@ export async function POST(request: NextRequest) {
  * Exported and callable with no request, so a route can kick it with `after()` and a test can call
  * it directly — the same reason the document sweep exports its own.
  */
-export async function sweep() {
+export async function sweep(admin: SupabaseClient = supabaseAdmin) {
   const startedAt = Date.now()
+  // Every company this run declined to work for, accumulated so the log is ONE LINE PER COMPANY
+  // PER RUN rather than one per section (`lib/accessGate.ts` `logSkips`).
+  const readOnly: Array<Skipped<{ company_id: string }>> = []
+  const declined = new Set<string>()
   // Opened when the sweep finds work, before that work; an empty sweep writes no row (`lib/jobRun.ts`).
-  const run = lazyJobRun(supabaseAdmin, 'audit_sections')
+  const run = lazyJobRun(admin, 'audit_sections')
   const errors: Array<{ section: string; error: string }> = []
   let recovered = 0, done = 0, couldNotComplete = 0, companies = 0, runsFinished = 0, notified = 0
   // WHAT WENT OUT, ON THE RUN'S OWN ROW — the document sweep's reasoning: the provider's id is the
@@ -72,13 +78,13 @@ export async function sweep() {
   try {
     // ---- recover anything abandoned, before anything else ----
     const stuckBefore = new Date(Date.now() - STUCK_AFTER_MS).toISOString()
-    const { data: stuck } = await supabaseAdmin.from('audit_sections')
+    const { data: stuck } = await admin.from('audit_sections')
       .select('id').eq('status', 'running').lt('claimed_at', stuckBefore)
     if (stuck?.length) await run.open()
     for (const s of (stuck ?? []) as Array<{ id: string }>) {
       // Guarded on the claim still being old, so a run that picked it up between the SELECT and
       // the UPDATE is not robbed of it (§4).
-      const { data: back } = await supabaseAdmin.from('audit_sections')
+      const { data: back } = await admin.from('audit_sections')
         .update({ status: 'queued', claimed_at: null })
         .eq('id', s.id).eq('status', 'running').lt('claimed_at', stuckBefore).select('id')
       if (back?.length) recovered++
@@ -91,12 +97,26 @@ export async function sweep() {
       // audit started at nine finishes before one started at ten. Ordered by the RUN's creation,
       // not the section's, because sections of one run are written in one statement and share a
       // timestamp — ordering on that would be arbitrary within a run.
-      const { data: nextRuns } = await supabaseAdmin.from('audit_runs')
+      let q0 = admin.from('audit_runs')
         .select('id, company_id, created_at').in('status', ['queued', 'running'])
         .order('created_at', { ascending: true }).limit(50)
+      // *** AND THE COMPANIES THIS RUN HAS ALREADY DECLINED ARE EXCLUDED FROM THE QUERY. ***
+      // A read-only company's run stays `queued` for ever by design (decision 11 deletes
+      // nothing), so it would sit at the head of "the 50 oldest" on every iteration and the
+      // paying companies behind it would never be reached. Excluding them is what makes each
+      // turn of this loop see something new, and is what makes it terminate.
+      if (declined.size) q0 = q0.not('company_id', 'in', `(${[...declined].join(',')})`)
+      const { data: nextRuns } = await q0
+
+      // DECISION 11: a read-only company's audit is LEFT QUEUED — not failed, not deleted.
+      const rows = (nextRuns ?? []) as Array<{ id: string; company_id: string }>
+      const billing = await loadBilling(admin, rows.map((r) => r.company_id))
+      const split = splitByAccess(rows, billing, new Date())
+      for (const sk of split.skipped) { declined.add(sk.companyId); readOnly.push(sk) }
+
       let companyId: string | null = null
-      for (const r of (nextRuns ?? []) as Array<{ id: string; company_id: string }>) {
-        const { data: q } = await supabaseAdmin.from('audit_sections')
+      for (const r of split.allowed) {
+        const { data: q } = await admin.from('audit_sections')
           .select('id').eq('run_id', r.id).eq('status', 'queued').is('claimed_at', null).limit(1)
         if (q?.length) { companyId = r.company_id; break }
       }
@@ -111,7 +131,7 @@ export async function sweep() {
       // "running" on four rows when one is running and three are waiting — the product describing
       // work that is not happening. `runSection` sets `running` on the one it is actually doing.
       const nowIso = new Date().toISOString()
-      const { data: claimed } = await supabaseAdmin.from('audit_sections')
+      const { data: claimed } = await admin.from('audit_sections')
         .update({ claimed_at: nowIso })
         .eq('company_id', companyId).eq('status', 'queued').is('claimed_at', null)
         .select('id, run_id, ordinal')
@@ -122,7 +142,7 @@ export async function sweep() {
 
       // Run order, then ordinal: an older run's sections before a newer run's, and within a run
       // the order they were created in. The run's own created_at decides, read once.
-      const { data: runRows } = await supabaseAdmin.from('audit_runs')
+      const { data: runRows } = await admin.from('audit_runs')
         .select('id, created_at').in('id', [...new Set(queue.map((s) => s.run_id))])
       const createdAt = new Map((runRows ?? []).map((r: { id: string; created_at: string }) => [r.id, r.created_at]))
       queue.sort((a, b) => (createdAt.get(a.run_id) ?? '').localeCompare(createdAt.get(b.run_id) ?? '')
@@ -138,12 +158,12 @@ export async function sweep() {
             // Hand the claim back so the next run takes it rather than the recovery above waiting
             // out fifteen minutes. The status never moved, so the row has been saying queued all
             // along and goes on saying it.
-            await supabaseAdmin.from('audit_sections').update({ claimed_at: null }).eq('id', sec.id)
+            await admin.from('audit_sections').update({ claimed_at: null }).eq('id', sec.id)
             continue
           }
           touchedRuns.add(sec.run_id)
           try {
-            const r = await runSection(supabaseAdmin, sec.id)
+            const r = await runSection(admin, sec.id)
             if (r.status === 'done') done++
             else { couldNotComplete++; errors.push({ section: sec.id, error: r.reason ?? 'no reason given' }) }
           } catch (e) {
@@ -163,17 +183,17 @@ export async function sweep() {
         // cron delivery, or the `after()` kick from a new audit) may have claimed that company's newer
         // sections; clearing its claim let a third sweep take them too, and two sweeps would pay for
         // the same section. The ids are the ones this run claimed, and nothing else.
-        await supabaseAdmin.from('audit_sections')
+        await admin.from('audit_sections')
           .update({ claimed_at: null })
           .in('id', queue.map((s) => s.id)).eq('status', 'queued').eq('claimed_at', nowIso)
       }
 
       for (const runId of touchedRuns) {
         try {
-          const fin = await finishRunIfDone(supabaseAdmin, runId)
+          const fin = await finishRunIfDone(admin, runId)
           if (!fin.finished) continue
           runsFinished++
-          const r = await notifyRun(supabaseAdmin, runId, fin.summary as RunSummary)
+          const r = await notifyRun(admin, runId, fin.summary as RunSummary)
           if (r.notified) notified++
           if (r.id || r.error) {
             sent.push({ run: runId, to: r.to ?? '', id: r.id ?? null, ...(r.error ? { error: r.error } : {}) })
@@ -187,6 +207,7 @@ export async function sweep() {
     errors.push({ section: '(run)', error: e instanceof Error ? e.message : String(e) })
   }
 
+  logSkips('jobs/audit-sections', readOnly, 'audit')
   const counts = {
     companies, done, could_not_complete: couldNotComplete, recovered,
     runs_finished: runsFinished, notified, sent,

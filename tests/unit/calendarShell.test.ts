@@ -323,9 +323,11 @@ describe('every word on the page is the owner\'s', () => {
     assert.ok(!PAGE.includes('This view arrives with step 10'))
     assert.ok(!PAGE.includes('CONVERSATIONS_ARRIVE'))
     // The Ask button was `disabled` with nothing behind it; now it is disabled only while a
-    // question is in flight or the box is empty.
+    // question is in flight, while the box is empty, or — since My Account step 18 — while this
+    // company is read-only (decision 11). The third condition is a REASON, not a placeholder:
+    // `paused` is null whenever access is full, so a paying company's button is exactly as it was.
     assert.ok(!/<button className=\{PRIMARY\} disabled>Ask<\/button>/.test(PAGE))
-    assert.match(ASK_UI, /disabled=\{busy \|\| !box\.trim\(\)\}/)
+    assert.match(ASK_UI, /disabled=\{busy \|\| Boolean\(paused\) \|\| !box\.trim\(\)\}/)
     const handoff = readFileSync('docs/HANDOFF-CODE.md', 'utf8')
     assert.ok(!handoff.includes('Asking a question arrives with step 10'), '§7 must no longer carry it')
   })

@@ -113,7 +113,32 @@ import { readdirSync, readFileSync } from 'node:fs'
 //     has no top-level `subscription`, the subscription has no top-level `current_period_end`, and
 //     an unexpanded payment method is an id string. Each would have stored nothing, for ever, with
 //     nothing failing.
-const FLOOR = 1803
+// *** 1803 -> 1892 on 23 October 2026, My Account step 18 (the read-only state): 51 in
+// accessGate.test.ts, 18 more in billing.test.ts, 20 in readOnlyUi.test.ts. *** The ones they
+// exist for:
+//   - THE FOUR SWEEPS, RUN FOR REAL, two companies at a time. Three of the four had never been
+//     executed by any test: their sweep reached a module-scope client, and a route file could not
+//     be imported by `node --test` at all. Both are fixed (`sweep(admin = supabaseAdmin)` and
+//     tests/unit/resolveNextServer.mjs), and the assertion is a DEEP-EQUAL on the read-only
+//     company's row before and after — because decision 11 promises nothing is failed, marked or
+//     deleted, and only comparing the state can show that. The first run of these found a real
+//     bug: `audit-sections` still passed `supabaseAdmin` to `runSection`, so the injected client
+//     did not reach the work.
+//   - scan-documents' STALL. Its read-only fixture is deliberately the OLDEST document. With the
+//     old `limit(1)` pick plus a `continue`, that test hangs until BUDGET_MS while every paying
+//     company starves; if it ever hangs again, that is why.
+//   - the grace, which is the case the whole design turns on: `accessFor` returns **full** during
+//     decision 11's seven days, so the banner has to render while access is still full, and the
+//     controls must NOT be disabled. Two functions (`bannerFromRow`, `pausedFromRow`) exist only
+//     to keep those apart, and a test asserts each takes the opposite view of the same row.
+//   - "0 more days" never reaching a person: `graceDaysLeft` is honest arithmetic and hits 0 (and
+//     goes negative), and `bannerFor` clamps to 1 with the singular handled.
+//   - the §9a control on `splitByAccess`: that it can return a NON-EMPTY allowed list. A splitter
+//     which skipped everything would satisfy almost every other assertion in that file.
+//   - DECISION 14, as a snapshot: NAV_ITEMS and SidebarContent are pinned by length AND content
+//     hash. "Nothing else in the layout changed" is the promise step 18 made; this is what makes
+//     breaking it fail the build. Editing the sidebar later is a deliberate edit of two constants.
+const FLOOR = 1892
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
@@ -124,7 +149,11 @@ if (only.length) {
 
 let out = ''
 try {
-  out = execFileSync('node', ['--test', 'tests/unit/*.test.ts'], { encoding: 'utf8' })
+  // `--import` loads tests/unit/resolveNextServer.mjs, which teaches plain Node two things the
+  // bundler already knows: the bare specifier `next/server`, and the `@/` path alias. Without it
+  // no route file can be imported by a test at all — which is why three of the four cron sweeps
+  // had never been executed by one before My Account step 18.
+  out = execFileSync('node', ['--import', './tests/unit/resolveNextServer.mjs', '--test', 'tests/unit/*.test.ts'], { encoding: 'utf8' })
 } catch (e) {
   process.stdout.write((e.stdout ?? '') + (e.stderr ?? ''))
   process.exit(1)

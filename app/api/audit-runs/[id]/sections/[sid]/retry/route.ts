@@ -14,10 +14,15 @@ import { after } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
 
+import { requireAccess } from '@/lib/requireAccess'
 export async function POST(request: NextRequest, ctx: { params: Promise<{ id: string; sid: string }> }) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
+    // Decision 11: after the trial, or after the grace, this company may read and
+    // download everything and spend nothing. 402 with one plain sentence.
+    const paused = await requireAccess(authed.auth)
+    if (paused) return paused
     const { db } = authed.auth
     const { id, sid } = await ctx.params
 

@@ -19,6 +19,7 @@ import { READ_REASONS } from '@/lib/handbooks'
 import { hrAnswerPrompt, hrAnswerMessage } from '@/prompts/hr-answer'
 import { HR_SELECT_PROMPT, hrSelectMessage } from '@/prompts/hr-select'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 800
 
 /** The workspace's own failed line, copied exactly (`app/api/chat/route.ts`, the open research stream). */
@@ -29,6 +30,10 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
+    // Decision 11: after the trial, or after the grace, this company may read and
+    // download everything and spend nothing. 402 with one plain sentence.
+    const paused = await requireAccess(authed.auth)
+    if (paused) return paused
     const { companyId, db } = authed.auth
 
     const body = await request.json().catch(() => ({}))

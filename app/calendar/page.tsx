@@ -79,6 +79,8 @@ import AuditReport from '@/components/AuditReport'
 import { authHeaders } from '@/lib/supabase'
 import { printWithFrame, printDate } from '@/lib/printFrame'
 
+import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 type Tab = 'ask' | 'conversations' | 'calendar' | 'dates'
 
 /** The four tabs, in the owner's order. The key is also the `?tab=` word. */
@@ -173,6 +175,9 @@ function Calendar() {
   const [sites, setSites] = useState<Array<{ id: string; name: string }>>([])
   const [names, setNames] = useState<Record<string, string>>({})
   const [companyName, setCompanyName] = useState<string | null>(null)
+  // Step 18, decision 11 — four more columns on the company read this page already makes.
+  const [billing, setBilling] = useState<BillingRow | null>(null)
+  const paused = pausedFromRow(billing)
   /** Month is the default view, as board 4 is the tab's first board. */
   const [view, setView] = useState<'month' | 'list'>('month')
   /** Board 4's site filter. 'all' is off, and with one site it is never drawn (decision 24). */
@@ -291,8 +296,13 @@ function Calendar() {
     ;(async () => {
       await load()
       if (!live) return
-      const { data: co } = await supabase.from('companies').select('name').limit(1).maybeSingle()
-      if (live) setCompanyName((co as { name?: string } | null)?.name ?? null)
+      const { data: co } = await supabase.from('companies')
+        .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+        .limit(1).maybeSingle()
+      if (live) {
+        setCompanyName((co as { name?: string } | null)?.name ?? null)
+        setBilling((co as BillingRow | null) ?? null)
+      }
     })()
     return () => { live = false }
   }, [supabase, load])
@@ -687,6 +697,7 @@ function Calendar() {
               onChanged={refresh}
               onSummarise={summarise}
               summaryBusy={summaryRunning(askTopicId)}
+              paused={paused}
             />
             {notice && (
               <div className="no-print mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
@@ -904,12 +915,12 @@ function Calendar() {
       */}
       {open && report && !openDocId && (
         report.kind === 'audit' ? (
-          <AuditReport runId={report.id} companyName={companyName}
+          <AuditReport runId={report.id} companyName={companyName} paused={paused}
             onClose={closeDate} onChanged={() => { void refresh() }}
             onOpenDoc={(id) => setOpenDocId(id)}
             topLine={<ReportTabs onBack={() => setReport(null)} second="The audit" />} />
         ) : (
-          <DocumentReport documentId={report.id} companyName={companyName} folders={folders}
+          <DocumentReport documentId={report.id} companyName={companyName} folders={folders} paused={paused}
             onClose={closeDate} onChanged={() => { void refresh() }}
             onMove={async (documentId, folderId) => {
               await fetch('/api/documents', {
@@ -949,10 +960,11 @@ function Calendar() {
                   Open the conversation
                 </button>
               )}
-              <button onClick={() => summarise(convDrawer.id)} disabled={summaryRunning(convDrawer.id)}
+              <button onClick={() => summarise(convDrawer.id)} disabled={summaryRunning(convDrawer.id) || Boolean(paused)}
                 className="ml-3 text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
                 {summaryRunning(convDrawer.id) ? CLAIM_WORDS.summary : 'Summarise this conversation'}
               </button>
+              <PausedNote banner={paused} />
               <button onClick={printDrawer} className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
                 Download
               </button>
@@ -992,7 +1004,7 @@ function Calendar() {
 
       {/* A document opened FROM the audit report — Audits' third level, and the same way back. */}
       {openDocId && (
-        <DocumentReport documentId={openDocId} companyName={companyName} folders={folders}
+        <DocumentReport documentId={openDocId} companyName={companyName} folders={folders} paused={paused}
           onClose={() => setOpenDocId(null)} onChanged={() => { void refresh() }}
           onMove={async (documentId, folderId) => {
             await fetch('/api/documents', {

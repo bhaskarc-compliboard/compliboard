@@ -52,6 +52,8 @@ import { Stages, type Step } from '@/components/Stages'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { markNotFound, readingWords, splitAppended, splitSuggested, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
 
+import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
 /**
@@ -134,6 +136,9 @@ export default function HrWorkspace() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
+  // Step 18, decision 11 — four more columns on the company read this workspace already makes.
+  const [billing, setBilling] = useState<BillingRow | null>(null)
+  const paused = pausedFromRow(billing)
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [allHandbooks, setAllHandbooks] = useState<HandbookRow[]>([])
   const [sites, setSites] = useState<Site[]>([])
@@ -269,11 +274,14 @@ export default function HrWorkspace() {
         // HR's conversations only — topics.section 'hr' (migration 066), the workspace's own read.
         readTopicList(supabase, 'hr'),
         supabase.from('entities').select('id, name').order('name'),
-        co ? supabase.from('companies').select('name').eq('id', co).maybeSingle() : Promise.resolve({ data: null }),
+        co ? supabase.from('companies')
+          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+          .eq('id', co).maybeSingle() : Promise.resolve({ data: null }),
       ])
       if (!live) return
       setCompanyId(co)
       setCompanyName((c.data as { name?: string } | null)?.name ?? null)
+      setBilling((c.data as BillingRow | null) ?? null)
       setTopics(t)
       setSites((s.data ?? []) as Site[])
       await loadHandbooks()
@@ -681,7 +689,7 @@ export default function HrWorkspace() {
                   {x.phase === 'not_answered' && !askedAgain && (
                     <p className="mt-2 text-[14px] text-gray-500">
                       {x.notAnsweredWords ?? NOT_ANSWERED}
-                      <button onClick={() => ask(x.question)} disabled={askBusy}
+                      <button onClick={() => ask(x.question)} disabled={askBusy || Boolean(paused)}
                         className="ml-2 font-medium underline hover:no-underline disabled:text-gray-300">{ASK_IT_AGAIN}</button>
                     </p>
                   )}
@@ -721,7 +729,7 @@ export default function HrWorkspace() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5" /></svg>
                       </button>
                     ) : (
-                      <button onClick={() => ask(box)} title="Send" aria-label="Send" disabled={!box.trim()}
+                      <button onClick={() => ask(box)} title="Send" aria-label="Send" disabled={!box.trim() || Boolean(paused)}
                         className="rounded-lg bg-[var(--green)] p-2 text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                       </button>
@@ -737,7 +745,7 @@ export default function HrWorkspace() {
                     <AttachControl label="Add a handbook" onClick={() => addHandbook('ask')} disabled={saving} />
                   </p>
                   {topicId && exchanges.some((x) => x.phase === 'done') && (<>
-                    <button onClick={() => summarise(topicId)} disabled={askBusy || summaryRunning(topicId)}
+                    <button onClick={() => summarise(topicId)} disabled={askBusy || Boolean(paused) || summaryRunning(topicId)}
                       className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
                       {summaryRunning(topicId) ? CLAIM_WORDS.summary : 'Summarise this conversation'}
                     </button>
@@ -748,6 +756,7 @@ export default function HrWorkspace() {
                   </>)}
                 </div>
                 {askAddLines}
+                <PausedNote banner={paused} />
                 <p className="mt-2 text-[12px] text-gray-500">
                   One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.
                 </p>
@@ -990,7 +999,7 @@ export default function HrWorkspace() {
             <>
               {/* The workspace's order: the outline action first (Check now, current and read only). */}
               {drawer.is_current && drawerReadId === drawer.id && (
-                <button onClick={() => checkNow(drawer)} disabled={startingCheck || !!drawerCheck?.open} className={OUTLINE}>Check now</button>
+                <button onClick={() => checkNow(drawer)} disabled={startingCheck || Boolean(paused) || !!drawerCheck?.open} className={OUTLINE}>Check now</button>
               )}
               <button onClick={() => openHandbook(drawer)} className={TEXT_ACTION}>Open the handbook</button>
               {/* A newer version is added to the CURRENT one only (owner, 7 October). */}
@@ -1005,7 +1014,7 @@ export default function HrWorkspace() {
               {(() => {
                 const st = allHandbooks.find((x) => x.id === drawer.id)?.status ?? drawer.status
                 return (st === 'could_not_read' || st === 'uploaded') && (
-                  <button onClick={() => readAgain(drawer)} disabled={startingRead} className={TEXT_ACTION}>Read it again</button>
+                  <button onClick={() => readAgain(drawer)} disabled={startingRead || Boolean(paused)} className={TEXT_ACTION}>Read it again</button>
                 )
               })()}
               <button onClick={printDrawer} className={`ml-auto ${TEXT_ACTION}`}>Download</button>

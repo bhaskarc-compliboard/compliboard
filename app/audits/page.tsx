@@ -28,6 +28,8 @@ import DocumentReport from '@/components/DocumentReport'
 import { authHeaders, createClient } from '@/lib/supabase'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
+import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 /* ── the shapes the one read returns ──────────────────────────────────────── */
 interface Doc {
   document_id: string; title: string; file_name: string; kind: string | null
@@ -297,6 +299,9 @@ function Audits() {
   // THE COMPANY, FOR PAPER — board 10. Every printed drawer names the company at the top of every
   // page; this page passed none (the audit) or `null` (a document's report). Read as /documents reads it.
   const [companyName, setCompanyName] = useState<string | null>(null)
+  // Step 18, decision 11 — from the company read just below, widened by four columns.
+  const [billing, setBilling] = useState<BillingRow | null>(null)
+  const paused = pausedFromRow(billing)
   useEffect(() => {
     (async () => {
       const supabase = createClient()
@@ -304,8 +309,12 @@ function Audits() {
       if (!user) return
       const { data: p } = await supabase.from('profiles').select('company_id').eq('id', user.id).single()
       if (!p?.company_id) return
-      const { data: c } = await supabase.from('companies').select('name').eq('id', p.company_id).single()
+      const { data: c } = await supabase
+        .from('companies')
+        .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+        .eq('id', p.company_id).single()
       setCompanyName(c?.name ?? null)
+      setBilling(c)
     })()
   }, [])
 
@@ -614,10 +623,12 @@ function Audits() {
                   </a>
                 </p>
               </div>
-              <button onClick={submitAsk} disabled={busy || !ask.trim()} className={ACTION_PRIMARY}>
+              <button onClick={submitAsk} disabled={busy || Boolean(paused) || !ask.trim()} className={ACTION_PRIMARY}>
                 {busy ? 'Starting…' : 'Audit'}
               </button>
             </div>
+
+            <PausedNote banner={paused} />
 
             {notice && <p className="no-print mb-4 text-[13px] text-gray-600">{notice}</p>}
 
@@ -737,7 +748,7 @@ function Audits() {
                                 {v.n > 1 ? `section ${v.k} of ${v.n}` : ''}
                               </p>
                             ) : (
-                              <button disabled={busy}
+                              <button disabled={busy || Boolean(paused)}
                                 onClick={(e) => { e.stopPropagation(); startRun(label) }}
                                 className={ACTION_GREEN}>
                                 {v.lastRun ? 'Audit again' : 'Audit'}
@@ -759,7 +770,7 @@ function Audits() {
                 </p>
               </>
             ) : (
-              <GroupedByOther by={groupBy} idx={idx} docs={visibleDocs} onAudit={startRun} busy={busy}
+              <GroupedByOther by={groupBy} idx={idx} docs={visibleDocs} onAudit={startRun} busy={busy} paused={Boolean(paused)}
                 onOpenDoc={(d) => { setFromAudit(null); setOpenDoc(d) }} />
             )}
 
@@ -849,7 +860,7 @@ function Audits() {
         <div className={openDoc ? 'hidden' : ''}>
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/20"
             onClick={() => { setParam('run', null); setDrawerWord(null) }} />
-          <AuditReport runId={openRun} focusWord={drawerWord}
+          <AuditReport runId={openRun} focusWord={drawerWord} paused={paused}
             onClose={() => { setParam('run', null); setDrawerWord(null) }}
             onChanged={load}
             onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }}
@@ -863,6 +874,7 @@ function Audits() {
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/30"
             onClick={() => { setOpenDoc(null); setFromAudit(null) }} />
           <DocumentReport
+            paused={paused}
               documentId={openDoc}
               companyName={companyName}
               onClose={() => { setOpenDoc(null); setFromAudit(null) }}
@@ -1017,9 +1029,11 @@ function AgencyBody({ label, idx, v, onOpenRun, onOpenDoc }: {
  * action stays on the agency names inside each group. Offering "Audit" on a subject would promise a
  * run the engine cannot do.
  */
-function GroupedByOther({ by, idx, docs, onAudit, busy, onOpenDoc }: {
+function GroupedByOther({ by, idx, docs, onAudit, busy, paused, onOpenDoc }: {
   by: 'subject' | 'site'; idx: Index; docs: Doc[]
   onAudit: (agency: string) => void; busy: boolean
+  /** Step 18: a prop, not a second read — the parent already has the verdict. */
+  paused: boolean
   onOpenDoc: (documentId: string) => void
 }) {
   const keyOf = (d: Doc): string[] =>
@@ -1045,7 +1059,7 @@ function GroupedByOther({ by, idx, docs, onAudit, busy, onOpenDoc }: {
               </div>
               <div className="shrink-0 space-x-3 text-right">
                 {ag.map((a) => (
-                  <button key={a} disabled={busy} onClick={() => onAudit(a)} className={ACTION_GREEN}>
+                  <button key={a} disabled={busy || paused} onClick={() => onAudit(a)} className={ACTION_GREEN}>
                     Audit {a}
                   </button>
                 ))}

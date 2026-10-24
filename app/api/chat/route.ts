@@ -49,6 +49,7 @@ import { buildCompanyContext } from '@/lib/companyContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
 
+import { requireAccess } from '@/lib/requireAccess';
 /**
  * The facts THIS turn asserted, for the turn the server is about to seal.
  *
@@ -120,6 +121,10 @@ export async function POST(request: NextRequest) {
     // implementation is app/api/documents/route.ts — CLAUDE.md §3.6.
     const authed = await requireCompany(request);
     if (!authed.ok) return authed.response;
+    // Decision 11: after the trial, or after the grace, this company may read and
+    // download everything and spend nothing. 402 with one plain sentence.
+    const paused = await requireAccess(authed.auth);
+    if (paused) return paused;
     const { companyId, db } = authed.auth;
 
     const contentType = request.headers.get('content-type') || '';

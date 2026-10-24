@@ -19,6 +19,7 @@ import { answer, FAILED_LINE } from '@/lib/ask/engine'
 import { calendarBrief } from '@/lib/ask/calendarBrief'
 import type { AskSource } from '@/lib/ask/passages'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 800
 
 export async function POST(request: NextRequest) {
@@ -26,6 +27,10 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
+    // Decision 11: after the trial, or after the grace, this company may read and
+    // download everything and spend nothing. 402 with one plain sentence.
+    const paused = await requireAccess(authed.auth)
+    if (paused) return paused
     const { companyId, db } = authed.auth
 
     const body = await request.json().catch(() => ({}))

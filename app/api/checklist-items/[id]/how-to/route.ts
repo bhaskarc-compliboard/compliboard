@@ -35,6 +35,7 @@ import { howToPrompt, howToInput } from '@/prompts/how-to'
 import { checkHowTo, stripMarkers } from '@/lib/howTo'
 import { HOWTO_LOCK_MS } from '@/lib/checklistView'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 300
 
 /** The model call's own limit. Under `maxDuration`, so the route can still clear the claim and answer. */
@@ -45,6 +46,10 @@ const FAILED = 'We could not look this up just now. Nothing was saved. Please tr
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { companyId, db } = authed.auth
   const { id } = await context.params
   if (!id) return NextResponse.json({ error: 'No checklist item was given.' }, { status: 400 })

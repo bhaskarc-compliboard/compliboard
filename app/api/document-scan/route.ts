@@ -42,11 +42,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { runDocumentScan, saveScan, buildScanContext, failedScan } from '@/lib/documentScan'
 
+import { requireAccess } from '@/lib/requireAccess'
 const BUCKET = 'company-documents'
 
 export async function POST(request: NextRequest) {
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { companyId, db } = authed.auth
 
   let documentId: string | null = null

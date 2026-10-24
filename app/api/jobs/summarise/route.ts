@@ -45,6 +45,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
 import { supabaseAdmin } from '@/lib/auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { loadBilling, splitByAccess, logSkips } from '@/lib/accessGate'
 // THE SUMMARY REPORT — Workspace Task 5. The same writer, prompt and check the person's own
 // "Summarise this conversation" uses; each answer reaches it with its sources numbered once (§127).
 import { summariseTopic } from '@/lib/summaryReport'
@@ -65,11 +67,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
+  return sweep()
+}
 
-  const run = await startJobRun(supabaseAdmin, 'summarise')
+/**
+ * The sweep itself, callable without a request — the shape `jobs/scan-documents` and
+ * `jobs/audit-sections` already have. **The body below is unchanged apart from the
+ * read-only split**; it was lifted out of `POST` so the client can be a parameter, which is
+ * the only way `tests/unit/accessGate.test.ts` can run a paying and a non-paying company
+ * through one real run without a database. `CLAUDE.md` §9a: a thing is done when something
+ * real uses it, and a cron skip nothing can execute is a claim nothing can check.
+ */
+export async function sweep(admin: SupabaseClient = supabaseAdmin) {
+  const run = await startJobRun(admin, 'summarise')
   const errors: Array<{ topic: string; error: string }> = []
   const skipped: Array<{ topic: string; reason: string }> = []
-  let considered = 0, summarised = 0, skippedUserSummary = 0, proposals = 0
+  let considered = 0, summarised = 0, skippedUserSummary = 0, proposals = 0, skippedReadOnly = 0
 
   try {
     // Every topic that has been spoken in. Two queries (never summarised, summarised) as before; the
@@ -79,10 +92,10 @@ export async function POST(request: NextRequest) {
     // an HR conversation's handbook sources are kept. Always since the HR go-live (HR Step 13); a workspace
     // conversation's call is unchanged (no kind), as before.
     const sections = ['workspace', 'hr']
-    const { data: never, error: e1 } = await supabaseAdmin
+    const { data: never, error: e1 } = await admin
       .from('topics').select(cols).in('section', sections).is('summarised_at', null).not('last_turn_at', 'is', null)
     if (e1) throw new Error(`could not list unsummarised topics: ${e1.message}`)
-    const { data: already, error: e2 } = await supabaseAdmin
+    const { data: already, error: e2 } = await admin
       .from('topics').select(cols).in('section', sections).not('summarised_at', 'is', null).not('last_turn_at', 'is', null)
     if (e2) throw new Error(`could not list summarised topics: ${e2.message}`)
 
@@ -91,11 +104,22 @@ export async function POST(request: NextRequest) {
     considered = candidates.length
     skippedUserSummary = userCurrent.length   // RULE 2
 
-    for (const topic of candidates) {
+    // ---- DECISION 11: A READ-ONLY COMPANY'S TOPICS ARE LEFT EXACTLY WHERE THEY ARE. ----
+    // The split happens HERE, before the loop, so `claimTopic` is never called for them. Taking
+    // a claim and handing it straight back would block another run from the topic for no reason
+    // and would write to a row this company's state says we must not touch. Nothing is written:
+    // `summarised_at` stays as it was and `last_turn_at` is still set, so the topic is a
+    // candidate again on the very next run, and the day a card is added it is simply summarised.
+    const billing = await loadBilling(admin, candidates.map((t) => t.company_id))
+    const split = splitByAccess(candidates as Array<Row>, billing, new Date())
+    logSkips('jobs/summarise', split.skipped, 'topic')
+    skippedReadOnly = split.skipped.length
+
+    for (const topic of split.allowed) {
       // RULE 3 — the claim, before any work is done or any token is spent.
       let claimedAt: string | null = null
       try {
-        const claim = await claimTopic(supabaseAdmin, topic.id, 'summary')
+        const claim = await claimTopic(admin, topic.id, 'summary')
         if (!claim.ok) {
           skipped.push({ topic: topic.id, reason: 'a summary is being written for it right now (claim held)' })
           continue
@@ -106,7 +130,7 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        const { data: turns, error: tErr } = await supabaseAdmin
+        const { data: turns, error: tErr } = await admin
           .from('turns')
           .select('id, position, role, text, stopped, sources, document_id, document_name')
           .eq('topic_id', topic.id).order('position', { ascending: true })
@@ -121,7 +145,7 @@ export async function POST(request: NextRequest) {
 
         // THE SAME WRITER AS "SUMMARISE THIS CONVERSATION" — Workspace Task 5 (`lib/summaryReport.ts`).
         // Both clients are the service role here: this job has no user session (CLAUDE.md §3.6).
-        const result = await summariseTopic(supabaseAdmin, supabaseAdmin, {
+        const result = await summariseTopic(admin, admin, {
           topicId: topic.id, companyId: topic.company_id, title: topic.title ?? null, turns, source: 'nightly',
           extra: { idle_at: topic.last_turn_at, extracted_at: new Date().toISOString() },
           guard: { claimedAt, summarisedAt: topic.summarised_at },   // RULE 4
@@ -137,7 +161,7 @@ export async function POST(request: NextRequest) {
         errors.push({ topic: topic.id, error: e instanceof Error ? e.message : String(e) })
       } finally {
         // A written summary already cleared the claim; this clears it on every other path, ours only.
-        if (claimedAt) await releaseTopic(supabaseAdmin, topic.id, 'summary', claimedAt)
+        if (claimedAt) await releaseTopic(admin, topic.id, 'summary', claimedAt)
       }
     }
   } catch (e) {
@@ -145,6 +169,7 @@ export async function POST(request: NextRequest) {
   }
 
   const counts = { considered, summarised, skipped_user_summary: skippedUserSummary, proposals,
+    skipped_read_only: skippedReadOnly,
     skipped_count: skipped.length, skipped }
   await run.finish(counts, errors)
   return NextResponse.json({ job: 'summarise', run: run.id, ...counts, errors })

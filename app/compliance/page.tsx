@@ -57,6 +57,8 @@ import { TOPIC_LIST_COLUMNS, toTopicRow, readTopicList, type TopicRow, type Topi
 import { ConversationList } from '@/components/ConversationList'
 import { ReportView, WEB_SOURCE } from '@/components/ReportView'
 
+import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 type Tab = 'ask' | 'conversations' | 'checklists'
 
 /* THE STAGES (the `Step` type, their words and the list) live in `components/Stages.tsx` (HR Step 3a). */
@@ -254,6 +256,9 @@ export default function CompliancePage() {
    * The machine-written micro-steps are gone: never generated, never shown. The rows already stored
    * (`parent_item_index` set) stay in the database untouched; the drawer simply does not read them.
    */
+  // Step 18, decision 11: four more columns on the company read this page already makes.
+  const [billing, setBilling] = useState<BillingRow | null>(null)
+  const paused = pausedFromRow(billing)
   const [howToBusy, setHowToBusy] = useState<Record<string, boolean>>({})
   const [howToError, setHowToError] = useState<Record<string, string>>({})
   /**
@@ -307,8 +312,11 @@ export default function CompliancePage() {
         // The printed header names the company. An id on a page handed to an inspector is worth
         // nothing; if the name cannot be read the header simply omits that line (Fix Round 1 E).
         const { data: co } = await supabase
-          .from('companies').select('name').eq('id', prof.company_id as string).maybeSingle()
+          .from('companies')
+          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+          .eq('id', prof.company_id as string).maybeSingle()
         if (co?.name) setCompanyName(co.name as string)
+        if (co) setBilling(co as BillingRow)
       }
     })()
   }, [supabase])
@@ -1203,7 +1211,7 @@ export default function CompliancePage() {
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5" /></svg>
                           </button>
                         ) : (
-                          <button onClick={() => ask(box, 'research')} title="Send" aria-label="Send" disabled={!box.trim()}
+                          <button onClick={() => ask(box, 'research')} title="Send" aria-label="Send" disabled={!box.trim() || Boolean(paused)}
                             className="rounded-lg bg-[var(--green)] p-2 text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                           </button>
@@ -1248,11 +1256,11 @@ export default function CompliancePage() {
                       <div className="mt-[10px] flex flex-wrap items-center gap-5">
                         {/* Disabled the moment it is pressed, and while any run on this conversation is
                             going, with the run's own words in place of the button's (Stage 4). */}
-                        <button onClick={() => setScopeFor(topicId)} disabled={busy || inProgress(topicId, 'checklist')}
+                        <button onClick={() => setScopeFor(topicId)} disabled={busy || Boolean(paused) || inProgress(topicId, 'checklist')}
                           className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
                           {inProgress(topicId, 'checklist') ? CLAIM_WORDS.checklist : 'Turn this into a checklist'}
                         </button>
-                        <button onClick={() => summarise(topicId)} disabled={busy || inProgress(topicId, 'summary')} className={TEXT_ACTION}>
+                        <button onClick={() => summarise(topicId)} disabled={busy || Boolean(paused) || inProgress(topicId, 'summary')} className={TEXT_ACTION}>
                           {inProgress(topicId, 'summary') ? CLAIM_WORDS.summary : 'Summarise this conversation'}
                         </button>
                         {/* The shared print frame (board 10), the same path the drawers take — not a copy. */}
@@ -1262,6 +1270,7 @@ export default function CompliancePage() {
                         </button>
                       </div>
                     )}
+                    <PausedNote banner={paused} />
                     <p className="mt-2 text-[12px] text-gray-500">
                       One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.
                     </p>
@@ -1281,6 +1290,9 @@ export default function CompliancePage() {
                   route is called. `busy` still disables, because during a request they genuinely
                   cannot be pressed.
                 */}
+                {!started && paused && (
+                  <div className="mt-[10px]"><PausedNote banner={paused} /></div>
+                )}
                 {!started && (
                   <div className="mt-[10px] flex items-start justify-between gap-4">
                     <p className="min-w-0 text-[12px] text-gray-500">
@@ -1295,13 +1307,13 @@ export default function CompliancePage() {
                     <div className="flex shrink-0 items-center gap-3">
                       <button
                         onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'checklist') }}
-                        disabled={busy}
+                        disabled={busy || Boolean(paused)}
                         className={SECONDARY_LARGE}>
                         Make a checklist
                       </button>
                       <button
                         onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'research') }}
-                        disabled={busy}
+                        disabled={busy || Boolean(paused)}
                         className={PRIMARY}>
                         Research this
                       </button>
@@ -1565,8 +1577,8 @@ export default function CompliancePage() {
                                 Looking this up — checking sources…
                               </p>
                             ) : (
-                              <button onClick={() => howTo(item)}
-                                className="no-print mt-2 text-[13px] text-[var(--green-ink)] underline underline-offset-2 hover:text-gray-900">
+                              <button onClick={() => howTo(item)} disabled={Boolean(paused)}
+                                className="no-print mt-2 text-[13px] text-[var(--green-ink)] underline underline-offset-2 hover:text-gray-900 disabled:text-gray-300 disabled:no-underline">
                                 How do I do this?
                               </button>
                             )
@@ -1611,6 +1623,7 @@ export default function CompliancePage() {
         <>
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setReportDoc(null)} />
           <DocumentReport
+            paused={paused}
             documentId={reportDoc}
             companyName={companyName}
             onClose={() => setReportDoc(null)}

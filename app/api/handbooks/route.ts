@@ -20,6 +20,7 @@ import { saveHandbookRow, setHandbookSite } from '@/lib/handbookSave'
 import { deleteHandbookVersion } from '@/lib/handbookDelete'
 import { startReading } from '@/lib/handbookStart'
 
+import { requireAccess } from '@/lib/requireAccess'
 // The reading runs after the reply, up to this long (Vercel `waitUntil`); copied from the summarise route.
 export const maxDuration = 800
 
@@ -31,6 +32,10 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
+    // Decision 11: after the trial, or after the grace, this company may read and
+    // download everything and spend nothing. 402 with one plain sentence.
+    const paused = await requireAccess(authed.auth)
+    if (paused) return paused
     const { companyId, userId, db } = authed.auth
 
     // The two writes, and why their order matters, are in `lib/handbookSave.ts`.

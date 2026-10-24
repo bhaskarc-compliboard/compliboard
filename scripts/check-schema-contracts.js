@@ -125,6 +125,7 @@ function walk(dir, out = []) {
 }
 
 const problems = [];
+let paidGatedCount = 0, paidTotalCount = 0;
 const note = (file, msg) => problems.push(`${relative(ROOT, file)}\n      ${msg}`);
 function fail(msg) { console.error(`\n  check-schema-contracts: ${msg}\n`); process.exit(1); }
 
@@ -261,6 +262,110 @@ if (!deleted || !exempt) {
 }
 
 // ---------------------------------------------------------------------------
+// CHECK 3 — every route that can reach a model applies the read-only rule.
+//
+// `ACCOUNT-PLAN.md` decision 11: after the trial, or after a failed card's grace, a company
+// may read and download everything and spend nothing. That is enforced by `requireAccess`
+// in each paid route and by `splitByAccess` in each sweep.
+//
+// *** A LIST OF ROUTES IS A SNAPSHOT OF A SET THAT GROWS, WHICH IS CHECK 2'S WHOLE LESSON. ***
+// And the set was already wrong once: step 17 assembled it by grepping for `@/lib/ai`, which
+// finds only DIRECT importers, and reported 14 person-triggered paid routes. The real number
+// is 19. The five it missed — `handbooks` POST, `handbooks/read` POST, `document-rescan`,
+// `document-batches` PATCH action='start' and the audit section `retry` — all spend by
+// calling a sweep in `after()`, so no amount of reading their own source would have found
+// them. Only the transitive closure does.
+//
+// So this computes the closure rather than trusting a list: a route is PAID if it, or
+// anything it imports transitively, imports the Anthropic SDK or posts to api.anthropic.com.
+// Every paid route must call `requireAccess`, or be named in EXEMPT below WITH A REASON.
+//
+// Nineteen is also asserted as a COUNT. A twentieth paid route is then a deliberate edit here
+// — which is exactly what nobody made when the five above were added.
+// ---------------------------------------------------------------------------
+const PAID_COUNT = 19;
+
+// Why each of these may reach a model and still not call `requireAccess`.
+const EXEMPT = {
+  "app/api/topics/[id]/route.ts":
+    "GET and DELETE only. The closure reaches lib/ai.ts through a module it imports for types " +
+    "and helpers, but neither handler spends — reading and deleting a conversation are free.",
+  "app/api/jobs/summarise/route.ts":
+    "A cron. The rule is applied per company inside the sweep by splitByAccess, not per request.",
+  "app/api/jobs/scan-documents/route.ts":
+    "A cron — splitByAccess inside the sweep.",
+  "app/api/jobs/audit-sections/route.ts":
+    "A cron — splitByAccess inside the sweep.",
+  "app/api/jobs/handbook-checks/route.ts":
+    "A cron — splitByAccess inside lib/handbookCheck.ts sweepChecks.",
+  "app/api/jobs/handbook-queue/route.ts":
+    "A cron, and it spends NOTHING: queueDueChecks inserts rows and calls no model. Its paid " +
+    "work is sweepChecks, kicked in after(), and that is gated. Queueing for a read-only " +
+    "company is correct — decision 11 leaves work queued, it does not refuse to record it.",
+};
+
+{
+  const rel = (f) => relative(ROOT, f);
+  const srcOf = new Map(files.map((f) => [rel(f), readFileSync(f, "utf8")]));
+  const resolveSpec = (from, spec) => {
+    let base;
+    if (spec.startsWith("@/")) base = join(ROOT, spec.slice(2));
+    else if (spec.startsWith(".")) base = join(dirname(join(ROOT, from)), spec);
+    else return null;
+    for (const c of [base, base + ".ts", base + ".tsx", join(base, "index.ts"), join(base, "index.tsx")]) {
+      const r = relative(ROOT, c);
+      if (srcOf.has(r)) return r;
+    }
+    return null;
+  };
+  const spendsDirectly = (f) => /@anthropic-ai|api\.anthropic\.com/.test(srcOf.get(f) ?? "");
+  const memo = new Map();
+  const reaches = (f, stack = new Set()) => {
+    if (memo.has(f)) return memo.get(f);
+    if (stack.has(f)) return false;
+    stack.add(f);
+    let r = spendsDirectly(f);
+    if (!r) {
+      for (const m of (srcOf.get(f) ?? "").matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)) {
+        const d = resolveSpec(f, m[1]);
+        if (d && reaches(d, stack)) { r = true; break; }
+      }
+    }
+    stack.delete(f);
+    memo.set(f, r);
+    return r;
+  };
+
+  const routes = [...srcOf.keys()].filter((f) => /^app\/api\/.*\/route\.ts$/.test(f)).sort();
+  const paid = routes.filter((f) => reaches(f));
+  const gated = paid.filter((f) => /requireAccess\(/.test(srcOf.get(f) ?? ""));
+  const ungated = paid.filter((f) => !/requireAccess\(/.test(srcOf.get(f) ?? ""));
+
+  for (const f of ungated) {
+    if (!EXEMPT[f]) {
+      note(join(ROOT, f),
+        "can reach a model but never calls requireAccess.\n" +
+        "      A read-only company would spend here (ACCOUNT-PLAN decision 11). Add the two lines\n" +
+        "      beside requireCompany, or name it in EXEMPT in this script with the reason.");
+    }
+  }
+  for (const f of Object.keys(EXEMPT)) {
+    if (!srcOf.has(f)) note(join(ROOT, "scripts/check-schema-contracts.js"),
+      `EXEMPT names '${f}', which is not a route file. A stale exemption is a hole.`);
+    else if (!paid.includes(f)) note(join(ROOT, "scripts/check-schema-contracts.js"),
+      `EXEMPT names '${f}', which can no longer reach a model. Remove it — an exemption that\n` +
+      "      is not needed hides the day it becomes needed again.");
+  }
+  if (gated.length !== PAID_COUNT) {
+    note(join(ROOT, "scripts/check-schema-contracts.js"),
+      `${gated.length} routes call requireAccess; PAID_COUNT says ${PAID_COUNT}.\n` +
+      "      If a paid route was added or removed, change PAID_COUNT deliberately and say why.");
+  }
+  paidGatedCount = gated.length;
+  paidTotalCount = paid.length;
+}
+
+// ---------------------------------------------------------------------------
 if (problems.length) {
   console.error(`\n  check-schema-contracts: ${problems.length} problem(s).\n`);
   for (const p of problems) console.error(`    ${p}`);
@@ -285,4 +390,6 @@ console.log(
   `${tableCount + viewCount} relations (${tableCount} tables + ${viewCount} view${viewCount === 1 ? "" : "s"}).\n` +
   `    ${skippedDynamic} dynamic .from(variable) call site(s), which cannot be checked here:\n` +
   dynamicSites.map((s) => `      ${s}`).join("\n") +
-  `\n    Check these by hand after any column rename — see the blind-spot note above.`);
+  `\n    Check these by hand after any column rename — see the blind-spot note above.\n` +
+  `    ${paidTotalCount} route(s) can reach a model; ${paidGatedCount} call requireAccess, ` +
+  `${paidTotalCount - paidGatedCount} exempt with a reason (check 3).`);

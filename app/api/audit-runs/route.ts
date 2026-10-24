@@ -19,10 +19,15 @@ import { estimateRun } from '@/lib/auditEstimate'
 import { auditAgenciesFor } from '@/lib/audit'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
 
+import { requireAccess } from '@/lib/requireAccess'
 export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
+    // Decision 11: after the trial, or after the grace, this company may read and
+    // download everything and spend nothing. 402 with one plain sentence.
+    const paused = await requireAccess(authed.auth)
+    if (paused) return paused
     const { companyId, userId, db } = authed.auth
 
     const body = await request.json().catch(() => null)

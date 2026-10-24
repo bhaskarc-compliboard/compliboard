@@ -27,6 +27,8 @@ import { authHeaders } from '@/lib/supabase'
 import { Drawer, printDrawer } from '@/components/Drawer'
 import { DRAFT_NOTICE } from '@/prompts/document-draft'
 
+import type { Banner } from '@/lib/billing'
+import PausedNote from '@/components/PausedNote'
 /* ── the shapes, as the report route returns them ─────────────────────────── */
 interface Row {
   document_id: string; title: string; file_name: string; kind: string | null
@@ -199,10 +201,17 @@ function FilingLine({ row, folders, onMove, onChanged }: {
 
 /* ── the drawer ───────────────────────────────────────────────────────────── */
 export default function DocumentReport({
-  documentId, companyName, onClose, onChanged, onPickFile, folders, onMove, topLine,
+  documentId, companyName, onClose, onChanged, onPickFile, folders, onMove, topLine, paused = null,
 }: {
   documentId: string
   companyName: string | null
+  /**
+   * Step 18, decision 11. A PROP and not a read of its own: every page that mounts this drawer
+   * already holds the verdict, and a second `companies` read per drawer open would be a request
+   * the brief explicitly asked us not to add. Defaulted to null so a mount that has not been
+   * taught about it behaves exactly as it did before.
+   */
+  paused?: Banner | null
   onClose: () => void
   /** The page reloads its index when something here changes a value it shows. */
   onChanged: () => void
@@ -404,7 +413,7 @@ export default function DocumentReport({
       {/* THE ONE OUTLINED BUTTON, and the only one this run has. DESIGN.md §4: one primary or
           outlined action, everything else a text action. */}
       {isProgram && openGaps.length > 0 && (
-        <button disabled={!!working} onClick={() => runChecklist({ all: true })}
+        <button disabled={!!working || Boolean(paused)} onClick={() => runChecklist({ all: true })}
           className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)] disabled:border-gray-200 disabled:text-gray-300">
           {working === 'all' ? 'Working…' : `Make a checklist for all ${openGaps.length} gaps`}
         </button>
@@ -420,7 +429,7 @@ export default function DocumentReport({
           exactly as they left it. `/api/document-rescan` puts the document back in the queue and
           hands it to the sweep, and returns in a few hundred milliseconds. The reading now happens
           on the server whatever the browser does. `DECISIONS.md` §138. */}
-      <button disabled={busy || rereading} onClick={async () => {
+      <button disabled={busy || rereading || Boolean(paused)} onClick={async () => {
         setBusy(true)
         try {
           const res = await fetch('/api/document-rescan', {
@@ -544,6 +553,9 @@ export default function DocumentReport({
         printType="Document report" printDates={printDates}
         topLine={topLine}>
       {deletePanel}
+      {/* Step 18: one note at the top of the drawer, because the paused controls in here are
+          spread across the gaps list and the footer. Nothing is restyled and nothing moves. */}
+      <PausedNote banner={paused} />
       {notice && (
         <p className="mb-4 rounded-lg bg-[var(--green-wash)] px-3 py-2 text-[13px] text-gray-800">{notice}</p>
       )}
@@ -736,7 +748,7 @@ export default function DocumentReport({
                 ) : (
                   <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px]">
                     {/* E in the design puts the actions under the gap they belong to. */}
-                    <button disabled={!!working} onClick={() => runChecklist({ gap_id: g.id })}
+                    <button disabled={!!working || Boolean(paused)} onClick={() => runChecklist({ gap_id: g.id })}
                       className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
                       {working === g.id ? 'Working…' : 'Make a checklist'}
                     </button>
@@ -744,7 +756,7 @@ export default function DocumentReport({
                         floor plan is not one we can draft, and offering it would be a promise
                         the route then refuses. */}
                     {g.draftable && (
-                      <button disabled={!!working} onClick={() => runDraft(g.id)}
+                      <button disabled={!!working || Boolean(paused)} onClick={() => runDraft(g.id)}
                         className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
                         {working === `draft-${g.id}` ? 'Writing…' : (g.draft_text ? 'Draft it again' : 'Draft this section')}
                       </button>

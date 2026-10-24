@@ -73,18 +73,30 @@ describe('the recorder', () => {
 })
 
 describe('who uses it', () => {
+  // *** THESE SAID `lazyJobRun(supabaseAdmin, …)` UNTIL MY ACCOUNT STEP 18. *** The three sweeps
+  // now take their client as a parameter — `sweep(admin: SupabaseClient = supabaseAdmin)` — so the
+  // read-only cron test can run a paying and a non-paying company through a real sweep with a fake
+  // database. The client's NAME was never what these tests were about; that the job opens its row
+  // lazily, on the admin client, is. So the default is asserted separately and by name, which pins
+  // the thing that would actually be a bug if it changed: a cron running as anything but the
+  // service role would see no rows at all.
   for (const [file, job] of [['scan-documents', 'scan_documents'], ['audit-sections', 'audit_sections']]) {
     test(`app/api/jobs/${file} opens lazily — when it recovers or claims — and never at the top`, () => {
       const src = readFileSync(`app/api/jobs/${file}/route.ts`, 'utf8')
-      assert.match(src, new RegExp(`const run = lazyJobRun\\(supabaseAdmin, '${job}'\\)`))
+      assert.match(src, new RegExp(`const run = lazyJobRun\\(admin, '${job}'\\)`))
+      assert.match(src, /export async function sweep\(admin: SupabaseClient = supabaseAdmin\)/)
       assert.ok(!/startJobRun/.test(src))
       assert.match(src, /if \(stuck\?\.length\) await run\.open\(\)/)
       assert.match(src, /if \(!queue\.length\) continue\n\s*await run\.open\(\)/)
     })
   }
-  for (const file of ['summarise', 'delete']) {
-    test(`app/api/jobs/${file} still writes its row every run — the evidence it ran`, () => {
-      assert.match(readFileSync(`app/api/jobs/${file}/route.ts`, 'utf8'), /await startJobRun\(supabaseAdmin, '/)
-    })
-  }
+  test('app/api/jobs/summarise still writes its row every run — the evidence it ran', () => {
+    const src = readFileSync('app/api/jobs/summarise/route.ts', 'utf8')
+    assert.match(src, /await startJobRun\(admin, '/)
+    assert.match(src, /export async function sweep\(admin: SupabaseClient = supabaseAdmin\)/)
+  })
+  test('app/api/jobs/delete still writes its row every run — the evidence it ran', () => {
+    // Untouched by step 18: it calls no model, so there is nothing for decision 11 to pause.
+    assert.match(readFileSync('app/api/jobs/delete/route.ts', 'utf8'), /await startJobRun\(supabaseAdmin, '/)
+  })
 })

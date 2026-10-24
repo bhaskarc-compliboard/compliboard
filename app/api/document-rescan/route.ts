@@ -35,6 +35,7 @@ import { after } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { sweep } from '@/app/api/jobs/scan-documents/route'
 
+import { requireAccess } from '@/lib/requireAccess'
 // The same ceiling as the batches route, and for the same reason: `after()` runs the sweep on this
 // invocation, so the function has to be allowed to live long enough to read what it claimed.
 export const maxDuration = 800
@@ -42,6 +43,10 @@ export const maxDuration = 800
 export async function POST(request: NextRequest) {
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { companyId, userId, db } = authed.auth
 
   let documentId: string | null = null

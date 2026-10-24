@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { bannerFromRow, type BillingRow } from '@/lib/billing'
+import ReadOnlyBanner from '@/components/ReadOnlyBanner'
 import { useRouter, usePathname } from 'next/navigation'
 
 interface AppLayoutProps {
@@ -101,6 +103,11 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [companyName, setCompanyName] = useState('')
+  // STEP 18, decision 11. The four billing columns come from the read below, which this layout
+  // already made for the company's NAME — one widened string, not a new request. `accessFor` and
+  // `bannerFor` are pure and `lib/billing.ts` imports nothing, so the verdict is computed here in
+  // the browser rather than asked for.
+  const [billing, setBilling] = useState<BillingRow | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [toConfirm, setToConfirm] = useState<number | null>(null)
   const [calendarDates, setCalendarDates] = useState<number | null>(null)
@@ -172,14 +179,23 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
       if (profile?.company_id) {
         const { data: company } = await supabase
           .from('companies')
-          .select('name')
+          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
           .eq('id', profile.company_id)
           .single()
-        if (company) setCompanyName(company.name)
+        if (company) {
+          setCompanyName(company.name)
+          setBilling(company)
+        }
       }
     }
     loadCompany()
   }, [])
+
+  // *** THE BANNER SHOWS WHILE ACCESS IS STILL `full`, AND THAT IS THE POINT OF THE GRACE. ***
+  // `payment_failed_in_grace` returns `full` from `accessFor` — correctly; the seven days ARE the
+  // grace. A band drawn only on `read_only` would first appear on day 8, telling somebody about a
+  // window that has already shut. See `bannerFor`.
+  const banner = bannerFromRow(billing)
 
   useEffect(() => {
     if (title) document.title = `${title} — CompliBoard`
@@ -313,6 +329,10 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+
+      {/* The read-only band — ABOVE the top bar (board 8), and the only thing step 18 adds to this
+          file's markup. Nothing else here changes and the sidebar is not touched at all. */}
+      {banner && <ReadOnlyBanner banner={banner} />}
 
       {/* Header. `no-print` (app/globals.css, @media print only): the site header never prints. It is
           sticky, so on paper it landed wherever the page behind a drawer was scrolled to — across the

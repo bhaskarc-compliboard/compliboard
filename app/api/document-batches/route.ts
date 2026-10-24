@@ -21,6 +21,7 @@ import { after } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { sweep, finishBatchIfDone } from '@/app/api/jobs/scan-documents/route'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 800
 
 export async function POST(request: NextRequest) {
@@ -81,7 +82,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: true, ...res })
     }
 
-    // action === 'start'
+    // action === 'start' — THE ONLY ONE OF THE THREE THAT SPENDS.
+    //
+    // *** THE GATE IS HERE AND NOT BESIDE `requireCompany`, WHICH IS WHERE THE OTHER EIGHTEEN
+    // PUT IT. *** `dismiss` and `finish` write nothing to a model: dismissing is closing a
+    // banner and finishing is a summary of scans that already happened. Gating the handler
+    // would have paused both, and the owner's rule for step 18 is that no NON-MODEL write is
+    // gated — a read-only company still runs its product, it just stops spending. Only
+    // `start`, which kicks the scan sweep in `after()` below, is paid work.
+    const paused = await requireAccess(authed.auth)
+    if (paused) return paused
+
     const fileCount = Number.isFinite(Number(body?.file_count)) ? Math.max(0, Number(body.file_count)) : null
     await supabaseAdmin.from('document_batches')
       .update({ status: 'queued', ...(fileCount === null ? {} : { file_count: fileCount }) })

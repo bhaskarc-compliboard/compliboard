@@ -16,6 +16,7 @@ import { loadTurns } from '@/lib/conversation'
 import { summarise } from '@/lib/ask/engine'
 import { claimTopic, releaseTopic, withinClaimTime, CLAIM_WORDS } from '@/lib/topicClaim'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 800
 
 const NOT_FOUND = 'That conversation was not found.'
@@ -24,6 +25,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   await connection()
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { db, companyId } = authed.auth
 
   const { id } = await context.params

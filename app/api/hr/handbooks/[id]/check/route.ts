@@ -14,6 +14,7 @@ import { NextRequest, NextResponse, after, connection } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { createCheck, sweepChecks, ALREADY_CHECKING, NOT_READ_YET, ONLY_NEWEST } from '@/lib/handbookCheck'
 
+import { requireAccess } from '@/lib/requireAccess'
 export const maxDuration = 800
 
 const NOT_FOUND = 'That handbook was not found.'
@@ -22,6 +23,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   await connection()
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
+  // Decision 11: after the trial, or after the grace, this company may read and
+  // download everything and spend nothing. 402 with one plain sentence.
+  const paused = await requireAccess(authed.auth)
+  if (paused) return paused
   const { db, companyId, userId } = authed.auth
 
   const { id } = await context.params
