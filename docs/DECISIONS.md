@@ -15764,9 +15764,26 @@ Four texts: the trial ended; the card failed with **N more days**; the grace is 
 subscription is not active (which also covers a status Stripe invents after this was written).
 `graceDaysLeft` is honest arithmetic and reaches 0, so `bannerFor` clamps the display to 1 and
 handles the singular — "0 more days" is not a sentence to show anyone.
-**"Update your card" goes to the PORTAL when `stripe_customer_id` is set, and to checkout when it is
-not**: a card is added at checkout and changed in the portal, and sending somebody with a dead card
-to checkout would make them a second Stripe customer.
+~~**"Update your card" goes to the PORTAL when `stripe_customer_id` is set, and to checkout when it
+is not**: a card is added at checkout and changed in the portal, and sending somebody with a dead
+card to checkout would make them a second Stripe customer.~~
+
+> ### ⚡ WRONG, AND BOTH HALVES OF IT — CORRECTED 24 OCTOBER 2026, §218.
+> The rule now keys on **`stripe_subscription_id`**, as the Cancel tab always did.
+>
+> The reason given above — "sending somebody to checkout would make them a second Stripe customer"
+> — **was never true.** `app/api/billing/checkout/route.ts:61` reads `company.stripe_customer_id`
+> and creates one only when it is null; a stored customer is reused. Step 17 proved that on the
+> sandbox ("one customer in the Stripe dashboard, not two") and step 19's own staging run printed
+> `Gamma stripe_customer_id unchanged: true`. **The evidence was in hand when this sentence was
+> written, and the sentence contradicted it.**
+>
+> What the rule cost: a Stripe customer exists the moment somebody OPENS checkout. Anybody who
+> abandoned a session was thereafter sent to the portal, added a card nothing could charge, and
+> lapsed on day 15. §218.
+
+The same wrong rule was in `bannerFor`, so the read-only banner on **every page** sent a lapsed
+company that had once opened checkout to the same dead portal. Also §218.
 
 `payment_failed_retrying` gets **no banner**, and it is the one deliberate gap: it is `past_due` with
 no `payment_failed_at`, which `accessFor` reasons is our mirror having dropped an event. There is no
@@ -16063,3 +16080,104 @@ source 2 is the safety net it was always meant to be.
   already — or a time-limited coupon becoming necessary, which makes it `always` everywhere.
 - **The deep expand (D):** nothing. A shallower expand is simply unreadable, and
   `tests/unit/stripeWebhook.test.ts` now fails if it comes back.
+
+---
+
+## 218. "ADD A CARD" GOES TO CHECKOUT UNTIL A SUBSCRIPTION EXISTS — 24 October 2026 (My Account step 20, the owner's card walk; corrects §216)
+
+The Billing tab and the read-only banner choose their door by **`stripe_subscription_id`**, not by
+`stripe_customer_id`. The Cancel tab already did.
+
+### A. THE LOOP A SINGLE ABANDONED CHECKOUT PUT SOMEBODY IN
+
+A Stripe customer exists the moment a person **opens** Checkout — `/api/billing/checkout` creates
+it before handing them to Stripe, so it survives them closing the tab. The old rule read "a
+customer exists → the portal", so from that moment on:
+
+1. "Add a card" sent them to the **billing portal**, not to Checkout.
+2. In the portal they could attach a card — and **we never hear about it.** None of the six events
+   `lib/stripeWebhook.ts` handles fires for a payment method attached to a customer with no
+   subscription. The mirror stays blank, and the tab goes on saying "No card yet".
+3. **Nothing will ever charge that card**, because no subscription exists to charge it against.
+4. So they press again, land in the portal again, and lapse on day 15 — having added a card, been
+   shown no error, and had no route to a subscription at any point.
+
+Every press reinforced it. The one thing that would have fixed it, Checkout, was the one thing the
+rule would not offer them.
+
+### B. ⚡ THE REASON GIVEN FOR THE OLD RULE WAS UNFOUNDED, AND THE EVIDENCE WAS ALREADY IN HAND
+
+§216 said: *"sending somebody with a dead card to checkout would make them a second Stripe
+customer."* Read the route:
+
+```ts
+let customerId = company.stripe_customer_id
+if (!customerId) { /* create, and remember it */ }
+```
+
+`app/api/billing/checkout/route.ts:61`. A stored customer is **reused**; nothing is created. The
+`.is('stripe_customer_id', null)` guard on the write, and migration 087's unique partial index,
+exist to make a second customer impossible even under a race.
+
+Worse than unfounded — **already disproved, twice, by this project's own runs**:
+
+- step 17's sandbox proof: *"the company's `stripe_customer_id` is written and is reused on a
+  second press (one customer in the Stripe dashboard, not two)"*;
+- step 19's staging run printed, in its own output, `Gamma stripe_customer_id unchanged: true`.
+
+The sentence was written anyway, in the same step as the second of those. **A reason that is
+plausible, undisputed and never checked against the code it describes is how this happens.**
+
+### C. WHERE ELSE IT KEYED THE SAME WAY
+
+Two decision sites, both now fixed, and the second was the wider one:
+
+| | was | now |
+|---|---|---|
+| `lib/billingView.ts` — the Billing tab's card door | `stripe_customer_id` | `stripe_subscription_id` |
+| `lib/billing.ts` `bannerFor` — **the read-only banner's one button, on every page** | `hasStripeCustomer` | `hasSubscription` |
+
+The banner is the more serious of the two: it is drawn above the top bar on every screen a
+read-only company sees, so a lapsed company that had once opened checkout met the dead portal
+wherever it went.
+
+`stripe_customer_id` is now **absent from `BillingViewColumns` and `BillingRow` altogether**. There
+is no remaining decision it is the right answer to, and leaving it reachable invites the same
+mistake. The column is still read where it genuinely means "which customer" — the checkout route's
+reuse, the portal route's target, and the webhook's company lookup — and nowhere as a proxy for
+"is paying" or "can manage billing".
+
+**"Manage billing and invoices" is also gated now.** It goes to the portal unconditionally, so for
+a customer with no subscription it was the same dead end by another name. The sentence about Stripe
+holding the card is true either way and stays; only the link is conditional.
+
+### D. SHOULD THE WEBHOOK LISTEN FOR `payment_method.attached` OR `customer.updated`?
+
+**No — agreed with the owner, and for a reason beyond "it is now unreachable."**
+
+After this fix our own UI cannot produce a card-without-subscription state: the only door offered
+before a subscription exists is Checkout, which creates the subscription and the card together.
+
+But the stronger argument is what mirroring that state would mean. A card attached to a customer
+with no subscription is **not a fact about billing** — nothing is owed, nothing is scheduled,
+nothing will be charged. Writing `card_brand`/`card_last4` from it would put a card line on the
+Billing tab beside a status that says the company is not subscribed, which is the product
+asserting a payment arrangement that does not exist (§6, and the "omniscient status tracker"
+anti-pattern by another route). The mirror's value is that every column in it is something Stripe
+will act on.
+
+It is still reachable by a person who opens the portal URL from their own history, or whom the
+owner sends there directly. The right answer to that is not a seventh event — it is that such a
+card is harmless and invisible until a subscription exists, at which point
+`customer.subscription.created` reads it through the fallback fixed in §217 D and the mirror
+catches up in one event. **The existing six already cover the moment it starts to matter.**
+
+Reconsider if the owner ever creates subscriptions by hand in the dashboard, where the card may
+genuinely be attached first and the subscription minutes later.
+
+### WHAT WOULD REVERSE IT
+
+- **The door rule (A, C):** Stripe's portal gaining the ability to start a subscription from
+  nothing. Then the portal is a valid door for a customer without one, and the rule becomes a
+  preference rather than a correctness matter.
+- **The answer in (D):** subscriptions being created outside this application.

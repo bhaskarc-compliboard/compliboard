@@ -297,7 +297,7 @@ function Calendar() {
       await load()
       if (!live) return
       const { data: co } = await supabase.from('companies')
-        .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+        .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_subscription_id')
         .limit(1).maybeSingle()
       if (live) {
         setCompanyName((co as { name?: string } | null)?.name ?? null)

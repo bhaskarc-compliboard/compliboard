@@ -49,6 +49,12 @@ export const AFTER_THE_TRIAL: ReadonlyArray<{ key: string; text: string }> = [
 export type StatusTone = 'trial' | 'good' | 'warn' | 'paused'
 
 export type BillingTabView = {
+  /**
+   * Whether there is a subscription to manage at all. The page uses it to decide whether to offer
+   * "Manage billing and invoices", which goes to the portal unconditionally — and a portal opened
+   * for a customer with no subscription is the same dead end the card door used to lead to.
+   */
+  hasSubscription: boolean
   status: {
     /** The pill's word: Trial · Active · Payment failed · Canceled · Read-only. */
     pill: string
@@ -109,7 +115,8 @@ export type BillingViewColumns = BillingColumns & {
   current_period_end?: string | Date | null
   card_brand?: string | null
   card_last4?: string | null
-  stripe_customer_id?: string | null
+  /** Which door the card control opens. NOT the customer id — see below. */
+  stripe_subscription_id?: string | null
 }
 
 /**
@@ -125,19 +132,40 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
   const status = c.subscription_status
 
   // ---- THE CARD. Both halves come from the mirror; neither is computed. ----
+  //
+  // *** THE DOOR IS THE SUBSCRIPTION'S, NOT THE CUSTOMER'S. CORRECTED 24 OCTOBER 2026 — §218. ***
+  // This read `c.stripe_customer_id ? 'portal' : 'checkout'`, with the comment that "a customer
+  // may exist without a card … and the portal is still the right door then". It is not.
+  //
+  // A Stripe customer exists the moment somebody OPENS checkout, even if they close the tab. The
+  // old rule therefore sent that person to the PORTAL on every subsequent press, where they can
+  // attach a card that:
+  //   · we never hear about — none of the six events the webhook handles fires for a payment
+  //     method attached to a customer with no subscription; and
+  //   · nothing will ever charge, because there is no subscription to charge it against.
+  // One abandoned checkout and the person is stuck in that loop until they lapse on day 15,
+  // having added a card and been shown no sign that anything is wrong.
+  //
+  // The portal manages a subscription. With no subscription there is nothing to manage, and the
+  // door is checkout — which reuses the stored customer (`billing/checkout/route.ts:61` only
+  // creates one when the column is null), so nobody gets a second customer. That was step 19's
+  // stated reason for the old rule and it was unfounded.
+  //
+  // `app/account/page.tsx`'s Cancel tab already keyed on the subscription, with that reasoning
+  // written out beside it. This now matches it.
+  const hasSubscription = Boolean(c.stripe_subscription_id)
   const hasCard = Boolean(c.card_brand && c.card_last4)
+  const door: 'checkout' | 'portal' = c.stripe_subscription_id ? 'portal' : 'checkout'
   const card: BillingTabView['card'] = hasCard
-    ? { text: `${c.card_brand} ending ${c.card_last4}`, action: 'Change', door: 'portal' }
-    // A customer may exist without a card (a session opened and abandoned), and the portal is
-    // still the right door then — it is where Stripe lets them add one to an existing customer.
-    : { text: 'No card yet', action: 'Add a card', door: c.stripe_customer_id ? 'portal' : 'checkout' }
+    ? { text: `${c.card_brand} ending ${c.card_last4}`, action: 'Change', door }
+    : { text: 'No card yet', action: 'Add a card', door }
 
   // ---- THE STATUS. Driven by the gate's own reason. ----
   switch (verdict.reason) {
     case 'trial': {
       const n = daysUntil(c.trial_ends_at, now)
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Trial', tone: 'trial', headline: daysLeftPhrase(n),
           detail: `Your trial ends ${plainDate(c.trial_ends_at)}. `
@@ -148,7 +176,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
 
     case 'subscribed':
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Active', tone: 'good',
           headline: c.current_period_end ? `Next payment ${plainDate(c.current_period_end)}` : '',
@@ -164,7 +192,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'payment_failed_in_grace': {
       const n = c.payment_failed_at === null ? GRACE_DAYS : Math.max(1, graceDaysLeft(c.payment_failed_at, now))
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Payment failed', tone: 'warn', headline: `${n} day${n === 1 ? '' : 's'} left`,
           detail: `We couldn't charge your card. We'll try again for ${n} more day${n === 1 ? '' : 's'} `
@@ -176,7 +204,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     // `past_due` with no anchor: Stripe is still retrying and we have no date to quote.
     case 'payment_failed_retrying':
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Payment failed', tone: 'warn', headline: '',
           detail: "We couldn't charge your card and we're trying again. Nothing has stopped "
@@ -186,7 +214,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
 
     case 'payment_failed_grace_over':
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `We couldn't charge your card and the ${GRACE_DAYS} days are up. Everything is `
@@ -196,7 +224,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
 
     case 'trial_over_no_subscription':
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `Your trial ended ${plainDate(c.trial_ends_at)}. Everything is still here to read `
@@ -209,7 +237,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
       // `incomplete_expired` — are states a person did not choose, so they read as Read-only.
       if (status === 'canceled') {
         return {
-          card,
+          card, hasSubscription,
           status: {
             pill: 'Canceled', tone: 'paused', headline: '',
             detail: 'Your subscription is canceled. Everything is still here to read and download, '
@@ -218,7 +246,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
         }
       }
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: "Your subscription isn't active. Everything is still here to read and download. "
@@ -230,7 +258,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'status_not_recognised':
     default:
       return {
-        card,
+        card, hasSubscription,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `Your subscription is in a state we don't recognise${status ? ` (${status})` : ''}. `

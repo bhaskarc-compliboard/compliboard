@@ -800,13 +800,23 @@ function BillingTab({ company }: { company: CompanyRow | null }) {
         </div>
       </div>
 
-      {/* ---- Stripe's own page, and the way back to it ---- */}
+      {/* ---- Stripe's own page, and the way back to it ----
+          The LINK is offered only when there is a subscription to manage (§218). It goes to the
+          portal unconditionally, and a portal opened for a customer with no subscription is the
+          same dead end the card door above used to lead to: a card can be added there that
+          nothing will charge and no webhook reports. The sentence about Stripe holding the card
+          is true either way, so it stays. */}
       <p className="mt-3 text-[13px] leading-5 text-gray-500">
-        {STRIPE_NOTE}{' '}
-        <button type="button" data-testid="billing-manage" onClick={() => go('portal')} disabled={busy !== null}
-          className="text-[var(--green-ink)] hover:underline disabled:text-gray-300">
-          {busy === 'portal' ? 'Opening…' : MANAGE_LINK}
-        </button>
+        {STRIPE_NOTE}
+        {view.hasSubscription && (
+          <>
+            {' '}
+            <button type="button" data-testid="billing-manage" onClick={() => go('portal')} disabled={busy !== null}
+              className="text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+              {busy === 'portal' ? 'Opening…' : MANAGE_LINK}
+            </button>
+          </>
+        )}
       </p>
 
       {/* ---- After the trial — board 4's three plain paragraphs ---- */}

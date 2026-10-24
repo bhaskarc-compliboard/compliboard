@@ -266,8 +266,8 @@ describe('bannerFor — four texts, and nothing when nothing is wrong', () => {
   const now = new Date('2026-10-23T12:00:00Z')
   const past = '2026-10-01T00:00:00Z'
   const future = '2026-11-30T00:00:00Z'
-  const opts = (p: string | null = null, cust = false) =>
-    ({ paymentFailedAt: p, hasStripeCustomer: cust, now })
+  const opts = (p: string | null = null, sub = false) =>
+    ({ paymentFailedAt: p, hasSubscription: sub, now })
 
   test('1. the trial ended and no card was added — board 8\'s words, exactly', () => {
     const b = bannerFor(accessFor({ trial_ends_at: past, subscription_status: null, payment_failed_at: null }, now), opts())
@@ -335,12 +335,16 @@ describe('bannerFor — four texts, and nothing when nothing is wrong', () => {
     assert.equal(bannerFor(v, opts()), null)
   })
 
-  test('*** THE BUTTON GOES TO THE PORTAL WHEN STRIPE ALREADY KNOWS THEM. ***', () => {
-    // A card is ADDED at checkout and CHANGED in the portal. Sending somebody with a dead card
-    // to checkout would make them a second Stripe customer.
+  test('*** THE BUTTON GOES TO THE PORTAL ONLY WHEN A SUBSCRIPTION EXISTS. ***', () => {
+    // CORRECTED 24 OCTOBER 2026 (§218). This asserted the door by `hasStripeCustomer`, with the
+    // reason "sending somebody with a dead card to checkout would make them a second Stripe
+    // customer". **That reason was never true**: `app/api/billing/checkout/route.ts:61` reads
+    // `company.stripe_customer_id` and only creates one when it is null, so the stored customer
+    // is reused. The old rule sent anybody who had merely OPENED checkout to the portal, where a
+    // card can be added that nothing will ever charge.
     const v = accessFor({ trial_ends_at: past, subscription_status: 'canceled', payment_failed_at: null }, now)
-    assert.equal(bannerFor(v, opts(null, false))?.action, 'checkout')
-    assert.equal(bannerFor(v, opts(null, true))?.action, 'portal')
+    assert.equal(bannerFor(v, opts(null, false))?.action, 'checkout', 'no subscription → checkout')
+    assert.equal(bannerFor(v, opts(null, true))?.action, 'portal', 'subscription → portal')
   })
 })
 

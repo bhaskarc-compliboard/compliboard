@@ -23,7 +23,7 @@ const row = (over: Partial<BillingViewColumns> = {}): BillingViewColumns => ({
   current_period_end: null,
   card_brand: null,
   card_last4: null,
-  stripe_customer_id: null,
+  stripe_subscription_id: null,
   ...over,
 })
 
@@ -143,20 +143,45 @@ describe('board 4, the card — both states, and which door each opens', () => {
   })
 
   test('a card on file → "Visa ending 4242", and that is the PORTAL', () => {
-    const v = billingTabView(row({ card_brand: 'Visa', card_last4: '4242', stripe_customer_id: 'cus_1' }), NOW)
+    const v = billingTabView(row({ card_brand: 'Visa', card_last4: '4242', stripe_subscription_id: 'sub_1' }), NOW)
     assert.equal(v.card.text, 'Visa ending 4242')
     assert.equal(v.card.action, 'Change')
     assert.equal(v.card.door, 'portal')
   })
 
-  test('*** A CUSTOMER WITHOUT A CARD STILL GOES TO THE PORTAL. ***', () => {
-    // Somebody opened checkout and abandoned it: Stripe has a customer, we have no card line.
-    // Sending them back to checkout would make a SECOND customer for the same company, which
-    // migration 087's unique index on `stripe_customer_id` exists to make impossible.
-    const v = billingTabView(row({ stripe_customer_id: 'cus_1' }), NOW)
+  test('*** A PERSON WHO ABANDONED CHECKOUT MUST STILL BE ABLE TO SUBSCRIBE. ***', () => {
+    // THE MIDDLE STATE, AND THE WHOLE REASON FOR §218.
+    //
+    // A Stripe customer exists the moment somebody OPENS checkout, even if they close the tab.
+    // This test used to assert the opposite — that such a person goes to the PORTAL — with the
+    // reason that checkout would make them a second customer. **That reason was never true:**
+    // `app/api/billing/checkout/route.ts:61` reads the stored id and only creates one when it is
+    // null.
+    //
+    // What the old rule did to them, found on the owner's own walk: every press sent them to the
+    // portal, where they added a card that we never hear about (no subscribed event fires for a
+    // payment method on a customer with no subscription) and that nothing will ever charge
+    // (there is no subscription to charge it against). One abandoned checkout and they were
+    // stuck in that loop until they lapsed on day 15 — having added a card and been shown
+    // nothing to suggest it had not worked.
+    const v = billingTabView(row({ stripe_subscription_id: null }), NOW)
     assert.equal(v.card.text, 'No card yet')
     assert.equal(v.card.action, 'Add a card')
-    assert.equal(v.card.door, 'portal')
+    assert.equal(v.card.door, 'checkout',
+      'a company with no subscription is being sent to the portal: it can add a card there that '
+      + 'nothing will charge and no webhook reports, and it can never actually subscribe')
+    assert.equal(v.hasSubscription, false)
+  })
+
+  test('the three states, side by side', () => {
+    // The customer id is deliberately absent from `BillingViewColumns` now: there is no decision
+    // left that it is the right answer to, and leaving it reachable invites the same mistake.
+    const noCustomer = billingTabView(row(), NOW)
+    const abandoned = billingTabView(row(), NOW)                                   // same row: a customer is NOT a column this reads
+    const subscribed = billingTabView(row({ stripe_subscription_id: 'sub_1' }), NOW)
+    assert.equal(noCustomer.card.door, 'checkout')
+    assert.equal(abandoned.card.door, 'checkout')
+    assert.equal(subscribed.card.door, 'portal')
   })
 
   test('half a card line is not a card line', () => {
@@ -168,7 +193,7 @@ describe('board 4, the card — both states, and which door each opens', () => {
   })
 
   test('the card line is independent of the status', () => {
-    const v = billingTabView(row({ trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'canceled', card_brand: 'Mastercard', card_last4: '4444', stripe_customer_id: 'cus_2' }), NOW)
+    const v = billingTabView(row({ trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'canceled', card_brand: 'Mastercard', card_last4: '4444', stripe_subscription_id: 'sub_2' }), NOW)
     assert.equal(v.status.pill, 'Canceled')
     assert.equal(v.card.text, 'Mastercard ending 4444')
     assert.equal(v.card.door, 'portal')

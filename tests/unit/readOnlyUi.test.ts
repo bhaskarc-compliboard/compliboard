@@ -78,7 +78,12 @@ describe('*** DECISION 14: THE SIDEBAR AND THE FRAME ARE UNTOUCHED. ***', () => 
   test('step 18 added three things to the layout and no more', () => {
     // One widened select, one state, one JSX line. Named so the next reader can check the diff
     // against the claim rather than taking it on trust.
-    assert.match(LAYOUT, /\.select\('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id'\)/)
+    // `stripe_subscription_id`, not `stripe_customer_id` — §218. The banner's one button routes
+    // by whether a SUBSCRIPTION exists; a customer exists the moment checkout is opened, so
+    // keying on it sent anybody who abandoned a session to a portal they could not use.
+    assert.match(LAYOUT, /\.select\('name, trial_ends_at, subscription_status, payment_failed_at, stripe_subscription_id'\)/)
+    assert.ok(!/payment_failed_at, stripe_customer_id/.test(LAYOUT),
+      'the layout is back to reading the customer id, which is not what the button routes on')
     assert.match(LAYOUT, /const \[billing, setBilling\] = useState<BillingRow \| null>\(null\)/)
     assert.equal((LAYOUT.match(/<ReadOnlyBanner/g) ?? []).length, 1)
   })
@@ -98,7 +103,7 @@ describe('every screen that owns a paid control shows the same note', () => {
   for (const f of PAGES) {
     test(`${f}: widens the read it already makes, and never adds one`, () => {
       const src = readFileSync(f, 'utf8')
-      assert.match(src, /trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id/,
+      assert.match(src, /trial_ends_at, subscription_status, payment_failed_at, stripe_subscription_id/,
         'the select was not widened')
       assert.match(src, /const paused = pausedFromRow\(billing\)/)
       assert.equal((src.match(/\.from\('companies'\)/g) ?? []).length, 1,

@@ -179,7 +179,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
       if (profile?.company_id) {
         const { data: company } = await supabase
           .from('companies')
-          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_subscription_id')
           .eq('id', profile.company_id)
           .single()
         if (company) {

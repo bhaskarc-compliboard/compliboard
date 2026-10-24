@@ -166,7 +166,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   - the card-line fallback's input. `cardLineFrom` was always right; the PORT handed it an id
 //     string, because expanding `customer` does not expand the payment method on it. The shallow
 //     expand is now asserted absent, because its return would kill the fallback again silently.
-const FLOOR = 1943
+// *** 1943 -> 1944 on 24 October 2026, My Account step 20, second finding from the walk. ***
+// One test, and it is the middle of three states nobody had thought to separate: a company with a
+// Stripe CUSTOMER but no SUBSCRIPTION. A customer exists the moment checkout is OPENED, so an
+// abandoned session put a person there permanently — and the old rule sent them to the portal,
+// where a card can be attached that no webhook reports and nothing will ever charge. Its message
+// names that: "a company with no subscription is being sent to the portal: it can add a card
+// there that nothing will charge and no webhook reports, and it can never actually subscribe."
+// `DECISIONS.md` §218.
+const FLOOR = 1944
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

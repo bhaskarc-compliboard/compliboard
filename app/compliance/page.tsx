@@ -325,7 +325,7 @@ export default function CompliancePage() {
         // nothing; if the name cannot be read the header simply omits that line (Fix Round 1 E).
         const { data: co } = await supabase
           .from('companies')
-          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_subscription_id')
           .eq('id', prof.company_id as string).maybeSingle()
         if (co?.name) setCompanyName(co.name as string)
         if (co) setBilling(co as BillingRow)

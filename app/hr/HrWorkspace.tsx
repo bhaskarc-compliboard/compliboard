@@ -275,7 +275,7 @@ export default function HrWorkspace() {
         readTopicList(supabase, 'hr'),
         supabase.from('entities').select('id, name').order('name'),
         co ? supabase.from('companies')
-          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+          .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_subscription_id')
           .eq('id', co).maybeSingle() : Promise.resolve({ data: null }),
       ])
       if (!live) return

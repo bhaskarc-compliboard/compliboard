@@ -296,7 +296,7 @@ function DocumentsPageContent() {
       if (!p?.company_id) return
       const { data: c } = await supabase
         .from('companies')
-        .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_customer_id')
+        .select('name, trial_ends_at, subscription_status, payment_failed_at, stripe_subscription_id')
         .eq('id', p.company_id).single()
       setCompanyName(c?.name ?? null)
       setBilling(c)

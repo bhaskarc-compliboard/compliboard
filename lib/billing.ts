@@ -282,16 +282,17 @@ export type Banner = {
  */
 export function bannerFor(
   verdict: BillingVerdict,
-  opts: { paymentFailedAt: string | Date | null; hasStripeCustomer: boolean; now: Date },
+  opts: { paymentFailedAt: string | Date | null; hasSubscription: boolean; now: Date },
 ): Banner | null {
-  const update = {
-    button: 'Update your card',
-    action: (opts.hasStripeCustomer ? 'portal' : 'checkout') as BannerAction,
-  }
-  const add = {
-    button: 'Add a card',
-    action: (opts.hasStripeCustomer ? 'portal' : 'checkout') as BannerAction,
-  }
+  // *** THE DOOR IS CHOSEN BY THE SUBSCRIPTION, NOT THE CUSTOMER. CORRECTED 24 OCTOBER 2026. ***
+  // This took `hasStripeCustomer`, and that is the trap §218 is about: a customer exists the
+  // moment somebody OPENS checkout, even if they close the tab. Sending them to the portal then
+  // offers a card that nothing will ever charge, because there is no subscription to charge it
+  // against — and no webhook fires for it either. The portal is for managing a subscription; if
+  // there is no subscription, the door is checkout.
+  const door = (opts.hasSubscription ? 'portal' : 'checkout') as BannerAction
+  const update = { button: 'Update your card', action: door }
+  const add = { button: 'Add a card', action: door }
 
   switch (verdict.reason) {
     // ---- 1. The ordinary end of a free trial. Board 8's words, unchanged. ----
@@ -350,7 +351,8 @@ export type BillingRow = {
   trial_ends_at: string | Date
   subscription_status: string | null
   payment_failed_at: string | Date | null
-  stripe_customer_id?: string | null
+  /** Which door the one button opens. NOT `stripe_customer_id` — see `bannerFor`. */
+  stripe_subscription_id?: string | null
 }
 
 /**
@@ -363,7 +365,7 @@ export function bannerFromRow(row: BillingRow | null, now: Date = new Date()): B
   if (verdict.access !== 'read_only' && verdict.reason !== 'payment_failed_in_grace') return null
   return bannerFor(verdict, {
     paymentFailedAt: row.payment_failed_at,
-    hasStripeCustomer: Boolean(row.stripe_customer_id),
+    hasSubscription: Boolean(row.stripe_subscription_id),
     now,
   })
 }
