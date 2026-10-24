@@ -15446,14 +15446,35 @@ to 24 hours of wrong state, a second thing that can be down, and a second source
 fact — the shape of problem §208 was written to remove. `vercel.json` is unchanged.
 
 > ### ⚡ AND THE FINDING BEHIND THAT, WHICH IS STEP 18's REAL WORK.
-> **Five of the seven crons call a model on a company's behalf with no person in the request** —
-> `jobs/summarise`, `jobs/scan-documents`, `jobs/audit-sections`, `jobs/handbook-queue`,
-> `jobs/handbook-checks` (classified by reading each route for `@/lib/ai`; `jobs/calendar-month` and
-> `jobs/delete` call no model). A request-time rule guarded on the session **does not reach them.**
-> Left alone, a read-only company's queued work still runs and still costs us money: the paid work
-> simply moves from the person's click to the cron's sweep, and the gate is silently bypassed. So
-> step 18 must apply the rule **per work item, by company**, inside all five — not only at the 14
-> person-triggered routes. That is the difference between a gate and the appearance of one.
+> **Crons call a model on a company's behalf with no person in the request.** A request-time rule
+> guarded on the session **does not reach them.** Left alone, a read-only company's queued work
+> still runs and still costs us money: the paid work simply moves from the person's click to the
+> cron's sweep, and the gate is silently bypassed. So step 18 must apply the rule **per work item,
+> by company**, inside each one — not only at the person-triggered routes. That is the difference
+> between a gate and the appearance of one.
+>
+> ### ⚡⚡ CORRECTED 23 OCTOBER 2026 AT STEP 18: THE TWO NUMBERS IN THIS BOX WERE BOTH WRONG.
+> It said **"five of the seven crons"** and **"the 14 person-triggered routes"**. The real figures
+> are **four crons and nineteen routes**, and the reason the first count was wrong is the reason
+> the second was: *"classified by reading each route for `@/lib/ai`"* finds only DIRECT importers.
+>
+> **Nineteen, not fourteen.** `scripts/check-schema-contracts.js` check 3 now computes the
+> transitive import closure instead. Five routes were missed, and every one of them spends by
+> kicking a sweep in `after()` rather than by importing `lib/ai.ts` itself, so no amount of reading
+> their own source would have found them: **`handbooks` POST**, **`handbooks/read` POST**,
+> **`document-rescan` POST**, **`document-batches` PATCH with `action: 'start'`**, and
+> **`audit-runs/[id]/sections/[sid]/retry` POST**. (A twentieth file, `topics/[id]`, is reached by
+> the closure but has only GET and DELETE, so it is exempt by name.)
+>
+> **Four crons, not five.** `jobs/handbook-queue` spends nothing: `queueDueChecks` inserts rows and
+> calls no model. Its paid work is `sweepChecks`, kicked in `after()`, and gating that covers both
+> routes. Queueing for a read-only company is CORRECT — decision 11 leaves work queued; it does not
+> refuse to record it. The four that needed a gate are `jobs/summarise`, `jobs/scan-documents`,
+> `jobs/audit-sections` and `jobs/handbook-checks`. `jobs/calendar-month` and `jobs/delete` call no
+> model, as this box always said.
+>
+> The count is now pinned in the build (`PAID_COUNT = 19`), so a twentieth paid route is a
+> deliberate edit rather than something discovered a step later. §215.
 
 ### H. NO PUBLISHABLE KEY. THREE VARIABLES, NONE OF THEM PUBLIC
 
@@ -15631,3 +15652,174 @@ the grep the owner required rather than by reading the comment again.
   commit that holds it, verified by running both that and its parent before writing this line.
 - **`companies.scan_result` being retired.** A separate decision with a separate reader to move,
   still owed in `STATUS.md`. This one does not do it.
+
+---
+
+## 215. THE READ-ONLY STATE: ONE RULE AT NINETEEN DOORS AND FOUR SWEEPS — 23 October 2026 (My Account step 18, `ACCOUNT-PLAN.md` decision 11, board 8)
+
+After the trial without a card, or after a failed card's seven days, a company may sign in, read,
+download and print everything it has, and spends nothing. Nothing is deleted and nothing is marked.
+The rule itself is `lib/billing.ts` `accessFor`, built and tested at step 17 (§213); this is where
+it is applied.
+
+### A. TWO SHAPES, BECAUSE A PERSON AND A QUEUE NEED OPPOSITE ANSWERS
+
+`lib/requireAccess.ts` `requireAccess(auth)` answers a person: `null` to carry on, or a **402** whose
+body is one plain sentence. Two lines, at the identical position in nineteen POST handlers, directly
+below `requireCompany`. It reads through **`auth.db`** — the caller's own RLS-scoped client — so
+there is no new service-role use (migration 087 left `authenticated`'s SELECT on `companies` intact,
+which is what draws the Billing tab) and it **fails closed**: a policy mistake returns no row, and no
+row refuses.
+
+`lib/accessGate.ts` `splitByAccess(items, billing, now)` answers a sweep: which work items may be
+worked, and which are left. It is **pure** — that is the only reason the two-company cron test can
+run offline.
+
+**402 and not 403.** "Payment Required" is the one status that means this, and it is
+distinguishable in a log from the 401/404 `requireCompany` already returns.
+
+### B. ⚡ NINETEEN DOORS, NOT FOURTEEN — AND THE REASON IS A LESSON, NOT A MISCOUNT
+
+Step 17 built its list by grepping for `@/lib/ai`. That finds only **direct importers**. The real
+set is the **transitive import closure**, and it is five larger. Every one of the five spends by
+kicking a sweep in `after()`, so reading its own source would never have found it:
+
+| missed route | how it spends |
+|---|---|
+| `app/api/handbooks/route.ts` **POST** | `startReading()` reads the handbook in `after()` |
+| `app/api/handbooks/read/route.ts` **POST** | the retry door for the same read |
+| `app/api/document-rescan/route.ts` **POST** | `after(() => sweep())` — the scan sweep |
+| `app/api/document-batches/route.ts` **PATCH**, `action: 'start'` | `after(() => sweep())` |
+| `app/api/audit-runs/[id]/sections/[sid]/retry/route.ts` **POST** | `after(() => sweep())` |
+
+So the list is not maintained by hand any more. **`scripts/check-schema-contracts.js` CHECK 3**
+computes the closure at build time and fails the build when a route that can reach a model does not
+call `requireAccess` — or is not named in an exemption list **with a reason**. It is check 2's
+lesson applied to a second snapshot-of-a-growing-set, and the count is pinned (`PAID_COUNT = 19`) so
+a twentieth is a deliberate edit. Proved red by deleting one gate line: two problems, the file named,
+exit 1. Restored.
+
+`app/api/topics/[id]/route.ts` is reached by the closure and exempt by name: GET and DELETE only.
+Reading and deleting a conversation are free.
+
+### C. FOUR SWEEPS, NOT FIVE, AND WHAT "LEFT" MEANS FOR EACH TABLE
+
+`jobs/handbook-queue` spends nothing — `queueDueChecks` inserts rows. Queueing for a read-only
+company is correct: decision 11 leaves work queued, it does not refuse to record it.
+
+| sweep | the skip | what the row says afterwards |
+|---|---|---|
+| `jobs/summarise` | split **before `claimTopic`** | `topics` untouched: `summarised_at` null, `last_turn_at` set, so it is a candidate again next run |
+| `jobs/scan-documents` | excluded from the pick | `documents` still `uploaded`, `reading_since` null — which the page already draws as **Queued**. Never claimed, so rule 3's stuck-release never touches them |
+| `jobs/audit-sections` | split on the fifty oldest runs | `audit_sections` still `queued`, `claimed_at` null; the parent `audit_runs` row still `queued` |
+| `lib/handbookCheck.ts` `sweepChecks` | into the `visited` set it already keeps | `handbook_check_sections` still `queued`, `claimed_at` null; `recoverStuck` ignores an unclaimed row |
+
+Nothing is failed, nothing is marked, nothing is deleted. Each row is left in the state that already
+means *waiting*, so the day a card is added the work simply runs.
+
+**One log line per company per run**, not per item: a read-only company with forty queued documents
+would otherwise write forty identical lines every five minutes, for ever.
+
+### D. ⚡ THE STALL THAT THE OBVIOUS IMPLEMENTATION WOULD HAVE SHIPPED
+
+`jobs/scan-documents` picked the single oldest queued document (`limit(1).maybeSingle()`) inside
+`for (;;)`. The obvious skip — `continue` — **hangs the sweep**: the skipped document is deliberately
+left `uploaded` and unclaimed, so the next turn picks the same one, and the run spins until
+`BUDGET_MS` while every paying company behind it starves. It is head-of-line blocking, and it is
+worse than the thing it fixes.
+
+It now takes **fifty and filters**, the shape `jobs/audit-sections` already used, and both of them
+additionally **exclude a declined company from the query** — which is what makes each turn of the
+loop see something new and is what makes them provably terminate. The offline test's read-only
+fixture is deliberately the **oldest** document, so the regression announces itself as a hang.
+
+### E. THE SCREENS: TWO LAYERS, AND THE FIRST NEEDED NO SECTION CHANGE AT ALL
+
+Every call site in every section already does `if (!res.ok) show json?.error`. So the 402's sentence
+displays today, in each section's own existing mechanism, **with no change to any section file**.
+That is also the layer that cannot be bypassed, because it is the server's answer.
+
+The second layer is the courtesy one: `components/PausedNote.tsx` beside each control, and
+`disabled` on the control, so nobody presses a button that cannot work. It needs the verdict in the
+browser, and **every page that owns a paid control already read `companies`** — so the change is one
+string, `select('name')` → four more columns. No new request anywhere. `lib/billing.ts` has zero
+imports, so `accessFor` runs unchanged in the browser.
+
+### F. THE BANNER, AND THE ONE CASE THE WHOLE DESIGN TURNS ON
+
+Board 8's band sits above the top bar. `components/AppLayout.tsx` gains exactly three things — one
+widened select (the read it already made), one state, and one JSX line before `<header>`.
+`SidebarContent` and `NAV_ITEMS` are **not touched**, and `tests/unit/readOnlyUi.test.ts` pins both
+by length and content hash so that stays true (decision 14).
+
+> ### ⚡ IT RENDERS WHILE ACCESS IS STILL `full`, AND THAT IS NOT A BUG.
+> During decision 11's seven days `accessFor` returns **`full`** — correctly; the grace *is* access.
+> A band drawn only on `read_only` would first appear on day 8, telling somebody about a window that
+> had already shut. So the condition is `read_only` **OR** `payment_failed_in_grace`, and the
+> controls stay **enabled** then — disabling them would take back the seven days the banner is at
+> that moment promising in writing. Two functions exist only to keep those apart:
+> `bannerFromRow` (the band) and `pausedFromRow` (the controls).
+
+Four texts: the trial ended; the card failed with **N more days**; the grace is over; and the
+subscription is not active (which also covers a status Stripe invents after this was written).
+`graceDaysLeft` is honest arithmetic and reaches 0, so `bannerFor` clamps the display to 1 and
+handles the singular — "0 more days" is not a sentence to show anyone.
+**"Update your card" goes to the PORTAL when `stripe_customer_id` is set, and to checkout when it is
+not**: a card is added at checkout and changed in the portal, and sending somebody with a dead card
+to checkout would make them a second Stripe customer.
+
+`payment_failed_retrying` gets **no banner**, and it is the one deliberate gap: it is `past_due` with
+no `payment_failed_at`, which `accessFor` reasons is our mirror having dropped an event. There is no
+anchor, so there is no N, and any sentence would either invent a number or alarm without a date. The
+banner arrives when the next `invoice.payment_failed` writes the anchor.
+
+### G. UPLOADING IS NOT GATED (the owner, 23 October)
+
+No **non-model** write is gated. Storing a file calls no model, and a read-only company must still be
+able to put its records somewhere safe. The Documents page says what will happen — *"uploaded and
+saved — queued to be read"* — rather than letting the scan come back 402 and look like nothing
+happened (§5.1: never a silent failure).
+
+### H. WHAT HAD TO CHANGE TO MAKE ANY OF THIS TESTABLE
+
+Three of the four sweeps had **never been executed by a test**, for two independent reasons, and
+both are now fixed:
+
+1. **Their sweep reached a module-scope client.** `sweep()` in the three job routes now takes
+   `admin: SupabaseClient = supabaseAdmin`. Signature only — the default is what production uses.
+2. **`node --test` could not import a route file at all.** A route imports `next/server`; `next` is
+   CommonJS with no `exports` map, so Node's ESM resolver treats the bare specifier as a file path
+   and refuses it for want of an extension. `tests/unit/resolveNextServer.mjs` maps that one
+   specifier, and resolves the `@/` alias besides — the general fix for the thing
+   `lib/stripeWebhook.ts` worked around with relative imports at step 17. It is a test-harness shim;
+   `next build` never sees it.
+
+The first run of those tests immediately found a real defect in this step's own work:
+`jobs/audit-sections` still passed `supabaseAdmin` to `runSection`, `finishRunIfDone` and
+`notifyRun`, so the injected client never reached the work. The test hung against a placeholder URL
+rather than passing — **a check that could not see a presence, failing loudly instead of quietly.**
+
+### I. A PRE-EXISTING BUG THIS STEP TRIPPED OVER AND FIXED
+
+`app/compliance/page.tsx` read `from('profiles').select('company_id').maybeSingle()` with **no
+`.eq('id', user.id)`**, leaning on RLS to return exactly one row. It does not: the SELECT policy
+shows a person their **colleagues** too (`CLAUDE.md` §3.6 — several profiles sharing a `company_id`
+is the normal state). At any company with more than one person PostgREST returned *"JSON object
+requested, multiple (or no) rows returned"*, `prof` came back null, and the whole effect bailed — no
+`companyId`, and **no company name on the printed header**. Found on staging against Test Alpha
+Chemical, which has two people: the read-only note never appeared because `billing` was never set
+either. Every other page already filtered by the user's own id. One line, and the conversation
+counts the page had been silently failing to show came back with it.
+
+### WHAT WOULD REVERSE ANY OF IT
+
+- **The 402 (A):** a decision to let read-only companies queue work that runs when they pay. Then
+  the routes accept and the sweeps keep skipping, and the person needs a different sentence.
+- **The build gate (B):** nothing short of the closure becoming wrong — a route that spends without
+  importing anything that imports `lib/ai.ts`, e.g. a raw `fetch` to a model. That is what
+  `app/api/scan-website/route.ts` was, and §214 deleted it.
+- **Fifty-and-filter (D):** a queue large enough that fifty is not enough to find a payer. Then the
+  exclusion set stays and the page size grows, or the rule moves into SQL — at the cost of a second
+  copy of it.
+- **The grace banner's condition (F):** the grace being removed, or becoming read-only from day one.
+- **Uploads staying open (G):** storage cost becoming the thing being abused rather than model spend.

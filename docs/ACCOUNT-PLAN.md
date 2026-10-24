@@ -49,7 +49,7 @@ the trial. Three parts, built and released in order: **A the account page · B t
 | 16 | Release B | The routine; `AI_MODEL_WEBSITE` set on Vercel by the owner | **Released 22 Oct** — four backup CSVs, the variable set before the push, 084/085/086 applied, production read back six ways, `main` fast-forwarded to `2440cef`, ten live checks passed, one measured walk against the production build. `docs/RELEASE.md` |
 | **C** | **Billing** | | |
 | 17 | Stripe, the wiring | **Migration 087** — EIGHT columns, not four: the plan named `stripe_customer_id`, `subscription_status`, `trial_ends_at`, `current_period_end`, and the stop added `stripe_subscription_id`, `payment_failed_at` (the grace anchor) and `card_brand`/`card_last4` (the Billing tab's one line, and the database refuses a card number). Plus `stripe_events`. `lib/billing.ts`, `lib/stripe.ts`, `lib/stripeWebhook.ts`; `/api/billing/checkout`, `/api/billing/portal`, `/api/stripe/webhook`. One stop, taken | **Done 23 Oct** — 087 on staging, proved against Stripe's sandbox with nothing stubbed (20 + 32 checks, $0 model spend), 40 unit tests. `DECISIONS.md` §213 |
-| 18 | The read-only state | One rule the paid routes check (`lib/billing.ts` `accessFor`, **built and tested at step 17**); the banner; the 7-day grace. ~~the daily job that ends trials~~ — **STRUCK at the step 17 stop (the owner, 23 Oct).** The rule is computed from timestamps at request time, so there is nothing to flip and no 24-hour window of wrong state. **AND THE WORK THE STRUCK JOB HID: five of the seven crons call a model with no person in the request** (`jobs/summarise`, `scan-documents`, `audit-sections`, `handbook-queue`, `handbook-checks`), so a session-guarded rule does not reach them and a read-only company's queued work would still spend money. The rule must be applied per work item, by company, inside all five as well as at the 14 person-triggered routes. `DECISIONS.md` §213 G | Not started |
+| 18 | The read-only state | **BUILT 23 Oct** (`DECISIONS.md` §215). `requireAccess` at **19** POST handlers — not the 14 this row used to say; the five that were missed (`handbooks` POST, `handbooks/read` POST, `document-rescan`, `document-batches` PATCH `start`, the audit section `retry`) all spend by kicking a sweep in `after()`, which a grep for `@/lib/ai` cannot see. `splitByAccess` inside **4** sweeps — not 5: `jobs/handbook-queue` calls no model. `scan-documents` had to stop picking `limit(1)`, which a naive `continue` would have hung. The banner above the top bar; the sidebar untouched and hashed. Uploads stay open. The count is pinned in `check-schema-contracts.js` check 3. ~~the daily job that ends trials~~ — **STRUCK at the step 17 stop (the owner, 23 Oct)**; the rule is computed from timestamps at request time. | **Done** |
 | 19 | The Billing tab and the Cancel tab's subscription line | As drawn | Not started |
 | 20 | The owner's test, part C | Stripe test mode: a test card, a failing card, the trial ending | Not started |
 | 21 | Release C | The routine | Not started |
@@ -102,6 +102,20 @@ the trial. Three parts, built and released in order: **A the account page · B t
 11. **After the trial without a card, or after a failed card's 7-day grace: read-only, never locked out.** Sign in, read,
     download and print everything; asking, reading documents and auditing pause; one banner, one button. Nothing is ever
     deleted for non-payment.
+    > ### ✅ BUILT AT STEP 18 — 23 October 2026 (`DECISIONS.md` §215).
+    > **Where it is applied:** `requireAccess` in **19** POST handlers (not 14 — the transitive closure found five that
+    > spend by kicking a sweep in `after()`), and `splitByAccess` inside **4** sweeps (not 5 — `jobs/handbook-queue`
+    > calls no model). Every GET is untouched. `scripts/check-schema-contracts.js` check 3 fails the build if a
+    > twentieth paid route appears without a gate.
+    > **What a skipped work item looks like:** exactly what it looked like before — `topics` untouched, `documents`
+    > still Queued, sections still `queued` and unclaimed. One log line per company per run.
+    > **The banner** is one slot above the top bar in `AppLayout`; the sidebar and `NAV_ITEMS` are untouched and pinned
+    > by content hash. It shows on `read_only` **or** inside the grace — where `accessFor` still returns `full`, so the
+    > controls stay enabled and the seven days are real. "Update your card" goes to the portal when Stripe knows them.
+    > **Uploading is NOT gated** (the owner): no non-model write is. A read-only company still stores its files, and the
+    > page says they are queued to be read.
+    > Proved on staging with two fixture companies: 19 of 19 doors answered 402, 13 of 13 reads worked, all four sweeps
+    > processed the paying company and left the read-only one byte-identical. Screenshots `shots/step18-*`.
     **The rule exists as of step 17** — `lib/billing.ts` `accessFor`, pure, 26 unit tests, reading exactly three columns:
     `trial_ends_at`, `subscription_status`, `payment_failed_at`. **The trial is consulted FIRST**, so a person who cancels
     on day 3 keeps every day they were promised. The grace is a WINDOW from the FIRST failure we heard about, not a flag —

@@ -125,6 +125,49 @@ two cases written. (c) is not built and is deliberately bounded.**
 
 ---
 
+## ⚡ A ROUTE FILE AND A CRON SWEEP ARE NOW TESTABLE OFFLINE — 23 October 2026 (My Account step 18, `DECISIONS.md` §215 H)
+
+Until this step, **no test in this project had ever executed a cron sweep.** `tests/unit/handbookCheck.test.ts`
+reached `sweepChecks` because it lives in `lib/`; the other three sweeps lived in route files and
+could not be reached at all. Two independent walls, both now down — and this is written here rather
+than in `DECISIONS.md` because it changes what a test CAN be, not what the product does.
+
+**1. `node --test` could not import a route file.** A route imports `next/server`. `next` is
+CommonJS and declares no `exports` map, so Node's ESM resolver treats the bare specifier as a file
+path and refuses it for want of an extension — *"Cannot find module …/node_modules/next/server. Did
+you mean to import next/server.js?"*. **`tests/unit/resolveNextServer.mjs`** maps that one
+specifier, resolves the `@/` path alias besides, and sets obviously-fake Supabase credentials so
+`lib/auth.ts`'s module-scope client can construct. `scripts/test-guard.js` loads it with
+`--import`. It is a test-harness shim: `next build` never sees it, and nothing it does reaches the
+product.
+
+> The `@/` half is the general fix for a thing that had already been worked around once:
+> `lib/stripeWebhook.ts` was written with RELATIVE imports at step 17 purely because
+> `node --test` could not resolve the alias (`DECISIONS.md` §213 I). New test code does not need
+> that workaround any more.
+
+**2. The sweeps reached a module-scope client.** `sweep()` in `jobs/summarise`,
+`jobs/scan-documents` and `jobs/audit-sections` now takes `admin: SupabaseClient = supabaseAdmin`.
+Signature only; the default is exactly what production uses, and `tests/unit/jobRun.test.ts`
+asserts that default by name — a cron running as anything but the service role would see no rows.
+
+**What that bought, in `tests/unit/accessGate.test.ts`:** all four sweeps run against an in-memory
+fake (`tests/unit/fakeSupabase.ts`) with a paying company and a read-only company **in the same
+run**. The assertion on the read-only company is a **deep-equal on its row, before and after** —
+not "no call was made", because decision 11's promise is about state: nothing failed, nothing
+marked, nothing deleted. Only comparing the row can show that.
+
+**And it caught a real defect on its first run.** `jobs/audit-sections` still handed
+`supabaseAdmin` to `runSection`, `finishRunIfDone` and `notifyRun`, so the injected client never
+reached the work. The test hung against the placeholder URL instead of passing — loud, not quiet.
+
+**One fixture is load-bearing and must not be tidied:** in the `jobs/scan-documents` test the
+read-only company's document is deliberately the **oldest**. With the `limit(1)`-plus-`continue`
+shape that step 18 replaced, that test hangs until `BUDGET_MS`. If it ever hangs again, the
+head-of-line stall is back.
+
+---
+
 ## The suite may grow. It may not silently shrink — `npm run test`
 
 Added 12 September 2026. `npm run test` is `scripts/test-guard.js`, which runs the suite and
