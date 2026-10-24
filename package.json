@@ -37,7 +37,10 @@
     "measure": "node --env-file=.env.local scripts/measure-layout.mjs",
     "check:live": "node --env-file=.env.local scripts/check-live.js",
     "schema:doc": "node --env-file=.env.local scripts/schema-doc.js",
-    "website:compare": "node --env-file=.env.local scripts/website-compare.mjs"
+    "website:compare": "node --env-file=.env.local scripts/website-compare.mjs",
+    "stripe:watch": "node scripts/stripe-watch.mjs",
+    "stripe:clock": "node scripts/stripe-clock.mjs",
+    "stripe:fixture": "node scripts/stripe-walk-fixture.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",

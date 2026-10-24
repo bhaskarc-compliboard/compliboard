@@ -125,6 +125,79 @@ two cases written. (c) is not built and is deliberately bounded.**
 
 ---
 
+## THE CARD WALK: THREE TERMINALS AND TWO HELPERS — 23 October 2026 (My Account step 20 setup)
+
+Everything about billing that a sandbox, a service role and a unit test cannot reach needs a human
+with a card. This is the setup for that, and what it can and cannot stand in for.
+
+### The Stripe CLI
+
+Installed **without sudo**, into a user-owned prefix that is already on this machine's PATH:
+
+    npm install -g --prefix ~/.local @stripe/cli
+
+`@stripe/cli` is Stripe's own package (`github.com/stripe/stripe-cli`, MIT). A plain
+`npm install -g` is refused here — `/usr/local/lib/node_modules` needs root — and there is no
+Homebrew on this laptop. `npx --package=@stripe/cli stripe …` also works and installs nothing.
+
+> **`stripe login` is not required.** `npm run stripe:watch` passes `--api-key`, read from
+> `.env.local`. That is deliberate: `stripe listen` forwards events from whichever account the CLI
+> is paired with, while the app talks to whichever account `STRIPE_SECRET_KEY` names. If those are
+> two different sandboxes, checkout creates a customer in one and the listener forwards from the
+> other, **nothing arrives, and there is no error anywhere to explain it.** Passing the app's own
+> key makes them provably the same account.
+
+### Three terminals, all in the project root
+
+| | command | what it is |
+|---|---|---|
+| 1 | `npm run dev` | the app on :3000 |
+| 2 | `npm run stripe:watch` | the listener. Prints the signing secret; paste it into `.env.local` as `STRIPE_WEBHOOK_SECRET` and **restart terminal 1** — Next reads `.env.local` once, at boot |
+| 3 | `npm run stripe:fixture` | prints the sign-in for the walk company. Also `-- --reset` to put it back in a clean trial |
+
+`PORT=3998` on terminals 2 and 3 points them at an isolated copy instead (§3c), which is how this
+was tested without touching the owner's own server.
+
+> ### ⚡ TWO THINGS THE OLD GUIDES GET WRONG, BOTH FOUND BY RUNNING IT
+> **1. `stripe listen --forward-to …` on its own is REFUSED** by CLI 1.55.1: *"must specify events
+> to forward using --events, --all-snapshot, or --all-thin"*. `npm run stripe:watch` names the six
+> events `lib/stripeWebhook.ts` handles, which also keeps `stripe_events` free of rows for events
+> the handler ignores.
+>
+> **2. The `whsec_` does NOT change on every start.** It is stable for an account+device pairing —
+> verified by taking it twice and comparing hashes. It *does* change if you
+> `stripe login --new-session` or pair a different account. Without
+> `STRIPE_WEBHOOK_SECRET` set, the route refuses every event with a 400 that is indistinguishable
+> from a bad signature.
+
+### `npm run stripe:clock` — a subscription lifetime in about four minutes
+
+A Stripe **test clock** is a fake "now" that a customer and its subscription live inside. Advancing
+it makes Stripe genuinely end the trial, raise the invoice, charge the card and retry the failure,
+and fire the real webhooks. It creates **its own** company fixture and its own clock-bound customer,
+prints at each step what our columns say and what the Billing tab would show — from the real
+`lib/billingView.ts`, not a copy — and cleans up in a `finally`. `-- --clean` sweeps an interrupted
+run; `-- --keep` leaves it standing.
+
+**What it proves:** the trial converting on day 15, `subscription_status` and `current_period_end`
+being written, the renewal failing, and `payment_failed_at` being written once.
+
+**What it cannot:**
+
+- **Checkout and the portal.** The subscription is made through the API, so the hosted card page
+  and `payment_method_collection: 'if_required'` are untouched by it. That is the human's walk.
+- **⚡ The 7-day grace WINDOW.** The webhook anchors the grace with `payment_failed_at = new Date()`
+  — our server's wall clock when it handles the event (`lib/stripeWebhook.ts:327`), not the event's
+  own timestamp. For a real customer those are seconds apart. For a test clock they are months
+  apart, so the clock cannot walk through the window: the anchor stays in real time and the gate
+  reads the grace as already over. The script therefore shows the window by re-asking the gate
+  about the same row with the anchor moved onto the clock's day — **a question, not a write**, and
+  labelled as such on screen.
+- Stripe's dunning email, proration, tax, 3-D Secure, and the actual price behind
+  `STRIPE_PRICE_ID` (§216 A: the one unguarded claim on the Billing tab).
+
+---
+
 ## A PARAMETER THAT DECIDES WHETHER A CUSTOMER IS ASKED FOR A CARD — 23 October 2026 (My Account step 19, `DECISIONS.md` §216 B)
 
 `payment_method_collection: 'if_required'` on the Checkout session is one word, and it decides
