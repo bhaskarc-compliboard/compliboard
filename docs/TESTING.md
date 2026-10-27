@@ -4768,3 +4768,62 @@ mirror has gone stale (a tab left open while the trial ran out), which is exactl
 cause wearing different clothes. The proof was taken against the route instead: signed in as the
 lapsed fixture, `POST /api/chat` → **402**, the exact sentence, and **no model call** — the one
 check that matters, since the gate's whole job is to refuse before anything is spent.
+
+---
+
+## AN EXPAND PATH ONE LEVEL TOO SHALLOW IS A SILENT ZERO — 27 October 2026 (My Account step 20, `DECISIONS.md` §221)
+
+The second time in four days that a Stripe `expand` has been one level short, and the second time it
+would have shipped as a missing value rather than as an error. §217 D was the card line
+(`'customer'` where `'customer.invoice_settings.default_payment_method'` was needed, so the fallback
+could never fire). §221 is the discount:
+
+```
+expand: ['discounts']                  → discount is an object, source.coupon is "f4DDuTXd"
+expand: ['discounts.source.coupon']    → source.coupon is a Coupon, name "FOUNDER100"
+```
+
+With the first one the product mirrors **"no discount"** for a company that has one, and then tells
+them they owe the list price. Nothing throws. Nothing logs. The only symptom is a sentence about
+money that is wrong.
+
+> ### THE RULE: NEVER WRITE AN `expand` FROM THE SHAPE YOU EXPECT. PRINT WHAT CAME BACK.
+> Four lines in a throwaway script settled both cases and would have settled them before the code
+> was written:
+>
+>     const s = await stripe.subscriptions.retrieve(ID, { expand: ['discounts'] })
+>     console.log(typeof s.discounts[0], typeof s.discounts[0]?.source?.coupon)
+>
+> `typeof` is the whole test. An id string and an object are the two outcomes, and the declarations
+> say `string | Coupon` for both — so **TypeScript cannot tell you which you got**, which is exactly
+> why this class is invisible to the gate.
+
+**Three more things in the same family, all confirmed by printing rather than by reading docs:**
+
+- **A `Discount` has no top-level `coupon`.** `'coupon' in discount` was `false` on the live object.
+  Reading `discount.coupon` gives `undefined`, and `undefined` reads as "no discount".
+- **`discount.end` is null for `once` AND `forever`.** Only `coupon.duration` separates them. A page
+  that keyed on the date would show a one-off discount as permanent — and would never ask for the
+  card the second month needs.
+- **`invoices.retrieveUpcoming` is gone**; it is `createPreview`, and it **refuses outright** for a
+  canceled subscription (`invoice_upcoming_none`). So "no amount" is a normal state to design for,
+  not an exception to catch and forget.
+
+### And the test that was wrong in the same way the page was
+
+Fixing the words broke one existing assertion, which turned out to be the finding in miniature:
+
+```
+['active, with a next payment date',
+  { subscription_status: 'active', current_period_end: '2026-11-30T12:00:00Z' },
+  'Active', /charged to the card below/],
+```
+
+That fixture has **no card**. The suite had been asserting, for two steps, that the page tells a
+company with no card that a charge is going to one — the same sentence the owner found on screen,
+sitting green in the test file. It passed because it was written from the same belief as the code.
+
+> This is §216 B's lesson arriving from the other direction. There, a test asserted a value that was
+> the wrong value. Here, a test asserted a *sentence* about a fixture that could not be true of it.
+> **A fixture is a claim too, and nobody checks it.** When a wording change breaks an old assertion,
+> read the fixture before fixing the assertion: it may be the fixture that was lying.

@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-24 05:11 UTC
-**Migrations applied:** 90 — `000` to `089`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-27 17:56 UTC
+**Migrations applied:** 91 — `000` to `090`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -74,7 +74,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 12 rows · touched by screen account, route account/export, route account, route audit-runs, route billing/checkout, +31 more
+- `companies` — 12 rows · touched by screen account, route account/export, route account, route audit-runs, route billing/checkout, +33 more
 - `profiles` — 11 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +14 more
 - `entities` — 16 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +26 more
 
@@ -774,7 +774,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 **Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route billing/checkout`, `route billing/portal`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib accessGate`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `lib requireAccess`, `lib stripeWebhook`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route billing/checkout`, `route billing/portal`, `route billing/reconcile`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib accessGate`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `lib requireAccess`, `lib stripeReconcile`, `lib stripeWebhook`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -806,6 +806,14 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 | `card_last4` | text | yes | — |
 | `trial_ends_at` | timestamp with time zone | no | `(now() + '14 days'::interval)` |
 | `cancel_at` | timestamp with time zone | yes | — |
+| `next_charge_amount_cents` | integer | yes | — |
+| `next_charge_currency` | text | yes | — |
+| `discount_name` | text | yes | — |
+| `discount_percent_off` | numeric | yes | — |
+| `discount_amount_off_cents` | integer | yes | — |
+| `discount_duration` | text | yes | — |
+| `discount_months` | integer | yes | — |
+| `discount_ends_at` | timestamp with time zone | yes | — |
 
 **Pointed at by:**
 
@@ -2900,9 +2908,9 @@ Reusable, shared parsed checklist per named standard. Built once, reused by ever
 
 Every event /api/stripe/webhook accepted from Stripe, keyed by STRIPE'S OWN EVENT ID so a redelivery is a primary-key conflict rather than a second write. Two jobs: it makes the webhook idempotent, and it is the only record of what Stripe told us — the thing you need when a customer says they were charged and the product disagrees (CLAUDE.md §5). *** OURS, NOT THE CUSTOMER'S: no grant to anon or authenticated, and RLS on with no policy, so it is closed the way library_candidates is. *** `company_id` is nullable because an event for a customer we cannot map must still be recorded with its reason. My Account step 17.
 
-**Rows:** 29 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 24 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `lib stripeWebhook`
+**Read or written by:** `lib stripeReconcile`, `lib stripeWebhook`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -3587,4 +3595,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 087
 088
 089
+090
 ```

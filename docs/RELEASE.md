@@ -832,6 +832,21 @@ only for the exact word `true`. Off, an HR answer is the baseline's; on, it is g
 > 20's by-hand list, together with the live product, the live price, the live webhook endpoint and
 > the Billing Portal's default configuration saved in live mode.
 >
+> ### ⚡ STEP 20'S BY-HAND LIST, AS IT STANDS AFTER THE OWNER'S WALK — 27 October 2026
+>
+> Four findings came out of walking it with a real card, and each adds something to do in live mode
+> that no test can do for us. `DECISIONS.md` §217–§221.
+>
+> | # | To do in LIVE mode, by hand | Why it cannot be skipped |
+> |---|---|---|
+> | 1 | Create the live **product and $199/month price**, and put the price id in `STRIPE_PRICE_ID` | Test and live price ids differ. The Billing tab's `$199` is a constant here and Stripe's truth there; **if they ever disagree the page is lying about a price** (§216 A) |
+> | 2 | Save the **Billing Portal's default configuration** in live mode | The configuration object carries `livemode`, so test and live are separate records. With none saved, the portal 500s — and the portal IS "change the card", "see my invoices" and "stop paying" |
+> | 3 | Register the **live webhook endpoint** and put its signing secret in `STRIPE_WEBHOOK_SECRET` | The CLI's test secret is a different value. Without it the route refuses every event with a 400 that is indistinguishable from a bad signature — and the mirror silently stops tracking Stripe (§220 is the repair, not a substitute) |
+> | 4 | **Subscribe that endpoint to the six events** `lib/stripeWebhook.ts` handles | `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.paid`, `invoice.payment_failed`. A missing one is a column that stops moving |
+> | 5 | ⚡ **Issue `forever` coupons only** | §217: a coupon that zeroes only the FIRST charge on a no-trial session collects no card, and month two has nothing to charge. §221 gave the mirror the ability to SEE the difference and the page the words for it — but the chain that catches a lapsed repeating discount (`invoice.payment_failed` with no payment method → the seven-day grace) **has not been observed** and is recorded as owed |
+> | 6 | After the first live checkout, **read the mirror back** and confirm the Billing tab's amount is the customer's own, not `$199` | §221: `next_charge_amount_cents` comes from `invoices.createPreview`, which is a second round trip per event. If it ever returns nothing the tab says "shortly" rather than inventing a price — which is correct and worth seeing once |
+> | 7 | Confirm `payment_method_collection` on a live session: **`always` whenever a trial is sent** | §217. Stripe evaluates what is due NOW, so `if_required` on a trialling session collected **no card at all** and every trial customer would have lapsed on day 15 |
+>
 > | Variable | Who reads it | What it must be |
 > |---|---|---|
 > | `STRIPE_SECRET_KEY` | `lib/stripe.ts` `getStripe()` | `sk_test_…` on a laptop, `sk_live_…` on Vercel and nowhere else. **Sensitive, never visible** — unlike the `AI_MODEL_*` rows above, this one is a credential and the read-back argument of §136 does not apply to it. Server-only: `tests/unit/clientImports.test.ts` holds `lib/stripe.ts` in the same forbidden list as `lib/auth.ts` |

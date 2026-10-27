@@ -16514,3 +16514,182 @@ Stripe customer was deleted afterwards; the testgamma fixture's `trial_ends_at` 
 - **The full navigation (G.2):** `AppLayout` taking its billing row from a shared source the page can
   refresh. That is the better fix and a bigger one.
 - **The 402 wording (H):** nothing. The line was false.
+
+---
+
+## 221. THE PAGE STATED THE LIST PRICE AS FACT — 27 October 2026 (My Account step 20, migration 090, the owner's coupon walk; corrects §216 A)
+
+### WHAT HAPPENED
+
+`FOUNDER100` — 100% off, forever — went through Checkout exactly as it should: $0 total, no card
+form, a live subscription. The Billing tab then said, of that company:
+
+```
+Plan     $199 a month
+Status   Active · Next payment 27 November 2026
+         $199 a month, charged to the card below. Cancel any time from the Cancel tab.
+Card     No card yet                                              [Add a card]
+```
+
+**Three false statements about money in one card.** They will never be charged $199; there is no
+card below; and nothing will ever be charged to one. "Next payment" named a date on which no payment
+happens, and "Add a card" instructed somebody to do something pointless.
+
+§216 A had already flagged the $199 as this page's one unguarded claim — a constant here, Stripe's
+truth elsewhere, with a note saying so. **This is that claim meeting a discount**, and for a
+*partially* discounted customer it would be worse, because $199 is plausible and nobody would check.
+
+### A. WHAT THE MIRROR NOW CARRIES, AND WHY IT IS NOT ARITHMETIC
+
+The tempting fix is to compute: list price × (1 − `percent_off`/100). It is wrong the moment
+anything else is true — tax, a credit balance on the customer, two discounts, an `amount_off` coupon
+in another currency, a proration. Every one of those is Stripe's to compute.
+
+**So the amount is Stripe's own answer to "what is the next invoice":** `invoices.createPreview({
+subscription })`, whose `total` *is* what will be charged. Read from the sandbox on the real
+FOUNDER100 subscription:
+
+```
+subtotal 19900   total 0   amount_due 0 usd
+total_discount_amounts [{"amount":19900,"discount":"di_1UVET1Dfr228eUmO4QqqdR8E"}]
+```
+
+**And it is a column, not a page-load call** — which is the whole point of §213's mirror. Calling
+Stripe to draw a page would put a round trip, and a Stripe outage, in front of every Billing tab.
+The preview is read **once per event**, by the webhook and by the reconcile, through
+`columnsFromFacts` — the mapping §220 made them share. The page reads columns, as it always has.
+
+### B. ⚡ WHAT STRIPE REALLY GIVES — read off the object, and two of them would have been wrong
+
+Confirmed against the live subscription, `stripe@23.0.0`, API `2026-09-30.endive`:
+
+| | |
+|---|---|
+| **`subscription.discounts` is an ARRAY** | not `discount`. Needs `expand[]=discounts`, or every element is an id string. |
+| **⚡ a `Discount` has NO top-level `coupon`** | it is `discount.source.coupon`. `'coupon' in discount` came back **false**. |
+| **⚡ and `expand: ['discounts']` leaves THAT an id string** | checked: the bare `"f4DDuTXd"`. The expand must be `discounts.source.coupon`. |
+| the coupon carries the words | `name` ("FOUNDER100"), `percent_off` or `amount_off`, `duration`, `duration_in_months`. |
+| **`discount.end` is a date only for `repeating`** | **null for `once` AND `forever`.** They are told apart by `coupon.duration` and nothing else. |
+| the Checkout promotion code landed on the **subscription** | `customer.discount` was null. A Dashboard coupon lands on the customer, so both are read — subscription first, the same two-source shape as the card line. |
+| **`retrieveUpcoming` is gone from this SDK** | it is `invoices.createPreview` (`Invoices.d.ts:114`). |
+| **a canceled subscription has no preview at all** | `invoice_upcoming_none` — *"You cannot preview the upcoming invoice for a canceled subscription."* So a null amount is a NORMAL state, not an error. |
+
+The third row is **§217 D exactly, in a new place**: an expand one level too shallow reads as a
+missing value rather than as an error, so the discount would have mirrored as "no discount" and the
+company would have been told it owes the list price — silently, with nothing failing anywhere.
+
+The fifth row is the one with teeth. `once` zeroes one charge and nothing after it, and it is
+indistinguishable from `forever` by date. §217's rule was **"forever coupons only"**; the mirror can
+now see the difference, so the page can say *"on your first payment only"* and still ask for a card.
+
+### C. MIGRATION 090 — EIGHT COLUMNS, NO DEFAULT, NO BACKFILL
+
+Two about the money (`next_charge_amount_cents`, `next_charge_currency`) and six about the discount
+(`discount_name`, `discount_percent_off`, `discount_amount_off_cents`, `discount_duration`,
+`discount_months`, `discount_ends_at`). Explicit columns rather than one jsonb blob, for the reason
+the other nine are explicit: `check-schema-contracts.js` validates a column name inside a query
+string and cannot see into a jsonb path.
+
+**None of them decides anything about access.** `accessFor` does not read them and must not: a
+company on a 100% discount has a live subscription, and that is what gives it access.
+
+Its self-test has four checks, and check 3 is the one that matters: it writes the partial-discount
+case end to end, reads every field back, **proves check 2's absence query would have seen it**, then
+proves **0 is storable and does not read as NULL** — because a column that could not tell those apart
+would make *"nothing to pay"* indistinguishable from *"we do not know what you pay"*, which is the
+entire distinction this migration exists for. Then it clears all eight, which is the coupon-removed
+path. ⚠ No DEFAULT on any of them: 087's no-op backfill (repaired by 088) is the standing reason.
+
+### D. THE TWO WRITE RULES, OPPOSITE TO EACH OTHER
+
+- **The discount is written EVEN WHEN NULL**, like `cancel_at` (§219). We read the subscription, so
+  "there is no discount on it" is a fact Stripe told us — and it is the only way **removing** a
+  coupon in the portal reaches the page. A conditional write would leave somebody reading
+  "FOUNDER100, 100% off, forever" after the coupon was taken off them.
+- **The amount is written only when we have one**, like the card line. Null from the preview does
+  not mean "nothing to pay"; it means Stripe would not tell us. **But a real 0 is written**, because
+  0 is the figure this whole finding is about.
+
+### E. THE WORDS
+
+| state | Plan | Status | Card |
+|---|---|---|---|
+| no discount | `$199 a month` | `$199 a month, charged to the card below.` | `Visa ending 4242 · Change` |
+| **100% forever** | **`$0 a month — FOUNDER100, 100% off, forever`** | **`Renews 27 Nov` · "Your discount covers the whole of it, so there is nothing to pay and no card is needed."** | **`Not needed — there is nothing to pay`, and NO BUTTON** |
+| partial | `$99.50 a month — HALFYEAR, 50% off for 6 months, then $199` | `$99.50 a month, charged to the card below.` | as normal |
+| zero, but ending | `$0 a month — FREE6, 100% off for 6 months, then $199` | `Nothing to pay until 27 April 2027, when your discount ends and $199 a month resumes.` | `No card yet · Add a card`, with **the date** |
+| charge coming, no card | `$199 a month` | `$199 a month. Add a card below so the next payment can go through.` | `No card yet · Add a card` |
+
+Three rules run through it:
+
+1. **Never "charged to the card below" unless there is a card below and something to charge to it.**
+   The old string asserted all three at once.
+2. **"Next payment" only when there is a payment.** A 100%-forever company gets **"Renews"**, which
+   is exactly what happens on the day.
+3. **Do not ask for a card when nothing will ever be charged.** `forever` is the only duration that
+   earns the suppression — a `repeating` or `once` zero is temporary, and that company is still
+   asked, *with the date*. A card that already EXISTS is still shown and still changeable; hiding it
+   would be hiding a fact about their account.
+
+**And the list price is no longer a fallback.** With a subscription and no mirrored amount the page
+says *"The amount of your next payment will appear here shortly"* — it does not print $199. That
+fallback is the bug. `PLAN_PRICE` survives only where the page describes **the product**: a company
+with no subscription (a trial, a lapsed trial, a cancellation), and the "then $199" tail that says
+what resumes when a temporary discount ends.
+
+### F. THE CARD ASKED FOR IN TIME — what is handled, and what is owed
+
+**Handled:** from the moment a discount with an end is mirrored, the Billing tab asks for a card and
+**names the date** — in the Status sentence and again under the card row. The date is the only
+honest reason to ask somebody for a card today; without it the request reads as nagging and is
+ignored.
+
+> ### ⚠ OWED, AND RECORDED AS A HYPOTHESIS RATHER THAN A CLAIM.
+> If the card is still not added, the expectation is that Stripe raises the invoice, fails to pay it
+> with no payment method, fires `invoice.payment_failed`, and decision 11's seven-day grace catches
+> the company — banner, then read-only, nothing deleted. **That chain has not been observed.** It is
+> reasoning about Stripe's behaviour, not a reading of it, and §9.1 says to call that a hypothesis.
+>
+> **What would prove it:** a test clock with a `repeating` coupon and no payment method, advanced
+> past `discount_ends_at`, watching for `invoice.payment_failed` and for `payment_failed_at` to be
+> written. `npm run stripe:clock` is the harness; it cannot walk the grace *window* (the anchor is
+> our wall clock — `TESTING.md`), but it can prove the event fires.
+>
+> **The date it would bite** is whatever `discount_ends_at` holds for the first repeating coupon
+> ever issued. Today no company has one: every discount in play is `forever`, which is why §217's
+> rule stands until this is proved.
+>
+> Also not built: an email before the date. The tab says it; nothing sends it.
+
+### G. PROVED ON STAGING, NO CARD TYPED, $0
+
+The mirror was brought up to date **through the reconcile** (§220) rather than by a direct write —
+blank `stripe_subscription_id`, load the tab, let it repair from Stripe — which also proves the
+eight new columns travel the shared mapping:
+
+```
+wrote=stripe_subscription_id,subscription_status,current_period_end,cancel_at,
+      discount_name,discount_percent_off,discount_amount_off_cents,discount_duration,
+      discount_months,discount_ends_at,next_charge_amount_cents,next_charge_currency
+```
+
+| | the mirror | the tab | screenshot |
+|---|---|---|---|
+| **FOUNDER100, 100% forever, no card** | `0 usd · FOUNDER100 · 100 · forever` | `$0 a month — FOUNDER100, 100% off, forever` · `Active · Renews 27 November 2026` · `Not needed — there is nothing to pay`, **no button** | `shots/step20-coupon-100-forever.png` |
+| **50% off for 6 months, no card** | `9950 usd · 50 · repeating · 6 · ends 2027-04-27` | `$99.50 a month — …, 50% off for 6 months, then $199` · `$99.50 a month. Add a card below…` · `No card yet` + **"Your discount ends 27 April 2027. Add a card before then…"** | `shots/step20-coupon-partial.png` |
+
+The partial coupon was created for the test (50% off, `repeating`, 6 months), applied by replacing
+the subscription's discount, and **deleted afterwards**; FOUNDER100 was put back and the mirror
+read back to confirm it. One thing to know: replacing a discount creates a NEW `Discount` object, so
+the fixture's discount id moved from `di_1UVET1…` to `di_1UVEkr…`. The coupon, the amount and the
+words are identical.
+
+### WHAT WOULD REVERSE IT
+
+- **The preview call (A):** Stripe putting the next total on the subscription object, which would
+  make the second round trip unnecessary. The columns would not change.
+- **Explicit columns over jsonb (C):** nothing, while `check-schema-contracts.js` validates column
+  names in query strings. If that check ever learned jsonb paths, one column would be tidier.
+- **The card suppression (E.3):** a customer complaining they could not put a card on file ahead of
+  time. The "Change" path already covers one that exists; this would be about adding a first one.
+- **The owed proof (F):** doing it. Until then §217's "forever coupons only" is load-bearing.
