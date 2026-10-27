@@ -201,7 +201,24 @@ import { readdirSync, readFileSync } from 'node:fs'
 //     column, so a future patch cannot quietly add a write on that path.
 //   - ONE MAPPING. What the reconcile wrote is compared with `columnsFromFacts(facts)` — the
 //     webhook's own function — so a second copy of the Stripe->us mapping fails the build.
-const FLOOR = 2000
+//
+// 2000 -> 2040, 27 October 2026 (My Account step 20, what this company pays — migration 090,
+// `DECISIONS.md` §221). The owner's coupon walk: FOUNDER100 (100% off, forever) produced a live
+// subscription and the Billing tab said "$199 a month, charged to the card below" beside "No card
+// yet · Add a card". Three false statements about money in one card. Of the 40:
+//   - FIVE SUITES, one per state the brief names — no discount, 100% forever, a partial discount, a
+//     discount with an end, and the card-nagging suppression. Each asserts the SENTENCE, because
+//     the sentence is what was wrong; asserting the column would have passed all along.
+//   - `once` IS NOT `forever`, and only `coupon.duration` knows. Stripe leaves `discount.end` null
+//     for both, so a page keying on the date would show a one-off discount as permanent and never
+//     ask for a card. §217's "forever coupons only" is the rule; this is the net under it.
+//   - A DISCOUNT HAS NO TOP-LEVEL `coupon`, and `expand: ['discounts']` leaves `source.coupon` an id
+//     string. Both read off the live FOUNDER100 subscription, both silent failures if wrong — the
+//     company would simply be told it owes the list price. §217 D's defect in a new place.
+//   - THE LIST PRICE IS NOT A FALLBACK for an amount we did not read, which is the finding in one
+//     assertion. It also caught an old fixture in this very suite that asserted "charged to the card
+//     below" for a company with no card.
+const FLOOR = 2040
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

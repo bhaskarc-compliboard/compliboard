@@ -23,7 +23,8 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
-  customerIdOf, subscriptionIdOfInvoice, receiveStripeEvent, type SubscriptionFacts,
+  customerIdOf, subscriptionIdOfInvoice, receiveStripeEvent, discountFactsFrom, columnsFromFacts,
+  type SubscriptionFacts,
 } from '../../lib/stripeWebhook.ts'
 import { makeDb } from './fakeSupabase.ts'
 import { cardLineFrom } from '../../lib/stripe.ts'
@@ -116,10 +117,12 @@ describe('*** THE EXPAND LIST IS WHAT MAKES THE SECOND SOURCE READABLE AT ALL **
 
   test('the port asks for the deep path, not just `customer`', () => {
     const src = readFileSync('lib/stripeWebhook.ts', 'utf8')
-    assert.match(src, /expand: \['default_payment_method', 'customer\.invoice_settings\.default_payment_method'\]/)
+    // The list gained two discount paths at §221, so the members are asserted rather than the
+    // whole literal — which was one line and is now several.
+    assert.match(src, /'default_payment_method', 'customer\.invoice_settings\.default_payment_method',/)
     // The shallow form is the defect. If it ever comes back, the fallback is dead again and
     // nothing fails — which is why this is asserted on the string rather than left to a comment.
-    assert.ok(!/expand: \['default_payment_method', 'customer'\]/.test(src),
+    assert.ok(!/^\s*'customer',\s*$/m.test(src),
       "the port is back to expanding `customer`, so the card-line fallback cannot fire")
   })
 
@@ -192,7 +195,10 @@ describe('*** A SCHEDULED CANCELLATION IS MIRRORED, AND CLEARED — §219 ***', 
     id: 'sub_1', status: 'trialing',
     currentPeriodEnd: '2026-11-07T00:00:00.000Z',
     trialEnd: '2026-11-07T00:00:00.000Z',
-    cancelAt: null, card: null, ...over,
+    cancelAt: null, card: null,
+    // Migration 090. Null here means "Stripe told us nothing about a discount or an amount", which
+    // is what every §219 case below is about — the cancellation, not the money.
+    discount: null, nextCharge: null, ...over,
   })
   const portOf = (f: SubscriptionFacts) => ({ readSubscription: async () => f })
   const subEvent = (type: string) => ({
@@ -279,5 +285,164 @@ describe('*** A SCHEDULED CANCELLATION IS MIRRORED, AND CLEARED — §219 ***', 
     // so in its own declaration. Using it would put a PAST date on the page.
     const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
     assert.ok(!/canceled_at/.test(code), 'the port reads canceled_at, which is the request time')
+  })
+})
+
+
+// =================================================================================================
+// *** THE DISCOUNT — migration 090, `DECISIONS.md` §221. ***
+//
+// Two shapes here would have been written wrong from memory of an older Stripe, and each would have
+// failed SILENTLY — mirroring "no discount" for a company that has one, and so telling them they owe
+// the list price. Both are pinned to what the live FOUNDER100 subscription actually returned on
+// 27 October 2026, printed in migration 090's header.
+// =================================================================================================
+
+describe('discountFactsFrom — read off the object, not off a memory of the API', () => {
+  /** The shape Stripe really returns, with `expand: ['discounts.source.coupon']`. */
+  const real = (coupon: Record<string, unknown>, end: number | null = null) => ({
+    id: 'di_1', object: 'discount', end, subscription: 'sub_1',
+    promotion_code: 'promo_1', source: { type: 'coupon', coupon },
+  })
+
+  const FOUNDER100 = {
+    id: 'f4DDuTXd', object: 'coupon', name: 'FOUNDER100',
+    percent_off: 100, amount_off: null, duration: 'forever', duration_in_months: null,
+  }
+
+  test('*** THE SUBSCRIPTION CARRIES `discounts`, AN ARRAY — not `discount`. ***', () => {
+    const d = discountFactsFrom([real(FOUNDER100)], null)
+    assert.equal(d?.name, 'FOUNDER100')
+    assert.equal(d?.percentOff, 100)
+    assert.equal(d?.duration, 'forever')
+    assert.equal(d?.months, null)
+    assert.equal(d?.endsAt, null)
+  })
+
+  test('*** AND THE COUPON IS UNDER `source`, BECAUSE A DISCOUNT HAS NO `coupon` FIELD. ***', () => {
+    // Confirmed against the live object: `'coupon' in discount` was false. A reader that looked for
+    // `discount.coupon` would find undefined and mirror "no discount" for ever, with nothing
+    // raising anywhere.
+    const wrongShape = { id: 'di_1', end: null, coupon: FOUNDER100 }
+    assert.equal(discountFactsFrom([wrongShape], null), null,
+      'a top-level `coupon` was accepted, so the real shape is not what is being read')
+  })
+
+  test('*** AN UNEXPANDED COUPON IS AN ID STRING, AND IS NOT A DISCOUNT. ***', () => {
+    // `expand: ['discounts']` ALONE returns this: the discount is an object, `source.coupon` is
+    // still `"f4DDuTXd"`. Read from the sandbox. It is §217 D's defect in a new place, and the only
+    // safe answer is null — a half-filled discount would put a blank name in a sentence about money.
+    assert.equal(discountFactsFrom([real('f4DDuTXd' as unknown as Record<string, unknown>)], null), null)
+    assert.equal(discountFactsFrom(['di_1'], null), null, 'an unexpanded DISCOUNT was read as one')
+  })
+
+  test('no discount at all is null, from either place', () => {
+    assert.equal(discountFactsFrom([], null), null)
+    assert.equal(discountFactsFrom(null, null), null)
+    assert.equal(discountFactsFrom(undefined, undefined), null)
+  })
+
+  test('the CUSTOMER\u2019S discount is the fallback — a coupon applied in the Dashboard', () => {
+    // The Checkout promotion code landed on the subscription; a Dashboard coupon lands here. Reading
+    // only one of the two would miss half the ways a discount can exist.
+    const d = discountFactsFrom([], real(FOUNDER100))
+    assert.equal(d?.name, 'FOUNDER100')
+  })
+
+  test('\u2026and the subscription wins when both carry one', () => {
+    const other = { ...FOUNDER100, id: 'other', name: 'CUSTOMERONE', percent_off: 10 }
+    assert.equal(discountFactsFrom([real(FOUNDER100)], real(other))?.name, 'FOUNDER100')
+  })
+
+  test('a repeating coupon carries its months AND the discount\u2019s own end date', () => {
+    const d = discountFactsFrom([real({
+      id: 'c2', name: 'HALFYEAR', percent_off: 50, amount_off: null,
+      duration: 'repeating', duration_in_months: 6,
+    }, 1808000000)], null)
+    assert.equal(d?.months, 6)
+    assert.equal(d?.endsAt, new Date(1808000000 * 1000).toISOString())
+  })
+
+  test('an amount-off coupon keeps its cents and has no percentage', () => {
+    const d = discountFactsFrom([real({
+      id: 'c3', name: 'FIFTYOFF', percent_off: null, amount_off: 5000,
+      currency: 'usd', duration: 'forever', duration_in_months: null,
+    })], null)
+    assert.equal(d?.amountOffCents, 5000)
+    assert.equal(d?.percentOff, null)
+  })
+
+  test('a coupon with no name falls back to its id, never to a blank', () => {
+    const d = discountFactsFrom([real({ id: 'f4DDuTXd', name: null, percent_off: 100, duration: 'forever' })], null)
+    assert.equal(d?.name, 'f4DDuTXd')
+  })
+
+  test('a deleted discount is not a discount', () => {
+    assert.equal(discountFactsFrom([{ ...real(FOUNDER100), deleted: true }], null), null)
+  })
+})
+
+describe('*** THE TWO WRITE RULES, WHICH ARE OPPOSITE TO EACH OTHER ON PURPOSE. ***', () => {
+  const base = (over: Partial<SubscriptionFacts> = {}): SubscriptionFacts => ({
+    id: 'sub_1', status: 'active', currentPeriodEnd: '2026-11-27T00:00:00.000Z',
+    trialEnd: null, cancelAt: null, card: null, discount: null, nextCharge: null, ...over,
+  })
+
+  test('THE DISCOUNT IS WRITTEN EVEN WHEN NULL — removing a coupon must reach the page', () => {
+    // The same argument as `cancel_at` (§219). We read the subscription, so "there is no discount
+    // on it" is a fact Stripe told us. A conditional write would leave somebody reading
+    // "FOUNDER100, 100% off, forever" after the coupon was taken off them.
+    const patch = columnsFromFacts(base())
+    for (const k of ['discount_name', 'discount_percent_off', 'discount_amount_off_cents',
+                     'discount_duration', 'discount_months', 'discount_ends_at']) {
+      assert.ok(k in patch, `${k} is not written, so a removed coupon could never be cleared`)
+      assert.equal(patch[k], null)
+    }
+  })
+
+  test('THE AMOUNT IS WRITTEN ONLY WHEN WE HAVE ONE — like the card line', () => {
+    // `null` from the preview does not mean "nothing to pay"; it means Stripe would not tell us (a
+    // canceled subscription has no upcoming invoice). Clearing on that would turn "$99.50" blank.
+    const patch = columnsFromFacts(base({ nextCharge: null }))
+    assert.ok(!('next_charge_amount_cents' in patch), 'an unread amount cleared the column')
+    assert.ok(!('next_charge_currency' in patch))
+  })
+
+  test('*** BUT A REAL ZERO IS WRITTEN, BECAUSE ZERO IS THE WHOLE FINDING. ***', () => {
+    const patch = columnsFromFacts(base({ nextCharge: { amountCents: 0, currency: 'usd' } }))
+    assert.equal(patch.next_charge_amount_cents, 0)
+    assert.equal(patch.next_charge_currency, 'usd')
+  })
+
+  test('a full discount round-trips through the mapping into the nine column names', () => {
+    const patch = columnsFromFacts(base({
+      nextCharge: { amountCents: 9950, currency: 'usd' },
+      discount: { name: 'HALFYEAR', percentOff: 50, amountOffCents: null,
+                  duration: 'repeating', months: 6, endsAt: '2027-04-27T00:00:00.000Z' },
+    }))
+    assert.equal(patch.discount_name, 'HALFYEAR')
+    assert.equal(patch.discount_percent_off, 50)
+    assert.equal(patch.discount_duration, 'repeating')
+    assert.equal(patch.discount_months, 6)
+    assert.equal(patch.discount_ends_at, '2027-04-27T00:00:00.000Z')
+    assert.equal(patch.next_charge_amount_cents, 9950)
+  })
+
+  test('the expand list asks for the coupon INSIDE the discount, and for the customer\u2019s too', () => {
+    const code = readFileSync('lib/stripeWebhook.ts', 'utf8')
+    assert.match(code, /'discounts\.source\.coupon'/)
+    assert.match(code, /'customer\.discount\.source\.coupon'/)
+    // Matched as a CODE LINE: the comment above the expand quotes the shallow form it replaced,
+    // because naming the wrong one is the point of the comment.
+    assert.ok(!/^\s*'discounts',\s*$/m.test(code),
+      'the expand is back to `discounts`, whose source.coupon is an id string')
+  })
+
+  test('the next charge is ASKED OF STRIPE, not calculated from the list price', () => {
+    const code = readFileSync('lib/stripeWebhook.ts', 'utf8')
+    assert.match(code, /invoices\.createPreview\(\{ subscription: sub\.id \}\)/)
+    // The arithmetic would be wrong the moment tax, a credit balance or a second discount exists.
+    assert.ok(!/percent_off\s*\/\s*100|unit_amount\s*\*/.test(code),
+      'the amount is being computed rather than read')
   })
 })

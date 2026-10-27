@@ -45,7 +45,7 @@ import CompanyQuestions from '@/components/CompanyQuestions'
 import PeopleTab from '@/components/PeopleTab'
 import { PRIMARY, TEXT_ACTION, OUTLINE } from '@/components/buttonStyles'
 import {
-  billingTabView, plainDate, PLAN_PRICE, PLAN_PERIOD, PLAN_NOTE, STRIPE_NOTE, MANAGE_LINK,
+  billingTabView, plainDate, STRIPE_NOTE, MANAGE_LINK,
   AFTER_THE_TRIAL, reconcileTrigger, FINISHING_STALLED, type StatusTone,
 } from '@/lib/billingView'
 import { createClient, authHeaders } from '@/lib/supabase'
@@ -113,6 +113,17 @@ interface CompanyRow {
   stripe_subscription_id: string | null
   /** Stripe's scheduled end (migration 089). */
   cancel_at: string | null
+  /* ---- WHAT THIS COMPANY PAYS (migration 090, §221) ----
+     The amount is Stripe's own next-invoice total; **0 is a real value and is not null**. The six
+     discount columns are what turns "$0 a month" from a bug into a sentence. */
+  next_charge_amount_cents: number | null
+  next_charge_currency: string | null
+  discount_name: string | null
+  discount_percent_off: number | null
+  discount_amount_off_cents: number | null
+  discount_duration: string | null
+  discount_months: number | null
+  discount_ends_at: string | null
 }
 
 const ROW = 'flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4'
@@ -233,6 +244,16 @@ function Account() {
         stripe_customer_id: d.stripe_customer_id ?? null,
         stripe_subscription_id: d.stripe_subscription_id ?? null,
         cancel_at: d.cancel_at ?? null,
+        // Migration 090. `?? null` and NOT `?? 0`: an unread amount must stay unread — see
+        // `moneyFor`, which refuses to print the list price in its place.
+        next_charge_amount_cents: d.next_charge_amount_cents ?? null,
+        next_charge_currency: d.next_charge_currency ?? null,
+        discount_name: d.discount_name ?? null,
+        discount_percent_off: d.discount_percent_off ?? null,
+        discount_amount_off_cents: d.discount_amount_off_cents ?? null,
+        discount_duration: d.discount_duration ?? null,
+        discount_months: d.discount_months ?? null,
+        discount_ends_at: d.discount_ends_at ?? null,
       })
     }
     // As the person: `entities_select` scopes it, so no company is named here.
@@ -860,15 +881,26 @@ function BillingTab({ company, finishing, stalled }: {
       <DashboardSection heading="Your plan" />
 
       <div className="rounded-xl border border-gray-200 bg-white">
-        {/* ---- Plan ---- */}
+        {/* ---- Plan ----
+            *** THE AMOUNT IS THIS COMPANY'S, NOT THE PRODUCT'S (§221). *** It was `PLAN_PRICE`,
+            a constant, and a 100%-off customer was therefore told "$199 a month" about a
+            subscription that will never be charged anything. `view.plan.amount` is the mirrored
+            next-invoice total when there is a subscription, and the list price only when there is
+            none — the one case where the page is describing the product and not this company.
+            The discount is named beside it, because "$0 a month" with no reason reads like a bug. */}
         <div className={ROW}>
           <p className={KEY}>Plan</p>
           <div className="min-w-0 flex-1">
             <p className="text-[14px] text-gray-900">
-              <span className="font-medium">{PLAN_PRICE}</span>{' '}
-              <span className="text-[13px] text-gray-500">{PLAN_PERIOD}</span>
+              <span data-testid="billing-amount" className="font-medium">{view.plan.amount}</span>{' '}
+              <span className="text-[13px] text-gray-500">{view.plan.period}</span>
+              {view.plan.discount && (
+                <span data-testid="billing-discount" className="text-[13px] text-gray-500">
+                  {' \u2014 '}{view.plan.discount}
+                </span>
+              )}
             </p>
-            <p className="mt-0.5 text-[13px] leading-5 text-gray-600">{PLAN_NOTE}</p>
+            <p className="mt-0.5 text-[13px] leading-5 text-gray-600">{view.plan.note}</p>
           </div>
         </div>
 
@@ -894,17 +926,29 @@ function BillingTab({ company, finishing, stalled }: {
           <p className={KEY}>Card</p>
           <div className="min-w-0 flex-1">
             <p data-testid="billing-card-line" className="text-[14px] text-gray-900">{cardText}</p>
-            {stillWaiting && (
+            {stillWaiting ? (
               <p data-testid="billing-finishing" className="mt-1 text-[13px] text-gray-500">
                 {FINISHING_STALLED}
               </p>
-            )}
+            ) : view.card.note ? (
+              /* The date a discount ends, for a company with no card. §221: the only honest
+                 reason to ask for a card today is a deadline, and without the date the request
+                 reads as nagging. */
+              <p data-testid="billing-card-note" className="mt-1 text-[13px] text-gray-500">
+                {view.card.note}
+              </p>
+            ) : null}
             {error && <p className="mt-1 text-[13px] text-[var(--amber)]">{error}</p>}
           </div>
-          <button type="button" data-testid="billing-card-action"
-            onClick={() => go(view.card.door)} disabled={busy !== null || finishing !== null} className={ACTION}>
-            {busy === view.card.door ? 'Opening…' : view.card.action}
-          </button>
+          {/* *** AN EMPTY ACTION RENDERS NO BUTTON (§221). *** A company whose discount covers the
+              whole of it, for ever, has nothing to pay and needs no card — so there is nothing for
+              a button to do, and offering one is an instruction to waste a minute. */}
+          {view.card.action && (
+            <button type="button" data-testid="billing-card-action"
+              onClick={() => go(view.card.door)} disabled={busy !== null || finishing !== null} className={ACTION}>
+              {busy === view.card.door ? 'Opening…' : view.card.action}
+            </button>
+          )}
         </div>
       </div>
 

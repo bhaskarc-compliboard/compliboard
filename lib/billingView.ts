@@ -11,19 +11,36 @@
  * what comes back. A tab that recomputed a status would be a second source of truth about the one
  * fact §213 exists to keep single.
  *
- * ---- WHY THE PRICE IS A CONSTANT HERE, AND WHAT THAT COSTS -------------------------------------
+ * ---- ⚡ THE PRICE: CORRECTED 27 OCTOBER 2026 (§221), AND THIS IS THE IMPORTANT PART ------------
  *
- * `$199` is DISPLAY ONLY. The money that is actually charged is Stripe's, under `STRIPE_PRICE_ID`,
- * and nothing in this repository can read it without an API call. So these two can disagree, and
- * if they ever do the page is lying about a price. The honest options were: show nothing, call
- * Stripe on every page load, or state the number and say plainly where the truth is. The owner's
- * boards show the number, so it is stated — and `docs/RELEASE.md` is where the price id lives.
- * **If the plan's price changes in Stripe, this line must change in the same commit.**
+ * This file used to state `$199` as the price of THIS COMPANY'S plan, with a note saying the
+ * number was display-only and Stripe held the truth. §216 A called it "the one unguarded claim on
+ * the Billing tab". The owner's coupon walk is that claim meeting a discount: `FOUNDER100` (100%
+ * off, forever) produced a live subscription that will never be charged anything, and the tab said
+ * **"$199 a month, charged to the card below"** beside **"No card yet · Add a card"**.
+ *
+ * *** SO THE LIST PRICE IS NOW USED ONLY WHERE THE PAGE DESCRIBES THE PRODUCT, NEVER WHERE IT
+ * DESCRIBES THIS COMPANY. *** What this company pays comes from `next_charge_amount_cents`
+ * (migration 090) — Stripe's own answer to "what is the next invoice", mirrored by the webhook and
+ * the reconcile through the mapping they share. Which means:
+ *
+ *   · a company WITH a subscription is told its own mirrored amount, and nothing else;
+ *   · a company WITHOUT one (a trial, a lapsed trial, a cancellation) is told `PLAN_PRICE`,
+ *     because for them it is the product's price and there is no discount to know about;
+ *   · and if a subscription exists but no amount has been mirrored yet, the page says so rather
+ *     than falling back to the list price, because that fallback is exactly the bug.
+ *
+ * `PLAN_PRICE` therefore survives, with a much narrower job, and the old warning still applies to
+ * it: **if the plan's price changes in Stripe, this line must change in the same commit**
+ * (`docs/RELEASE.md` holds the price id).
  */
 
 import { accessFor, GRACE_DAYS, graceDaysLeft, type BillingColumns } from './billing.ts'
 
-/** Display only. See the header: Stripe holds the real price. */
+/**
+ * THE PRODUCT'S LIST PRICE — for a company that has no subscription, and nowhere else.
+ * See the header. A company WITH a subscription is described by `next_charge_amount_cents`.
+ */
 export const PLAN_PRICE = '$199'
 export const PLAN_PERIOD = 'a month'
 /** Board 4's own second line, verbatim. */
@@ -127,13 +144,27 @@ export type BillingTabView = {
     /** The sentence under it. Always written; never empty. */
     detail: string
   }
+  /* ---- WHAT THIS COMPANY PAYS — migration 090, §221. ---- */
+  plan: {
+    /** "$0" · "$99.50" · "$199". The mirrored amount, or the list price when there is no
+     *  subscription to have an amount. Never the list price as a stand-in for an unread one. */
+    amount: string
+    /** "a month". */
+    period: string
+    /** "FOUNDER100, 100% off, forever" · "HALFYEAR, 50% off for 6 months, then $199" · ''. */
+    discount: string
+    /** The line under it. Board 4's own, or the sentence that says the amount is not known yet. */
+    note: string
+  }
   card: {
-    /** "No card yet" or "Visa ending 4242". */
+    /** "No card yet" · "Visa ending 4242" · "Not needed — there is nothing to pay". */
     text: string
-    /** "Add a card" or "Change". */
+    /** "Add a card" or "Change". **`''` means render no button at all.** */
     action: string
     /** Which door the action opens. A card is ADDED at checkout and CHANGED in the portal. */
     door: 'checkout' | 'portal'
+    /** A second line under the card text, or ''. The date a discount ends, when one does. */
+    note: string
   }
 }
 
@@ -172,6 +203,154 @@ export function daysUntil(then: string | Date, now: Date): number {
   return Math.max(0, Math.round((midnight(d) - midnight(now)) / DAY_MS))
 }
 
+/* =================================================================================================
+ * WHAT THIS COMPANY PAYS, IN WORDS — migration 090, `DECISIONS.md` §221.
+ * ============================================================================================== */
+
+/**
+ * CENTS → "$199" · "$99.50" · "$0".
+ *
+ * **Trailing `.00` is dropped and nothing else is.** "$199.00 a month" reads like a form; "$199 a
+ * month" is what the boards say and what the owner's wording asks for. But "$99.50" must keep both
+ * places, and "$99.5" would be a price nobody writes.
+ *
+ * The currency symbol is taken from a small table rather than `Intl.NumberFormat`, because
+ * `Intl` formats to the RUNTIME's locale conventions — the same amount renders "US$199.00" in some
+ * and "199,00 $US" in others, and this string has to match a board. An unknown currency is printed
+ * with its ISO code beside the number instead of a guessed symbol, which is ugly and true.
+ */
+const SYMBOLS: Readonly<Record<string, string>> = { usd: '$', eur: '\u20ac', gbp: '\u00a3' }
+
+export function money(amountCents: number, currency: string): string {
+  const whole = amountCents / 100
+  const digits = Number.isInteger(whole) ? 0 : 2
+  const n = whole.toFixed(digits)
+  const symbol = SYMBOLS[currency?.toLowerCase() ?? '']
+  return symbol ? `${symbol}${n}` : `${n} ${(currency ?? '').toUpperCase()}`.trim()
+}
+
+/** What the coupon takes off, in words: "100% off" · "50% off" · "$50 off". */
+function takesOff(c: BillingViewColumns): string {
+  if (typeof c.discount_percent_off === 'number') {
+    // 33.33% must keep its places; 50% must not become "50.00%".
+    const p = Number.isInteger(c.discount_percent_off)
+      ? String(c.discount_percent_off)
+      : String(Number(c.discount_percent_off.toFixed(2)))
+    return `${p}% off`
+  }
+  if (typeof c.discount_amount_off_cents === 'number') {
+    return `${money(c.discount_amount_off_cents, c.next_charge_currency ?? 'usd')} off`
+  }
+  // A discount we know the name of and not the shape of. Saying the name alone is still true.
+  return 'discount applied'
+}
+
+/** How long it lasts: "forever" · "for 6 months" · "on your first payment only". */
+function lastsFor(c: BillingViewColumns): string {
+  if (c.discount_duration === 'forever') return 'forever'
+  if (c.discount_duration === 'repeating') {
+    const m = c.discount_months
+    return typeof m === 'number' && m > 0 ? `for ${m} month${m === 1 ? '' : 's'}` : 'for a while'
+  }
+  // *** `once` IS THE ONE THAT HAS TO BE SAID OUT LOUD. *** It zeroes one charge and nothing after
+  // it, and `discount.end` is null for it exactly as it is for `forever` — so a page that did not
+  // read `duration` would show a one-off discount as permanent. §217's "forever coupons only" is
+  // the rule; this is what the page says if one is ever issued anyway.
+  if (c.discount_duration === 'once') return 'on your first payment only'
+  return ''
+}
+
+/**
+ * THE DISCOUNT PHRASE THAT FOLLOWS THE AMOUNT, or ''.
+ *
+ *   "FOUNDER100, 100% off, forever"
+ *   "HALFYEAR, 50% off for 6 months, then $199"
+ *
+ * The "then" tail is only added when the discount ENDS and the list price is the thing that
+ * resumes — which is what a person actually needs to know about a temporary discount, and the one
+ * place a list price is still the truth about this company's future.
+ */
+export function discountPhrase(c: BillingViewColumns): string {
+  if (!c.discount_name) return ''
+  const off = takesOff(c)
+  const lasts = lastsFor(c)
+  const temporary = c.discount_duration === 'repeating' || c.discount_duration === 'once'
+  const head = lasts
+    // "50% off for 6 months" reads as one clause; "100% off, forever" needs the comma.
+    ? (temporary ? `${c.discount_name}, ${off} ${lasts}` : `${c.discount_name}, ${off}, ${lasts}`)
+    : `${c.discount_name}, ${off}`
+  return temporary ? `${head}, then ${PLAN_PRICE}` : head
+}
+
+/** The three things the page needs to know about the money, decided once. */
+type Money = {
+  /** True when a subscription exists AND Stripe has told us its next total. */
+  known: boolean
+  /** The mirrored total in cents when `known`, else null. **0 is a real value.** */
+  cents: number | null
+  /** What to print: the mirrored amount, or the list price when there is no subscription. */
+  amount: string
+  /** True when nothing will EVER be charged — zero, and a discount that does not end. */
+  freeForever: boolean
+  /** True when a charge is coming that is more than nothing. */
+  willCharge: boolean
+  /** "a month" — carried so the sentences do not each reach for the constant. */
+  period: string
+}
+
+function moneyFor(c: BillingViewColumns, hasSubscription: boolean): Money {
+  const cents = typeof c.next_charge_amount_cents === 'number' ? c.next_charge_amount_cents : null
+  const known = hasSubscription && cents !== null
+  // *** THE FALLBACK IS THE BUG, SO THERE ISN'T ONE. *** With a subscription and no mirrored
+  // amount the page must not print the list price: that is precisely what told a FOUNDER100
+  // customer they owed $199. `known: false` makes the words say so instead.
+  const amount = known ? money(cents as number, c.next_charge_currency ?? 'usd') : PLAN_PRICE
+  const zero = known && cents === 0
+  // `forever` only. A `repeating` or `once` zero is temporary, and a card WILL be needed.
+  const freeForever = zero && c.discount_duration === 'forever'
+  return {
+    known, cents, amount, freeForever, period: PLAN_PERIOD,
+    willCharge: known && (cents as number) > 0,
+  }
+}
+
+/**
+ * THE SENTENCE UNDER "ACTIVE" — the second of the three false statements §221 is about.
+ *
+ * It used to be one string: **"$199 a month, charged to the card below. Cancel any time from the
+ * Cancel tab."** For the FOUNDER100 company every clause of it was wrong — not $199, not charged,
+ * and there was no card below. So it is now four sentences for four genuinely different states,
+ * and the rule running through all of them is: **never say "charged to the card below" unless
+ * there is a card below and something to charge to it.**
+ */
+function activeDetail(m: Money, hasCard: boolean, discountEnds: string): string {
+  const CANCEL_ANY_TIME = 'Cancel any time from the Cancel tab.'
+
+  // 1. Nothing to pay, ever. No amount, no card, no instruction — just the fact.
+  if (m.freeForever) {
+    return `Your discount covers the whole of it, so there is nothing to pay and no card is `
+         + `needed. ${CANCEL_ANY_TIME}`
+  }
+
+  // 2. Nothing to pay YET, and that will change on a date we know. This is the state that would
+  //    otherwise lapse somebody silently — see §221 on what is handled here and what is owed.
+  if (m.known && m.cents === 0) {
+    return discountEnds
+      ? `Nothing to pay until ${discountEnds}, when your discount ends and ${PLAN_PRICE} ${PLAN_PERIOD} `
+        + `resumes. ${CANCEL_ANY_TIME}`
+      : `There is nothing to pay at the moment. ${CANCEL_ANY_TIME}`
+  }
+
+  // 3. A real charge is coming and there is a card for it. The original sentence, with the
+  //    company's OWN amount in place of the list price.
+  if (hasCard) return `${m.amount} ${m.period}, charged to the card below. ${CANCEL_ANY_TIME}`
+
+  // 4. A real charge is coming and there is NO card. The one case where asking is the right thing
+  //    to do, and it is said as a consequence rather than as a nag.
+  return `${m.amount} ${m.period}. Add a card below so the next payment can go through. `
+       + CANCEL_ANY_TIME
+}
+
 /** "9 days left" · "1 day left" · "Ends today". */
 function daysLeftPhrase(n: number): string {
   if (n === 0) return 'Ends today'
@@ -187,6 +366,18 @@ export type BillingViewColumns = BillingColumns & {
   stripe_subscription_id?: string | null
   /** Stripe's scheduled end (migration 089). Set = a cancellation is pending; null = none. */
   cancel_at?: string | Date | null
+  /* ---- WHAT THIS COMPANY PAYS (migration 090) ----
+     `next_charge_amount_cents` is Stripe's own next-invoice total. **0 is a real value and is not
+     the same as null**: 0 means nothing to pay, null means we could not establish it. */
+  next_charge_amount_cents?: number | null
+  next_charge_currency?: string | null
+  discount_name?: string | null
+  discount_percent_off?: number | null
+  discount_amount_off_cents?: number | null
+  /** Stripe's word: `forever` | `once` | `repeating`. The only thing telling `once` from `forever`. */
+  discount_duration?: string | null
+  discount_months?: number | null
+  discount_ends_at?: string | Date | null
 }
 
 /**
@@ -244,21 +435,58 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     'You cancelled. You keep everything until then, and nothing further will be charged. '
     + 'Change your mind in Stripe.'
   const door: 'checkout' | 'portal' = c.stripe_subscription_id ? 'portal' : 'checkout'
+  /* ---- WHAT THIS COMPANY PAYS. One decision, used by all three rows. ---- */
+  const m = moneyFor(c, hasSubscription)
+  const discount = discountPhrase(c)
+  const discountEnds = c.discount_ends_at ? plainDate(c.discount_ends_at) : ''
+
+  const plan: BillingTabView['plan'] = {
+    amount: m.amount,
+    period: PLAN_PERIOD,
+    discount,
+    // The one case the old code had no words for: a subscription exists and Stripe has not told us
+    // what the next invoice totals (a canceled subscription has no upcoming invoice at all). The
+    // page must NOT fall back to the list price here — that fallback is the whole finding.
+    note: hasSubscription && !m.known
+      ? 'Your plan is active. The amount of your next payment will appear here shortly.'
+      : PLAN_NOTE,
+  }
+
+  /* ---- THE CARD ROW. ------------------------------------------------------------------------
+     *** IT DOES NOT ASK FOR A CARD WHEN NOTHING WILL EVER BE CHARGED. ***
+     A 100%-off-forever customer was being shown "No card yet · Add a card" — an instruction to do
+     something pointless, beside a status claiming a $199 charge that will never happen. There is
+     no card because none is needed, and saying so is both true and the end of the matter.
+
+     `forever` is the only duration that earns this. A `repeating` or `once` zero is temporary and
+     a card WILL be needed, so that company is still asked — with the date, see `note`. */
   const card: BillingTabView['card'] = hasCard
     // *** THE BRAND IS CAPITALISED HERE, BECAUSE STRIPE SENDS IT LOWER CASE. ***
     // `card.brand` comes back as `visa`, `mastercard`, `amex`. The mirror stores Stripe's own
     // value verbatim (migration 087's rule, and the webhook must not translate), so the one place
     // that can fix the sentence is the one that writes the sentence. Board 4 and the step 19 brief
     // both say "Visa ending 4242"; the staging run showed "visa ending 4242".
-    ? { text: `${titleCase(c.card_brand ?? '')} ending ${c.card_last4}`, action: 'Change', door }
-    : { text: 'No card yet', action: 'Add a card', door }
+    ? { text: `${titleCase(c.card_brand ?? '')} ending ${c.card_last4}`, action: 'Change', door, note: '' }
+    : m.freeForever
+      ? { text: 'Not needed \u2014 there is nothing to pay', action: '', door, note: '' }
+      : {
+          text: 'No card yet',
+          action: 'Add a card',
+          door,
+          // *** AND WHEN A DISCOUNT ENDS, THE DATE IS THE POINT. *** A person on "50% off for 6
+          // months" with no card has a real deadline, and it is the only honest reason to ask them
+          // for a card today. Without the date the request has no force and reads as nagging.
+          note: discountEnds && !hasCard
+            ? `Your discount ends ${discountEnds}. Add a card before then so the payment can go through.`
+            : '',
+        }
 
   // ---- THE STATUS. Driven by the gate's own reason. ----
   switch (verdict.reason) {
     case 'trial': {
       const n = daysUntil(c.trial_ends_at, now)
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Trial', tone: cancelScheduled ? 'warn' : 'trial',
           headline: cancelScheduled
@@ -275,7 +503,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'subscribed':
       if (cancelScheduled) {
         return {
-          card, hasSubscription, cancelScheduled,
+          card, plan, hasSubscription, cancelScheduled,
           status: {
             pill: 'Active', tone: 'warn', headline: `Cancels on ${cancelsOn}`,
             // No "next payment" line: there isn't one. That was the other false statement.
@@ -284,15 +512,20 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
         }
       }
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Active', tone: 'good',
-          headline: c.current_period_end ? `Next payment ${plainDate(c.current_period_end)}` : '',
+          // *** "NEXT PAYMENT" ONLY WHEN THERE IS A PAYMENT. *** A 100%-off-forever company has a
+          // renewal date and no payment; calling it a payment is the same class of false statement
+          // as the price was. It gets "Renews" instead, which is exactly what happens on the day.
+          headline: !c.current_period_end ? ''
+            : m.freeForever ? `Renews ${plainDate(c.current_period_end)}`
+            : `Next payment ${plainDate(c.current_period_end)}`,
           // `current_period_end` can be null for a moment after checkout, before the subscription
           // webhook lands. Saying so is better than an empty line or an invented date.
-          detail: c.current_period_end
-            ? `${PLAN_PRICE} ${PLAN_PERIOD}, charged to the card below. Cancel any time from the Cancel tab.`
-            : 'Your subscription is active. The next payment date will appear here shortly.',
+          detail: !c.current_period_end
+            ? 'Your subscription is active. The next payment date will appear here shortly.'
+            : activeDetail(m, hasCard, discountEnds),
         },
       }
 
@@ -300,7 +533,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'payment_failed_in_grace': {
       const n = c.payment_failed_at === null ? GRACE_DAYS : Math.max(1, graceDaysLeft(c.payment_failed_at, now))
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Payment failed', tone: 'warn', headline: `${n} day${n === 1 ? '' : 's'} left`,
           detail: `We couldn't charge your card. We'll try again for ${n} more day${n === 1 ? '' : 's'} `
@@ -312,7 +545,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     // `past_due` with no anchor: Stripe is still retrying and we have no date to quote.
     case 'payment_failed_retrying':
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Payment failed', tone: 'warn', headline: '',
           detail: "We couldn't charge your card and we're trying again. Nothing has stopped "
@@ -322,7 +555,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
 
     case 'payment_failed_grace_over':
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `We couldn't charge your card and the ${GRACE_DAYS} days are up. Everything is `
@@ -332,7 +565,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
 
     case 'trial_over_no_subscription':
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `Your trial ended ${plainDate(c.trial_ends_at)}. Everything is still here to read `
@@ -345,7 +578,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
       // `incomplete_expired` — are states a person did not choose, so they read as Read-only.
       if (status === 'canceled') {
         return {
-          card, hasSubscription, cancelScheduled,
+          card, plan, hasSubscription, cancelScheduled,
           status: {
             pill: 'Canceled', tone: 'paused', headline: '',
             detail: 'Your subscription is canceled. Everything is still here to read and download, '
@@ -354,7 +587,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
         }
       }
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: "Your subscription isn't active. Everything is still here to read and download. "
@@ -366,7 +599,7 @@ export function billingTabView(c: BillingViewColumns, now: Date): BillingTabView
     case 'status_not_recognised':
     default:
       return {
-        card, hasSubscription, cancelScheduled,
+        card, plan, hasSubscription, cancelScheduled,
         status: {
           pill: 'Read-only', tone: 'paused', headline: '',
           detail: `Your subscription is in a state we don't recognise${status ? ` (${status})` : ''}. `

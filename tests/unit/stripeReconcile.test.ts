@@ -40,6 +40,9 @@ const facts = (over: Partial<SubscriptionFacts> = {}): SubscriptionFacts => ({
   trialEnd: null,
   cancelAt: null,
   card: { brand: 'visa', last4: '4242' },
+  // Migration 090: the undiscounted company pays the list price, and Stripe says so.
+  discount: null,
+  nextCharge: { amountCents: 19900, currency: 'usd' },
   ...over,
 })
 

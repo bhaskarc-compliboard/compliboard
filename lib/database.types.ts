@@ -1038,6 +1038,12 @@ export type Database = {
           county: string | null
           created_at: string | null
           current_period_end: string | null
+          discount_amount_off_cents: number | null
+          discount_duration: string | null
+          discount_ends_at: string | null
+          discount_months: number | null
+          discount_name: string | null
+          discount_percent_off: number | null
           employee_count: number | null
           extra_profile: Json | null
           id: string
@@ -1045,6 +1051,8 @@ export type Database = {
           library: string
           naics_code: string | null
           name: string
+          next_charge_amount_cents: number | null
+          next_charge_currency: string | null
           obligations_computed_at: string | null
           payment_failed_at: string | null
           pre_completed_items: Json | null
@@ -1068,6 +1076,12 @@ export type Database = {
           county?: string | null
           created_at?: string | null
           current_period_end?: string | null
+          discount_amount_off_cents?: number | null
+          discount_duration?: string | null
+          discount_ends_at?: string | null
+          discount_months?: number | null
+          discount_name?: string | null
+          discount_percent_off?: number | null
           employee_count?: number | null
           extra_profile?: Json | null
           id?: string
@@ -1075,6 +1089,8 @@ export type Database = {
           library?: string
           naics_code?: string | null
           name: string
+          next_charge_amount_cents?: number | null
+          next_charge_currency?: string | null
           obligations_computed_at?: string | null
           payment_failed_at?: string | null
           pre_completed_items?: Json | null
@@ -1098,6 +1114,12 @@ export type Database = {
           county?: string | null
           created_at?: string | null
           current_period_end?: string | null
+          discount_amount_off_cents?: number | null
+          discount_duration?: string | null
+          discount_ends_at?: string | null
+          discount_months?: number | null
+          discount_name?: string | null
+          discount_percent_off?: number | null
           employee_count?: number | null
           extra_profile?: Json | null
           id?: string
@@ -1105,6 +1127,8 @@ export type Database = {
           library?: string
           naics_code?: string | null
           name?: string
+          next_charge_amount_cents?: number | null
+          next_charge_currency?: string | null
           obligations_computed_at?: string | null
           payment_failed_at?: string | null
           pre_completed_items?: Json | null

@@ -56,6 +56,40 @@ export type SubscriptionFacts = {
    */
   cancelAt: string | null
   card: CardLine | null
+  /**
+   * WHAT THE NEXT INVOICE TOTALS, from Stripe's own preview of it — migration 090.
+   *
+   * **`null` means we could not establish it**, which is not the same as zero: a canceled
+   * subscription has no upcoming invoice and Stripe refuses the preview outright
+   * (`invoice_upcoming_none`, read from the sandbox). `columnsFromFacts` therefore leaves the
+   * columns alone on a null and writes a real 0, because 0 is the commonest value there is —
+   * every 100%-off coupon produces one.
+   */
+  nextCharge: { amountCents: number; currency: string } | null
+  /** The discount in the words a person reads, or `null` for "there is no discount" — which IS a
+   *  fact Stripe told us, and is written as nulls. See `columnsFromFacts`. */
+  discount: DiscountFacts | null
+}
+
+/**
+ * THE DISCOUNT, FLATTENED TO WHAT THE BILLING TAB SAYS — migration 090.
+ *
+ * Every field is read straight off Stripe and translated into nothing. `duration` in particular is
+ * Stripe's own word, because it is the only thing that tells `once` from `forever` — `discount.end`
+ * is null for both, which is the trap §217 left open.
+ */
+export type DiscountFacts = {
+  /** The coupon's `name` as shown to customers ("FOUNDER100"), falling back to its id. */
+  name: string
+  /** 100 for "100% off". Exactly one of this and `amountOffCents` is set — Stripe's own rule. */
+  percentOff: number | null
+  amountOffCents: number | null
+  /** `forever` | `once` | `repeating`, verbatim. */
+  duration: string
+  /** `duration_in_months` — the "for 6 months". Null unless `repeating`. */
+  months: number | null
+  /** The DISCOUNT's own `end`, ISO. Set only for `repeating`; null for `once` and `forever`. */
+  endsAt: string | null
 }
 
 /** The one seam. */
@@ -102,13 +136,119 @@ const iso = (unixSeconds: number | null | undefined): string | null =>
  *     comes back as an object, `type: 'card'`, `visa 4242`. A two-source fallback where the second
  *     source is structurally unreadable is one source wearing a comment that says two.
  */
+/**
+ * THE DISCOUNT, FROM WHICHEVER OF THE TWO PLACES STRIPE PUT IT — migration 090.
+ *
+ * Pure, and exported so `tests/unit/stripeWebhook.test.ts` can drive every shape without a network.
+ * Takes the raw fields so the test hands in exactly what Stripe hands in.
+ *
+ * *** THE SUBSCRIPTION WINS, AND BOTH ARE READ. *** A promotion code typed at Checkout lands on the
+ * SUBSCRIPTION — `subscription.discounts`, an array (read live, 27 October: `customer.discount` was
+ * null on the real FOUNDER100 subscription). A coupon applied by hand in the Dashboard lands on the
+ * CUSTOMER instead. Reading only one of the two would mirror "no discount" for half the ways a
+ * discount can exist, and the company would be told it owes the list price.
+ *
+ * A discount whose coupon did not expand is **not** a discount we can describe, and returning
+ * something half-filled would put a blank name in a sentence about money. It returns null, and
+ * `columnsFromFacts` then writes nulls — which is honest: we would rather say "no discount known"
+ * than "a discount called ''".
+ */
+export function discountFactsFrom(
+  subscriptionDiscounts: unknown,
+  customerDiscount: unknown,
+): DiscountFacts | null {
+  const first = Array.isArray(subscriptionDiscounts) ? subscriptionDiscounts[0] : null
+  for (const d of [first, customerDiscount]) {
+    const facts = asDiscount(d)
+    if (facts) return facts
+  }
+  return null
+}
+
+/** One Discount object → the six fields, or null if it is an id string, a deleted object, or has
+ *  no readable coupon on it. */
+function asDiscount(d: unknown): DiscountFacts | null {
+  if (!d || typeof d !== 'object') return null
+  const o = d as { end?: unknown; deleted?: unknown; source?: { coupon?: unknown } }
+  if (o.deleted === true) return null
+  const c = o.source?.coupon
+  // An unexpanded coupon is an id string, not a coupon — exactly as an unexpanded payment method
+  // is not a card. See the expand list in `realStripePort`.
+  if (!c || typeof c !== 'object') return null
+  const coupon = c as {
+    id?: unknown; name?: unknown; percent_off?: unknown
+    amount_off?: unknown; duration?: unknown; duration_in_months?: unknown
+  }
+  if (typeof coupon.duration !== 'string' || !coupon.duration) return null
+  const name = typeof coupon.name === 'string' && coupon.name
+    ? coupon.name
+    : typeof coupon.id === 'string' && coupon.id ? coupon.id : null
+  if (!name) return null
+  return {
+    name,
+    percentOff: typeof coupon.percent_off === 'number' ? coupon.percent_off : null,
+    amountOffCents: typeof coupon.amount_off === 'number' ? coupon.amount_off : null,
+    duration: coupon.duration,
+    months: typeof coupon.duration_in_months === 'number' ? coupon.duration_in_months : null,
+    endsAt: iso(typeof o.end === 'number' ? o.end : null),
+  }
+}
+
+/**
+ * WHAT STRIPE SAYS THE NEXT INVOICE TOTALS — migration 090's whole argument.
+ *
+ * *** IT ASKS STRIPE RATHER THAN DOING THE ARITHMETIC. *** list price × (1 − percent/100) is wrong
+ * the moment tax, a credit balance, a second discount, a proration or an `amount_off` in another
+ * currency is in play, and every one of those is Stripe's to compute. `invoices.createPreview`
+ * returns the invoice that WILL be raised; its `total` is the figure.
+ *
+ * *** AND IT IS CALLED ONCE PER EVENT, NEVER PER PAGE LOAD. *** That is the difference between a
+ * mirror and a proxy (§213): the webhook and the reconcile pay this round trip, the Billing tab
+ * reads a column.
+ *
+ * `null` on a refusal, and a refusal is NORMAL rather than exceptional: a canceled subscription has
+ * no upcoming invoice and Stripe says so outright — `invoice_upcoming_none`, *"You cannot preview
+ * the upcoming invoice for a canceled subscription"*, read from the sandbox on 27 October. The
+ * `method` is `createPreview` and not `retrieveUpcoming`, which this SDK no longer carries
+ * (`node_modules/stripe/esm/resources/Invoices.d.ts:114`).
+ */
+async function nextChargeFrom(
+  stripe: Stripe,
+  sub: Stripe.Subscription,
+): Promise<{ amountCents: number; currency: string } | null> {
+  try {
+    const preview = await stripe.invoices.createPreview({ subscription: sub.id })
+    if (typeof preview.total !== 'number' || typeof preview.currency !== 'string') return null
+    return { amountCents: preview.total, currency: preview.currency }
+  } catch {
+    // Said in the log rather than thrown: the rest of the mirror is still worth writing, and a
+    // null here is a state the words already handle (§5 — never silent, never made worse).
+    console.log(`[stripeWebhook] no upcoming invoice for ${sub.id}; next charge left unwritten`)
+    return null
+  }
+}
+
 export function realStripePort(stripe: Stripe): StripePort {
   return {
     async readSubscription(id: string): Promise<SubscriptionFacts | null> {
       let sub: Stripe.Subscription
       try {
         sub = await stripe.subscriptions.retrieve(id, {
-          expand: ['default_payment_method', 'customer.invoice_settings.default_payment_method'],
+          expand: [
+            'default_payment_method', 'customer.invoice_settings.default_payment_method',
+            // *** `discounts.source.coupon`, AND THE LAST LEVEL IS THE WHOLE POINT — migration 090.
+            // `expand: ['discounts']` alone gives expanded Discount objects whose
+            // `source.coupon` is still an ID STRING. Checked against the live FOUNDER100
+            // subscription on 27 October: it came back as the bare `"f4DDuTXd"`. That is §217 D
+            // again — an expand one level too shallow reads as a missing value, not as an error,
+            // so the whole discount would silently mirror as "no discount".
+            'discounts.source.coupon',
+            // A coupon applied to the CUSTOMER in the Dashboard lands here instead. The Checkout
+            // promotion code landed on the subscription (`customer.discount` was null on the real
+            // one), so the subscription is read first and this is the fallback — the same
+            // two-source shape as the card line above.
+            'customer.discount.source.coupon',
+          ],
         })
       } catch {
         return null
@@ -132,6 +272,8 @@ export function realStripePort(stripe: Stripe): StripePort {
         // boolean would show that company nothing at all.
         cancelAt: iso(sub.cancel_at),
         card: cardLineFrom(sub.default_payment_method, customer?.invoice_settings?.default_payment_method),
+        discount: discountFactsFrom(sub.discounts, customer?.discount),
+        nextCharge: await nextChargeFrom(stripe, sub),
       }
     },
 
@@ -343,6 +485,30 @@ export function columnsFromFacts(facts: SubscriptionFacts): Record<string, unkno
   if (facts.card) {
     patch.card_brand = facts.card.brand
     patch.card_last4 = facts.card.last4
+  }
+
+  /* ---- MIGRATION 090: WHAT THIS COMPANY PAYS. Two rules, opposite to each other. --------------
+     THE DISCOUNT IS WRITTEN EVEN WHEN NULL, like `cancel_at` and for the same reason: we read the
+     subscription, and "there is no discount on it" is a fact Stripe told us. It is also the only
+     way REMOVING a coupon in the portal reaches the page. A conditional write would leave a
+     company reading "FOUNDER100, 100% off, forever" after the coupon was taken off them — a false
+     statement about money, which is the one thing this mirror exists to prevent.
+
+     THE AMOUNT IS WRITTEN ONLY WHEN WE HAVE ONE, like the card line. `null` from
+     `nextChargeFrom` does not mean "nothing to pay"; it means Stripe would not tell us — a
+     canceled subscription has no upcoming invoice at all. Clearing on that would turn "you pay
+     $99.50" into a blank. *** A REAL ZERO IS NOT A NULL *** and must still be written: every
+     100%-off coupon produces one, and 0 is the figure the whole finding is about. */
+  patch.discount_name = facts.discount?.name ?? null
+  patch.discount_percent_off = facts.discount?.percentOff ?? null
+  patch.discount_amount_off_cents = facts.discount?.amountOffCents ?? null
+  patch.discount_duration = facts.discount?.duration ?? null
+  patch.discount_months = facts.discount?.months ?? null
+  patch.discount_ends_at = facts.discount?.endsAt ?? null
+
+  if (facts.nextCharge) {
+    patch.next_charge_amount_cents = facts.nextCharge.amountCents
+    patch.next_charge_currency = facts.nextCharge.currency
   }
   return patch
 }

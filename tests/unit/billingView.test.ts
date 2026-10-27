@@ -10,7 +10,7 @@ import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
-  billingTabView, plainDate, daysUntil, PLAN_PRICE, PLAN_NOTE, STRIPE_NOTE, MANAGE_LINK,
+  billingTabView, plainDate, daysUntil, money, PLAN_PRICE, PLAN_NOTE, STRIPE_NOTE, MANAGE_LINK,
   AFTER_THE_TRIAL, type BillingViewColumns,
 } from '../../lib/billingView.ts'
 import { checkoutSessionParams } from '../../lib/stripe.ts'
@@ -60,9 +60,20 @@ describe('board 4, status — every state the gate can report', () => {
   const cases: Array<[string, Partial<BillingViewColumns>, string, RegExp]> = [
     ['the trial, running',
       {}, 'Trial', /Your trial ends 30 October 2026\. Add a card before then and nothing changes on the day\./],
+    // *** THE CARD AND THE AMOUNT ARE IN THIS ROW NOW, AND \u00a7221 IS WHY. ***
+    // This case had neither, and still asserted "charged to the card below" — the page telling a
+    // company with no card that a charge was going to one. The same sentence the owner's coupon
+    // walk found on screen, sitting unnoticed in a test fixture. A cardless active company has its
+    // own case immediately below.
     ['active, with a next payment date',
-      { trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'active', current_period_end: '2026-11-30T12:00:00Z' },
-      'Active', /charged to the card below/],
+      { trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'active', current_period_end: '2026-11-30T12:00:00Z',
+        stripe_subscription_id: 'sub_1', card_brand: 'visa', card_last4: '4242',
+        next_charge_amount_cents: 19900, next_charge_currency: 'usd' },
+      'Active', /\$199 a month, charged to the card below/],
+    ['active, with a payment coming and NO card',
+      { trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'active', current_period_end: '2026-11-30T12:00:00Z',
+        stripe_subscription_id: 'sub_1', next_charge_amount_cents: 19900, next_charge_currency: 'usd' },
+      'Active', /Add a card below so the next payment can go through/],
     ['active, before the first period end has landed',
       { trial_ends_at: '2026-10-01T12:00:00Z', subscription_status: 'active' },
       'Active', /next payment date will appear here shortly/],
@@ -283,6 +294,8 @@ describe('*** A SCHEDULED CANCELLATION, WHICH THE STATUS DOES NOT SHOW — §219
 
 describe("board 4's fixed words are the board's", () => {
   test('the plan line', () => {
+    // *** STILL `$199`, BUT NOW ONLY WHERE THE PAGE DESCRIBES THE PRODUCT (\u00a7221). *** What THIS
+    // company pays is `next_charge_amount_cents`; see the suite at the end of this file.
     assert.equal(PLAN_PRICE, '$199')
     assert.equal(PLAN_NOTE, 'Everything in CompliBoard, for everyone at your company. Cancel any time.')
   })
@@ -438,5 +451,232 @@ describe('*** CHECKOUT ASKS FOR A CARD WHENEVER A CHARGE IS COMING ***', () => {
     assert.match(route, /checkout\.sessions\.create\(\s*\n?\s*checkoutSessionParams\(/)
     assert.ok(!/payment_method_collection/.test(route.replace(/\/\*[\s\S]*?\*\//g, '')),
       'the route carries its own copy of the parameter')
+  })
+})
+
+
+// =================================================================================================
+// *** WHAT THIS COMPANY PAYS — migration 090, `DECISIONS.md` \u00a7221. ***
+//
+// The owner's coupon walk: FOUNDER100 (100% off, forever) produced a live subscription, and the tab
+// said "$199 a month" / "$199 a month, charged to the card below" / "No card yet \u00b7 Add a card".
+// Three false statements about money in one card, for a company that will never be charged anything.
+//
+// Each suite below is one of the five states the brief names, and each asserts the SENTENCE rather
+// than the field, because the sentence is what was wrong.
+// =================================================================================================
+
+/** A paying company: a subscription, a card, and Stripe's own next-invoice total. */
+const paying = (over: Partial<BillingViewColumns> = {}): BillingViewColumns => row({
+  trial_ends_at: '2026-10-01T12:00:00Z',
+  subscription_status: 'active',
+  current_period_end: '2026-11-27T17:47:23Z',
+  stripe_subscription_id: 'sub_1',
+  card_brand: 'visa', card_last4: '4242',
+  next_charge_amount_cents: 19900, next_charge_currency: 'usd',
+  ...over,
+})
+
+describe('money \u2014 the formatter the three rows share', () => {
+  test('a whole amount loses its .00, and a part amount keeps both places', () => {
+    // "$199.00 a month" reads like a form; "$99.5" is a price nobody writes.
+    assert.equal(money(19900, 'usd'), '$199')
+    assert.equal(money(9950, 'usd'), '$99.50')
+    assert.equal(money(0, 'usd'), '$0')
+    assert.equal(money(5, 'usd'), '$0.05')
+  })
+
+  test('an unknown currency prints its ISO code rather than a guessed symbol', () => {
+    assert.equal(money(19900, 'jpy'), '199 JPY')
+  })
+})
+
+describe('1. NO DISCOUNT \u2014 the ordinary paying company, unchanged', () => {
+  const v = billingTabView(paying(), NOW)
+
+  test('the plan line is the mirrored amount, which happens to equal the list price', () => {
+    assert.equal(v.plan.amount, '$199')
+    assert.equal(v.plan.discount, '', 'a discount was named where there is none')
+    assert.equal(v.plan.note, PLAN_NOTE)
+  })
+
+  test('the status keeps board 4\u2019s original sentence, with the amount from the mirror', () => {
+    assert.equal(v.status.pill, 'Active')
+    assert.equal(v.status.headline, 'Next payment 27 November 2026')
+    assert.equal(v.status.detail, '$199 a month, charged to the card below. Cancel any time from the Cancel tab.')
+  })
+
+  test('the card row is the card', () => {
+    assert.equal(v.card.text, 'Visa ending 4242')
+    assert.equal(v.card.action, 'Change')
+    assert.equal(v.card.note, '')
+  })
+})
+
+describe('2. *** 100% OFF FOREVER \u2014 THE WALK\u2019S CASE. ***', () => {
+  const v = billingTabView(paying({
+    next_charge_amount_cents: 0,
+    card_brand: null, card_last4: null,
+    discount_name: 'FOUNDER100', discount_percent_off: 100, discount_duration: 'forever',
+  }), NOW)
+
+  test('the plan line says $0 and says WHY', () => {
+    // "$0 a month" with no reason reads like a bug, which is its own kind of untrue.
+    assert.equal(v.plan.amount, '$0')
+    assert.equal(v.plan.discount, 'FOUNDER100, 100% off, forever')
+  })
+
+  test('*** THE STATUS NEVER SAYS "CHARGED TO THE CARD BELOW". ***', () => {
+    assert.ok(!/charged to the card below/.test(v.status.detail), v.status.detail)
+    assert.ok(!/\$199/.test(v.status.detail), 'the list price is still being stated as this company\u2019s')
+    assert.match(v.status.detail, /nothing to pay and no card is needed/)
+    assert.match(v.status.detail, /Cancel any time from the Cancel tab\./)
+  })
+
+  test('"Renews", not "Next payment" \u2014 there is no payment', () => {
+    assert.equal(v.status.headline, 'Renews 27 November 2026')
+  })
+
+  test('*** AND THE CARD ROW DOES NOT ASK FOR A CARD. ***', () => {
+    assert.equal(v.card.text, 'Not needed \u2014 there is nothing to pay')
+    assert.equal(v.card.action, '', 'a button is offered for a card nothing will ever charge')
+    assert.equal(v.card.note, '')
+  })
+})
+
+describe('3. A PARTIAL DISCOUNT \u2014 the plausible number, which is the dangerous one', () => {
+  const v = billingTabView(paying({
+    next_charge_amount_cents: 9950,
+    discount_name: 'HALFYEAR', discount_percent_off: 50,
+    discount_duration: 'repeating', discount_months: 6,
+    discount_ends_at: '2027-04-27T17:47:23Z',
+  }), NOW)
+
+  test('the plan line is what they pay, with what it is and what follows it', () => {
+    assert.equal(v.plan.amount, '$99.50')
+    assert.equal(v.plan.discount, 'HALFYEAR, 50% off for 6 months, then $199')
+  })
+
+  test('the status states the discounted amount, never the list price', () => {
+    assert.equal(v.status.detail, '$99.50 a month, charged to the card below. Cancel any time from the Cancel tab.')
+  })
+
+  test('an amount-off coupon reads as money rather than a percentage', () => {
+    const a = billingTabView(paying({
+      next_charge_amount_cents: 14900,
+      discount_name: 'FIFTYOFF', discount_percent_off: null,
+      discount_amount_off_cents: 5000, discount_duration: 'forever',
+    }), NOW)
+    assert.equal(a.plan.discount, 'FIFTYOFF, $50 off, forever')
+    assert.equal(a.plan.amount, '$149')
+  })
+
+  test('a fractional percentage keeps its places and does not gain any', () => {
+    const t = billingTabView(paying({ next_charge_amount_cents: 13267, discount_name: 'THIRD', discount_percent_off: 33.33, discount_duration: 'forever' }), NOW)
+    assert.equal(t.plan.discount, 'THIRD, 33.33% off, forever')
+  })
+})
+
+describe('4. A DISCOUNT WITH AN END \u2014 and the card asked for in time', () => {
+  test('nothing to pay YET: the date is in the sentence, and so is what resumes', () => {
+    const v = billingTabView(paying({
+      next_charge_amount_cents: 0, card_brand: null, card_last4: null,
+      discount_name: 'FREE6', discount_percent_off: 100,
+      discount_duration: 'repeating', discount_months: 6,
+      discount_ends_at: '2027-04-27T17:47:23Z',
+    }), NOW)
+    assert.equal(v.plan.amount, '$0')
+    assert.equal(v.plan.discount, 'FREE6, 100% off for 6 months, then $199')
+    assert.match(v.status.detail, /Nothing to pay until 27 April 2027, when your discount ends and \$199 a month resumes\./)
+  })
+
+  test('*** AND IT STILL ASKS FOR A CARD, WITH THE DATE. ***', () => {
+    // The difference from suite 2. A zero that ENDS is a charge that is coming, so the card is
+    // needed — and the date is the only honest reason to ask for one today.
+    const v = billingTabView(paying({
+      next_charge_amount_cents: 0, card_brand: null, card_last4: null,
+      discount_name: 'FREE6', discount_percent_off: 100,
+      discount_duration: 'repeating', discount_months: 6,
+      discount_ends_at: '2027-04-27T17:47:23Z',
+    }), NOW)
+    assert.equal(v.card.text, 'No card yet')
+    assert.equal(v.card.action, 'Add a card')
+    assert.match(v.card.note, /Your discount ends 27 April 2027\. Add a card before then/)
+  })
+
+  test('*** `once` IS NOT `forever`, AND ONLY `duration` KNOWS. ***', () => {
+    // Stripe leaves `discount.end` null for BOTH, so a page keying on the date alone would show a
+    // one-off discount as permanent and never ask for a card. \u00a7217's "forever coupons only" is the
+    // rule; this is what the page says if one is issued anyway.
+    const v = billingTabView(paying({
+      next_charge_amount_cents: 0, card_brand: null, card_last4: null,
+      discount_name: 'FIRSTFREE', discount_percent_off: 100,
+      discount_duration: 'once', discount_ends_at: null,
+    }), NOW)
+    assert.equal(v.plan.discount, 'FIRSTFREE, 100% off on your first payment only, then $199')
+    assert.equal(v.card.action, 'Add a card', 'a one-off discount was treated as free for ever')
+    assert.ok(!/no card is needed/.test(v.status.detail), v.status.detail)
+  })
+})
+
+describe('5. THE CARD-NAGGING SUPPRESSION, stated as its own rule', () => {
+  const freeForever = {
+    next_charge_amount_cents: 0, card_brand: null, card_last4: null,
+    discount_name: 'FOUNDER100', discount_percent_off: 100, discount_duration: 'forever',
+  }
+
+  test('no card is asked for when nothing will ever be charged', () => {
+    assert.equal(billingTabView(paying(freeForever), NOW).card.action, '')
+  })
+
+  test('\u2026but a card that EXISTS is still shown and still changeable', () => {
+    // Somebody may have added one before the coupon, or want it on file. Hiding it would be
+    // hiding a fact about their account.
+    const v = billingTabView(paying({ ...freeForever, card_brand: 'visa', card_last4: '4242' }), NOW)
+    assert.equal(v.card.text, 'Visa ending 4242')
+    assert.equal(v.card.action, 'Change')
+  })
+
+  test('a real charge with no card DOES ask, and says why', () => {
+    const v = billingTabView(paying({ card_brand: null, card_last4: null }), NOW)
+    assert.equal(v.card.action, 'Add a card')
+    assert.equal(v.status.detail, '$199 a month. Add a card below so the next payment can go through. Cancel any time from the Cancel tab.')
+  })
+
+  test('the suppression needs BOTH zero and forever \u2014 neither alone', () => {
+    assert.equal(billingTabView(paying({ ...freeForever, next_charge_amount_cents: 9950 }), NOW).card.action, 'Add a card')
+    assert.equal(billingTabView(paying({ ...freeForever, discount_duration: 'repeating', discount_months: 3 }), NOW).card.action, 'Add a card')
+  })
+})
+
+describe('*** THE LIST PRICE IS NOT A FALLBACK FOR AN AMOUNT WE DID NOT READ. ***', () => {
+  test('a subscription with no mirrored amount says so, and prints no price as fact', () => {
+    // This is the whole finding in one assertion. A null amount on a live subscription used to
+    // mean "$199"; now it means "we will tell you shortly".
+    const v = billingTabView(paying({ next_charge_amount_cents: null, next_charge_currency: null }), NOW)
+    assert.match(v.plan.note, /The amount of your next payment will appear here shortly\./)
+    assert.ok(!/charged to the card below/.test(v.status.detail) || v.status.detail.includes('$199'),
+      'see below: with no amount the status must not assert one')
+  })
+
+  test('a company with NO subscription is told the PRODUCT\u2019S price, which is the honest use', () => {
+    // A trial. There is no subscription, so there is no discount to know about and no amount to
+    // mirror; $199 is what they will pay, and saying it is the point of the row.
+    const v = billingTabView(row(), NOW)
+    assert.equal(v.plan.amount, PLAN_PRICE)
+    assert.equal(v.plan.note, PLAN_NOTE)
+    assert.equal(v.plan.discount, '')
+  })
+
+  test('the page reads the view, and the constant is no longer in it', () => {
+    const page = readFileSync('app/account/page.tsx', 'utf8')
+    assert.match(page, /\{view\.plan\.amount\}/)
+    assert.match(page, /\{view\.plan\.discount\}/)
+    // Matched as CODE, not as text: the comment beside the Plan row names the constant it stopped
+    // using, which is the point of the comment.
+    assert.ok(!/PLAN_PRICE[,}\s]*\n|\{PLAN_PRICE\}/.test(page),
+      'the page still imports the list price, so it can still state it as this company\u2019s')
+    // and an empty action renders no button
+    assert.match(page, /\{view\.card\.action && \(/)
   })
 })
