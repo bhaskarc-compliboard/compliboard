@@ -4827,3 +4827,50 @@ sitting green in the test file. It passed because it was written from the same b
 > the wrong value. Here, a test asserted a *sentence* about a fixture that could not be true of it.
 > **A fixture is a claim too, and nobody checks it.** When a wording change breaks an old assertion,
 > read the fixture before fixing the assertion: it may be the fixture that was lying.
+
+---
+
+## A FAKE THAT IS KINDER THAN THE REAL THING HIDES THE BUG YOU WROTE IT TO FIND — 27 October 2026 (My Account step 20, `DECISIONS.md` §222)
+
+`§222`'s whole point is a compare-and-set: write only if the row still looks the way it did when we
+read it. The test for it is a race — the stub Stripe port mutates the table in between, standing in
+for a webhook landing mid-flight.
+
+**It passed while the guard did nothing.**
+
+`tests/unit/fakeSupabase.ts` returns the **live row object** from `maybeSingle()`. PostgREST returns
+a decoded copy. So the production code's `row.subscription_status`, read when the query was built —
+*after* the port had mutated the table — was already the new value. The guard compared the row
+against itself and matched every time.
+
+```
+  const row = company                   // the fake: a live reference. the real thing: a copy.
+  …await port.readSubscription()        // the "webhook" writes here
+  q.eq('subscription_status', row.subscription_status)   // reads the NEW value
+```
+
+The fix is one spread, and it is production code rather than test code: snapshot the row before any
+`await`. In production it changes nothing, which is the point — **the fake was the only place the
+bug could show, and it was hiding it.**
+
+> ### A STUB THAT SHARES STATE WITH THE SYSTEM UNDER TEST IS NOT A STUB, IT IS A PARTICIPANT.
+> Worth asking of any fake in this repository: *does it hand back a reference the code could still
+> be holding when the world moves?* `makeDb` does, deliberately — mutating its tables is how the
+> cron tests assert that a read-only company's rows were left alone. That is a feature for those
+> tests and a trap for this one, and the two are indistinguishable from the fake's side.
+
+### And the companion: a fact about WHY cannot be recovered from the state you acted on
+
+`/api/billing/reconcile` filled its `stripe_events` row by asking `reconcileNeeded` a second time,
+after the call. A successful repair settles the row, so the question answered `null` and **every
+record said "the mirror looked wrong"** instead of naming the state. Every unit test passed; the
+record is not something any of them read.
+
+What found it: reading a row the staging run had just written, because the report needed to quote
+it. The reason now travels out of the function on `ReconcileResult`, and a test asserts both the
+payload and that the route does not call `reconcileNeeded` at all.
+
+> **The pattern across §220, §221 and §222 is the same three words: _read it back_.** Not the column
+> you changed — the artefact a person or a future debugger will actually look at. The page, the
+> screenshot, the row in the log table. Three defects in three days, none visible to the suite, all
+> visible in ten seconds to anyone who looked at the output.

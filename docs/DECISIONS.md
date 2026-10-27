@@ -16693,3 +16693,184 @@ words are identical.
 - **The card suppression (E.3):** a customer complaining they could not put a card on file ahead of
   time. The "Change" path already covers one that exists; this would be about adding a first one.
 - **The owed proof (F):** doing it. Until then §217's "forever coupons only" is load-bearing.
+
+---
+
+## 222. THE STALE MIRROR: A MISSED EVENT ON A SUBSCRIPTION WE ALREADY KNOW ABOUT — 27 October 2026 (My Account step 20; completes §220)
+
+### WHAT §220 COULD NOT HEAL
+
+§220's write guard was `.is('stripe_subscription_id', null)` — fill a blank, never overwrite. That is
+what made it safe, and it is exactly why it could not help here: **a missed delivery on a
+subscription we already know about leaves the mirror stale and nothing heals it.**
+
+It happened twice in one afternoon of the owner's walk, and the second time cost the most:
+
+> He changed his card to 4242 in the portal, Stripe retried the open invoice and marked it **Paid**.
+> `invoice.paid` was never delivered. Our row sat at `past_due` with the grace anchor under it.
+> **On day 8 `accessFor` would have moved that paying customer to read_only** — locked out by our
+> own bookkeeping, with no event coming to fix it.
+
+In production the endpoint is registered and Stripe retries for days, so this is rarer. It is not
+impossible, and the failure is silent and expensive.
+
+### A. THE SIGNAL IS A STATE THAT SHOULD NOT PERSIST, NOT STALENESS
+
+"The row has not changed in a while" is not a signal. **A settled `active` company is not stale, it
+is correct**, and asking Stripe about it on every page load would be the proxy this mirror exists to
+avoid. What earns a question is a state Stripe does not leave alone, which we are nonetheless still
+in. `lib/billing.ts` `reconcileNeeded` — pure, beside `accessFor` — returns one of four reasons or
+null:
+
+| reason | when | why it cannot be right |
+|---|---|---|
+| `no_subscription_mirrored` | a customer, no subscription | §220's case, unchanged |
+| `not_paying_without_anchor` | `past_due`/`unpaid`/`incomplete`, no `payment_failed_at` | **`accessFor` already reasons this means we dropped an event** — read its `payment_failed_retrying` branch. It gives the benefit of the doubt; this goes and finds out. No age bound |
+| `not_paying_unconfirmed` | the same three, anchor older than 24h | Stripe retries and moves on; `incomplete` it expires within 23h by its own documentation |
+| `anchor_under_a_paying_status` | `active`/`trialing` with an anchor older than 24h | **the one that cost the walk.** A successful payment clears the anchor, so this is a contradiction — and left alone the grace runs out under somebody who has paid |
+
+**The clock is `payment_failed_at`, because it is the only one we have.** Nothing records when
+`subscription_status` last changed; `updated_at` moves on any edit to the row, including the Company
+tab's, so a company that tidies its profile daily would never look stale. The grace anchor is the one
+timestamp the billing path itself writes.
+
+`canceled` is deliberately never questioned: Stripe refuses to preview an upcoming invoice for one
+(`invoice_upcoming_none`), so the call could only come back empty-handed.
+
+> ### ⚠ ONE CLAUSE OF THE BRIEF IS NOT A SIGNAL, AND IS LEFT OUT.
+> *"`payment_failed_at` set with `current_period_end` in the future"* is **the ordinary grace**. It is
+> exactly what the owner's own decline produced twenty minutes earlier — anchor set, period end a
+> month out, status `past_due`, every column correct. Firing on it would reconcile every genuinely
+> failing customer on every page load. What is useful in it survives as the fourth row above: the
+> same contradiction, but under a status that says we are being **paid**.
+
+### B. ONE RULE, ASKED BY THE PAGE AND AGAIN BY THE SERVER
+
+`reconcileTrigger` (the words) wraps `reconcileNeeded` (the rule), and **`reconcileFromStripe` asks
+it again** before spending anything. Without that, a client looping on `/api/billing/reconcile` would
+be one Stripe round trip per request — the mirror turned into a proxy. Same shape as `accessFor` and
+`splitByAccess`: one rule, two callers.
+
+`?card=added` keeps its single job. A stale-state reconcile is **silent even with it on the address**:
+it will usually find nothing (a genuinely failing card looks exactly like a stale one until you ask),
+and "Finishing up…" for a repair nobody asked for is a progress bar for a no-op.
+
+### C. COMPARE-AND-SET, NOT `.is(null)`
+
+The property worth keeping was never "only fill a blank" — it was **the webhook wins every tie**. So
+the write is conditional on the row still looking the way it did when we read it: `id`, plus
+`stripe_subscription_id`, plus `subscription_status`. A delivery landing in between moves one of
+them, our filter matches nothing, and the outcome is `raced`.
+
+Two details that each would have broken it silently:
+
+- **`.is` and not `.eq` for a null.** PostgREST's `eq.null` matches no row at all, so §220's case —
+  a blank subscription id and a null status — would report `raced` on *every* repair and heal
+  nothing.
+- **⚡ the row is snapshotted before any `await`.** Comparing against `company.subscription_status`
+  later reads whatever it says later, so the guard would compare the row against itself and always
+  match. PostgREST hands back a copy so production was never wrong, but `fakeSupabase` returns the
+  **live row object** — and the race test, which mutates the table mid-flight, passed the guard
+  until the snapshot was added. **The test found it; review had not.**
+
+### D. "DID ANYTHING CHANGE" IS A DIFF, AND TIMESTAMPS ARE INSTANTS
+
+A reconcile that found the mirror already right must write nothing and record nothing. So the row is
+read with every column the mapping can write, and `changedFields` diffs the patch against it.
+
+⚡ **Compared as text, every reconcile would "repair".** Postgres hands back
+`2026-11-27T18:18:43+00:00`; the mapping holds `2026-11-27T18:18:43.000Z`. Same instant, two
+spellings. `changedFields` parses both and compares the moments, and compares numbers loosely
+because `numeric` can arrive as a string.
+
+### E. THE GRACE ANCHOR, AND WHY IT IS NOT IN THE SHARED MAPPING
+
+`columnsFromFacts` does not touch `payment_failed_at`, so the reconcile adds it: Stripe saying
+`active` means the payment is not failing, so a stale anchor is cleared — exactly what the webhook's
+`invoice.paid` branch does. The predicate is shared (`clearsGraceAnchor`); **where it is applied is
+not, and that is load-bearing:**
+
+> Folding the clearing into `columnsFromFacts` would change the webhook too, and break it. A LATE
+> `invoice.payment_failed` re-reads live state, would find `active`, would have the anchor cleared by
+> the mapping — and then that handler's `.is('payment_failed_at', null)` write would **match** and
+> stamp a fresh anchor on somebody who had already paid.
+
+A test runs both paths on two databases and compares the rows column for column, so "exactly as the
+webhook would" is an assertion and not a claim.
+
+### F. THE RECORD
+
+A reconcile that **changed** something still writes its `stripe_events` row; one that found the
+mirror already right writes nothing. `already_current` joins `nothing_at_stripe` on the
+not-recorded list, and for the same reason: once the trigger widened it is the commonest answer, so a
+real `past_due` customer would file a row on every page load for as long as their card kept failing.
+
+⚡ **The row names which of the four states earned the question — and did not at first.** The route
+asked `reconcileNeeded` *again* after the call, to fill that in; a successful repair settles the row,
+so the question answered `null` and every record read "the mirror looked wrong". **Found by reading a
+row the staging run had just written**, not by review. A fact about why we acted cannot be recovered
+from the state we acted on: it has to travel out of the function. It now does, on `ReconcileResult`.
+
+### G. THE PERIODIC SWEEP IS NOT BUILT, AND HERE IS WHEN IT SHOULD BE
+
+A cron that swept every company whose mirror looks wrong is the thorough answer. It is the only thing
+that repairs a row **before** the person notices, and it covers the customer who never opens the
+Billing tab. It is not built, deliberately.
+
+- **What it would cost:** a seventh cron, a Stripe call per candidate, rate-limit handling,
+  `splitByAccess`-style accounting, and a new way to write billing columns with no person in the
+  request. A day or two, and a new moving part that can itself be down.
+- **The condition that would make it right:** *enough paying companies that "they will open the
+  Billing tab" stops being true.* Today the argument holds — for the `past_due` case the banner is on
+  **every** page telling them to go there. When `check:live`'s new question (below) is routinely
+  returning companies, that argument has expired.
+
+> ### AND THE PRECONDITION FOR ALL OF THIS IS ALREADY ON THE LIST.
+> **Registering the production webhook endpoint and subscribing it to the six events** is items 3
+> and 4 of `RELEASE.md`'s step-20 by-hand list. Stripe then retries for up to three days with
+> backoff and emails on repeated failure. **Most of the risk this section is about is a laptop
+> artefact** — three outages in two days because a CLI process on one machine is the whole delivery
+> mechanism. The fix above is sized for the residue, not for that.
+
+### H. A QUESTION IN `check:live`, WHICH NEVER FAILS THE RUN
+
+`scripts/check-live.js` now asks, across every company at once, the same question `reconcileNeeded`
+asks of one: who is sitting in a state that should not persist. **N is one day**, the same constant
+the trigger uses.
+
+It prints a list and never fails, because every answer can be legitimate — a card really can keep
+failing. What it cannot be is invisible: the walk's failure had no symptom anywhere, and the only way
+anybody could have known was to look at a screen. It is in `check:live` rather than
+`scripts/audit-data-checks.js` because **`npm run db:migrate` chains into it**, so it is asked on
+every migration; the audit checks are the better conceptual home and have not been run since
+22 September 2026. A question nobody asks is a question nobody answers.
+
+### I. PROVED ON STAGING, $0
+
+The fixture — `active`, paid, Visa 4242 — was set back with the service role to exactly what the
+missed `invoice.paid` left: `past_due` with a two-day-old anchor, while Stripe still said `active`.
+
+| | the row | the gate | the page |
+|---|---|---|---|
+| **before** | `past_due`, anchor 2026-10-25 | `full · payment_failed_in_grace` | banner *"We couldn't charge your card. We'll try again for 5 more days"*, `[Payment failed] 5 days left` |
+| **after one load** | `active`, anchor NULL | `full · subscribed` | **no banner**, `[Active] Next payment 27 November 2026` |
+
+`shots/step20-stale-before.png`, `shots/step20-stale-after.png`. One POST, 764ms, and the record:
+
+```
+reconcile.repaired  handled=true
+why:     not_paying_unconfirmed
+changed: ["payment_failed_at","subscription_status"]
+```
+
+A second load made **zero** requests — the row is settled, so the rule declines to ask.
+
+### WHAT WOULD REVERSE IT
+
+- **The 24-hour clock:** evidence that a real delivery regularly takes longer, which would make the
+  reconcile race the webhook rather than follow it.
+- **Compare-and-set over `.is(null)` (C):** nothing. The old guard could not express "the webhook
+  wins" on a row that already had values.
+- **Not building the sweep (G):** the condition in G, read off `check:live`'s list.
+- **The anchor rule living outside the mapping (E):** the webhook ceasing to write
+  `payment_failed_at` from a timestamp of its own, which is the only reason the two must differ.
