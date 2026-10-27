@@ -513,6 +513,25 @@ export function columnsFromFacts(facts: SubscriptionFacts): Record<string, unkno
   return patch
 }
 
+/**
+ * DOES STRIPE'S PRESENT STATUS MEAN THE GRACE ANCHOR IS STALE? — §222.
+ *
+ * `payment_failed_at` is decision 11's clock. A successful payment clears it; `accessFor` reads it
+ * as "the seven days are running" and, once they are up, turns the company read_only. So an anchor
+ * left under a status that says we ARE being paid will eventually lock out a paying customer —
+ * which is exactly what a missed `invoice.paid` did on the owner's walk.
+ *
+ * *** IT IS A PREDICATE AND NOT A WRITE, ON PURPOSE. *** `lib/stripeReconcile.ts` applies it;
+ * `columnsFromFacts` deliberately does not. Folding it into the shared mapping would change the
+ * webhook too, and break it: a LATE `invoice.payment_failed` re-reads live state, would find
+ * `active`, would have the anchor cleared by the mapping — and then that handler's
+ * `.is('payment_failed_at', null)` write would MATCH and stamp a fresh anchor on somebody who had
+ * already paid. The rule is shared; where it is applied is not, and the difference is load-bearing.
+ */
+export function clearsGraceAnchor(status: string): boolean {
+  return status === 'active' || status === 'trialing'
+}
+
 /** The mapping itself. Returns what it wrote, so the caller can log it and a test can assert it. */
 async function applyToCompany(args: {
   event: Stripe.Event
@@ -567,6 +586,9 @@ async function applyToCompany(args: {
     }
 
     // ---- PAID: the grace is over, and the period end has moved.
+    // The clearing is UNCONDITIONAL here and conditional in the reconcile (`clearsGraceAnchor`),
+    // because this branch has an invoice in its hand saying it was paid — a stronger fact than a
+    // status. See that function's header for why the two must not be merged.
     case 'invoice.paid': {
       const inv = object as unknown as Stripe.Invoice
       const patch = await fromSubscription(subscriptionIdOfInvoice(inv))

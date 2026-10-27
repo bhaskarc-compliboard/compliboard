@@ -346,6 +346,123 @@ export function bannerFor(
   }
 }
 
+/* =================================================================================================
+ * WHEN THE MIRROR LOOKS WRONG — My Account step 20, `DECISIONS.md` §222.
+ *
+ * *** THE RECONCILE (§220) COULD ONLY HEAL AN EMPTY MIRROR, AND THAT LEFT THE WORSE CASE OPEN. ***
+ *
+ * §220's write guard was `.is('stripe_subscription_id', null)` — fill a blank, never overwrite. That
+ * is what makes it safe, and it is exactly why it could not help here: **a missed delivery on a
+ * subscription we already know about leaves the mirror stale and nothing heals it.** It happened
+ * twice in one afternoon of the owner's walk. The second time cost the most:
+ *
+ *   he paid the $199, Stripe marked the invoice Paid, `invoice.paid` was never delivered, and our
+ *   row sat at `past_due` with a grace anchor. **On day 8 `accessFor` would have moved that paying
+ *   customer to read_only** — locked out by our own bookkeeping, with no event coming to fix it.
+ *
+ * ---- SO: A STATE THAT SHOULD NOT PERSIST, NOT STALENESS ------------------------------------------
+ *
+ * "The row has not changed in a while" is not a signal. A settled `active` company is not stale, it
+ * is **correct**, and asking Stripe about it on every page load would be the proxy this mirror
+ * exists to avoid. What earns a question is a state Stripe does not leave alone, which we are
+ * nonetheless still in.
+ *
+ * *** AND THE CLOCK IS `payment_failed_at`, BECAUSE IT IS THE ONLY ONE WE HAVE. ***
+ * Nothing records when `subscription_status` last changed — `updated_at` moves on any edit to the
+ * row, including the Company tab's, so a company that tidies its profile daily would never look
+ * stale. The grace anchor is the one timestamp written by the billing path itself, so "we were told
+ * a day ago and have heard nothing since" is the honest reading of an old anchor.
+ *
+ * ⚠ ONE CLAUSE OF THE BRIEF IS NOT A SIGNAL, AND IS LEFT OUT DELIBERATELY: *"payment_failed_at set
+ * with current_period_end in the future"*. That is the ORDINARY grace. It is exactly what the
+ * owner's own decline produced twenty minutes before this was written — anchor set, period end a
+ * month out, status `past_due`, and every column correct. Firing on it would reconcile every
+ * genuinely failing customer on every page load. What is useful in it survives as case 3 below: the
+ * same contradiction, but under a status that says we are being PAID.
+ * ============================================================================================== */
+
+/** How long a not-paying state may stand unconfirmed before it is worth asking Stripe about. */
+export const RECONCILE_STALE_HOURS = 24
+
+/** Why the mirror is worth checking against Stripe. Named, so a test asserts a case and not a bool. */
+export type ReconcileReason =
+  /** A Stripe customer and no subscription: §220's original case. They may have abandoned
+   *  Checkout, or we may have missed the event that would have told us. Only Stripe can say. */
+  | 'no_subscription_mirrored'
+  /**
+   * `past_due`, `unpaid` or `incomplete` with NO anchor. `accessFor` already reasons that this
+   * means **our mirror dropped an event** rather than that they stopped paying — read its
+   * `payment_failed_retrying` branch. It gives them the benefit of the doubt and carries on; this
+   * goes and finds out. No age bound: the state is self-evidently incomplete the moment we see it.
+   */
+  | 'not_paying_without_anchor'
+  /**
+   * `past_due`, `unpaid` or `incomplete` with an anchor older than `RECONCILE_STALE_HOURS`.
+   * Stripe does not sit in these: it retries, and it moves the subscription on. `incomplete` in
+   * particular Stripe expires within 23 hours by its own documentation. A day of silence under one
+   * of them means the move happened and we were not told.
+   */
+  | 'not_paying_unconfirmed'
+  /**
+   * *** THE ONE THAT COST THE WALK: an anchor under a status that says we ARE being paid. ***
+   * `active` or `trialing` with `payment_failed_at` set is a contradiction — a successful payment
+   * clears the anchor. It means we got the status and missed the `invoice.paid`. Left alone, the
+   * grace runs out underneath a paying customer and `accessFor` turns them read_only.
+   *
+   * It still waits for the anchor to age, because the two events can legitimately arrive a second
+   * apart in either order, and a reconcile racing a webhook is wasted work rather than a repair.
+   */
+  | 'anchor_under_a_paying_status'
+
+/** The columns the question reads. All four are already on every screen's widened select. */
+export type ReconcileColumns = {
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+  subscription_status?: string | null
+  payment_failed_at?: string | Date | null
+}
+
+/** Stripe's three words for "we are not being paid and it is not settled either way". */
+const UNSETTLED = new Set(['past_due', 'unpaid', 'incomplete'])
+
+/**
+ * IS THIS ROW WORTH ONE READ FROM STRIPE? `null` means no, and no is the common answer.
+ *
+ * Pure, and in this file rather than in `lib/billingView.ts`, because **both the page and the
+ * server ask it**: the Billing tab decides whether to call `/api/billing/reconcile`, and the route
+ * asks again before spending a Stripe call, so a client that called it in a loop could not turn
+ * this into a proxy. One rule, two callers — the shape `accessFor` and `splitByAccess` already use.
+ */
+export function reconcileNeeded(c: ReconcileColumns, now: Date): ReconcileReason | null {
+  const status = c.subscription_status ?? null
+  const anchor = c.payment_failed_at == null ? null : asDate(c.payment_failed_at)
+  const anchorIsOld = anchor !== null
+    && now.getTime() - anchor.getTime() > RECONCILE_STALE_HOURS * 60 * 60 * 1000
+
+  // 1. §220's case, unchanged and still first: a customer exists and we know of no subscription.
+  if (c.stripe_customer_id && !c.stripe_subscription_id) return 'no_subscription_mirrored'
+
+  // Everything below is about a subscription we DO know about, so there must be one.
+  if (!c.stripe_subscription_id || !status) return null
+
+  if (UNSETTLED.has(status)) {
+    if (anchor === null) return 'not_paying_without_anchor'
+    if (anchorIsOld) return 'not_paying_unconfirmed'
+    // A fresh anchor means Stripe told us minutes or hours ago. Believe it.
+    return null
+  }
+
+  if ((status === 'active' || status === 'trialing') && anchorIsOld) {
+    return 'anchor_under_a_paying_status'
+  }
+
+  // `active`/`trialing` with no anchor, `canceled`, and a word we do not know: settled, or nothing
+  // a reconcile could improve. **`canceled` is deliberately not checked** — Stripe refuses to
+  // preview an upcoming invoice for one at all (`invoice_upcoming_none`), so the call could only
+  // ever come back empty-handed.
+  return null
+}
+
 /* -------------------------------------------------------------------------------------------------
  * THE LINE OFFERED AFTER A FAILED ASK — and the one failure it must not be offered for.
  * My Account step 20, `DECISIONS.md` §220.

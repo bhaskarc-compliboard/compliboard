@@ -302,7 +302,7 @@ function Account() {
 
   useEffect(() => {
     if (tab !== 'billing' || !company || asked.current) return
-    const trigger = reconcileTrigger(company, cardAdded)
+    const trigger = reconcileTrigger(company, cardAdded, new Date())
     if (!trigger.call) { dropCardParam(); return }
     asked.current = true
     ;(async () => {

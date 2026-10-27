@@ -218,7 +218,25 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   - THE LIST PRICE IS NOT A FALLBACK for an amount we did not read, which is the finding in one
 //     assertion. It also caught an old fixture in this very suite that asserted "charged to the card
 //     below" for a company with no card.
-const FLOOR = 2040
+//
+// 2040 -> 2063, 27 October 2026 (My Account step 20, the stale mirror — `DECISIONS.md` §222).
+// §220's reconcile only ever filled a BLANK mirror, so a missed `invoice.paid` on a subscription we
+// already knew about left a paying customer at `past_due` with the grace counting down to a
+// lock-out. Of the 23, four are worth knowing about:
+//   - EACH QUALIFYING STATE TRIGGERS AND EACH SETTLED ONE DOES NOT, one test per status, plus the
+//     §9a control that `reconcileNeeded` can return null for five real rows AND each of its four
+//     reasons for four others. A rule that answered "check" to everything would pass most of this
+//     file and put a Stripe call on every Billing-tab load in the product.
+//   - THE RACE ON AN EXISTING SUBSCRIPTION, which `.is(null)` could not guard at all — driven by a
+//     stub port that writes what `invoice.paid` would write in between our read and our update.
+//     *** It passed while the guard did nothing: `fakeSupabase` hands back the LIVE row, so the
+//     comparison read the mutated value. The snapshot in `reconcileFromStripe` is the fix. ***
+//   - `past_due` -> `active` CLEARS THE ANCHOR EXACTLY AS THE WEBHOOK WOULD, asserted by running
+//     both paths on two databases and comparing the rows column for column.
+//   - THE RECORD NAMES THE STATE THAT EARNED THE QUESTION. It did not at first: the route asked
+//     `reconcileNeeded` again afterwards, and a repair settles the row, so every record said "the
+//     mirror looked wrong". Found by reading a row the staging run had written.
+const FLOOR = 2063
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

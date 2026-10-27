@@ -2013,6 +2013,60 @@ if (want('calendar_month')) {
   }
 }
 
+// ===========================================================================================
+// A QUESTION, NOT A CHECK — companies whose billing mirror looks wrong. §222.
+//
+// *** IT NEVER FAILS THE RUN, AND THAT IS DELIBERATE. *** Every answer below can be legitimate:
+// a card really can keep failing for days. What it cannot be is INVISIBLE. The failure this
+// exists for had no symptom anywhere — a customer who had paid sat at `past_due` with the grace
+// counting down, and the only way anybody could have known was to look at their screen.
+//
+// It asks the same question `lib/billing.ts` `reconcileNeeded` asks, in SQL, across every company
+// at once — the reconcile heals the ones who open the Billing tab, and this is how you find the
+// ones who do not. When this list is routinely long, the periodic sweep §222 declined to build
+// has become the right thing.
+//
+// It is here rather than in `scripts/audit-data-checks.js` for one reason: `npm run db:migrate`
+// chains into this script, so it is asked on every migration. The audit checks are the better
+// conceptual home and have not been run since 22 September 2026 (`CLAUDE.md` §2), and a question
+// nobody asks is a question nobody answers.
+// ===========================================================================================
+const MIRROR_STALE_DAYS = 1
+{
+  const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+  const cutoff = new Date(Date.now() - MIRROR_STALE_DAYS * 86400_000).toISOString()
+  const { data, error } = await admin
+    .from('companies')
+    .select('id, name, subscription_status, payment_failed_at, current_period_end, stripe_subscription_id')
+    .not('stripe_subscription_id', 'is', null)
+
+  console.log(`\n  THE BILLING MIRROR — companies whose state should not persist (§222)\n`)
+  if (error) {
+    // §9a: a check that cannot see anything looks exactly like a check that found nothing.
+    console.log(`  ! could not ask: ${error.message} — this is NOT "no companies".`)
+  } else {
+    const unsettled = new Set(['past_due', 'unpaid', 'incomplete'])
+    const rows = []
+    for (const c of data ?? []) {
+      const anchorOld = c.payment_failed_at && c.payment_failed_at < cutoff
+      let why = null
+      if (unsettled.has(c.subscription_status) && !c.payment_failed_at) why = 'not paying, no anchor — an event we never got'
+      else if (unsettled.has(c.subscription_status) && anchorOld) why = `${c.subscription_status} unconfirmed for over ${MIRROR_STALE_DAYS}d`
+      else if ((c.subscription_status === 'active' || c.subscription_status === 'trialing') && anchorOld)
+        why = `*** ${c.subscription_status} WITH A GRACE ANCHOR — this company is heading for a lock-out it has paid to avoid ***`
+      if (why) rows.push({ c, why })
+    }
+    console.log(`  ${data?.length ?? 0} compan${(data?.length ?? 0) === 1 ? 'y' : 'ies'} with a subscription; ${rows.length} worth asking Stripe about.`)
+    for (const { c, why } of rows) {
+      console.log(`    ${c.name ?? '(no name)'}  ${c.id}`)
+      console.log(`      status ${c.subscription_status ?? '(null)'}  anchor ${c.payment_failed_at ?? '(none)'}  period_end ${c.current_period_end ?? '(none)'}`)
+      console.log(`      ${why}`)
+    }
+    if (rows.length === 0) console.log('    none — every mirrored subscription is in a state Stripe would leave it in.')
+  }
+  console.log()
+}
+
 console.log(`  check:live: ok — ${CASES.length} tenant table(s): ${writable} writable by a signed-in `
   + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon; `
   + `and HR's ${HR_TABLES.length} tables (066), each allowing and refusing exactly its grant; `

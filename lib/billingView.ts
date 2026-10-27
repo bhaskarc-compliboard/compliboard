@@ -35,7 +35,10 @@
  * (`docs/RELEASE.md` holds the price id).
  */
 
-import { accessFor, GRACE_DAYS, graceDaysLeft, type BillingColumns } from './billing.ts'
+import {
+  accessFor, GRACE_DAYS, graceDaysLeft, reconcileNeeded,
+  type BillingColumns, type ReconcileColumns, type ReconcileReason,
+} from './billing.ts'
 
 /**
  * THE PRODUCT'S LIST PRICE — for a company that has no subscription, and nowhere else.
@@ -98,29 +101,43 @@ export const FINISHING_UP = 'Finishing up…'
  */
 export const FINISHING_STALLED = 'Finishing up — refresh in a moment.'
 
-/** Exactly the two columns the trigger reads. */
-export type ReconcileColumns = {
-  stripe_customer_id?: string | null
-  stripe_subscription_id?: string | null
-}
-
 export type ReconcileTrigger = {
   /** Whether to POST `/api/billing/reconcile` on this load. */
   call: boolean
   /** The line to show while it runs, or null for the quiet path. */
   say: string | null
+  /** Why, when it fires. For the log, and so a test names a case rather than a boolean. */
+  reason: ReconcileReason | null
 }
 
 /**
  * SHOULD THIS LOAD ASK THE SERVER TO RECONCILE, AND SHOULD IT SAY SO?
  *
- * Pure, so the three states are a test rather than a thing to click: no customer → no call;
- * a customer and a subscription → no call; a customer and no subscription → one call.
+ * The RULE is `reconcileNeeded` in `lib/billing.ts` — the server asks the same function before it
+ * spends a Stripe call, so the page and the route cannot drift. What lives here is the WORDS.
+ *
+ * *** WIDENED AT §222: IT NO LONGER FIRES ONLY ON AN EMPTY MIRROR. *** A missed delivery on a
+ * subscription we already know about leaves the row stale, and §220's `.is(null)` guard could not
+ * heal it — which, on the owner's walk, left a customer who had just paid $199 sitting at
+ * "payment failed" with the grace counting down to a lock-out. `reconcileNeeded`'s header has the
+ * four states that now qualify and why each one is a state Stripe does not leave alone.
+ *
+ * `?card=added` still does one job and one only: deciding whether the person is WAITING. Somebody
+ * back from Checkout is owed a word about the delay. Somebody whose stale `past_due` is being
+ * quietly checked is not owed a progress message about a repair they never asked for — and if it
+ * finds nothing, as it will for a genuinely failing card, they should see no sign it happened.
  */
-export function reconcileTrigger(c: ReconcileColumns, cardAdded: boolean): ReconcileTrigger {
-  const broken = Boolean(c.stripe_customer_id) && !c.stripe_subscription_id
-  if (!broken) return { call: false, say: null }
-  return { call: true, say: cardAdded ? FINISHING_UP : null }
+export function reconcileTrigger(
+  c: ReconcileColumns,
+  cardAdded: boolean,
+  now: Date = new Date(),
+): ReconcileTrigger {
+  const reason = reconcileNeeded(c, now)
+  if (!reason) return { call: false, say: null, reason: null }
+  // Only the empty-mirror case can follow a Checkout, so only it can be waited on. The three
+  // stale-state cases are reached by opening the tab, where nothing is pending.
+  const waiting = cardAdded && reason === 'no_subscription_mirrored'
+  return { call: true, say: waiting ? FINISHING_UP : null, reason }
 }
 
 /** The tone of the status pill. The page maps these to colours; the words are decided here. */

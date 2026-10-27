@@ -61,17 +61,23 @@ export async function POST(request: NextRequest) {
       .eq('id', companyId)
       .maybeSingle()
 
+    // *** THE REASON COMES OUT OF THE RECONCILE, NOT FROM A SECOND READ. *** This asked
+    // `reconcileNeeded` again here, after the call — and a successful repair settles the row, so
+    // the question answered `null` and every record said "the mirror looked wrong". Caught by
+    // reading a row the staging run had just written.
     const recorded = await recordReconcile({
       companyId,
       customerId: after?.stripe_customer_id ?? null,
+      reason: outcome.reason,
       outcome,
       db: supabaseAdmin,
     })
 
     console.log(
       `[billing/reconcile] company=${companyId} outcome=${outcome.kind}`
+      + (outcome.reason ? ` reason=${outcome.reason}` : '')
       + (outcome.kind === 'repaired' ? ` subscription=${outcome.subscriptionId}`
-        + ` wrote=${Object.keys(outcome.written).join(',')}` : '')
+        + ` changed=${outcome.changed.join(',')}` : '')
       + (outcome.kind === 'failed' ? ` error=${outcome.error}` : '')
       + (recorded ? ' recorded' : '')
     )
