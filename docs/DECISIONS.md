@@ -16309,3 +16309,208 @@ real subscription read, through the expand fixed in §217 D.
 - **Reading `cancel_at` over the boolean (C):** nothing. The boolean is strictly less informative.
 - **The failure-state decision (D):** a customer complaining they were not told their cancellation
   stood while their card was failing.
+
+---
+
+## 220. A RECONCILE IS A READ, NOT A SECOND SOURCE OF TRUTH — 27 October 2026 (My Account step 20, the owner's card walk)
+
+### WHAT HAPPENED
+
+During the owner's card walk his Stripe CLI listener died. He completed a real Checkout, **was
+charged $199**, landed back on the Billing tab — and the tab said **"No card yet"**. Nothing was
+broken. Stripe had the subscription; the webhook had simply never been delivered. Our nine columns
+are a one-directional copy of Stripe (§213), and a copy that misses one delivery is wrong until
+something tells it otherwise.
+
+**The same gap exists with no outage at all.** Stripe redirects the browser back the instant the
+session completes; the webhook is a separate delivery that lands a moment later. So "No card yet,
+seconds after paying" is not an edge case — on a fast redirect it is the LIKELY first paint. The only
+reason it had not been seen constantly is that we had been watching a terminal rather than the page.
+
+A customer who has just been charged $199 and is told they have no card will either pay again or
+write in. Both are expensive, and the second one costs trust that is not recoverable.
+
+### A. WHY THIS IS STILL ONE SOURCE OF TRUTH
+
+The direction is unchanged: **Stripe → us, never the reverse.** `POST /api/billing/reconcile` asks
+Stripe what is true and writes the same columns through **the same mapping the webhook uses**.
+`columnsFromFacts` was extracted from `lib/stripeWebhook.ts`'s private `fromSubscription` and is now
+exported; `realStripePort.readSubscription` — with the deep expand §217 D fixed — does the reading.
+`lib/stripeReconcile.ts` reimplements neither.
+
+So there is **one mapping** from Stripe's objects to our columns, and **two ways of being told to
+run it**: pushed (the webhook) and pulled (this). That is not a second source of truth; it is the
+same read, triggered differently. A test asserts it by comparing what the reconcile wrote with
+`columnsFromFacts(facts)` itself, so a second copy of the mapping fails the build.
+
+The only thing the reconcile does that the webhook does not is **find the subscription from the
+customer** — `stripe.subscriptions.list({ customer, status: 'all', limit: 1 })`, which is exactly
+the one fact a missed delivery deprives us of. `status: 'all'` is load-bearing: the list omits
+canceled subscriptions by default, and a customer whose first charge failed is precisely somebody
+with an empty mirror who needs the truth on the page. It returns an **id**, not facts, so the
+flattening stays the webhook's.
+
+### B. THE TRIGGER IS THE STATE, NOT THE QUERY STRING
+
+The obvious rule is *"`?card=added` is on the address, so reconcile"*. It is too narrow in both
+directions. A person who bookmarks that URL re-triggers it for ever; and somebody who comes back to
+the Billing tab an hour after a missed delivery, or follows the read-only banner there, has no query
+string at all and the identical broken mirror. **During the owner's own walk the address had no
+`card=added` on it by the time he looked.**
+
+So the condition is the one state that cannot be right:
+
+> **a `stripe_customer_id` and no `stripe_subscription_id`.**
+
+A customer exists the moment Checkout is *opened* (§218), so that state has exactly two readings —
+*they abandoned the session* and *we missed the event* — and **asking Stripe is the only way to tell
+them apart**. `nothing_at_stripe` is the answer that means the first, and on it nothing is written
+and nothing is said.
+
+`?card=added` survives for one job: deciding whether the person is **waiting**. Back from Checkout,
+they are owed a word about the delay; browsing, they are not owed a progress message about a repair
+they never asked for. Same request either way, different words. It is stripped from the address
+afterwards, so a refresh cannot re-show the message.
+
+### C. THE WEBHOOK WINS EVERY TIE
+
+The write is `.is('stripe_subscription_id', null)` — it only ever fills an EMPTY mirror. If a webhook
+landed while we were talking to Stripe, the update matches zero rows and the outcome is `raced`,
+not an overwrite. That is the same `.is(null)` shape `billing/checkout/route.ts` already uses to turn
+two colleagues pressing at once into a no-op rather than a second Stripe customer.
+
+**It therefore cannot undo anything.** It cannot cancel, cannot clear a card, cannot move a status.
+The only state change it can make is "we know of no subscription" → "we know of this one". There is
+no argument to have about what happens when it is wrong, because the only thing it can do when it is
+wrong is nothing.
+
+The race is tested **as a race**: the stub port writes what a webhook would have written in between
+the reconcile's read of the row and its own update. Asserting that the guard is spelled correctly
+would not have proved it.
+
+### D. IT NEVER BLOCKS THE PAGE
+
+`RECONCILE_DEADLINE_MS = 6000`, and on a deadline the Stripe promise is abandoned — harmlessly,
+because the only code that could write is below the `await` and we have already returned. Nothing is
+queued and nothing retries; the next load simply asks again. Measured on staging: **804ms and
+526ms** for a real repair, two Stripe round trips included.
+
+The page draws whatever happens. The fetch's catch is empty *on purpose*: the next move is identical
+in every outcome — re-read the mirror and draw it.
+
+### E. THE RECORD GOES IN `stripe_events`, AND THE QUIET NO-OP DOES NOT
+
+Migration 087's own comment says what that table is for: *"the only record of what Stripe told us —
+the thing you need when a customer says they were charged and the product disagrees"*. A reconcile is
+that conversation's other half. The row that explains the walk's incident is **not** a webhook row —
+there is none, that is the whole problem — it is this one. Anywhere else and the answer to "what were
+we told about this company's money, and when" lives in two places.
+
+No migration: `id` is `reconcile_<companyId>_<ms>` (Stripe has no event with that shape), `type` is
+`reconcile.<outcome>` (Stripe has no event type called `reconcile`), and `payload.source` says it a
+third time for anyone reading a row rather than a column. A `source` column would be a fourth.
+
+**`nothing_at_stripe` is deliberately not recorded.** A company that abandoned Checkout sits in that
+state for ever, and one row per page load would fill the one table whose job is to make a payment
+fact *findable* with rows that are not payment facts. The line is: **a row when something changed, or
+when something went wrong** — `repaired`, `raced`, `timed_out`, `failed`. Both are things somebody
+would come looking for.
+
+### F. THE DOOR
+
+`POST /api/billing/reconcile`: `requireCompany`, the company from the verified token, **and no body
+at all** — not "the body's id is ignored", there is no id to pass. It holds `supabaseAdmin` for the
+reason `/api/billing/checkout` does (087 leaves all nine billing columns out of `authenticated`'s
+UPDATE grant and gives it nothing on `stripe_events`); it is the **fifth** entry on §3.6's list.
+
+**No `requireAccess`, and that is deliberate.** It reaches no model —
+`check-schema-contracts.js` check 3's closure does not list it, and the counts are unchanged at *25
+routes can reach a model, 19 call `requireAccess`, 6 exempt* — and gating the repair of a billing
+mirror behind the billing gate would be circular: the company most likely to need it is the one the
+gate currently reads as read-only *because* the mirror is empty. `checkout` and `portal` are ungated
+for the same reason.
+
+It answers **200 for every business outcome**, including the ones that did nothing, because the
+page's next move is the same in all of them. 503 for no Stripe key, 500 for an exception.
+
+### G. ⚡ TWO DEFECTS THE STAGING RUN FOUND, AND NEITHER WAS A TEST'S FAULT
+
+**1. The effect cleanup cancelled itself, and the page hung on "Finishing up…" for ever.**
+It was written the ordinary way — `let live = true`, cleared in the cleanup, `if (!live) return`
+after the reload. `load()` sets `company`; `company` is in the effect's deps; so the effect re-runs,
+so the *previous* run's cleanup fires and sets `live = false` — **cancelling the very continuation
+that clears `finishing`**. The re-run then exits on `asked.current` and nothing ever puts the
+sentence right. The guard was cancelling itself, and the only thing it protected against was a
+setState after unmount, which React 19 does not warn about. Found by looking at the page three
+seconds after the request; nothing in the gate could have seen it, because every unit assertion
+about this is about source text or about pure functions.
+
+**2. A soft reload left the read-only band above a repaired tab.** `load()` re-reads the company
+for *this page*. It cannot re-read `components/AppLayout.tsx`'s own `companies` query, which drew
+the band on mount. So the repaired tab said *"Active · Next payment 24 November 2026 · Visa ending
+4242"* with a band across the top of it still saying *"Your trial has ended — add a card"*. One of
+the two was false, and it was the loud one. **A repair is therefore a full navigation**
+(`window.location.replace('/account?tab=billing')`), and only a repair: the quiet and stalled paths
+stay soft, because nothing changed for them and a reload would be a flash for no reason.
+
+> **The general shape, which is worth keeping:** `AppLayout`'s banner is read once per mount, so
+> **any** mid-session change to the mirror leaves it stale until a navigation. The reconcile is the
+> first thing that can change the mirror from inside a session, which is why it is the first thing
+> to hit this. If a second one is ever added, it has the same obligation.
+
+### H. ALSO IN THIS COMMIT: A 402 IS NOT A QUESTION TO REPHRASE
+
+Three screens ended a failed exchange with *"You can ask again, or rephrase the question."* —
+`app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/CalendarAsk.tsx`. For a model that
+stumbled or a parse that failed, that is right. **After a 402 it is false, and the owner hit it in
+the Compliance Workspace:** the refusal above it already says *"Your trial has ended… add a card to
+start asking again"*, and the next line tells them to try the one thing that cannot possibly work.
+§5.1 asks for what they can do next **if there is anything** — the refusal has already said what
+there is.
+
+`askAgainLine(status)` in `lib/billing.ts` (the one file with no imports, because all three callers
+are client components) returns `''` for 402 and the line for everything else, **including a failure
+with no status at all** — a broken stream, where rephrasing may genuinely help. Each screen now
+records `failedStatus: res.status` on the exchange. The Calendar's "Try again" button goes with the
+line, for the same reason.
+
+> **A finding that came with it: a freshly-loaded read-only page cannot reach a 402 at all.** Step 18
+> disables the paid controls (`PausedNote` + `disabled`), so the refusal is only reachable when the
+> **browser's copy of the mirror is stale** — a tab left open while the trial ran out. That is the
+> same root cause as G.2, and it is why the wording still matters: the one person who sees it is
+> somebody whose screen has gone out of date, which is the worst moment to be told something false.
+> Proved end to end against the route instead (402, the exact sentence, **no model call**).
+
+### I. PROVED ON STAGING, NO CARD TYPED, $0
+
+The walk fixture's real subscription (`sub_1UTxYxDfr228eUmO9rCG1djA`, `active`, Visa 4242) was left
+in Stripe and its mirror blanked with the service role, which is what a missed delivery leaves.
+
+| | staged | the page drew | the mirror after | screenshot |
+|---|---|---|---|---|
+| **a missed delivery, route unreachable** | real customer, mirror blank | `No card yet` + *"Finishing up — refresh in a moment."*, button live again | unchanged | `shots/step20-reconcile-stalled.png` |
+| **a missed delivery, reconciled** | real customer, mirror blank | **Active · Next payment 24 November 2026 · Visa ending 4242 · Change** + *Manage billing and invoices*, **no band** | repaired, byte-identical to the truth | `shots/step20-reconcile-repaired.png` |
+| **a customer and genuinely no subscription** | a throwaway Stripe customer with 0 subscriptions | `Read-only` · `No card yet` · *Add a card* — **nothing invented** | **unchanged, every column** | `shots/step20-reconcile-abandoned.png` |
+
+In each case **exactly one** `POST /api/billing/reconcile`, counted from the browser. The route log:
+
+    outcome=nothing_at_stripe
+    outcome=repaired subscription=sub_1UTxYxDfr228eUmO9rCG1djA
+      wrote=stripe_subscription_id,subscription_status,current_period_end,cancel_at,card_brand,card_last4 recorded
+
+`trial_ends_at` was **not** touched by the repair — the subscription has no `trial_end`, and
+`columnsFromFacts` only ever adds that column. The asymmetry, proved on real data. The throwaway
+Stripe customer was deleted afterwards; the testgamma fixture's `trial_ends_at` was lapsed for the
+402 proof and restored to its exact prior value, both printed.
+
+### WHAT WOULD REVERSE IT
+
+- **The reconcile itself:** Stripe guaranteeing delivery before the redirect, which it does not and
+  cannot. Or a webhook endpoint registered in the Dashboard with retries that we monitor — which
+  removes the *outage* case and not the *race*.
+- **The state-based trigger (B):** evidence that it fires often enough on abandoned checkouts to
+  matter. It is one Stripe read per Billing-tab load for that one population; if that population
+  ever grows, cache the `nothing_at_stripe` answer for a few minutes.
+- **The full navigation (G.2):** `AppLayout` taking its billing row from a shared source the page can
+  refresh. That is the better fix and a bigger one.
+- **The 402 wording (H):** nothing. The line was false.

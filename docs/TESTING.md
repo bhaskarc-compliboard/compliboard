@@ -4708,3 +4708,63 @@ when a let-through list looks like a page asking for something twice — and it 
 double stamp seen while diagnosing the greeting was never production behaviour. The greeting's
 actual defect was a second MOUNT reading the page's own stamp, which the `sessionStorage` memory
 closes in both.
+
+---
+
+## WHAT A UNIT TEST OF A REACT EFFECT CANNOT SEE — 27 October 2026 (My Account step 20, `DECISIONS.md` §220)
+
+The reconcile shipped with 40 unit tests and a green gate. **The staging run then found two defects
+in the same afternoon**, and the shape of both is worth copying out, because the suite was not weak
+— it was looking at the wrong kind of thing.
+
+### The two
+
+1. **The page hung on "Finishing up…" for ever.** The effect had the ordinary cleanup —
+   `let live = true`, cleared in the returned function, `if (!live) return` after the reload. But
+   the effect's own reload changes `company`, `company` is in its deps, so the effect re-runs and
+   the *previous* run's cleanup fires — **cancelling the continuation that clears the message.**
+2. **A repaired tab kept the read-only band above it.** The page re-read its own company row. It
+   cannot re-read `AppLayout`'s, which drew the band on mount.
+
+### Why no test could have caught either
+
+Every assertion about a `useEffect` in this repository is one of two kinds, and **neither can see a
+lifecycle**:
+
+- **a pure function's behaviour** — `reconcileTrigger`, `columnsFromFacts`, `accessFor`. Excellent,
+  and they covered the trigger's three states exactly. None of them runs inside React.
+- **a match against the page's source text** — "the page calls the shared rule", "it POSTs with no
+  body", "the ref is a ref". Those assert that the code *says* the right thing. Defect 1 was code
+  that said the right thing in the right order and then cancelled itself; defect 2 was two correct
+  reads of two different scopes.
+
+> ### A LIFECYCLE BUG IS INVISIBLE TO BOTH A PURE TEST AND A SOURCE TEST.
+> One does not run the component; the other does not run anything. The thing that found both was
+> **a screenshot taken three seconds after the request**, which is the cheapest instrument we have
+> for this class and the only one that was pointed at it.
+
+### What to do instead, since the answer is not "add React testing"
+
+- **For any state that resolves asynchronously, photograph it at least twice: mid-flight and
+  settled.** `npm run measure -- … --wait 3000` is the settled one. The first run of this feature
+  caught "Finishing up…" by accident at ~500ms, which looked like a success and was in fact the
+  beginning of defect 1; the `--wait` run is what exposed it.
+- **After any change that writes to a column some OTHER component reads, photograph the whole page,
+  not the part you changed.** Defect 2 is visible only in a shot that includes the band.
+- **Then pin the finding with a source test**, which is what those tests are good for: both are now
+  held by `tests/unit/stripeReconcile.test.ts` — one asserts the self-cancelling cleanup has not
+  come back *and that the comment explaining why is still there*, because the next person to add a
+  cleanup will add it for good reasons.
+
+This is the companion to §216 B's lesson ("a test that asserts a value is not a test that the value
+is correct"). That one was about a value read back from the right place with the wrong belief behind
+it. This one is about behaviour that no assertion in the suite is in a position to observe at all.
+
+### And the smaller note: a 402 is unreachable from a freshly-loaded page
+
+Trying to photograph the 402 wording by hand found that a read-only company **cannot press Ask** —
+step 18 disables the paid controls. So the refusal is only reachable when the browser's copy of the
+mirror has gone stale (a tab left open while the trial ran out), which is exactly defect 2's root
+cause wearing different clothes. The proof was taken against the route instead: signed in as the
+lapsed fixture, `POST /api/chat` → **402**, the exact sentence, and **no model call** — the one
+check that matters, since the gate's whole job is to refuse before anything is spent.
