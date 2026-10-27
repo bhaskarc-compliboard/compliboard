@@ -45,6 +45,67 @@ export const AFTER_THE_TRIAL: ReadonlyArray<{ key: string; text: string }> = [
     text: 'Only you can delete your company, from the Cancel tab. Not paying never deletes anything.' },
 ]
 
+/* =================================================================================================
+ * THE RECONCILE'S TRIGGER, AND THE TWO THINGS IT CAN SAY — My Account step 20, `DECISIONS.md` §220.
+ *
+ * *** THE TRIGGER IS THE STATE, NOT THE QUERY STRING, AND THAT IS THE WIDENING. ***
+ * The obvious rule is "`?card=added` is on the address, so reconcile". It is too narrow in both
+ * directions. A person who bookmarks `/account?tab=billing&card=added` re-triggers it for ever;
+ * and — the case that actually happened — somebody who comes back to the Billing tab an hour after
+ * a missed delivery, or follows the read-only banner there, has no query string at all and the
+ * identical broken mirror. During the owner's own walk the address had no `card=added` on it by
+ * the time he looked.
+ *
+ * So the condition is the one state that cannot be right: **a Stripe customer and no subscription.**
+ * A customer exists the moment Checkout is OPENED (§218), so that state has two readings — "they
+ * abandoned the session" and "we missed the event" — and asking Stripe is the only way to tell
+ * them apart. The reconcile is what asks, and `nothing_at_stripe` is the answer that means the
+ * first one, on which nothing is written and nothing is said.
+ *
+ * `?card=added` survives for exactly one job: deciding whether the person is WAITING. Somebody who
+ * has just come back from Checkout is owed a word about the delay; somebody browsing is not owed a
+ * progress message about a repair they never asked for. Same request either way, different words.
+ *
+ * And the query string is stripped afterwards, so a refresh cannot re-trigger the message.
+ * ============================================================================================== */
+
+/** Shown while the reconcile is in flight, and only to somebody back from Checkout. */
+export const FINISHING_UP = 'Finishing up…'
+/**
+ * Shown when the reconcile ended and the mirror STILL has no subscription — to somebody back from
+ * Checkout, who may well have just been charged.
+ *
+ * *** IT DOES NOT CLAIM ANYTHING ABOUT THEIR CARD, BECAUSE WE DO NOT KNOW. *** §5.1: never assert
+ * a fact about something we failed to read. It says what is true — we are not finished — and what
+ * they can do. The webhook may land a second later, and then a refresh is all it takes.
+ */
+export const FINISHING_STALLED = 'Finishing up — refresh in a moment.'
+
+/** Exactly the two columns the trigger reads. */
+export type ReconcileColumns = {
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+}
+
+export type ReconcileTrigger = {
+  /** Whether to POST `/api/billing/reconcile` on this load. */
+  call: boolean
+  /** The line to show while it runs, or null for the quiet path. */
+  say: string | null
+}
+
+/**
+ * SHOULD THIS LOAD ASK THE SERVER TO RECONCILE, AND SHOULD IT SAY SO?
+ *
+ * Pure, so the three states are a test rather than a thing to click: no customer → no call;
+ * a customer and a subscription → no call; a customer and no subscription → one call.
+ */
+export function reconcileTrigger(c: ReconcileColumns, cardAdded: boolean): ReconcileTrigger {
+  const broken = Boolean(c.stripe_customer_id) && !c.stripe_subscription_id
+  if (!broken) return { call: false, say: null }
+  return { call: true, say: cardAdded ? FINISHING_UP : null }
+}
+
 /** The tone of the status pill. The page maps these to colours; the words are decided here. */
 export type StatusTone = 'trial' | 'good' | 'warn' | 'paused'
 

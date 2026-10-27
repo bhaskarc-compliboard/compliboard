@@ -46,7 +46,7 @@ import PeopleTab from '@/components/PeopleTab'
 import { PRIMARY, TEXT_ACTION, OUTLINE } from '@/components/buttonStyles'
 import {
   billingTabView, plainDate, PLAN_PRICE, PLAN_PERIOD, PLAN_NOTE, STRIPE_NOTE, MANAGE_LINK,
-  AFTER_THE_TRIAL, type StatusTone,
+  AFTER_THE_TRIAL, reconcileTrigger, FINISHING_STALLED, type StatusTone,
 } from '@/lib/billingView'
 import { createClient, authHeaders } from '@/lib/supabase'
 import {
@@ -247,6 +247,86 @@ function Account() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  /* ---- THE RECONCILE — My Account step 20, `DECISIONS.md` §220 ---------------------------------
+     A customer returning from Checkout must never be told "No card yet" seconds after being
+     charged. That is what the owner was shown during his own walk, when his Stripe listener had
+     died and the completed session's events were never delivered — and the same gap exists with
+     no outage at all, because Stripe redirects the browser back before the webhook lands.
+
+     *** THE TRIGGER IS THE STATE, NOT `?card=added`. *** `reconcileTrigger` in `lib/billingView.ts`
+     holds the rule and the argument for it. `?card=added` decides only whether the person is told
+     we are finishing up, and it is stripped afterwards so a refresh cannot re-trigger the message.
+
+     *** AND IT RUNS AT MOST ONCE. *** `asked` is a ref, so the reload this effect performs — which
+     changes `company` and re-runs it — cannot start a second request. Never a poll, and never a
+     spinner that can hang: whatever the route answers, the mirror is re-read and the page is
+     drawn. On the quiet path (no `card=added`) nothing is said at all, which is what keeps a
+     company who genuinely abandoned Checkout from being shown a progress message about a repair
+     that will correctly do nothing. */
+  const cardAdded = params.get('card') === 'added'
+  const asked = useRef(false)
+  const [finishing, setFinishing] = useState<string | null>(null)
+  const [stalled, setStalled] = useState(false)
+
+  /** Take `card=added` off the address, keeping the tab. Board 1's rule: never a bare path. */
+  const dropCardParam = useCallback(() => {
+    const q = new URLSearchParams(searchRef.current)
+    if (!q.has('card')) return
+    q.delete('card')
+    if (!q.get('tab')) q.set('tab', 'billing')
+    searchRef.current = q.toString()
+    router.replace(`/account?${q}`, { scroll: false })
+  }, [router])
+
+  useEffect(() => {
+    if (tab !== 'billing' || !company || asked.current) return
+    const trigger = reconcileTrigger(company, cardAdded)
+    if (!trigger.call) { dropCardParam(); return }
+    asked.current = true
+    ;(async () => {
+      setFinishing(trigger.say)
+      let repaired = false
+      try {
+        // No body: the company is the session's, and there is no id to pass (§3.6).
+        const res = await fetch('/api/billing/reconcile', { method: 'POST', headers: await authHeaders() })
+        repaired = Boolean((await res.json().catch(() => null))?.repaired)
+      } catch {
+        // Deliberately ignored. The reconcile is a repair, not the page: whether it answered or
+        // not, the lines below draw what the mirror actually says, which is never a lie.
+      }
+      /* *** A REPAIR IS A FULL NAVIGATION, NOT A SOFT RELOAD — AND THE STAGING RUN IS WHY. ***
+         `load()` re-reads the company for THIS page. It cannot re-read `components/AppLayout.tsx`'s
+         own `companies` query, which drew the read-only band above the top bar on mount. So the
+         repaired tab said "Active · Next payment 24 November 2026 · Visa ending 4242" with a band
+         across the top of it still saying "Your trial has ended — add a card". One of the two was
+         false, and it was the loud one.
+
+         Only on a repair, and only then: the quiet path (a company that really did abandon
+         Checkout) and the stalled path both stay soft, because nothing changed for them and a
+         reload would be a flash for no reason. There is no loop — after this navigation the mirror
+         names a subscription, so `reconcileTrigger` returns `call: false` and this never runs
+         again. It also drops `?card=added` by not carrying it, which is the same thing
+         `dropCardParam` does on the other paths. */
+      if (repaired) { window.location.replace('/account?tab=billing'); return }
+      await load()
+      setFinishing(null)
+      // Said only to somebody back from Checkout — see FINISHING_STALLED. The condition is read
+      // off the FRESH row this render is given, not off this closure's stale `company`, so it is
+      // checked in the render below instead of here.
+      setStalled(cardAdded)
+      dropCardParam()
+    })()
+    // *** NO `live` CLEANUP, AND THE STAGING RUN IS WHY. ***
+    // It had one — `let live = true`, cleared in a cleanup, with `if (!live) return` after the
+    // reload, which is the ordinary way to write this. It hung the page on "Finishing up…" for
+    // ever: `load()` sets `company`, `company` is in these deps, so the effect re-runs, so the
+    // PREVIOUS run's cleanup fires and sets `live = false` — cancelling the very continuation that
+    // clears `finishing`. The re-run then exits on `asked.current` and nothing ever puts the
+    // sentence right. The guard was cancelling itself, and the only thing it protected against was
+    // a setState after unmount, which React 19 does not even warn about. Caught on staging, by
+    // looking at the page three seconds after the request; nothing in the gate could have seen it.
+  }, [tab, company, cardAdded, load, dropCardParam])
 
   const mainSite = useMemo(() => sites.find((s) => s.is_primary) ?? null, [sites])
 
@@ -470,7 +550,7 @@ function Account() {
         {tab === 'people' && <PeopleTab db={supabase} />}
 
         {tab === 'signin' && <SignInTab />}
-        {tab === 'billing' && <BillingTab company={company} />}
+        {tab === 'billing' && <BillingTab company={company} finishing={finishing} stalled={stalled} />}
         {tab === 'cancel' && <CancelTab companyName={company?.name ?? ''} company={company} />}
       </div>
 
@@ -711,7 +791,13 @@ const PILL_TONE: Record<StatusTone, string> = {
  * including the ones that are hard to reach by hand (a status Stripe has not invented yet, a
  * subscription active before its first `current_period_end` has landed).
  */
-function BillingTab({ company }: { company: CompanyRow | null }) {
+function BillingTab({ company, finishing, stalled }: {
+  company: CompanyRow | null
+  /** `FINISHING_UP` while the reconcile is in flight for somebody back from Checkout; else null. */
+  finishing: string | null
+  /** True once a reconcile for somebody back from Checkout has finished. See the render below. */
+  stalled: boolean
+}) {
   const [busy, setBusy] = useState<'checkout' | 'portal' | null>(null)
   const [error, setError] = useState('')
 
@@ -756,6 +842,19 @@ function BillingTab({ company }: { company: CompanyRow | null }) {
 
   const view = billingTabView({ ...company, trial_ends_at: company.trial_ends_at }, new Date())
 
+  /* ---- THE TWO WORDS THE RECONCILE ADDS, AND NOTHING ELSE ABOUT THIS TAB CHANGES (§220) ----
+     While it runs, the card line says `Finishing up…` instead of "No card yet" — because "No card
+     yet" is the sentence we are not yet entitled to, and it is the one the owner was shown after
+     paying $199.
+
+     After it runs, `FINISHING_STALLED` appears ONLY if the mirror still has no subscription. That
+     is checked here, against the row this render was given, rather than inside the effect that
+     reloaded it — a closure there would be holding the row from BEFORE the reload and would show
+     the note to somebody whose repair had just succeeded. A repaired mirror simply draws Active,
+     and the note is never seen. */
+  const cardText = finishing ?? view.card.text
+  const stillWaiting = stalled && !view.hasSubscription
+
   return (
     <>
       <DashboardSection heading="Your plan" />
@@ -794,11 +893,16 @@ function BillingTab({ company }: { company: CompanyRow | null }) {
         <div className={ROW_LAST}>
           <p className={KEY}>Card</p>
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] text-gray-900">{view.card.text}</p>
+            <p data-testid="billing-card-line" className="text-[14px] text-gray-900">{cardText}</p>
+            {stillWaiting && (
+              <p data-testid="billing-finishing" className="mt-1 text-[13px] text-gray-500">
+                {FINISHING_STALLED}
+              </p>
+            )}
             {error && <p className="mt-1 text-[13px] text-[var(--amber)]">{error}</p>}
           </div>
           <button type="button" data-testid="billing-card-action"
-            onClick={() => go(view.card.door)} disabled={busy !== null} className={ACTION}>
+            onClick={() => go(view.card.door)} disabled={busy !== null || finishing !== null} className={ACTION}>
             {busy === view.card.door ? 'Opening…' : view.card.action}
           </button>
         </div>

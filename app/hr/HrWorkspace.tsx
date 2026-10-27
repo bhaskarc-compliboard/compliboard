@@ -52,7 +52,7 @@ import { Stages, type Step } from '@/components/Stages'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { markNotFound, readingWords, splitAppended, splitSuggested, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
 
-import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import { askAgainLine, pausedFromRow, type BillingRow } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
@@ -87,6 +87,9 @@ interface HrExchange {
     /** Reopened (Step 6b): a stored question with no stored answer after it. */
     | 'not_answered'
   searches: number; reading: string; steps?: { list: Step[]; at: Step }; error?: string; refusal?: string
+  /** The HTTP status a failed ask came back with, when it came from a response at all. 402 is
+   *  the one that must not be offered "ask again, or rephrase" — `askAgainLine` (§220). */
+  failedStatus?: number
   /** Step 6c: the request ended without an answer (a reading failed, or the wait ran too long): its words. */
   notAnsweredWords?: string
 }
@@ -323,7 +326,8 @@ export default function HrWorkspace() {
       if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) {
         const json = await res.json().catch(() => null)
         if (json?.outcome === 'refused') { patch(id, { phase: 'refused', refusal: String(json.message ?? '') }); return }
-        patch(id, { phase: 'failed', error: json?.error ?? 'That request could not be completed.' })
+        patch(id, { phase: 'failed', failedStatus: res.status,
+          error: json?.error ?? 'That request could not be completed.' })
         return
       }
       // The 'reading' event is HR's own: read here, then every line goes on to the workspace's reader.
@@ -700,7 +704,7 @@ export default function HrWorkspace() {
                   )}
                   {x.phase === 'failed' && (
                     <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
-                      {x.error} You can ask again, or rephrase the question.
+                      {x.error} {askAgainLine(x.failedStatus)}
                     </div>
                   )}
                 </div>

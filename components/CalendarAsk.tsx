@@ -32,7 +32,7 @@ import {
 } from '@/lib/calendarView'
 import type { Offer } from '@/lib/ask/offers'
 
-import type { Banner } from '@/lib/billing'
+import { askAgainLine, type Banner } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
 /** The composer's hint, board 2. */
 export const COMPOSER_HINT = 'Ask about a date, or what is due…'
@@ -52,6 +52,10 @@ export interface Exchange {
   searches: number
   error?: string
   refusal?: string
+  /** The HTTP status a failed ask came back with, when it came from a response at all. 402 is
+   *  the one that must not be offered "ask again, or rephrase" — `askAgainLine` (§220). */
+  failedStatus?: number
+
   /** Per offer: the row it became (or already was), or the sentence that says it did not. */
   added?: Record<number, { id: string | null; already: boolean; failed?: boolean }>
 }
@@ -111,7 +115,7 @@ export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, on
       })
       if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) {
         const json = await res.json().catch(() => null)
-        patch(id, { phase: 'failed', error: json?.error ?? FAILED_ASK })
+        patch(id, { phase: 'failed', failedStatus: res.status, error: json?.error ?? FAILED_ASK })
         return
       }
       // The two events this section adds ride on the same lines the shared reader consumes —
@@ -311,8 +315,12 @@ export function CalendarAsk({ rows, companyName, topicId, initial, onTopicId, on
             )}
             {x.phase === 'failed' && (
               <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
-                {x.error} You can ask again, or rephrase the question.
-                <button onClick={() => ask(x.question)} className="ml-2 font-medium underline hover:no-underline">Try again</button>
+                {x.error} {askAgainLine(x.failedStatus)}
+                {/* The button goes with the line, for the same reason: "Try again" against a 402
+                    offers the one thing that cannot work until a card is added (§220). */}
+                {x.failedStatus !== 402 && (
+                  <button onClick={() => ask(x.question)} className="ml-2 font-medium underline hover:no-underline">Try again</button>
+                )}
               </div>
             )}
           </div>

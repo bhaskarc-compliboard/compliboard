@@ -187,7 +187,21 @@ import { readdirSync, readFileSync } from 'node:fs'
 //     how it came to tell a cancelled customer with a card on file to add a card.
 //   - and `receiveStripeEvent` itself, driven for the first time with a stub port and a fake
 //     database. Before this the webhook's MAPPING had no test at all; only its pure helpers did.
-const FLOOR = 1959
+//
+// 1959 -> 2000, 27 October 2026 (My Account step 20, the reconcile — `DECISIONS.md` §220).
+// 40 of the 41 are `tests/unit/stripeReconcile.test.ts`, three of them added after the staging run
+// found two defects no test had asked about: a self-cancelling effect cleanup that hung the page on
+// "Finishing up…" for ever, and a soft reload that left the read-only band above a repaired tab. Three of them are the ones to keep:
+//   - THE RACE, run as a race. The stub port writes what a webhook would have written in between
+//     the reconcile's read of the row and its own update, which is the actual sequence the
+//     `.is('stripe_subscription_id', null)` guard exists for. Asserting that the guard is spelled
+//     correctly would not have proved it.
+//   - THE ABSENCE. A customer with no subscription at Stripe (somebody who abandoned Checkout)
+//     leaves the mirror byte-for-byte as it was, compared as a whole row rather than column by
+//     column, so a future patch cannot quietly add a write on that path.
+//   - ONE MAPPING. What the reconcile wrote is compared with `columnsFromFacts(facts)` — the
+//     webhook's own function — so a second copy of the Stripe->us mapping fails the build.
+const FLOOR = 2000
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

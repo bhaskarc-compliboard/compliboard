@@ -62,6 +62,18 @@ export type SubscriptionFacts = {
 export type StripePort = {
   /** The subscription's PRESENT state, or null if Stripe does not have it (a deleted test object). */
   readSubscription(id: string): Promise<SubscriptionFacts | null>
+  /**
+   * THE CUSTOMER'S NEWEST SUBSCRIPTION ID, OR NULL IF THEY HAVE NONE — added at step 20 for
+   * `lib/stripeReconcile.ts`, which has a customer and needs the subscription the webhook would
+   * have told us about.
+   *
+   * *** IT RETURNS AN ID AND NOT FACTS, ON PURPOSE. *** The reconcile then calls
+   * `readSubscription` for the flattening — the same call, the same expand list, the same
+   * `cardLineFrom` — so there is one code path from a subscription to our columns and not two.
+   * A `list` with its own `expand` would be a second one, and the first thing §217 D proved is
+   * that an expand path can be silently unreadable.
+   */
+  latestSubscriptionId(customerId: string): Promise<string | null>
 }
 
 const iso = (unixSeconds: number | null | undefined): string | null =>
@@ -120,6 +132,29 @@ export function realStripePort(stripe: Stripe): StripePort {
         // boolean would show that company nothing at all.
         cancelAt: iso(sub.cancel_at),
         card: cardLineFrom(sub.default_payment_method, customer?.invoice_settings?.default_payment_method),
+      }
+    },
+
+    /**
+     * `status: 'all'` AND `limit: 1`, AND NEITHER IS AN OPTIMISATION.
+     *
+     * Without `status: 'all'` the list endpoint returns only subscriptions Stripe considers
+     * active — it "does not include canceled subscriptions" by default
+     * (`docs.stripe.com/api/subscriptions/list`, read 27 October 2026). The reconcile must be able
+     * to find a `past_due` or `incomplete` one, because a customer whose first charge failed is
+     * exactly somebody whose mirror is empty and who needs the truth on the page.
+     *
+     * The list is newest first, so `limit: 1` is the newest one. A company has at most one
+     * subscription by construction (one plan, one customer, and `checkout` reuses the customer),
+     * so this is "the one" rather than a choice between several — but if there ever were two, the
+     * newest is the one that decides what they are paying now.
+     */
+    async latestSubscriptionId(customerId: string): Promise<string | null> {
+      try {
+        const list = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 1 })
+        return list.data[0]?.id ?? null
+      } catch {
+        return null
       }
     },
   }
@@ -269,6 +304,49 @@ export async function receiveStripeEvent(args: {
   }
 }
 
+/**
+ * THE MAPPING FROM A SUBSCRIPTION TO OUR COLUMNS — the one copy of it.
+ *
+ * *** EXPORTED AT STEP 20 BECAUSE A SECOND CALLER ARRIVED, AND A SECOND COPY WOULD HAVE BEEN A
+ * SECOND SOURCE OF TRUTH. *** `lib/stripeReconcile.ts` repairs a mirror that a missed webhook
+ * delivery left empty. It must write exactly what the webhook writes — including the two rules
+ * below, which are opposite to each other and neither of which is obvious:
+ *
+ *   · `trial_ends_at` is written ONLY when Stripe has one. A null there would erase our own trial.
+ *   · `cancel_at` is written EVEN WHEN NULL, because the absence is a fact Stripe is telling us
+ *     and it is the only way "Don't cancel subscription" reaches the page (§219).
+ *   · the card line is only ever ADDED, never cleared on a shape we failed to read (§6).
+ *
+ * A reconcile that re-derived these would drift from the webhook the first time one of them
+ * changed, and the drift would be silent and about money.
+ */
+export function columnsFromFacts(facts: SubscriptionFacts): Record<string, unknown> {
+  const patch: Record<string, unknown> = {
+    stripe_subscription_id: facts.id,
+    subscription_status: facts.status,
+    current_period_end: facts.currentPeriodEnd,
+  }
+  // *** THE TRIAL END IS MIRRORED, NOT COMPUTED. *** Once a card exists Stripe owns this number:
+  // the 48-hour floor can have moved it later than ours, and an extension typed into the Stripe
+  // Dashboard moves it again. Migration 087's header is the long form of why it is a column.
+  if (facts.trialEnd) patch.trial_ends_at = facts.trialEnd
+  // *** WRITTEN EVEN WHEN NULL, WHICH IS THE OPPOSITE OF THE CARD RULE BELOW, ON PURPOSE. ***
+  // A card line is only ever ADDED, because a shape we failed to read must not erase a card
+  // somebody really has. A scheduled cancellation is the reverse: the absence is a fact Stripe
+  // is telling us, and it is the only way "Don't cancel subscription" reaches the page. If this
+  // were conditional, a person who changed their mind would read "Cancels on 7 November" for
+  // ever — the same class of false statement about money that this whole column exists to stop.
+  patch.cancel_at = facts.cancelAt
+
+  // Only written when a card actually resolved — never cleared on a shape we did not expect, or
+  // a customer who does have a card would be shown as having none (§6).
+  if (facts.card) {
+    patch.card_brand = facts.card.brand
+    patch.card_last4 = facts.card.last4
+  }
+  return patch
+}
+
 /** The mapping itself. Returns what it wrote, so the caller can log it and a test can assert it. */
 async function applyToCompany(args: {
   event: Stripe.Event
@@ -282,35 +360,13 @@ async function applyToCompany(args: {
   // a bare record type and `tsc` is right to say so.
   const object = event.data.object as unknown
 
-  /** Everything the present state of a subscription says, in one place. */
+  /** Everything the present state of a subscription says — `columnsFromFacts`, above, shared
+   *  verbatim with the reconcile. The read is still the port's, so a test stubs one thing. */
   const fromSubscription = async (subscriptionId: string | null) => {
     if (!subscriptionId) return {}
     const facts = await port.readSubscription(subscriptionId)
     if (!facts) return {}
-    const patch: Record<string, unknown> = {
-      stripe_subscription_id: facts.id,
-      subscription_status: facts.status,
-      current_period_end: facts.currentPeriodEnd,
-    }
-    // *** THE TRIAL END IS MIRRORED, NOT COMPUTED. *** Once a card exists Stripe owns this number:
-    // the 48-hour floor can have moved it later than ours, and an extension typed into the Stripe
-    // Dashboard moves it again. Migration 087's header is the long form of why it is a column.
-    if (facts.trialEnd) patch.trial_ends_at = facts.trialEnd
-    // *** WRITTEN EVEN WHEN NULL, WHICH IS THE OPPOSITE OF THE CARD RULE BELOW, ON PURPOSE. ***
-    // A card line is only ever ADDED, because a shape we failed to read must not erase a card
-    // somebody really has. A scheduled cancellation is the reverse: the absence is a fact Stripe
-    // is telling us, and it is the only way "Don't cancel subscription" reaches the page. If this
-    // were conditional, a person who changed their mind would read "Cancels on 7 November" for
-    // ever — the same class of false statement about money that this whole column exists to stop.
-    patch.cancel_at = facts.cancelAt
-
-    // Only written when a card actually resolved — never cleared on a shape we did not expect, or
-    // a customer who does have a card would be shown as having none (§6).
-    if (facts.card) {
-      patch.card_brand = facts.card.brand
-      patch.card_last4 = facts.card.last4
-    }
-    return patch
+    return columnsFromFacts(facts)
   }
 
   const write = async (patch: Record<string, unknown>) => {

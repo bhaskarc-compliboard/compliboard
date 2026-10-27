@@ -57,7 +57,7 @@ import { TOPIC_LIST_COLUMNS, toTopicRow, readTopicList, type TopicRow, type Topi
 import { ConversationList } from '@/components/ConversationList'
 import { ReportView, WEB_SOURCE } from '@/components/ReportView'
 
-import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import { askAgainLine, pausedFromRow, type BillingRow } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
 type Tab = 'ask' | 'conversations' | 'checklists'
 
@@ -91,6 +91,9 @@ interface Exchange {
   phase: 'sending' | 'searching' | 'writing' | 'done' | 'stopped' | 'stopped_early' | 'failed'
   searches: number
   error?: string
+  /** The HTTP status a failed ask came back with, when it came from a response at all. 402 is
+   *  the one that must not be offered "ask again, or rephrase" — `askAgainLine` (§220). */
+  failedStatus?: number
   /** The file sent with this question, and its card once read — Workspace Task 4. */
   attachment?: Attachment
   /** The stages still to show, and the one that is true now. Gone when the answer finishes. */
@@ -570,7 +573,8 @@ export default function CompliancePage() {
       if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) {
         const json = await res.json().catch(() => null)
         if (!res.ok) {
-          patch(id, { phase: 'failed', steps: undefined, error: json?.error ?? 'That request could not be completed.' })
+          patch(id, { phase: 'failed', steps: undefined, failedStatus: res.status,
+            error: json?.error ?? 'That request could not be completed.' })
           return
         }
         if (json?.topicId) setTopicId(String(json.topicId))
@@ -1169,7 +1173,7 @@ export default function CompliancePage() {
                 )}
                 {x.phase === 'failed' && (
                   <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
-                    {x.error} You can ask again, or rephrase the question.
+                    {x.error} {askAgainLine(x.failedStatus)}
                   </div>
                 )}
               </div>

@@ -346,6 +346,39 @@ export function bannerFor(
   }
 }
 
+/* -------------------------------------------------------------------------------------------------
+ * THE LINE OFFERED AFTER A FAILED ASK — and the one failure it must not be offered for.
+ * My Account step 20, `DECISIONS.md` §220.
+ *
+ * Three screens end a failed exchange with *"You can ask again, or rephrase the question."* —
+ * `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx` and `components/CalendarAsk.tsx`. For a model
+ * that stumbled, a parse that failed or a timeout, that is exactly right: another wording often
+ * does help.
+ *
+ * *** FOR A 402 IT IS FALSE, AND THE OWNER HIT IT IN THE COMPLIANCE WORKSPACE. *** The 402 body is
+ * `sentenceFor` in `lib/accessGate.ts` — "Your trial has ended. Everything is still here to read
+ * and download — add a card to start asking again." Followed by "you can ask again, or rephrase
+ * the question", it tells somebody to try the one thing that cannot possibly work, and quietly
+ * contradicts the sentence immediately before it. §5.1: always tell the person what they can do
+ * next, **if there is anything** — the refusal has already said what there is.
+ *
+ * It lives here, in the one file with no imports, because the three callers are client components
+ * and because the 402 is this file's own rule. One function so the three cannot drift.
+ * ---------------------------------------------------------------------------------------------- */
+
+/** The invitation itself, so the three screens hold one copy of it. */
+export const ASK_AGAIN_LINE = 'You can ask again, or rephrase the question.'
+
+/**
+ * The line to print after a failure's own sentence, given the HTTP status it came back with.
+ *
+ * `null`/`undefined` means the failure did not come from a response at all — a stream that broke,
+ * a parse that failed — and those keep the line, because for them it is true.
+ */
+export function askAgainLine(status: number | null | undefined): string {
+  return status === 402 ? '' : ASK_AGAIN_LINE
+}
+
 /** The shape every screen already reads, once its `select('name')` is widened. */
 export type BillingRow = {
   trial_ends_at: string | Date
