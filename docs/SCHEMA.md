@@ -3,7 +3,7 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-27 17:56 UTC
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-29 15:31 UTC
 **Migrations applied:** 91 — `000` to `090`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
@@ -2908,7 +2908,7 @@ Reusable, shared parsed checklist per named standard. Built once, reused by ever
 
 Every event /api/stripe/webhook accepted from Stripe, keyed by STRIPE'S OWN EVENT ID so a redelivery is a primary-key conflict rather than a second write. Two jobs: it makes the webhook idempotent, and it is the only record of what Stripe told us — the thing you need when a customer says they were charged and the product disagrees (CLAUDE.md §5). *** OURS, NOT THE CUSTOMER'S: no grant to anon or authenticated, and RLS on with no policy, so it is closed the way library_candidates is. *** `company_id` is nullable because an event for a customer we cannot map must still be recorded with its reason. My Account step 17.
 
-**Rows:** 24 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 34 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `lib stripeReconcile`, `lib stripeWebhook`
 

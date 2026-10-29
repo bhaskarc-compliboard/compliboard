@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 29 October 2026, My Account part C (`DECISIONS.md` §213–§223): **the Release C routine as it ran** is at the end of this file, with the three backup CSVs, migrations 087–090 in one run, the read-backs, the trial parking and why it was an extension rather than a faked status, and the live checks. **Billing shipped INERT: not one Stripe variable is set on production**, so every billing route refuses in plain words and nothing can be charged. The section **"When Stripe live mode is ready"** holds the six dashboard steps, the three variables and the seven checks that wait for them.*
+
 *Updated 19 October 2026, Calendar step 14b (`DECISIONS.md` §201) and step 15 (§202): **migration 079 — applied by the owner the same day, and read back under step 3a below.** It writes no row; it changes what `calendar_v` computes, so 20 live rows appear on the grid, the list, the Dashboard and the monthly email that are on none of them today, and several of those days are in the past and will show as passed.*
 
 *Updated 16 October 2026, Calendar step 14 (`DECISIONS.md` §200): **the Calendar's release routine** below, the monthly-email cron row, and the sending-domain gate. Two corrections while writing it: this file has **never** carried a backup step (one is written below, and it is new, not quoted), and **`check:live` cannot be pointed at production** — it signs in as a staging fixture and writes rows. The free production checks are unauthenticated HTTP probes, listed in the routine.*
@@ -1030,3 +1032,362 @@ the prompt and the keychain remembers it against that username.
 
 *This belongs in a release routine because it stops a release dead at the last step, it looks like a
 permissions problem on GitHub's side, and the thing that is actually wrong is on the laptop.*
+
+---
+---
+
+# MY ACCOUNT PART C'S RELEASE ROUTINE — AS IT RAN, 29 OCTOBER 2026
+
+*`docs/ACCOUNT-PLAN.md` steps 17–21; `DECISIONS.md` §213–§223. The owner ran every step below.
+Claude Code ran the read-backs and nothing else.*
+
+> ### ⚡ THE ONE THING TO UNDERSTAND BEFORE READING THE REST.
+>
+> **Billing shipped INERT, on purpose.** Not one of `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` or
+> `STRIPE_WEBHOOK_SECRET` is set on production. So the code is live, the Billing tab draws, the
+> read-only rule is in force — and **nothing can be charged, because nothing can reach Stripe**.
+> Every billing route refuses by name, in plain words, and says nothing was charged. The webhook
+> refuses every request with a 500 so Stripe would retry if an event ever arrived.
+>
+> This is the honest shape for a release whose payment provider is not configured, and it is
+> possible only because `lib/stripe.ts` builds its client **lazily** and every reader names the
+> variable it wanted. A `new Stripe(process.env.STRIPE_SECRET_KEY!)` at module scope would have
+> crashed the build instead.
+
+| | |
+|---|---|
+| **Commits** | `ce72bdb` … `e81ecbb` — 22 on `account`, merged to `main` and pushed |
+| **Migrations** | **087, 088, 089, 090** on production, in one run |
+| **New variables needed** | three (Stripe), **none set** — see the section after this one |
+| **Variables changed** | none. `NEXT_PUBLIC_APP_URL` gains a reader and was already set |
+| **What a customer can do that they could not** | see their plan, their trial and its end date; everything else about billing is inert |
+| **What a customer can no longer do** | nothing — every production trial was parked past the window first |
+
+---
+
+### Step 1 — the three backup CSVs
+
+**Production SQL editor → run each, Download CSV, keep the files together with the date.**
+
+Only **one** table these four migrations touch has rows on production. 087 and 090 `alter table
+public.companies`; 087 creates `public.stripe_events`, which did not exist there, so there was
+nothing to save from it; 088 and 089 touch `companies` alone. The other two files are context, and
+they are labelled as context rather than padded into the list.
+
+```sql
+-- MANDATORY — the only table these four migrations alter, and 088 rewrites a column in every row.
+select * from public.companies order by id;
+
+-- CONTEXT — what the read-back in step 4 counts against, and the only record of who belongs where.
+select * from public.profiles order by id;
+select * from public.entities order by company_id, is_primary desc;
+```
+
+Read from production on 29 October 2026, so you know what to expect: **companies 10 rows,
+profiles 4, entities 10.** The `companies` CSV is what proves 088 changed `trial_ends_at` and
+nothing else — it is the only copy of the values the pre-billing code wrote.
+
+### Step 2 — preflight
+
+```
+npm run preflight
+```
+
+Expect `PENDING COUNT: 4` — `087`, `088`, `089`, `090`.
+
+### Step 3 — the four migrations, in one run
+
+```
+npm run db:migrate:prod
+```
+
+They go together and must: **088 exists only to repair 087**, and 089 and 090 add columns the code
+pushed in step 6 reads. Splitting them would leave production in a state no branch was ever tested
+against.
+
+> **⚠ WHY 088 IS NOT OPTIONAL.** 087 adds `trial_ends_at` **NOT NULL with a default**, and
+> PostgreSQL 11+ folds a non-volatile default into **one value for every existing row**
+> (`pg_attribute.attmissingval`), so 087's own backfill — `where trial_ends_at is null` — matches
+> nothing. Every company would hold *the instant 087 ran* + 14 days. 088 replaces that with
+> `coalesce(trial_started_at, created_at) + interval '14 days'`: the fourteen days each company
+> actually got. `DECISIONS.md` §213 I.5.
+
+Each migration carries its own `do $$ … end $$;` self-test and raises rather than returns if the
+database disagrees with it. **Read the result from the database, never from the command's exit
+code** (§3.7's pty lesson).
+
+### Step 4 — the read-backs, before anything is pushed
+
+SELECT-only, through the Supabase CLI's own DB connection (**not** the service role, which is blank
+on a laptop). Each is a stated need, and the SQL is the evidence:
+
+```sql
+-- 1. the four are recorded
+select version from supabase_migrations.schema_migrations order by version desc limit 5;
+--    → 090 089 088 087 086
+
+-- 2. the seventeen columns exist with the right types, and only trial_ends_at is NOT NULL
+select column_name, data_type, is_nullable, coalesce(column_default,'(none)')
+  from information_schema.columns
+ where table_schema='public' and table_name='companies'
+   and column_name in ('stripe_customer_id','stripe_subscription_id','subscription_status',
+       'current_period_end','payment_failed_at','card_brand','card_last4','trial_ends_at',
+       'cancel_at','next_charge_amount_cents','next_charge_currency','discount_name',
+       'discount_percent_off','discount_amount_off_cents','discount_duration','discount_months',
+       'discount_ends_at');
+--    → 17 rows. 16 nullable with no default; trial_ends_at NOT NULL, default now() + 14 days.
+
+-- 3. NOTHING was backfilled into the eight 090 columns
+select count(next_charge_amount_cents)+count(next_charge_currency)+count(discount_name)
+      +count(discount_percent_off)+count(discount_amount_off_cents)+count(discount_duration)
+      +count(discount_months)+count(discount_ends_at) as any_090_value
+  from public.companies;
+--    → 0
+
+-- 4. a person may READ every billing column and WRITE none
+select count(*) filter (where has_column_privilege('authenticated','public.companies',column_name,'SELECT')) as can_read,
+       count(*) filter (where has_column_privilege('authenticated','public.companies',column_name,'UPDATE')) as can_write,
+       count(*) filter (where has_column_privilege('anon','public.companies',column_name,'SELECT')) as anon_reads
+  from information_schema.columns where table_schema='public' and table_name='companies'
+   and column_name in ( … the same seventeen … );
+--    → can_read 17, can_write 0, anon_reads 0
+
+-- 5. the table ACL itself, because has_table_privilege(UPDATE) is satisfied by a COLUMN grant
+select array_to_string(relacl,' | ') from pg_class c join pg_namespace n on n.oid=c.relnamespace
+ where n.nspname='public' and c.relname='companies';
+--    → postgres=arwdDxtm/postgres | authenticated=r/postgres | service_role=arwdDxtm/postgres
+--      `authenticated=r` is read-only at table level. `anon` is ABSENT, which is stronger than empty.
+
+-- 6. stripe_events: exists, RLS on, no policy, closed to people
+select c.relrowsecurity, (select count(*) from pg_policy p where p.polrelid=c.oid) as policies,
+       array_to_string(c.relacl,' | ') as acl, (select count(*) from public.stripe_events) as rows
+  from pg_class c join pg_namespace n on n.oid=c.relnamespace
+ where n.nspname='public' and c.relname='stripe_events';
+--    → rls true, policies 0, rows 0,
+--      acl = postgres=arwdDxtm | service_role=arwdDxtm   ← see the note below
+
+-- 7. the unique index and the card CHECK, read rather than tested (this is production)
+select pg_get_indexdef(ix.indexrelid) from pg_index ix … like '%stripe_customer_id%';
+--    → CREATE UNIQUE INDEX … (stripe_customer_id) WHERE (stripe_customer_id IS NOT NULL)
+select pg_get_constraintdef(con.oid) from pg_constraint con … like '%card_last4%';
+--    → CHECK ((card_last4 ~ '^[0-9]{4}$'::text))
+
+-- 8. counts unchanged
+--    → companies 10 · profiles 4 · entities 10 · ai_calls 83 · stripe_events 0
+```
+
+> **⚡ WHAT READ-BACK 6 FOUND, AND IT IS A CORRECTION TO 087'S OWN COMMENT.**
+> 087 says `grant select, insert, update on table public.stripe_events to service_role`, which
+> reads as though it narrowed that role to three privileges. **It did not, and cannot.**
+> `service_role` holds all eight — SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER,
+> MAINTAIN — because `postgres`'s default ACL on `public` (migration 068) grants it everything on
+> any table created there, before a GRANT runs. **Staging's ACL is byte-identical, so this is the
+> default-privilege rule and not a production anomaly.** §3.6's own lesson, arriving in the file
+> that quotes it: *a grant list describes what you added, not what the role holds.*
+> The security property is untouched: `anon` and `authenticated` hold **nothing** on all eight
+> rights. 087's comment was corrected on 29 October; **its SQL was not**, and `docs/SCHEMA.md` has
+> always printed the true set because `scripts/schema-doc.js` reads the catalog.
+
+### Step 5 — park every trial, BEFORE the push
+
+After step 3, **every one of the ten production companies had a trial end in the past** — the
+newest was 6 August. The gate ships in step 6; the moment it does, all ten would turn read-only.
+
+```sql
+-- Park every production trial past the Release C window.
+-- The two null guards are 088's own scope: this can never touch a company that has started
+-- paying, so it is safe to run again later.
+update public.companies
+   set trial_ends_at = timestamptz '2027-01-31 00:00:00+00'
+ where stripe_subscription_id is null
+   and subscription_status is null;
+
+-- Read it back. Expect 10 rows, all 2027-01-31, all read_only_now = false.
+select name, trial_ends_at, (trial_ends_at < now()) as read_only_now
+  from public.companies order by name;
+```
+
+**An absolute date, not `now() + interval`.** Run twice, an interval gives two answers; a fixed date
+is legible in the row and in the CSV as *deliberately parked* rather than as a real trial end. Three
+months is past any plausible live-mode setup; a year would be a state you stop seeing.
+
+> ### ⚠ WHY AN EXTENSION, AND NOT `subscription_status = 'active'`.
+>
+> Faking the status is one word and it is the wrong word. The Billing tab would then say
+> *"Active · Next payment … · $199 a month, charged to the card below"* to a company with no card
+> and no subscription — **§221's exact defect, self-inflicted, in the one table built to be true
+> about money.** It would also put a value in the mirror that Stripe never said, which is the single
+> invariant §213 exists to hold.
+>
+> A trial extension changes a number the product already owns, in the direction it already
+> understands, and leaves `stripe_customer_id` and `stripe_subscription_id` null — so
+> `reconcileNeeded` returns null, no Stripe call is ever made, and §222's machinery stays quiet.
+>
+> **The one honest cost:** the tab reads *"Your trial ends 31 January 2027"* for a company created
+> in June. True of what the product will do, visible only on test companies, and gone the moment a
+> real subscription exists.
+
+**Before the push, not after.** The deployed code before step 6 is pre-billing: `accessFor`,
+`requireAccess`, the banner and the Billing tab do not exist in it, so between the migration and the
+push **nothing changes for anyone** and the window is safe for as long as you like. Run the parking
+after the push instead and every company — including the one you work in — is read-only from the
+moment the deploy goes green until the write lands, with the banner up, asking refused, and the
+**Add a card** button a dead end.
+
+### Step 6 — the merge and the push
+
+```
+git checkout main && git merge --ff-only account && git push origin main
+```
+
+`main` at **`e81ecbb`**. Vercel green.
+
+### Step 7 — the free checks on production
+
+No login, nothing written, nothing paid.
+
+```
+curl -s -o /dev/null -w '%{http_code}\n' https://compliboard.vercel.app/account
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://compliboard.vercel.app/api/billing/checkout
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://compliboard.vercel.app/api/billing/reconcile
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://compliboard.vercel.app/api/billing/portal
+curl -s          -X POST https://compliboard.vercel.app/api/stripe/webhook
+```
+
+Expect **200** (the page shell, as every signed-in page returns), **401** on all three billing
+routes (no login — and the third proves §220's reconcile cannot be aimed without a session), and
+from the webhook:
+
+```
+HTTP/2 500
+{"error":"Webhooks are not configured on this server."}
+```
+
+> **⚡ THAT LAST PROBE IS THE ONE THAT EARNS ITS PLACE.** It is the only check that distinguishes an
+> **unset** signing secret from a **set** one, and it does it without a login or a Stripe account:
+> **500 + "Webhooks are not configured"** means the variable is absent; **400 + "No stripe-signature
+> header."** means it is present and the route got as far as looking for a signature. Keep it in the
+> list for every future billing release.
+
+### Step 8 — the owner's own screens
+
+Signed in, on production: **no read-only banner on any page**; Ask / Research this / Make a checklist
+**live, not dimmed**; **Billing** reads `Trial`, the parked date and `No card yet · Add a card`; and
+pressing **Add a card** answers *"Card payment is not set up on this server yet. Nothing was
+charged."* — **which is the check that the gap is honest rather than a dead button.**
+
+### Step 9 — one measured walk against a production BUILD
+
+The standing rule since the Dashboard's release: `next build && next start` on an isolated copy
+(§3c), under `npm run haiku`, measured rather than looked at.
+
+```
+rsync -a --exclude .next --exclude node_modules --exclude .git ./ <scratch>/relc/
+cp -cR node_modules <scratch>/relc/
+cd <scratch>/relc && node scripts/haiku.mjs npx next build
+                  && node scripts/haiku.mjs npx next start -p 3998
+npm run measure -- "/account?tab=billing" --base http://localhost:3998 --as <fixture> --wait 2500 \
+  --shot shots/relc-billing-trial.png
+```
+
+Three screens, `shots/relc-*`: the Billing tab in a **parked trial** (what every production company
+sees today), the Billing tab **paying** (`Active · Next payment 27 November 2026 · Visa ending
+4242`), and the **read-only** Compliance Workspace with the banner up and both buttons dimmed.
+`BLOCKED (0)` on two of the three; the third blocked one `POST /api/billing/reconcile`, correctly,
+because the measure harness blocks every write — and the page drew anyway, which is §220's "never a
+spinner that can hang" seen from the outside.
+
+### Step 10 — the morning after
+
+Nothing to watch. There is no new cron, no new email and no new model tier in this release, and
+`stripe_events` cannot gain a row while the webhook has no secret. The only thing that moves is
+`ai_calls`, exactly as before.
+
+---
+
+# WHEN STRIPE LIVE MODE IS READY
+
+*Everything in this section is **pending**. None of it has been done. Until all of it is, billing is
+inert and the product says so.*
+
+## A. The six dashboard steps, in order
+
+**Every one of these has a sandbox twin that does NOT carry over.** Test and live are separate
+object graphs: ids differ, and several of these objects carry a `livemode` flag of their own.
+Nothing built for the step-20 card walk exists in live mode.
+
+| # | In the Stripe dashboard, **with the Test-mode toggle OFF** | copy to |
+|---|---|---|
+| 1 | **Product** "CompliBoard", then a **recurring price, $199 / month, USD**. Note the `price_…` | `STRIPE_PRICE_ID` |
+| 2 | **Webhook endpoint** → *Add endpoint* → `https://compliboard.vercel.app/api/stripe/webhook`. Reveal its signing secret | `STRIPE_WEBHOOK_SECRET` |
+| 3 | **Subscribe that endpoint to exactly six events** — `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed` | — |
+| 4 | **Billing Portal → default configuration**, saved in live mode: update payment method, invoice history, cancel subscription | — |
+| 5 | **Secret API key** (`sk_live_…`), Developers → API keys | `STRIPE_SECRET_KEY` |
+| 6 | **Coupon** `FOUNDER100`, 100% off, **duration: forever**; then a **promotion code** on it with the customer-facing code `FOUNDER100` | — |
+
+Items 3 and 4 are the two most easily skipped and the two that fail silently. **With no portal
+configuration saved in live mode the portal 500s** — and the portal is "change the card", "see my
+invoices" and "stop paying", all three. **A missing event type is a column that stops moving.**
+
+> ### ⚡ ITEMS 2 AND 3 ARE THE PRECONDITION FOR §222, NOT JUST GOOD PRACTICE.
+> A registered endpoint means Stripe retries for up to three days with backoff and emails you after
+> repeated failure. Without one, the only delivery mechanism is a CLI process on one machine — which
+> failed **three times in two days** on the owner's walk and twice left a paying customer reading
+> "payment failed". §220's and §222's reconcile is sized for the residue that remains *after* items
+> 2 and 3, not as a substitute for them.
+
+> ### ⚡ AND ITEM 6 CARRIES A STANDING RULE: FOREVER COUPONS ONLY.
+> §217 and §221. A coupon that zeroes only the **first** charge on a no-trial session collects no
+> card, and month two has nothing to charge. The mirror can now *see* the difference
+> (`discount_duration`) and the page has words for it — but the chain that catches a lapsed
+> repeating discount has never been observed, so the rule stands.
+
+## B. The three variables
+
+Names only; **`docs/RELEASE.md`'s variable table above is the authoritative record of values**
+(§136), and two of these are credentials that must never be read back into a document.
+
+| Variable | Read by | Must be |
+|---|---|---|
+| `STRIPE_SECRET_KEY` | `lib/stripe.ts:65` `getStripe()` | `sk_live_…` on Vercel and nowhere else. **Sensitive, never visible.** Server-only — `tests/unit/clientImports.test.ts` holds `lib/stripe.ts` in the same forbidden list as `lib/auth.ts` |
+| `STRIPE_PRICE_ID` | `lib/stripe.ts:71` `stripePriceId()` | the **live** `price_…`. ***Test and live price ids differ***, and this is the variable most easily carried across by mistake — a wrong one is a Checkout session for the wrong amount, the worst kind of silent bug here |
+| `STRIPE_WEBHOOK_SECRET` | `lib/stripe.ts:77` `stripeWebhookSecret()` | the signing secret of the **live** endpoint. ***Not*** the laptop's CLI value |
+
+`NEXT_PUBLIC_APP_URL` is already set and needs nothing. It is `NEXT_PUBLIC_*`, so it is inlined at
+build time and must exist **before** the push that builds — it does.
+
+> **A grep for `process.env.X` across the branch finds only `STRIPE_SECRET_KEY`.** The other two are
+> read through `required(name)` with a dynamic index, so they are invisible to it. The real list is
+> the `required(...)` call sites above. Worth remembering the next time a release's variables are
+> assembled by grepping.
+
+## C. What a customer sees if one of them is wrong
+
+| state | what the customer sees | loud or silent? |
+|---|---|---|
+| `STRIPE_SECRET_KEY` unset | **Add a card** → *"Card payment is not set up on this server yet. Nothing was charged."* **Manage billing** → *"Card payment is not set up on this server yet."* | **Loud**, and the log names the variable |
+| `STRIPE_PRICE_ID` unset | the same sentence, from the same button | **Loud**, named |
+| `STRIPE_WEBHOOK_SECRET` unset | nothing — no customer is on that path. Stripe sees 500 and retries for days, then emails you | **Loud** in the log; 500 rather than 503 deliberately, so the retries happen |
+| the reconcile's 503 | **nothing.** The page reads only `repaired` and draws the mirror regardless — correct behaviour, but a missing key is invisible on that one path | **⚠ silent** |
+| `sk_test_…` while live | a Stripe page banded **TEST MODE**; the real card is refused. No money moves, and the product looks broken rather than says so | silent-ish |
+| `sk_live_` + a **test** price id | *"We could not open the card page. Nothing was charged. Please try again."* — honest but **uninformative**, and the variable is not named, because a Stripe `No such price` is not a `StripeNotConfigured` | the weakest of the six |
+| `STRIPE_WEBHOOK_SECRET` holding the sandbox value | the customer pays, Stripe takes the money, **the mirror never moves**, 400 *"Invalid signature."* ⚡ The one mercy: if the secret KEY is live, §220/§222's reconcile still heals it on the next Billing-tab load | silent to the customer, loud in Stripe |
+
+**Nothing fails at build or deploy time in any of these cases** — `getStripe()` is lazy by design.
+
+## D. The checks that wait for live mode
+
+Numbered to follow the free checks in step 7 above.
+
+| # | check |
+|---|---|
+| 12 | Checkout with a real card → the Stripe page is **live mode**, the charge succeeds, you land back on `?card=added`, and the tab reads `Active · Next payment <date> · <brand> ending <4>` |
+| 13 | Read the mirror back: `subscription_status`, `current_period_end`, `card_brand`/`card_last4`, and **`next_charge_amount_cents = 19900`** |
+| 14 | **The reconcile** — blank `stripe_subscription_id` with the service role, load Billing, confirm it repairs itself and files `reconcile.repaired` in `stripe_events` |
+| 15 | **The grace** — change to a declining card in the portal and let the renewal fail. Confirm `invoice.payment_failed` arrives, `payment_failed_at` is written, the banner says *"We couldn't charge your card. We'll try again for 7 more days"*, and **access is still full** |
+| 16 | **The recovery** — fix the card, confirm `invoice.paid` clears `payment_failed_at` and the banner goes |
+| 17 | Stripe Dashboard → the endpoint's delivery log: **six event types, all 200.** An endpoint with retries pending is §222's failure in advance |
+| 18 | `npm run check:live` → staging only, and read its **billing-mirror question** (§222 H). An empty list is evidence that deliveries are landing; a routinely non-empty one is the condition under which the periodic sweep §222 declined to build becomes the right thing |
+
+**12–16 cost real money** — $199 a charge, refundable from the Stripe dashboard. Do them on a
+company created for the purpose, not on CB-Test-3.

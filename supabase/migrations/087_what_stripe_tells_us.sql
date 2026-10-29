@@ -254,6 +254,25 @@ alter table public.stripe_events enable row level security;
 -- Closed to people, both roles, explicitly — `CLAUDE.md` §3.6: not granting is not denying, and the
 -- revoke is what denies. No policy is written either, so even a grant that arrived by some other
 -- route would read nothing.
+--
+-- *** ⚡ COMMENT CORRECTED 29 OCTOBER 2026 (Release C's read-back). THE SQL BELOW IS UNCHANGED AND
+-- IS WHAT RAN ON BOTH DATABASES. *** The `grant` line reads as though it narrowed `service_role` to
+-- three privileges. It did not, and cannot. Read from the catalog on production and staging, which
+-- agree:
+--
+--     stripe_events relacl = postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+--     service_role holds SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN
+--
+-- `postgres`'s default ACL on `public` (migration 068) grants `service_role` everything on any
+-- table created there, before a single GRANT runs. So this line RE-STATES three of eight rather
+-- than reducing eight to three — §3.6's own lesson, arriving in the file that quotes it: **a grant
+-- list describes what you added, not what the role holds.**
+--
+-- The security property this block exists for is untouched and was re-read on production: `anon`
+-- and `authenticated` hold NOTHING on all eight rights, and are absent from the ACL entirely.
+-- Narrowing `service_role` would need an explicit REVOKE in a later migration, and nothing wants
+-- one — the webhook and the reconcile are its only holders. `docs/SCHEMA.md` has always printed
+-- the true set, because `scripts/schema-doc.js` reads the catalog rather than the grant lines.
 revoke all on table public.stripe_events from anon;
 revoke all on table public.stripe_events from authenticated;
 grant select, insert, update on table public.stripe_events to service_role;
