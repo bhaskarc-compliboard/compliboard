@@ -11,6 +11,38 @@ name and section.
 
 ---
 
+## ⚡ REVIEW OF 29 OCTOBER 2026 — NOTHING WAS ADDED, AND HERE IS WHAT WAS CHECKED
+
+Every file in `docs/` and the repository root was re-examined against three tests: **superseded by a
+newer document**, **describing code that no longer exists**, or **a plan whose section has shipped
+and whose truth now lives in a handoff or in `DECISIONS.md`**. The rule applied was the owner's:
+*do not archive anything a live document still points at.*
+
+**Nothing qualified.** The findings are worth keeping, because "we looked and the answer was no" is
+only useful if it says what was looked at:
+
+| candidate | why it looked stale | why it stayed |
+|---|---|---|
+| `HANDOFF-WORKSPACE-TO-HR.md` | A completed handoff — the HR chat it briefed finished, and `HANDOFF-FROM-HR.md` is its close-out. The same category as the two already here | **`HANDOFF-FROM-HR.md:39` says its §§6–8 "still apply to every section"**, and `HR-PLAN.md:340` points at the same sections. It is live guidance, not a spent brief |
+| `HANDOFF-WORKSPACE.md` | A handoff for work that shipped on 4 October | `STATUS.md` points at it as the **element-by-element** reference for the live `/compliance` page. A live reference, not a brief |
+| `WORKSPACE-PLAN.md` | A plan for a section that shipped | **`HANDOFF-CODE.md` cites it five times** as where open quality-pass items live — *"this row stays OPEN — see `docs/WORKSPACE-PLAN.md` Stage 3"*. It records unfinished work |
+| `INVENTORY-2026-09.md` | **The strongest case on content.** It says the repo holds *34 API routes and 14 pages*; it holds **63 and 17**. It describes a codebase 46% of the current one | `HANDOFF-CODE.md:29` and `STATUS.md` both point at it as current — *"for every file's state and who calls what"*. Blocked by the rule, and recorded in `docs/PENDING.md` instead |
+| the five `*-MACHINERY.md` files | Pre-build maps of code that has since changed | Each is **cited from code**: `ACCOUNT-MACHINERY` from 6 files, `WORKSPACE-MACHINERY` and `DASHBOARD-MACHINERY` from 4 each, `CALENDAR-MACHINERY` from 2, `HR-MACHINERY` from 1. Moving them breaks a path in a source comment |
+| `HANDOFF-AUDITS.md` | A handoff for a section rebuilt on 30 September | Cited from **6 code files**, and its §8 is still the Audits section's live owed list |
+| `HANDOFF-FOLDER-TEST.md` | Written 1 October as *"the brief for the next chat"* | **That chat has not happened.** It is pending work, not a spent brief — `PENDING.md` item |
+| `EVIDENCE-LINKING.md` | *"Status: SPEC. Nothing here is built."* | The only written design for unbuilt work — the same reason three files already here were kept — and cited from a database column comment that reaches `SCHEMA.md` |
+| the four `*-boards.html` | The owner's boards for sections now shipped | Each is cited from code and tests (`lib/accountView.ts`, `lib/dashboardView.ts`, `lib/calendarView.ts` and their tests) as the source of the exact words on screen |
+
+> ### ⚠ WHAT THE REVIEW DID FIND WAS THAT **`docs/README.md`** WAS THE STALE FILE.
+> The index had full, present-tense sections for **six of the eight files in this folder** — one of
+> them telling a reader to *"consult it before starting work"* — and listed `CURRENT-SCHEMA.md`,
+> deleted on 28 September. It also claimed, in its own version 17 note, to have **archived
+> `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `HR-MACHINERY.md` on 19 October**; none
+> of the three ever moved. **The 28 September archive moved the files and nobody updated the
+> index.** Corrected on 29 October; `docs/README.md` is version 18.
+
+---
+
 ## The eight, and what is current instead
 
 | Archived | Why it is here | Read instead |

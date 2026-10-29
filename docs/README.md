@@ -1,6 +1,15 @@
 # docs/
 
-**Version:** 17 · **Updated:** 20 October 2026 — indexes `DASHBOARD-PLAN.md`, `DASHBOARD-MACHINERY.md`, `dashboard-boards.html` and `HANDOFF-FROM-DASHBOARD.md`; notes that `TEST-AT-FINISH-LINE.md` now holds the Dashboard's part too; **marks `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `HR-MACHINERY.md` as archived** — kept as record, superseded 19 October. **Version 16:** 19 October 2026 — indexes `HANDOFF-FROM-CALENDAR.md`, and notes that `TEST-AT-FINISH-LINE.md` now holds the Calendar's part as well as HR's. **Version 15:** 8 October 2026 — indexes `HANDOFF-FROM-HR.md`. Version 14: 8 October 2026 — indexes `TEST-AT-FINISH-LINE.md`. Version 13: 4 October 2026, HR Step 2 — indexes `HR-PLAN.md` and `HR-MACHINERY.md`. Version 12: at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
+**Version:** 18 · **Updated:** 29 October 2026 (housekeeping) — **this index was wrong in both
+directions and both are fixed here.** (1) It carried full, present-tense sections for **six files
+that were moved to `archive/` on 28 September** — `BUILD-PLAN.md`, `CHEMICAL-OR-WA.md`,
+`GATE-HISTORY.md`, `INVENTORY.md`, `AUDIT-CHECKS.md`, `REQUIREMENTS-SCREEN.md` — one of which told
+a reader to *"consult it before starting work"*. (2) Version 17 said it **marked
+`HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `HR-MACHINERY.md` as archived**; **none of
+the three ever moved, and none of them should** — `HANDOFF-FROM-HR.md:39` says
+`HANDOFF-WORKSPACE-TO-HR.md` §§6–8 *"still apply to every section"*. It also listed
+`CURRENT-SCHEMA.md`, deleted on 28 September. Now indexes the **Calendar and My Account** doc sets,
+which it had never caught up with, and **`PENDING.md`**.
 
 **This is the index of what is LIVE.** Eight files moved to **`archive/`** on 28 September; that
 folder's own README names what supersedes each, and it is the only place this index points at them.
@@ -78,7 +87,18 @@ folder's own README names what supersedes each, and it is the only place this in
 
 | | |
 |---|---|
-| **`archive/`** | Eight files, kept for the record and superseded. **`archive/README.md` names what replaces each** — and flags the three that are the only written design for work still to be done: `AUDIT-CHECKS.md`, `CHEMICAL-OR-WA.md`, `REQUIREMENTS-SCREEN.md` |
+| **`archive/`** | **Eight files**, kept for the record and superseded, all moved on 28 September 2026. **`archive/README.md` names what replaces each** — and flags the three that are the only written design for work still to be done: `AUDIT-CHECKS.md`, `CHEMICAL-OR-WA.md`, `REQUIREMENTS-SCREEN.md`. **A review on 29 October 2026 moved nothing further**, and `archive/README.md` says what was checked and why each candidate stayed |
+
+### Not indexed above, and added 29 October 2026
+
+| | |
+|---|---|
+| **`PENDING.md`** | **Everything this product still owes, in one list**, gathered from the handoffs, `TODO.md`, `TEST-AT-FINISH-LINE.md`, `STATUS.md`'s degraded rows, `HANDOFF-CODE.md` §7, `DECISIONS.md` and each plan's parked items. Grouped by kind, each item traced to the line that records it. **Start here when asking "what is left".** |
+| **`ACCOUNT-PLAN.md`** | My Account's plan: 22 steps in three parts, every decision's final state, and **the owed list for that section** |
+| **`ACCOUNT-MACHINERY.md`** | The read-only map of 21 October: every file that touched an account before the section existed. Its "B" numbers are cited through `DECISIONS.md` §207–§223 |
+| **`HANDOFF-FROM-ACCOUNT.md`** | My Account's close-out (29 October): what it is, how billing works, the migrations, what is owed, and what a future session must not break |
+| **`account-boards.html`**, **`account-walk-card.html`** | The owner's nine boards for My Account, and the walk's card. The words on them are his |
+| **`CALENDAR-PLAN.md`**, **`CALENDAR-MACHINERY.md`**, **`calendar-boards.html`** | The Calendar's plan, its pre-build map, and the owner's twelve boards — never indexed here, which is why this row exists |
 
 ---
 
@@ -155,7 +175,9 @@ That last part is what makes it more than a changelog: a decision recorded with 
 reversal condition can be re-examined when the world changes, instead of being treated as
 permanent because nobody remembers the reasoning.
 
-### `BUILD-PLAN.md`
+### `archive/BUILD-PLAN.md`
+
+> **⚠ THIS FILE IS IN `docs/archive/`.** Archived 28 September 2026. Its phase ordering lives in `CLAUDE.md` §2; `TODO.md` is what to follow. The paragraph below is kept as it was written.
 The phased plan — what is being built, in what order, and what is deliberately deferred.
 Consult it before starting work so effort lands on the current phase rather than on
 something scheduled for later or already dropped.
@@ -175,7 +197,9 @@ in that final section** — the phases are short because infrastructure is small
 product. Read the ⛔ GATE at the top before planning anything: three pieces of work are
 cheap today and expensive the moment a real customer's documents are in the database.
 
-### `CHEMICAL-OR-WA.md`
+### `archive/CHEMICAL-OR-WA.md`
+
+> **⚠ THIS FILE IS IN `docs/archive/`.** Archived 28 September 2026 — and still the ONLY written design for the first vertical. The paragraph below is kept as it was written.
 The full design of the first vertical: regulatory map, data model, runtime pipeline,
 display, verification, onboarding. The most detailed document here and the one to read
 before touching requirements, obligations, or how results are shown. **Design only —
@@ -221,7 +245,9 @@ finding. **It reports and never regenerates**: a silent fix destroys the evidenc
 self-healing loop means no failure is ever found. Built 12 Sep; acceptance met against the
 frozen 2.5L artifact.
 
-### `AUDIT-CHECKS.md`
+### `archive/AUDIT-CHECKS.md`
+
+> **⚠ THIS FILE IS IN `docs/archive/`.** Archived 28 September 2026. No check in it has been re-run since 22 September; the questions are still worth asking. The paragraph below is kept as it was written.
 The questions `npm run check` does not answer. It answers *"does the code build and
 behave"*; nothing answered *"is what we are telling customers actually true"*, and this is
 that second set. Each check is a question, the query that answers it, and **the answer on
@@ -245,14 +271,18 @@ from the other four**: they say where a fact came from, it says whether it is tr
 requirement — enforced in code as well as in the prompt. Phase 7.3. **Nothing writes the table
 yet**; the schema and the view are built and the writer is not.
 
-### `REQUIREMENTS-SCREEN.md`
+### `archive/REQUIREMENTS-SCREEN.md`
+
+> **⚠ THIS FILE IS IN `docs/archive/`.** Archived 28 September 2026 — design only, never built. Module M6. The paragraph below is kept as it was written.
 
 **What the requirements screen SAYS, and the six display contracts it must not break.** Four
 states rendered by four separate roots, no numeric aggregates, `unknown` rendered as a question
 rather than a gap, and **not every `unknown` row has a question behind it** — §3.2a, where twelve
 rows wait on quantities no question asks for. Module M6.
 
-### `GATE-HISTORY.md`
+### `archive/GATE-HISTORY.md`
+
+> **⚠ THIS FILE IS IN `docs/archive/`.** Archived 28 September 2026. Read `DETERMINATION-GATE.md` for the gate as it stands. The paragraph below is kept as it was written.
 
 **The conversation the determination gate reads, specified before it was built.** Prior turns as
 **claims, never prose**; the `hypothetical` source and why it is a different dimension from
@@ -302,7 +332,9 @@ Holds the rewritten prompt in full, the facts block rewritten as **premises to r
 rather than a list of prohibitions, `needsWebSearch` built with a reader this time (§101), the
 citation bar, and **the benchmark: beat the bare model or the product adds nothing on research.**
 
-### `INVENTORY.md`
+### `archive/INVENTORY.md`
+
+> **⚠ THIS FILE IS IN `docs/archive/`.** Archived 28 September 2026. Superseded by `INVENTORY-2026-09.md` — which is itself a month out of date; see `PENDING.md`. The paragraph below is kept as it was written.
 
 **What exists, as a list.** Every table with its row count, every module with its state, and what
 each is waiting on. A snapshot rather than a design — read it to find out what is there, not why.
@@ -348,7 +380,7 @@ Git holds the full history of every version. That is what it is for.
 ## What does not belong here
 
 - Anything with a real key, password, or token in it.
-- Generated output. `CURRENT-SCHEMA.md` (a snapshot of the live database) and
+- Generated output. ~~`CURRENT-SCHEMA.md`~~ (**deleted 28 September 2026**, `INVENTORY-2026-09.md`; `SCHEMA.md` replaced it) and
   `baseline-outputs/` (frozen AI output kept for comparison) live at the repo root
   because they are produced by tooling, not written by hand.
 - **Data destined for the database.** Anything that will end up as rows lives in
