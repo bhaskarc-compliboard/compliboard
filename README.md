@@ -7,7 +7,7 @@ in Oregon.
 The one-sentence architecture: **the Requirements module answers "what does this company have to
 do?" deterministically, so that "what's missing" is a database query and never an AI guess.**
 
-## What a new customer walks into — part B released 22 October 2026
+## What a new customer walks into — part C released 29 October 2026
 
 1. **Signup asks four things** — work email, password, company name, and a website that is optional
    and worth giving. The account, the company and its main site are created in **one transaction**:
@@ -21,10 +21,29 @@ do?" deterministically, so that "what's missing" is a database query and never a
 5. **The Dashboard** says *"Welcome, ‹their company›"* on the first visit and *"Welcome back"*
    after, and carries on asking the three questions another day.
 
-Released in two parts: **part A** on 21 October (My Account's five tabs — the company, its sites,
-the people who can sign in, how you sign in, cancelling) and **part B** on 22 October (the front
-door above). **Next: part C, billing** — Stripe, the card page and the read-only state after a
-trial ends, which is `docs/ACCOUNT-PLAN.md` steps 17–21.
+6. **They work** — the Compliance Workspace, Documents, Audits, HR, the Calendar — and
+   **My Account shows them their plan**: $199 a month, their trial, and the day it ends.
+
+Released in three parts: **part A** on 21 October (My Account's five tabs — the company, its sites,
+the people who can sign in, how you sign in, cancelling), **part B** on 22 October (the front door
+above), and **part C** on 29 October (billing).
+
+### When a trial ends
+
+Everything stays. You can sign in, **read, download and print** all of it. Asking, document reading
+and auditing pause with one plain sentence, and a band at the top of every page says so and offers
+a card. **Uploading still works** — your files are saved and queued, and they are read the day a
+card is added. **Not paying never deletes anything.** Only you can delete your company, and only
+from the Cancel tab, by typing its name.
+
+### ⚡ Billing is built and switched off
+
+Stripe is the authority; the product keeps a one-directional copy of what Stripe says so a page can
+be drawn without asking Stripe on every request. **No Stripe credentials are set on production**, so
+nothing can be charged: pressing *Add a card* answers *"Card payment is not set up on this server
+yet. Nothing was charged."* and says so rather than failing quietly. Every existing company's trial
+runs to **31 January 2027**, so nobody is paused. `docs/RELEASE.md`'s *"When Stripe live mode is
+ready"* is the one gate left.
 
 **Where the real documentation is:** `CLAUDE.md` for the rules, `docs/HOW-WE-BUILD.md` for the
 method, `docs/DECISIONS.md` for every decision and why, `STATUS.md` for what works today, and

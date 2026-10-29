@@ -16874,3 +16874,134 @@ A second load made **zero** requests — the row is settled, so the rule decline
 - **Not building the sweep (G):** the condition in G, read off `check:live`'s list.
 - **The anchor rule living outside the mapping (E):** the webhook ceasing to write
   `payment_failed_at` from a timestamp of its own, which is the only reason the two must differ.
+
+---
+
+## 223. PART C RELEASED, AND BILLING SHIPPED INERT — 29 October 2026 (My Account steps 21 and 22)
+
+### WHAT WENT OUT
+
+`main` at **`e81ecbb`**, 22 commits, migrations **087–090** on production. The whole of part C:
+the mirror (§213), the read-only state (§215), the Billing tab (§216), and the four findings the
+owner's own card walk produced (§217–§219, §221) plus the two repairs (§220, §222).
+
+### A. THE DECISION THAT SHAPED THE RELEASE: SHIP IT INERT
+
+**Not one Stripe variable is set on production.** `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` and
+`STRIPE_WEBHOOK_SECRET` are all absent, deliberately, because live mode is not set up.
+
+The alternative was to hold the release until Stripe was ready. That was rejected: the release
+carries the read-only rule at 19 doors, the Billing tab, migrations four other things will want, and
+a **pre-existing Compliance Workspace bug** (`7363251`) that broke the page at any two-person
+company. None of that should wait on a dashboard.
+
+**It is only shippable because the code refuses loudly rather than guessing.** `lib/stripe.ts`
+builds its client lazily and every reader names the variable it wanted, so:
+
+- `/api/billing/checkout` and `/api/billing/portal` → **503**, *"Card payment is not set up on this
+  server yet. Nothing was charged."*
+- `/api/stripe/webhook` → **500**, *"Webhooks are not configured on this server."*
+- the build and the deploy are **green**, because nothing is read at module scope.
+
+> ### ⚡ THE PROBE THAT EARNS ITS PLACE IN EVERY FUTURE BILLING RELEASE.
+> `curl -X POST .../api/stripe/webhook` is the only check that tells an **unset** signing secret
+> from a **set** one, with no login and no Stripe account: **500 + "Webhooks are not configured"**
+> means absent; **400 + "No stripe-signature header."** means present. Run on production, 29
+> October: the 500.
+
+**The one silent path, named rather than discovered later:** `/api/billing/reconcile` also returns
+503, and the page reads only `repaired` from the body, so a missing key is invisible there. That is
+correct behaviour — it is a repair, not the page — and it means the log line is the only signal.
+
+### B. THE TRIAL PARKING, AND WHY AN EXTENSION
+
+After 088, **every one of the ten production companies had a trial end in the past** — the newest
+was 6 August. The gate ships with the push; without intervention all ten would turn read-only the
+moment the deploy went green, including **CB-Test-3**, the only company with data (83 of
+production's 83 `ai_calls`). And the way out would have been a dead end: *Add a card* answers *"Card
+payment is not set up on this server yet."*
+
+```sql
+update public.companies set trial_ends_at = timestamptz '2027-01-31 00:00:00+00'
+ where stripe_subscription_id is null and subscription_status is null;
+```
+
+**An absolute date, not an interval** — run twice, an interval gives two answers, and a fixed date
+reads in the row as *deliberately parked* rather than as a real trial end. The two null guards are
+088's own scope, so the statement can never touch a company that has started paying.
+
+> ### ⚠ AND NOT `subscription_status = 'active'`, WHICH IS ONE WORD AND THE WRONG ONE.
+> The Billing tab would then say *"Active · Next payment … · $199 a month, charged to the card
+> below"* to a company with no card and no subscription — **§221's exact defect, self-inflicted, in
+> the one table built to be true about money.** It would also put a value in the mirror that Stripe
+> never said, which is the single invariant §213 exists to hold.
+>
+> A trial extension changes a number the product already owns, in the direction it already
+> understands, and leaves the two Stripe ids null — so `reconcileNeeded` returns null and §222's
+> machinery stays quiet. **The honest cost:** the tab reads *"Your trial ends 31 January 2027"* for
+> a company created in June.
+
+**Before the push, not after**, and the reason is worth keeping: the deployed code *before* the push
+is pre-billing — `accessFor`, `requireAccess`, the banner and the Billing tab do not exist in it. So
+**between the migration and the push nothing changes for anyone**, and that window is safe for as
+long as you like. Park after the push instead, and every company is read-only from the moment the
+deploy is green until the write lands.
+
+### C. ⚡ WHAT THE READ-BACK FOUND: A GRANT LINE THAT READS AS A NARROWING
+
+087 says `grant select, insert, update on table public.stripe_events to service_role`. Read from the
+catalog, `service_role` holds **all eight** rights — SELECT, INSERT, UPDATE, DELETE, TRUNCATE,
+REFERENCES, TRIGGER, MAINTAIN:
+
+```
+stripe_events relacl = postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+```
+
+`postgres`'s default ACL on `public` (migration 068) grants `service_role` everything on any table
+created there, **before a single GRANT runs**. So that line re-states three of eight rather than
+reducing eight to three. **Staging's ACL is byte-identical**, so this is the default-privilege rule
+and not a production anomaly.
+
+It is §3.6's own lesson arriving in the file that quotes it: **a grant list describes what you
+added, not what the role holds.** The security property is untouched and was re-read — `anon` and
+`authenticated` hold nothing on all eight rights, and `anon` is absent from the ACL entirely, which
+is stronger than empty.
+
+**087's comment was corrected on 29 October; its SQL was not**, because the SQL is the record of what
+ran on two databases. `docs/SCHEMA.md` never carried the wrong claim, because `scripts/schema-doc.js`
+reads the catalog rather than the grant lines — which is the argument for generating that file.
+
+### D. THE CHECKS, AS THEY ANSWERED
+
+| | | |
+|---|---|---|
+| `GET /account` | **200** | the page shell, as every signed-in page returns |
+| `POST /api/billing/checkout` · `portal` · `reconcile` | **401** ×3 | no login — and the third proves §220's route cannot be aimed without a session |
+| `POST /api/stripe/webhook` | **500** *"Webhooks are not configured on this server."* | the unset-vs-set probe |
+| newest migrations | `090 089 088 087 086` | from `schema_migrations`, not from an exit code |
+| the eight 090 columns | **0 rows hold a value** | nothing was backfilled — 087's bug, checked for rather than assumed |
+| the seventeen billing columns | `authenticated` SELECT **17**, UPDATE **0**; `anon` **0** | and the table ACL reads `authenticated=r`, read-only |
+
+One measured walk against `next build && next start` on an isolated copy under the guard, three
+screens in `shots/relc-*`: a parked trial, a paying company, and the read-only workspace with both
+controls dimmed.
+
+### E. WHAT A CUSTOMER NOW EXPERIENCES, END TO END
+
+Four fields at signup; the account, the company and its main site in one transaction; the website
+read once, proposing rather than writing; a three-screen walk; the Dashboard. My Account shows the
+company, the colleagues, the sign-in — and **the plan, the trial and the day it ends**. *Add a card*
+says plainly that card payment is not set up on this server yet.
+
+When a trial does end: everything stays readable, downloadable and printable; asking, document
+reading and auditing pause with one plain sentence; uploads still work and queue; and **nothing is
+ever deleted for not paying**.
+
+### WHAT WOULD REVERSE IT
+
+- **Shipping inert (A):** nothing, while live mode is unset. The refusals are honest and nothing can
+  be charged.
+- **The parked date (B):** Stripe live mode going in, at which point the real trial dates stop
+  mattering for test companies and a real customer's trial is Stripe's to own.
+- **Leaving `service_role` wide (C):** a second holder of that key. Today it is the webhook and the
+  reconcile, and narrowing it would need an explicit REVOKE in a later migration.

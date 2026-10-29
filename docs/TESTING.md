@@ -4874,3 +4874,45 @@ payload and that the route does not call `reconcileNeeded` at all.
 > you changed — the artefact a person or a future debugger will actually look at. The page, the
 > screenshot, the row in the log table. Three defects in three days, none visible to the suite, all
 > visible in ten seconds to anyone who looked at the output.
+
+---
+
+## MY ACCOUNT PART C — WHAT THE BILLING WORK LEFT BEHIND, IN ONE PLACE — 29 October 2026
+
+Four sections above this one came out of part C, and they are easier to use as a set. In the order
+they were learned:
+
+| | the lesson | §216 B · §220 G · §221 · §222 |
+|---|---|---|
+| 1 | **A test that asserts a value is not a test that the value is correct.** `payment_method_collection: 'if_required'` was asserted by a unit test AND read back from Stripe's own API. Both passed. The value was wrong, because the assertion was written from the same belief as the code | §216 B |
+| 2 | **A lifecycle bug is invisible to both a pure test and a source test.** One does not run the component; the other does not run anything. Two defects — a self-cancelling effect cleanup and a stale banner above a repaired tab — were found by a screenshot taken three seconds after the request | §220 G |
+| 3 | **An expand path one level too shallow is a silent zero.** Twice in four days. `typeof` is the whole test, and TypeScript cannot help because the declaration says `string \| Coupon` for both outcomes | §221 B |
+| 4 | **A fake that is kinder than the real thing hides the bug you wrote it to find.** `fakeSupabase` returns the live row where PostgREST returns a copy, so a compare-and-set test passed while the guard did nothing | §222 C |
+
+### And the one sentence that covers all four
+
+> ### READ IT BACK — THE ARTEFACT, NOT THE COLUMN.
+> The page, the screenshot, the row in the log table. **Four defects in four days, none of them
+> visible to a suite of two thousand tests, every one of them visible in ten seconds to anybody who
+> looked at the output.** One was found because a report needed to quote a `stripe_events` row and
+> the row said *"the mirror looked wrong"* instead of naming a state.
+
+### The manual set for billing, and the honest limit on it
+
+**None of these can be run until Stripe live mode exists** (`docs/RELEASE.md`, *"When Stripe live
+mode is ready"*). They were all walked on the **sandbox** by the owner, with a real card, during
+step 20, and that walk is what found §217, §218, §219 and §221.
+
+| | walk | what it proves that nothing else does |
+|---|---|---|
+| **C1** | sign up → trial → **Add a card** → pay | the card form appears at all (`payment_method_collection: 'always'` whenever a trial is sent — §217) |
+| **C2** | a **coupon** at checkout, 100% off forever | $0, **no card form**, a live subscription — and the tab says `$0 a month — FOUNDER100, 100% off, forever` with **no card asked for** (§221) |
+| **C3** | **cancel** in the portal, then un-cancel | `cancel_at` both ways; the status does **not** move, which is why 089 exists (§219) |
+| **C4** | a **declining card** (`4000 0000 0000 0341`) at the renewal | a real `invoice.payment_failed`, `payment_failed_at` written by the webhook, the grace banner, and **access still full** |
+| **C5** | fix the card, let Stripe retry | `invoice.paid` clears the anchor and the banner goes |
+| **C6** | kill the listener mid-walk, then load the Billing tab | §220/§222's reconcile healing the mirror with no webhook at all. **This happened three times by accident before it was ever done on purpose** |
+
+> **⚡ What C4 and C5 still do NOT cover, recorded as a hypothesis rather than a claim:** a
+> subscription with **no payment method at all** — a lapsed `repeating` discount where nobody ever
+> added a card. A card that *fails* is observed; a card that is *absent* is not. Until it is,
+> §217's **forever coupons only** is load-bearing.

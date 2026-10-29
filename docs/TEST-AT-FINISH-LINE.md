@@ -683,3 +683,44 @@ A section that changes one of these re-runs the free checks of every section tha
 | `scripts/measure-layout.mjs` | `--type "<label>=<text>"`, password fields, masked echo | every section's measured walks |
 | `app/reset-password/page.tsx` | gated on a real recovery; floor 6 → 10 | the whole product's password recovery |
 | `app/company-information/page.tsx` + its route | the name, state and city left its company block | Company information |
+
+---
+
+## My Account — part C (billing)
+
+### A. Where it stands (29 October 2026)
+
+Released. `main` at `e81ecbb`, migrations 087–090 on production, every trial parked at 2027-01-31.
+**⚡ Billing is INERT: no Stripe variable is set**, so everything in this part is **blocked on
+`docs/RELEASE.md`'s "When Stripe live mode is ready"** and none of it can be done before that.
+
+### B. What waits for Stripe live mode
+
+| | | costs money? |
+|---|---|---|
+| **1** | Checkout with a real card end to end: live-mode page, charge succeeds, back on `?card=added`, tab reads `Active · Next payment <date> · <brand> ending <4>` | **$199**, refundable |
+| **2** | Read the mirror back: status, period end, card line, and `next_charge_amount_cents = 19900` | no |
+| **3** | The **reconcile** (§220/§222): blank `stripe_subscription_id`, load Billing, watch it repair and file `reconcile.repaired` | no |
+| **4** | The **grace** (decision 11): a declining card at the renewal → `invoice.payment_failed`, `payment_failed_at` written, banner up, **access still full** | **$199** attempted |
+| **5** | The **recovery**: fix the card → `invoice.paid` clears the anchor and the banner goes | $199 |
+| **6** | The **coupon**: `FOUNDER100` at checkout → $0, no card form, and the tab reads `$0 a month — FOUNDER100, 100% off, forever` with **no card asked for** | no |
+| **7** | Stripe's endpoint delivery log: **six event types, all 200.** Retries pending there are §222's failure in advance | no |
+| **8** | `npm run check:live`'s **billing-mirror question** (§222 H) — an empty list is evidence deliveries are landing | no |
+
+**Do 1, 4 and 5 on a company created for the purpose, not on CB-Test-3.**
+
+### C. The one thing that is still a hypothesis
+
+A subscription with **no payment method at all**, reaching the end of a `repeating` discount. We
+expect `invoice.payment_failed` and the grace; a card that *fails* is observed, a card that is
+*absent* is not. **Until it is, forever coupons only** (§217). Provable with a test clock plus a
+repeating coupon and no card, and it does not need live mode — it can be done on the sandbox before
+the gate opens, which makes it the cheapest item on this page.
+
+### D. What does NOT wait
+
+Everything that is not Stripe. The read-only rule at 19 doors and 4 sweeps, the banner, the Billing
+tab's words in every state, the 402 wording, and the two repairs are all covered by 2063 unit tests
+and were walked on staging against a production build. **The deferred email tests from HR and the
+Calendar are unchanged by this part** — billing sends no email, and the one it owes (before a
+discount ends, §221 F) is not built.
