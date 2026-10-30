@@ -23,6 +23,7 @@ import Nav from '@/components/home/Nav'
 import Hero from '@/components/home/Hero'
 import AuditPanel from '@/components/home/AuditPanel'
 import BinderPanel from '@/components/home/BinderPanel'
+import QuestionPanel from '@/components/home/QuestionPanel'
 import Footer from '@/components/home/Footer'
 
 export const metadata: Metadata = {
@@ -34,12 +35,13 @@ export default function PreviewHomePage() {
   return (
     <main className="bg-[var(--surface)]" data-public-page="preview-home">
       <Nav />
-      {/* The panels, in the order of `docs/PUBLIC-PAGES-PLAN.md` §4. Steps 18 to 24 fill in the
-          rest: research a question, an executable checklist, documents and the fix, calendar,
-          HR, where we are, the invitation to trial. */}
+      {/* The panels, in the order of `docs/PUBLIC-PAGES-PLAN.md` §4. Steps 19 to 24 fill in the
+          rest: an executable checklist, documents and the fix, calendar, HR, where we are, the
+          invitation to trial. */}
       <Hero />
       <AuditPanel />
       <BinderPanel />
+      <QuestionPanel />
       <Footer />
     </main>
   )
