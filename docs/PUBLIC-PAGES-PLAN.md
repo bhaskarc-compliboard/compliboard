@@ -1,6 +1,6 @@
 # Public pages — the plan
 
-**Version:** 3 · **Updated:** 30 October 2026 — decisions 10–12; steps 1 and 2 done; the hero goes light. **Written:** 29 October 2026, in the public-pages chat.
+**Version:** 4 · **Updated:** 30 October 2026 — the hero's final words; steps 13–15 built; boards and code now interleave per panel. **Written:** 29 October 2026, in the public-pages chat.
 **Supersedes:** nothing. The homepage at `app/page.tsx` is replaced whole; nothing from it is kept.
 **For:** the owner, this chat, and Claude Code. One step at a time. A step is crossed off here, with its date, before the next one starts.
 **Shape:** boards first (the chat draws, the owner approves), then code (Claude Code builds one board per instruction, in the same order), then the four content pages, then the domain and the release.
@@ -32,7 +32,7 @@ The four other pages — privacy, terms, security, FAQ — are content pages in 
 | 4 | **Industries rotate across the panels** — chemical, a flavour maker, a food manufacturer, a cannabis processor, a restaurant — because the product reads any company's documents today. Every non-chemical detail is checked against the agency's own page before it ships. | 29 Oct |
 | 5 | **Drawn cards, not screenshots.** Screenshots never read clean. Each card is drawn in code with the app's tokens and five or six lines of large text. | 29 Oct |
 | 6 | **Full-screen panels on a laptop, natural stacking on a phone.** No scroll-snap. The panels alternate page grey and white; the hero and the closing panel are light with the green waves (decision 12 replaced the deep green room). | 29 Oct, amended 30 Oct |
-| 7 | **No image in the hero.** Words only: the headline, three lines lifted from the panels, the turn sentence, the button. | 29 Oct |
+| 7 | **No image in the hero.** Words only: the headline, four lines lifted from the panels (each a link to its panel), the turn sentence, the button. | 29 Oct, amended 30 Oct |
 | 8 | **The legal pages are drafted as a starting point for a lawyer.** The note saying so is for the owner (`docs/LEGAL-REVIEW.md` and a comment at the top of each page file), never on the page. | 29 Oct |
 | 9 | **Price folds into the closing panel.** One number beside one button. | 29 Oct |
 | 10 | **Every panel shows the ask box.** The left side is the moment (the headline) and the move (the product's own box with the sentence the person typed); the right side is the answer. Documents shows the drop as well as the box. The same back-and-forth conversation is shown in every section, because the owner is adding the shared chat to Audits and Documents, which were built before it existed. | 30 Oct |
@@ -43,13 +43,13 @@ The four other pages — privacy, terms, security, FAQ — are content pages in 
 
 | | Panel | Left-hand line (draft) | The card shows |
 |---|---|---|---|
-| 1 | Hero | *You do compliance on top of two other jobs.* + three lines + the turn | nothing — words on green |
+| 1 | Hero | *Compliance is your job. It’s also your third one.* · four lines: *The inspector is coming Thursday.* / *The customer wants our audit binder by Friday.* / *The permit expired in March. You found out in June.* / *The handbook says 30 days. The state says 14.* · the turn: *CompliBoard has read the whole cabinet. It knows what to fix, what is due, and where you stand with each agency.* | nothing — words on the light ground with the waves |
 | 2a | Audit by agency | *The inspector is coming Thursday.* | your documents with status, the fix, a report link; nothing on file last |
 | 2b | The binder | *Hand them the binder.* (draft) | the binder: requirement, then the document behind it, print or PDF — **gate F4** |
 | 3a | Research a question | *We're bringing in 192-proof ethanol. What do we need before it ships?* | the answer with numbered official sources |
 | 3b | An executable checklist | *Now what do I actually do?* (draft) | must do / worth doing / to confirm, and "How do I do this?" |
 | 4 | Documents and the fix | *Nobody has opened this plan since 2021.* | kind, status, numbered gaps with fixes, a fact to confirm |
-| 5 | Calendar | *The renewal date was on page 6 of the license. Nobody had read page 6.* | a week with two dates, "not confirmed", "from:", "repeats yearly" |
+| 5 | Calendar | *The permit expired in March. You found out in June.* (was the page-6 line) | a week with two dates, "not confirmed", "from:", "repeats yearly" |
 | 6 | HR | *The handbook says 30 days. The state says 14.* | your handbook / the rule, side by side; suggested wording |
 | 7 | Where we are | *"Where are we?"* | the four counters, due in 30 days, one question for today |
 | 8 | Invitation to trial | *Start with the folder you have.* + $199 / everyone / 14 days / no card / nothing deleted | — |
@@ -90,9 +90,9 @@ Cross a step off with its date when it is done. A step is done when the owner ha
 
 ### Part B — code (Claude Code, one instruction per step, in this order)
 
-- [ ] **13. Read-only map.** Everything that touches the current homepage and the public surface: `app/page.tsx`, `components/HomepageSection.tsx`, who links to `/`, the login and signup redirects, every reader of `NEXT_PUBLIC_APP_URL`, the Supabase auth redirect settings, `app/layout.tsx`'s fonts and metadata. Report and stop; change nothing.
-- [ ] **14. The frame.** The new page at `app/preview-home/page.tsx` with `noindex` and no link to it (decision 11). The tokens the pages add to `app/globals.css` (the blue, the muted red, the wave greens), `components/home/Frame.tsx` (a sentence left, a card right, full screen on a laptop, stacked on a phone, no words), the nav and the footer as their own files, `app/page.tsx` as the ordered list with nothing in it yet. Measured at 1440, 1280 and 390 with `npm run measure`.
-- [ ] **15. Hero.**
+- [x] **13. Read-only map** — done 30 Oct, `6901ddb`, `docs/reports/public-pages-13-map.md`. Everything that touches the current homepage and the public surface: `app/page.tsx`, `components/HomepageSection.tsx`, who links to `/`, the login and signup redirects, every reader of `NEXT_PUBLIC_APP_URL`, the Supabase auth redirect settings, `app/layout.tsx`'s fonts and metadata. Report and stop; change nothing.
+- [x] **14. The frame** — done 30 Oct, `b3a9c71`. The new page at `app/preview-home/page.tsx` with `noindex` and no link to it (decision 11). The tokens the pages add to `app/globals.css` (the blue, the muted red, the wave greens), `components/home/Frame.tsx` (a sentence left, a card right, full screen on a laptop, stacked on a phone, no words), the nav and the footer as their own files, `app/page.tsx` as the ordered list with nothing in it yet. Measured at 1440, 1280 and 390 with `npm run measure`.
+- [x] **15. Hero** — done 30 Oct, `8caf1ce`; final words in 15b. `docs/reports/public-pages-13-15.md`.
 - [ ] **16. Panel 2a.**
 - [ ] **17. Panel 2b** — built with its gate comment; the page shows it only once F4 ships.
 - [ ] **18. Panel 3a.**
@@ -122,12 +122,17 @@ Cross a step off with its date when it is done. A step is done when the owner ha
 
 ## 7. Open, waiting on the owner
 
-- The legal entity name and state for the terms.
+- The legal entity name and state for the terms. (`components/AppLayout.tsx:466` prints “© 2026 CompliBoard LLC”; a line in a footer is not the legal fact — the owner confirms it.)
 - Whether hello@compliboard.com receives mail (the signup error path already names it).
-- Which hero line, of the three offered; the first is drafted in.
+- ~~Which hero line~~ — chosen 30 Oct (see §4).
+
+## 7a. Found along the way
+
+- **The app shell's footer already links to `/privacy` and `/terms`** (`components/AppLayout.tsx:462–463`), so every signed-in person has had two dead links since the shell was built. Part C builds the pages; nothing else is needed. Found by step 13's map.
 
 ## 8. Change log
 
+- v4, 30 October 2026 — the owner chose to build each panel as soon as its board is approved, so Parts A and B interleave from here (step numbers unchanged). Steps 13, 14, 15 built; the hero's final words chosen (headline, four lines, the turn); the calendar panel's line changed to match; §7a added.
 - v3, 30 October 2026 — decision 11 (built at `/preview-home`, swapped at step 25), decision 12 (the hero goes light with the green waves; the dark room dropped), decision 6 amended; steps 1 and 2 done.
 - v2, 30 October 2026 — decision 10: the ask box on every panel, left = headline + the typed box, right = the answer. Gate gains F7 (Audits on the shared chat) and chat over documents. Step 1's template board drawn on the canvas "CompliBoard Homepage Boards".
 - v1, 29 October 2026 — written at the end of the first day's brainstorm: the structure, the rules, nine decisions, the panel order, the gate, 35 steps.
