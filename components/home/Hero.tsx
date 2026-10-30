@@ -48,14 +48,25 @@ export default function Hero() {
         background: 'linear-gradient(120deg, #FFFFFF 0%, #F6FBF7 50%, var(--green-wash) 100%)',
       }}
     >
-      {/* THE WAVES ACROSS THE BOTTOM, the full four-colour set (decision 12 keeps the strong
-          green for the hero and the closing panel). Shorter on a phone, where a 320px band
-          under a stacked column would be most of the screen. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[150px] lg:h-[320px]">
-        <Waves full />
+      {/* THE WAVES ARE THE WHOLE SECTION, NOT A STRIP ALONG THE BOTTOM (step 15c). The board's
+          bands nest into the bottom-right corner and one of them reaches the top-right, so the
+          drawing is sized to the section and cropped by its `overflow-hidden`, not fitted into a
+          150/320px box. The two sets are the same four bands drawn for the two shapes of screen:
+          a 1440x900 curve squeezed into a 390-wide phone is not the same curve. Each is in its
+          own wrapper so the display utility sits on a div and never argues with the svg's own
+          `block` (`components/buttonStyles.ts` has the long version of why that matters). */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 hidden lg:block">
+          <Waves full />
+        </div>
+        <div className="absolute inset-0 lg:hidden">
+          <Waves full phone />
+        </div>
       </div>
 
-      <div className={`${EDGES} relative`}>
+      {/* `relative z-10`: the words sit over the drawing. A positioned sibling would paint above
+          an earlier one anyway, but the z-index says it rather than relying on source order. */}
+      <div className={`${EDGES} relative z-10`}>
         {/* 980 inside the 120px edges. At 1440 the box's own 1200 less its edges is already 960,
             so this caps nothing there and everything above about 1460. */}
         <div className="flex max-w-[980px] flex-col gap-10">
