@@ -54,33 +54,48 @@ export default function Frame({
         tone === 'grey' ? 'bg-[var(--page)]' : 'bg-[var(--surface)]'
       }`}
     >
-      <div className={EDGES}>
+      {/* THE WAVES ARE THE SECTION'S, NOT THE COLUMN'S — changed at step 16, and the reason is
+          the drawing's own shape. They used to hang off the right-hand column, which kept them
+          off the text by construction; what that cannot do is hide the BOTTOM of the drawing.
+          Step 15c's `faint` pair is a drawing with its own aspect that ends at its own baseline
+          (`xMaxYMax meet`), and a column ends wherever its card ends — so the first render of
+          this panel put a flat pale edge across the middle of the section, in mid-air, which is
+          the same defect the waves' right edge had at step 14.
+          Anchored to the section instead: the right reaches 240px past the page and the bottom
+          hangs 11% of the section's height BELOW it, so both ends are cut by `overflow-hidden`
+          at every width. It starts at the halfway mark, which is still well right of the text
+          (the words have 5fr of 11 inside a box with a 120px edge), so it cannot drift under
+          them either.
+          *** AND THE LEFT END IS FADED, BECAUSE `meet` ALWAYS LEAVES ONE EDGE ON THE PAGE. ***
+          `meet` fits the whole drawing inside its box, which means the drawing has a left edge
+          and it is somewhere on the screen — and the fill is not zero-height there, so it is a
+          straight vertical step. Measured in the screenshot at 1440 before this was added:
+          #EAF3ED against #F7F8FA, 88px tall, at x=714, which is the box's own left edge. No
+          amount of moving the box fixes that (the drawing's width follows its height, so the
+          edge moves with the box), so the left 200px of the drawing is masked out instead. The
+          -webkit- copy is for Safari before 15.4; where neither is supported the backdrop simply
+          has the faint edge back, which is the right way round for a decoration. */}
+      {waves && (
+        <div
+          aria-hidden="true"
+          style={{
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 200px)',
+            maskImage: 'linear-gradient(to right, transparent 0, black 200px)',
+          }}
+          className="pointer-events-none absolute right-[-240px] bottom-[-11%] left-1/2 h-[76%]"
+        >
+          <Waves faint />
+        </div>
+      )}
+
+      {/* `relative z-10`: the words and the card are over the drawing. */}
+      <div className={`${EDGES} relative z-10`}>
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-[5fr_6fr]">
           {/* `min-w-0` on both: a grid column's default minimum is its content, so one long
               unbroken string in either side would widen the column and push the other out of
               the box rather than wrapping inside it. */}
           <div className="min-w-0">{children}</div>
-          <div className="relative min-w-0">
-            {/* THE WAVES SIT INSIDE THE RIGHT-HAND COLUMN, which is what keeps them off the
-                text: absolute positioning is resolved against this column's own box, so there
-                is no width at which they can drift under the words. Low and right — the bottom
-                of the column, and reaching 240px PAST its right edge so that at 1440 and at 1280
-                the band runs off the side of the screen and is cut by the section's
-                `overflow-hidden`. The first draft stopped at the page's 120px margin, and the
-                probe screenshot showed what that is: a hard vertical edge in mid-air, which
-                reads as a bug rather than as a backdrop. */}
-            {waves && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute right-[-240px] bottom-[-48px] left-0 h-[62%]"
-              >
-                <Waves faint />
-              </div>
-            )}
-            {/* `relative` with no z-index: a positioned sibling paints above an earlier one, so
-                the card is over the waves without starting a z-index argument. */}
-            <div className="relative">{card}</div>
-          </div>
+          <div className="min-w-0">{card}</div>
         </div>
       </div>
     </section>

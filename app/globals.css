@@ -33,6 +33,11 @@
   --blue-wash:   #EAF0FA;
   --red-muted:   #A8453A;
   --red-wash:    #FBEDEB;
+  /* The amber a drawn card uses: the text, the pill behind it, and the dashed border on a row
+     for something that is not there at all. `--amber` and `--amber-wash` above are the app's. */
+  --amber-ink:   #8A5A12;
+  --amber-pill:  #F6E3B8;
+  --amber-line:  #E0B96A;
 }
 
 /*

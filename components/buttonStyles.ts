@@ -30,6 +30,21 @@ export const PRIMARY =
 export const PRIMARY_LARGE =
   'cursor-pointer rounded-md bg-[var(--green)] px-[22px] py-[13px] text-[15px] font-medium text-white ' +
   'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
+/**
+ * *** PRIMARY AT A DRAWN CARD'S SIZE — public pages step 16. ***
+ *
+ * The same button again, smaller: 7px/12px of padding and 13px text, because the public pages'
+ * cards are drawings of the app at about two-thirds scale and a 14px button inside one reads as
+ * the page's button rather than the card's. A STRING HERE for the reason PRIMARY_LARGE is one —
+ * `px-4` and `px-3` are the same utility twice, and which of them wins is decided by the order
+ * Tailwind emits them in, not the order they are written in.
+ *
+ * On the public pages it is worn by a <span>, not a button, and the call site adds
+ * `pointer-events-none`: the card is a picture, and a hover state on a picture is a promise.
+ */
+export const PRIMARY_SMALL =
+  'cursor-pointer rounded-md bg-[var(--green)] px-3 py-[7px] text-[13px] font-medium text-white ' +
+  'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
 /** PRIMARY's box, outlined. Used ONLY beside PRIMARY on the first visit, so the pair is one size. */
 export const SECONDARY_LARGE =
   'cursor-pointer rounded-md border border-[var(--green)] px-4 py-2 text-[14px] font-medium text-[var(--green)] ' +
