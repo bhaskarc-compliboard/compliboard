@@ -15,12 +15,17 @@
  *
  * The arrow is an inline stroke SVG and `aria-hidden`: the label is on the span that holds it, so
  * the picture is announced once, not twice.
+ *
+ * `file` (step 20) draws a chip above the sentence for a panel whose document comes first. It is
+ * optional and nothing else in the box changes, so the panels written before it are untouched —
+ * proved with a shot of the audit panel at the same width, not by reading the diff.
  */
 
 export default function AskBox({
   typed,
   attach,
   label,
+  file,
 }: {
   /** The sentence shown as typed into the box. The panel's own words. */
   typed: string
@@ -28,9 +33,35 @@ export default function AskBox({
   attach?: string
   /** What the send control is called, for a screen reader: the panel's verb ("Audit"). */
   label: string
+  /**
+   * A file already in the box, drawn as a chip ABOVE the sentence — the Documents panel, where
+   * the document comes first and the question is asked of it. Optional, and the three panels
+   * written before it pass nothing, so nothing of theirs moves.
+   */
+  file?: { name: string; meta?: string }
 }) {
   return (
     <div className="w-full max-w-[520px] rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] px-4 pt-4 pb-3 shadow-[0_1px_2px_rgba(20,23,26,.05)]">
+      {file && (
+        <span className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-md border border-[var(--line)] bg-[var(--page)] px-[10px] py-[5px] text-[12px]">
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-[13px] w-[13px] shrink-0 text-[var(--ink-soft)]"
+          >
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+            <path d="M14 3v5h5" />
+          </svg>
+          <span className="truncate text-[var(--ink)]">{file.name}</span>
+          {file.meta && <span className="shrink-0 text-[var(--ink-soft)]">{file.meta}</span>}
+        </span>
+      )}
       <p className="text-[16px] text-[var(--ink)]">{typed}</p>
 
       {/* The attach line and the send control share one row; `justify-between` with an empty
