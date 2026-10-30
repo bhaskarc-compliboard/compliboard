@@ -22,11 +22,22 @@ import type { ReactNode } from 'react'
 import Waves from './Waves'
 
 /**
- * The public pages' content box: 1200px centred, 120px side edges on a laptop, 16px below.
- * `box-sizing: border-box` is global (`app/globals.css`), so the padding is INSIDE the 1200 —
- * at 1440 the first glyph is at x=240, at 1280 at x=160, at 390 at x=16.
+ * The public pages' content box: 120px in from the edges of the WINDOW on a laptop, 16px below,
+ * and never wider than 1440.
+ *
+ * *** CORRECTED AT STEP 16b, AND THE DIFFERENCE IS 120px OF PAGE. *** Step 14's instruction read
+ * "a 1200px box with 120px edges", which can be built two ways, and this file built the wrong
+ * one: a box capped at 1200 with the padding INSIDE it, which puts the first glyph at x=240 at
+ * 1440 and leaves 1200 of window with only 960 of content in it. What it meant is the boards'
+ * own geometry — the edge is 120 from the window, so the content is 1200 wide at 1440 and 1040
+ * at 1280, and the first glyph is at x=120 at both. The cap is 1440 so the edges stop growing on
+ * a very wide screen.
+ *
+ * It is exported, not copied: the nav, every panel and the footer import it, so the wordmark,
+ * each panel's first word and the footer's first word sit at the same x at every width. Three
+ * copies of a padding literal is how that alignment goes quietly wrong (`DESIGN.md` §3).
  */
-export const EDGES = 'mx-auto w-full max-w-[1200px] px-4 lg:px-[120px]'
+export const EDGES = 'mx-auto w-full max-w-[1440px] px-4 lg:px-[120px]'
 
 export default function Frame({
   children,

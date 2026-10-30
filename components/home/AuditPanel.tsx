@@ -167,20 +167,16 @@ export default function AuditPanel() {
       id="audit"
       tone="grey"
       card={
-        /* *** 520 IS THE BOARD'S CARD, AND IT IS WIDER THAN THE COLUMN IT SITS IN. *** The
-           frame's right column is 6fr of (960 − 64) at both 1440 and 1280 — 489px — so a 520px
-           card is 31px too wide and something has to give. What must NOT give is the right edge:
-           it is the same x as the nav's "Start free" and the footer's last word, and alignment on
-           the two outside edges is most of what makes a page look deliberate (`DESIGN.md` §3).
-           So the column is a flex box justified to its end, which in CSS overflows the START
-           side: the card's right edge lands on the page's edge and the extra 31px is taken out
-           of the 64px gutter, leaving 33px of clear air between the card and the words.
-           `ml-auto` cannot do this — an auto margin resolves to zero when the child is wider
-           than the parent, and the card hangs off the right of the page instead. And `shrink-0`
-           is not decoration either: a flex item's default is to SHRINK, so `w-[520px]` inside a
-           489px column quietly measured 486 until it was told not to. */
-        <div className="lg:flex lg:justify-end">
-          <div className="w-full overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(20,23,26,.04),0_16px_40px_rgba(20,23,26,.10)] lg:w-[520px] lg:shrink-0">
+        /* 520 IS THE BOARD'S CARD, and with step 16b's content box it fits with room to spare:
+           the right-hand column is 6fr of (1200 − 64) at 1440, about 620, and of (1040 − 64) at
+           1280, about 530. The card is 520 at both and sits CENTRED in that column, which is
+           what makes the air between the words and the card match the boards.
+           `shrink-0` is not decoration: a flex item's default is to shrink, so at 1280 the card
+           would give up its last few pixels to the column rather than keep its width.
+           `max-w-full` is the guard for a column narrower than the card — it caps rather than
+           overflows, and below `lg` the card is simply the full width of the page. */
+        <div className="lg:flex lg:justify-center">
+          <div className="w-full overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(20,23,26,.04),0_16px_40px_rgba(20,23,26,.10)] lg:w-[520px] lg:max-w-full lg:shrink-0">
             <div className="border-b border-[var(--line)] px-6 pt-5 pb-[14px]">
               <p className="text-[18px] font-medium text-[var(--ink)]">{WORDS.card.title}</p>
               <p className="mt-1 text-[12px] text-[var(--ink-soft)]">{WORDS.card.meta}</p>
