@@ -49,6 +49,7 @@ export default function Frame({
   return (
     <section
       id={id}
+      data-public-section={id ?? 'panel'}
       className={`home-screen relative flex items-center overflow-hidden py-16 lg:py-24 ${
         tone === 'grey' ? 'bg-[var(--page)]' : 'bg-[var(--surface)]'
       }`}

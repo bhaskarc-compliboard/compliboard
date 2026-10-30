@@ -14,6 +14,22 @@
 export const PRIMARY =
   'cursor-pointer rounded-md bg-[var(--green)] px-4 py-2 text-[14px] font-medium text-white ' +
   'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
+/**
+ * *** PRIMARY AT THE HERO'S SIZE — public pages step 15. ***
+ *
+ * The public homepage's one button is PRIMARY in every respect but its size: 13px/22px of
+ * padding and 15px text, because a 14px button sized for a toolbar reads as a control on a page
+ * whose headline is 60px serif. It is a STRING HERE rather than three classes added at the call
+ * site, because `px-4` and `px-[22px]` are the same Tailwind utility twice and which one wins is
+ * decided by the order Tailwind happens to emit them in, not by the order they are written in —
+ * a button that is the right size today and the wrong size after an unrelated build.
+ *
+ * 15px is on the scale (`DESIGN.md` §1 — the seventh size, set deliberately), so this adds a
+ * size of button, not a size of type. Nothing in the app uses it; the public pages do.
+ */
+export const PRIMARY_LARGE =
+  'cursor-pointer rounded-md bg-[var(--green)] px-[22px] py-[13px] text-[15px] font-medium text-white ' +
+  'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
 /** PRIMARY's box, outlined. Used ONLY beside PRIMARY on the first visit, so the pair is one size. */
 export const SECONDARY_LARGE =
   'cursor-pointer rounded-md border border-[var(--green)] px-4 py-2 text-[14px] font-medium text-[var(--green)] ' +

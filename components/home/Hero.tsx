@@ -1,0 +1,102 @@
+/**
+ * THE HERO — public pages step 15 (`docs/PUBLIC-PAGES-PLAN.md` panel 1, decisions 7 and 12).
+ *
+ * Words only, no image (decision 7): the headline, three lines lifted from the panels further
+ * down, the turn sentence, and one button. It is the one panel that does NOT use
+ * `components/home/Frame.tsx`, because it has no card — the frame is a sentence on the left and
+ * a card on the right, and this is a single column.
+ *
+ * LIGHT, NOT A DARK ROOM (decision 12, 30 October). White fading to the app's `--green-wash`,
+ * the four green waves rising across the bottom, ink words with the headline's last three words
+ * in the product's own green. The dark green room and the inverse wordmark were dropped.
+ *
+ * *** IT REACHES UP UNDER THE NAV, AND THAT IS WHAT `-mt-[72px] pt-[72px]` IS FOR. *** The nav
+ * is 72px tall, in the ordinary flow of the page and with no background of its own, so the
+ * gradient has to start at the very top of the document or there would be a 72px band of plain
+ * page above it — a line across the top of the page that the design does not have. The negative
+ * margin pulls this section up by exactly the nav's height and the padding puts the content
+ * back, so the nav sits ON the gradient (`components/home/Nav.tsx` is `z-30`, so its words stay
+ * above it) and the section's own box is still a full screen tall.
+ *
+ * *** THE THREE LINES POINT AT PANELS THAT DO NOT EXIST YET. *** `#audit`, `#calendar` and
+ * `#hr` are the section ids steps 16, 21 and 22 will give those panels. Until then the three
+ * links move nobody: a same-page anchor with no target leaves the page where it is, which is the
+ * quietest possible failure and is why they are written now rather than wired later and
+ * forgotten.
+ */
+import { PRIMARY_LARGE } from '@/components/buttonStyles'
+import { EDGES } from './Frame'
+import Waves from './Waves'
+
+/**
+ * The three lines, in the order the panels come in. Each is one moment, in the words of the
+ * person who does compliance on top of two other jobs (`PUBLIC-PAGES-PLAN.md` §4).
+ */
+const LINES: { text: string; href: string }[] = [
+  { text: 'The inspector is coming Thursday.', href: '#audit' },
+  { text: 'The renewal date was on page 6. Nobody had read page 6.', href: '#calendar' },
+  { text: 'The handbook says 30 days. The state says 14.', href: '#hr' },
+]
+
+export default function Hero() {
+  return (
+    <section
+      data-public-section="hero"
+      className="home-screen relative -mt-[72px] flex items-center overflow-hidden pt-[72px] pb-20 lg:pb-0"
+      style={{
+        background: 'linear-gradient(120deg, #FFFFFF 0%, #F6FBF7 50%, var(--green-wash) 100%)',
+      }}
+    >
+      {/* THE WAVES ACROSS THE BOTTOM, the full four-colour set (decision 12 keeps the strong
+          green for the hero and the closing panel). Shorter on a phone, where a 320px band
+          under a stacked column would be most of the screen. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[150px] lg:h-[320px]">
+        <Waves full />
+      </div>
+
+      <div className={`${EDGES} relative`}>
+        {/* 980 inside the 120px edges. At 1440 the box's own 1200 less its edges is already 960,
+            so this caps nothing there and everything above about 1460. */}
+        <div className="flex max-w-[980px] flex-col gap-10">
+          <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-[var(--green-ink)]">
+            For the person who does compliance on top of everything else
+          </p>
+
+          <h1 className="max-w-[17ch] font-serif text-[38px] leading-[1.1] text-[var(--ink)] lg:text-[60px]">
+            You do compliance on top of <span className="text-[var(--green)]">two other jobs.</span>
+          </h1>
+
+          {/* WEIGHT 400, NOT 300, AND IT IS READ FROM THE FONT RATHER THAN CHOSEN. Source Serif 4
+              is self-hosted and declared at 400 and 600 only (`app/layout.tsx:172`–`:173`); there
+              is no 300 face in this project, so asking for 300 would either snap back to 400 or,
+              worse, invite a browser to synthesise one. 400 is what the font has. */}
+          <div className="flex flex-col gap-3 border-l-2 border-[var(--wave-1)] pl-[22px]">
+            {LINES.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="font-serif text-[20px] font-normal leading-snug text-[var(--ink-soft)] no-underline lg:text-[26px]"
+              >
+                {l.text}
+              </a>
+            ))}
+          </div>
+
+          <p className="max-w-[54ch] text-[16px] leading-[1.55] text-[var(--ink)] lg:text-[18px]">
+            CompliBoard has read every document in the cabinet. It knows what each one is, what to
+            fix, what is due, and where you stand with each agency.
+          </p>
+
+          {/* On a phone the button takes its own row and the small print sits under it; from
+              1024px up they are one line, 18px apart. */}
+          <div className="flex flex-col items-start gap-3 lg:flex-row lg:items-center lg:gap-[18px]">
+            <a href="/signup" className={PRIMARY_LARGE}>
+              Start free
+            </a>
+            <span className="text-[14px] text-[var(--ink-soft)]">14 days. No card.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

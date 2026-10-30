@@ -571,7 +571,44 @@ try {
     // The hairline between the two groups: any element inside the nav with no text and a height of
     // one pixel. Named by shape rather than by a class, so it is found whatever it is built from.
     const navRule = aside ? [...aside.querySelectorAll('div, hr')].find((e) => !e.textContent.trim() && Math.round(e.getBoundingClientRect().height) === 1) : null
+    // *** THE PUBLIC PAGES — public pages step 15. ***
+    // Everything above this line measures a SIGNED-IN page: the column is .print-page or the 900
+    // wrapper, and the top bar is a <header> holding a link to /dashboard. The public homepage has
+    // none of those, so it measured as "no column found" and "logo none" — and the three things its
+    // own acceptance asks for were not printed at all: that the headline starts at the wordmark's x,
+    // that a panel is at least a screen tall, and that nothing runs off the side.
+    //
+    // So this block, and it is keyed on a MARKER no app page carries (data-public-page on the
+    // page, data-public-section on each panel) rather than on a shape an app page might one day
+    // share. Nothing above it changes; on every existing page publicPage is null and nothing new
+    // prints. (No backticks anywhere in here: this whole block is inside a template literal sent
+    // to the browser, and one backtick ends it -- which is how this comment was written the first
+    // time, and node --check refused the file.)
+    const publicRoot = document.querySelector('[data-public-page]')
+    let publicPage = null
+    if (publicRoot) {
+      const marks = [...document.querySelectorAll('a[href="/"]')].map((a) => ({
+        text: a.textContent.trim(), left: Math.round(a.getBoundingClientRect().left),
+      }))
+      const sections = [...document.querySelectorAll('[data-public-section]')].map((el) => ({
+        name: el.getAttribute('data-public-section'),
+        height: Math.round(el.getBoundingClientRect().height),
+        top: Math.round(el.getBoundingClientRect().top + window.scrollY),
+      }))
+      publicPage = {
+        wordmarks: marks,
+        sections,
+        viewportHeight: window.innerHeight,
+        // The document's own overflow, which is the only honest reading of "nothing runs off the
+        // side": an element may be wider than the screen on purpose (the waves are) as long as the
+        // SCROLLING BOX is not.
+        overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }
+    }
     return {
+      publicPage,
       composer,
       topbar: topbar ? { height: Math.round(topbar.getBoundingClientRect().height),
         logo: logo ? { ...edges(logo), text: logo.textContent.trim() } : null,
@@ -597,6 +634,14 @@ try {
   console.log(`  column content   ${o.column ? `${o.column.content.left}–${o.column.content.right}` : '-'}`)
   console.log(`  tab row          ${o.tabRow ? `${o.tabRow.left}–${o.tabRow.right}   ${o.tabRow.tabs.join(' | ')}` : 'none'}`)
   console.log(`  footer content   ${o.footer ? `${o.footer.content.left}–${o.footer.content.right}   text starts x=${o.footer.textStartsAt}` : 'none'}`)
+  if (o.publicPage) {
+    const p = o.publicPage
+    for (const w of p.wordmarks) console.log(`  wordmark         x=${w.left}   "${w.text}"`)
+    for (const sct of p.sections) {
+      console.log(`  section          ${sct.name.padEnd(10)} height ${sct.height}px  (viewport ${p.viewportHeight}px, ${sct.height >= p.viewportHeight ? 'at least a screen' : 'SHORTER THAN THE SCREEN'})  top y=${sct.top}`)
+    }
+    console.log(`  horizontal       scrollWidth ${p.scrollWidth} − clientWidth ${p.clientWidth} = ${p.overflowX}px ${p.overflowX === 0 ? '(nothing overflows)' : '(OVERFLOWS)'}`)
+  }
   if (o.topbar) {
     console.log(`  top bar          height ${o.topbar.height}px   logo ${o.topbar.logo ? `${o.topbar.logo.left}–${o.topbar.logo.right} "${o.topbar.logo.text}"` : 'none'}   breadcrumb ${o.topbar.crumb ? `${o.topbar.crumb.left}–${o.topbar.crumb.right} "${o.topbar.crumb.text}"` : 'none'}`)
   }

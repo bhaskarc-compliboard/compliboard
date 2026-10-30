@@ -20,6 +20,7 @@
  */
 import type { Metadata } from 'next'
 import Nav from '@/components/home/Nav'
+import Hero from '@/components/home/Hero'
 import Footer from '@/components/home/Footer'
 
 export const metadata: Metadata = {
@@ -29,11 +30,12 @@ export const metadata: Metadata = {
 
 export default function PreviewHomePage() {
   return (
-    <main className="bg-[var(--surface)]">
+    <main className="bg-[var(--surface)]" data-public-page="preview-home">
       <Nav />
-      {/* The panels, in the order of `docs/PUBLIC-PAGES-PLAN.md` §4. Steps 15 to 24 fill this in:
-          hero, audit by agency, the binder, research a question, an executable checklist,
+      {/* The panels, in the order of `docs/PUBLIC-PAGES-PLAN.md` §4. Steps 16 to 24 fill in the
+          rest: audit by agency, the binder, research a question, an executable checklist,
           documents and the fix, calendar, HR, where we are, the invitation to trial. */}
+      <Hero />
       <Footer />
     </main>
   )
