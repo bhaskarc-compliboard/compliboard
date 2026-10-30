@@ -24,6 +24,31 @@
      audits and hr are max-w-6xl (1152px), and every page is going here. Only /compliance
      uses it so far; the rest move in their own passes. */
   --measure:     775px;
+
+  /* Public pages (homepage and the four content pages). Additive; the app does not use these yet. */
+  --wave-1:      #DCEDE2;
+  --wave-2:      #A9D1B7;
+  --wave-3:      #5FA57C;
+  --blue:        #2B5FA8;
+  --blue-wash:   #EAF0FA;
+  --red-muted:   #A8453A;
+  --red-wash:    #FBEDEB;
+}
+
+/*
+ * ONE CLASS FOR THE PUBLIC PAGES, AND ONLY BECAUSE OF A FALLBACK TAILWIND CANNOT WRITE.
+ * A panel is a full screen on a laptop: `min-height: 100svh` where the browser has `svh`, and
+ * `100vh` where it does not. That is TWO declarations of the SAME property, in order, and two
+ * Tailwind utilities for one property leave the winner to the order Tailwind happens to emit
+ * them in — so it is written here, where the order is the file's. Below 1024px no height is
+ * forced at all: a phone stacks naturally (`docs/PUBLIC-PAGES-PLAN.md` decision 6).
+ * Used by `components/home/Frame.tsx` and `components/home/Hero.tsx`. No app page uses it.
+ */
+@media (min-width: 1024px) {
+  .home-screen {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
 }
 
 /*
