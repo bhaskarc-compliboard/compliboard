@@ -1,13 +1,13 @@
 /**
  * THE HERO — public pages step 15 (`docs/PUBLIC-PAGES-PLAN.md` panel 1, decisions 7 and 12).
  *
- * Words only, no image (decision 7): the headline, three lines lifted from the panels further
+ * Words only, no image (decision 7): the headline, four lines lifted from the panels further
  * down, the turn sentence, and one button. It is the one panel that does NOT use
  * `components/home/Frame.tsx`, because it has no card — the frame is a sentence on the left and
  * a card on the right, and this is a single column.
  *
  * LIGHT, NOT A DARK ROOM (decision 12, 30 October). White fading to the app's `--green-wash`,
- * the four green waves rising across the bottom, ink words with the headline's last three words
+ * the four green waves rising across the bottom, ink words with the headline's second sentence
  * in the product's own green. The dark green room and the inverse wordmark were dropped.
  *
  * *** IT REACHES UP UNDER THE NAV, AND THAT IS WHAT `-mt-[72px] pt-[72px]` IS FOR. *** The nav
@@ -18,23 +18,24 @@
  * back, so the nav sits ON the gradient (`components/home/Nav.tsx` is `z-30`, so its words stay
  * above it) and the section's own box is still a full screen tall.
  *
- * *** THE THREE LINES POINT AT PANELS THAT DO NOT EXIST YET. *** `#audit`, `#calendar` and
- * `#hr` are the section ids steps 16, 21 and 22 will give those panels. Until then the three
- * links move nobody: a same-page anchor with no target leaves the page where it is, which is the
- * quietest possible failure and is why they are written now rather than wired later and
- * forgotten.
+ * *** THE FOUR LINES POINT AT PANELS THAT DO NOT EXIST YET. *** `#audit`, `#binder`,
+ * `#calendar` and `#hr` are the section ids steps 16, 17, 21 and 22 will give those panels
+ * (`docs/PUBLIC-PAGES-PLAN.md` §6). Until then the four links move nobody: a same-page anchor
+ * with no target leaves the page where it is, which is the quietest possible failure and is why
+ * they are written now rather than wired later and forgotten.
  */
 import { PRIMARY_LARGE } from '@/components/buttonStyles'
 import { EDGES } from './Frame'
 import Waves from './Waves'
 
 /**
- * The three lines, in the order the panels come in. Each is one moment, in the words of the
+ * The four lines, in the order the panels come in. Each is one moment, in the words of the
  * person who does compliance on top of two other jobs (`PUBLIC-PAGES-PLAN.md` §4).
  */
 const LINES: { text: string; href: string }[] = [
   { text: 'The inspector is coming Thursday.', href: '#audit' },
-  { text: 'The renewal date was on page 6. Nobody had read page 6.', href: '#calendar' },
+  { text: 'The customer wants our audit binder by Friday.', href: '#binder' },
+  { text: 'The permit expired in March. You found out in June.', href: '#calendar' },
   { text: 'The handbook says 30 days. The state says 14.', href: '#hr' },
 ]
 
@@ -62,8 +63,8 @@ export default function Hero() {
             For the person who does compliance on top of everything else
           </p>
 
-          <h1 className="max-w-[17ch] font-serif text-[38px] leading-[1.1] text-[var(--ink)] lg:text-[60px]">
-            You do compliance on top of <span className="text-[var(--green)]">two other jobs.</span>
+          <h1 className="max-w-[24ch] font-serif text-[38px] leading-[1.1] text-[var(--ink)] lg:text-[60px]">
+            Compliance is your job. <span className="text-[var(--green)]">It’s also your third one.</span>
           </h1>
 
           {/* WEIGHT 400, NOT 300, AND IT IS READ FROM THE FONT RATHER THAN CHOSEN. Source Serif 4
@@ -83,8 +84,8 @@ export default function Hero() {
           </div>
 
           <p className="max-w-[54ch] text-[16px] leading-[1.55] text-[var(--ink)] lg:text-[18px]">
-            CompliBoard has read every document in the cabinet. It knows what each one is, what to
-            fix, what is due, and where you stand with each agency.
+            CompliBoard has read the whole cabinet. It knows what to fix, what is due, and where you
+            stand with each agency.
           </p>
 
           {/* On a phone the button takes its own row and the small print sits under it; from
