@@ -18,11 +18,9 @@
  * the state on the right, and under them the one sentence that says which governs. Everything
  * else on the card hangs off that pair.
  *
- * *** ITS PLACE IN THE ORDER IS AFTER THE CALENDAR, WHICH IS NOT BUILT YET. *** Step 21 was not
- * written, so this panel currently follows Documents in `app/preview-home/page.tsx`. Its tone is
- * `grey` because the calendar before it is white (decision 6, the panels alternate) — which means
- * that until step 21 lands there are two grey panels in a row. That rights itself the moment the
- * calendar is inserted between them, and nothing here needs changing when it is.
+ * Grey, because the calendar before it is white (decision 6, the panels alternate). It was built
+ * before the calendar was — step 21's instruction arrived cut off — and followed Documents for
+ * one commit; step 21 put the calendar between them and nothing here had to change.
  */
 import Frame from './Frame'
 import AskBox from './AskBox'

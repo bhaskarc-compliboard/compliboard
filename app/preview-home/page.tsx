@@ -26,6 +26,7 @@ import BinderPanel from '@/components/home/BinderPanel'
 import QuestionPanel from '@/components/home/QuestionPanel'
 import ChecklistPanel from '@/components/home/ChecklistPanel'
 import DocumentsPanel from '@/components/home/DocumentsPanel'
+import CalendarPanel from '@/components/home/CalendarPanel'
 import HRPanel from '@/components/home/HRPanel'
 import Footer from '@/components/home/Footer'
 
@@ -39,17 +40,15 @@ export default function PreviewHomePage() {
     <main className="bg-[var(--surface)]" data-public-page="preview-home">
       <Nav />
       {/* The panels, in the order of `docs/PUBLIC-PAGES-PLAN.md` §4. Steps 23 and 24 fill in
-          where we are and the invitation to trial.
-          *** THE CALENDAR IS MISSING AND ITS PLACE IS HERE. *** Step 21's instruction arrived cut
-          off mid-row, so panel 5 was not built and HR (step 22) follows Documents for now. When
-          the calendar is written it goes between these two lines, and the grey/white alternation
-          (decision 6) comes right again on its own — Documents and HR are both grey until then. */}
+          where we are and the invitation to trial. The tones alternate from here down —
+          documents grey, calendar white, HR grey (decision 6). */}
       <Hero />
       <AuditPanel />
       <BinderPanel />
       <QuestionPanel />
       <ChecklistPanel />
       <DocumentsPanel />
+      <CalendarPanel />
       <HRPanel />
       <Footer />
     </main>
