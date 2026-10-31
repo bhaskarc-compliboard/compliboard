@@ -51,7 +51,7 @@ export default function Invite() {
             {WORDS.eyebrow}
           </p>
 
-          <h2 className="max-w-[14ch] font-serif text-[38px] leading-[1.1] text-[var(--ink)] lg:text-[56px]">
+          <h2 className="max-w-[16ch] font-serif text-[38px] leading-[1.1] text-[var(--ink)] lg:text-[56px]">
             {WORDS.headline}
           </h2>
 

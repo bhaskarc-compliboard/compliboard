@@ -1,15 +1,16 @@
 // SAMPLE TEXT — the handbook sentence, the company, the section and the page number are in the product's voice and are replaced at step 12 by a real run. The STATE FACT is not sample: KRS 337.055, read at https://law.justia.com/codes/kentucky/chapter-337/section-337-055 on 30 October 2026 — wages are due not later than the next normal pay period after dismissal or leaving, OR fourteen (14) days after it, WHICHEVER LAST OCCURS.
 // AND THE REASONING MUST NOT BE SIMPLIFIED TO A FLAT 14 DAYS. "You pay every two weeks" is the sample company's own pay period, read from its handbook, and it is what makes 30 days wrong: the next normal pay period is at most 14 days away, so the later of the two is never 30. On a MONTHLY payroll the next normal pay period could fall after the fourteenth day and be the one that counts, and a 30-day clause could still be wrong for a different reason — but the sentence on this card would not be. Step 12 keeps the pay period in the scene or the card stops being true.
 // NO GATE — HR's chat and its check against the agency are live today (docs/PUBLIC-PAGES-PLAN.md §5 lists neither).
-// *** AND TWO THINGS ON THIS CARD ARE NOT THE PRODUCT'S, WHICH THE STEP 22 REPORT NAMES IN FULL. ***
-//   · "needs work" is DOCUMENTS' word (`lib/documentStatus.ts:16`), not HR's. HR has no status word for a clause
-//     that disagrees with the agency: the per-section word rules left the run on 8 October 2026 and are parked on
-//     the branch `parked/hr-check-structured` (`lib/handbookCheck.ts:22`–`:24`), so a check stores prose answers
-//     and the disagreement is said in the answer's own sentences.
-//   · "Use this wording" and "Add to a checklist" are not controls HR has. Its composer carries ONE action,
-//     "Research this" (`app/hr/HrWorkspace.tsx:795`–`:802`), and the comment on that line says it: "No checklist
-//     in HR." The suggested-wording block itself IS the product's — `app/hr/HrWorkspace.tsx:123` draws the label
-//     "Suggested wording" — but in grey (`bg-gray-50`) and with no section reference after it.
+// *** THE CARD SHOWS WHAT HR DOES AND NOTHING HR DOES NOT — the owner, step 22b, 30 October 2026. ***
+// Its three strings are the product's: "Add a handbook" is HR's attach line (`app/hr/HrWorkspace.tsx:749`), the
+// draft block is labelled "Suggested wording" exactly as HR labels it (`:123`), and the one action is "Research
+// this" (`:795`–`:802`, under the comment "No checklist in HR."). What step 22 drew and 22b took off: a "needs
+// work" pill, which is DOCUMENTS' word (`lib/documentStatus.ts:16`) and not HR's — its sentence stays, as a
+// sentence; and the two controls "Use this wording" and "Add to a checklist", which HR does not have. The only
+// difference left is colour: HR draws the draft block grey (`bg-gray-50`), this card draws it green, because the
+// public pages' cards are coloured (decision 5).
+// HISTORY, one line: HR has no status word for a clause that disagrees with the agency because the per-section
+// word rules left the run on 8 October 2026 and are parked on `parked/hr-check-structured` (`lib/handbookCheck.ts:22`–`:24`).
 /**
  * PANEL 6 — HR. Public pages step 22 (`docs/PUBLIC-PAGES-PLAN.md` §4 row 6, decisions 5 and 10).
  * The hero's fourth line points here (`#hr`).
@@ -54,14 +55,15 @@ const WORDS = {
     stateQuote:
       '“…not later than the next normal pay period … or fourteen (14) days … whichever last occurs.”',
     stateSource: 'KRS 337.055 · apps.legislature.ky.gov',
-    pill: 'needs work',
-    verdict: 'You pay every two weeks, so 30 days is later than the state allows.',
-    suggestedLabel: 'Suggested wording · section 6.3',
+    verdict:
+      'You pay every two weeks, so the handbook’s 30 days is later than the state allows.',
+    /** HR's own label for a draft, word for word: `app/hr/HrWorkspace.tsx:123`. */
+    suggestedLabel: 'Suggested wording',
     suggested:
       '“If you leave or are let go, your final pay is issued on the next regular payday, or ' +
       'within 14 days of your last day, whichever is later.”',
-    use: 'Use this wording',
-    checklist: 'Add to a checklist',
+    /** HR's one action: `app/hr/HrWorkspace.tsx:795`–`:802`. */
+    action: 'Research this',
     checked: 'checked against the state today',
   },
 }
@@ -134,17 +136,11 @@ export default function HRPanel() {
                 />
               </div>
 
-              {/* The pill and the sentence are one row at every width: the sentence takes the
-                  rest of it and wraps inside its own column (`min-w-0 flex-1`) rather than being
-                  pushed onto a line below, which is what a plain `flex-wrap` did at 520. */}
-              <div className="flex items-baseline gap-3">
-                <span className="shrink-0 rounded-full bg-[var(--amber-pill)] px-2 py-[2px] text-[12px] font-medium text-[var(--amber-ink)]">
-                  {WORDS.card.pill}
-                </span>
-                <span className="min-w-0 flex-1 text-[13px] text-[var(--ink)]">
-                  {WORDS.card.verdict}
-                </span>
-              </div>
+              {/* THE SENTENCE THAT SAYS WHICH ONE GOVERNS, between the two quotes and the
+                  wording that fixes it. It wore a "needs work" pill until step 22b: the word was
+                  Documents', HR has none of its own, and a sentence does not need a badge to be
+                  read as a verdict. */}
+              <p className="text-[14px] text-[var(--ink)]">{WORDS.card.verdict}</p>
 
               {/* THE DRAFT. Green because it is the thing to do, not the thing that is wrong — the
                   app draws the same block grey, which is the difference the step 22 report names. */}
@@ -163,8 +159,7 @@ export default function HRPanel() {
                 Below lg the "checked" line takes a row of its own. */}
             <div className={`${SIDES} pb-5`}>
               <div className="mt-[14px] flex flex-wrap items-center gap-[18px] border-t border-[var(--line)] pt-3">
-                <span className={`${PRIMARY_SMALL} pointer-events-none`}>{WORDS.card.use}</span>
-                <span className="text-[13px] text-[var(--ink-soft)]">{WORDS.card.checklist}</span>
+                <span className={`${PRIMARY_SMALL} pointer-events-none`}>{WORDS.card.action}</span>
                 <span className="w-full text-[13px] text-[var(--ink-soft)] lg:ml-auto lg:w-auto">
                   {WORDS.card.checked}
                 </span>
