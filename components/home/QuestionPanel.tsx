@@ -2,7 +2,8 @@
 //   [1] LOCAL FIRST, THEN THE STATE — https://www.ca.gov/departments/100/services/1281/, "Apply for a cannabis license": "To get started, applicants must first secure local permits, gather necessary documents, and apply for a DCC license". The page's title is "Apply for a cannabis license"; the card said "Applying for" and now says the title.
 //   [2] 10 mg / 100 mg / 500 mg — 4 CCR §17304, read at the DCC's OWN copy, https://www.cannabis.ca.gov/cannabis-laws/dcc-regulations/text-of-regulations/: (a) not more than "10 milligrams THC per serving" or "100 milligrams THC per package"; (b) "up to 500 milligrams THC per package" for an orally dissolving product where each piece holds no more than 10 mg, it is labelled "FOR MEDICAL USE ONLY" and it is sold only to medicinal-use patients. That answers the question the first draft of this note left open: the real run can cite the DCC's own text, and this is its address.
 //   [3] CHILD-RESISTANT, AND THE SYMBOL ON THE FRONT — the same DCC text: §17412(a)(1), an edible's package "shall be child-resistant for the life of the product"; §17410, the universal symbol's design and size; §17404(a)(2), which puts "The universal symbol as described in section 17410" on the PRIMARY PANEL of a manufactured product. The card used to cite "Requirements for cannabis goods" at cannabis.ca.gov/licensees/requirements-cannabis-goods — THAT PAGE IS GONE (404 on 30 October 2026, as is the whole /licensees/requirements-cannabis-goods path), so the source row now names the regulation sections, which is where the rule actually lives.
-//   [4] *** METRC, AND THE ONE SENTENCE STEP 12 COULD NOT CONFIRM — LEFT AS IT IS, FOR THE OWNER. *** The card says "Every batch is tracked in Metrc from the first one, so the account-manager training comes before you make anything." The first half checks out: §15047.2(a), "A licensee shall create and maintain an account within the track and trace system" "prior to engaging in any commercial cannabis activity". The second half does not: §15048(b) gives the account manager until "No later than 10 calendar days after license issuance" to "Complete new user system training provided by the Department" — AFTER issuance, not before anything is made. (Other system users are the other way round: §15048.1(a)(1), trained "before the users are permitted to access the track and trace system".) The cited source is gone too: cannabis.ca.gov/wp-content/uploads/sites/2/2022/04/Track-and-Trace_System_5-Steps.pdf is a 404 and the live page, https://www.cannabis.ca.gov/licensees/track-and-trace/, says nothing about training at all. Step 12 reports this and changes NOTHING here: the words and the source row are the owner's to settle. The nearest true sentence is the account, not the training.
+//   [4] THE ACCOUNT BEFORE ANY COMMERCIAL ACTIVITY — 4 CCR §15047.2(a), the same DCC text as [2] and [3], read 30 October 2026: "A licensee shall create and maintain an account within the track and trace system" "prior to engaging in any commercial cannabis activity". That is what the card's fourth sentence now says.
+//   AND WHY THE SENTENCE THAT STOOD HERE UNTIL STEP 12b WAS DROPPED (30 October 2026), so nobody writes it again: it read "…so the account-manager training comes before you make anything", and §15048(b) gives the designated account manager until "No later than 10 calendar days after license issuance" to "Complete new user system training provided by the Department" — AFTER issuance, not before anything is made. (Other system users are the other way round: §15048.1(a)(1), trained "before the users are permitted to access the track and trace system".) The source row went with it: it cited https://www.cannabis.ca.gov/wp-content/uploads/sites/2/2022/04/Track-and-Trace_System_5-Steps.pdf, which DOES say access is withheld until the training is done — but it is a process page describing how the Department runs it, not the rule, and it is a 404 today. The regulation is the citation; the live process page is https://www.cannabis.ca.gov/licensees/track-and-trace/ and says nothing about training at all.
 // Everything on this card is live today; this panel waits on no gate item.
 /**
  * PANEL 3a — A QUESTION. Public pages step 18 (`docs/PUBLIC-PAGES-PLAN.md` §4 row 3a,
@@ -78,8 +79,8 @@ const WORDS = {
     { text: ', in child‑resistant packaging with the universal symbol on the front', mark: 3 },
     {
       text:
-        '. Every batch is tracked in Metrc from the first one, so the account‑manager training ' +
-        'comes before you make anything',
+        '. Every batch is tracked in Metrc from the first one, and the account has to exist ' +
+        'before any commercial cannabis activity',
       mark: 4,
     },
     { text: '.', mark: null },
@@ -88,7 +89,7 @@ const WORDS = {
     { n: 1, host: 'ca.gov', title: 'Apply for a cannabis license' },
     { n: 2, host: 'cannabis.ca.gov', title: 'DCC regulations, 4 CCR §17304' },
     { n: 3, host: 'cannabis.ca.gov', title: 'DCC regulations, 4 CCR §17410 and §17412' },
-    { n: 4, host: 'cannabis.ca.gov', title: 'Track and Trace, five steps' },
+    { n: 4, host: 'cannabis.ca.gov', title: 'DCC regulations, 4 CCR §15047.2' },
   ],
   askedAgain: 'Does the 100 mg cap apply to our medical customers too?',
   answerAgain: [

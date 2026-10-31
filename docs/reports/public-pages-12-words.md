@@ -13,6 +13,7 @@ over.
 
 **One thing in this report needs the owner and was deliberately NOT changed:** the fourth sentence
 of the question panel's answer (Metrc and the account-manager training). It is §B.1 [4].
+**Settled the same day — see §G, step 12b, at the end of this report.**
 
 ---
 
@@ -482,4 +483,74 @@ outside is new and one-way: `Hero.tsx` now reads `TRIAL_DAYS` from `lib/billing.
 nothing there. No app screen, no prompt, no route and no test was touched; `npm run check` is green
 and `/preview-home` is still static.
 
-**Left for the owner:** §B.1 [4], the Metrc sentence and its source row.
+**Left for the owner:** §B.1 [4], the Metrc sentence and its source row. **Answered — §G below.**
+
+---
+
+## G. Step 12b — §B.1 [4] resolved
+
+**30 October 2026, the owner, the same day.** `components/home/QuestionPanel.tsx` only.
+
+**The sentence.** The fourth span of the answer was
+
+> ". Every batch is tracked in Metrc from the first one, so the account-manager training comes
+> before you make anything"
+
+and is now
+
+> ". Every batch is tracked in Metrc from the first one, and the account has to exist before any
+> commercial cannabis activity"
+
+which is §15047.2(a) in the product's voice: *"A licensee shall create and maintain an account
+within the track and trace system" "prior to engaging in any commercial cannabis activity."* The
+marker stays 4.
+
+**The source.** Row 4 was "cannabis.ca.gov · Track and Trace, five steps" and is now
+**"cannabis.ca.gov · DCC regulations, 4 CCR §15047.2"** — the same DCC text the card's rows [2] and
+[3] already cite, at
+<https://www.cannabis.ca.gov/cannabis-laws/dcc-regulations/text-of-regulations/>.
+
+**A correction to what §B.1 [4] said about the PDF.** That section recorded the five-steps PDF,
+`cannabis.ca.gov/wp-content/uploads/sites/2/2022/04/Track-and-Trace_System_5-Steps.pdf`, only as a
+404, and reported that the live track-and-trace page says nothing about training. The owner's
+reading of the PDF is that it **does** say access is withheld until the training is done — so the
+old sentence was not invented. What it was is the wrong kind of source: a **process page**
+describing how the Department runs the system, not the rule. The rule is §15048(b), which gives the
+designated account manager until *"No later than 10 calendar days after license issuance"* to
+*"Complete new user system training provided by the Department"* — after issuance, not before
+anything is made. (Other system users are the other way round: §15048.1(a)(1), trained *"before the
+users are permitted to access the track and trace system"*.) Both facts are now in the file's own
+note so the sentence is not written again from the process page.
+
+**Checks.** `npm run check` exit 0, tests 2063, suites 510, pass 2063, fail 0; `/preview-home`
+still `○ (Static)`.
+
+### G.1 Measured, and the sentence costs nothing
+
+The new sentence is about ten characters longer, so the question was whether the answer takes an
+extra line and pushes the card past its section. **It does not — every section height is identical
+to the step 12 run, to the pixel:**
+
+```
+  1440:  title x=120 · wordmark x=120
+         workspace 926px (viewport 900px, at least a screen)  top y=2700   — step 12: 926px, y=2700
+         overflow: scrollWidth 1425 − clientWidth 1425 = 0px
+  1280:  title x=120 · wordmark x=120
+         workspace 926px  top y=2700                                       — step 12: 926px, y=2700
+         overflow: scrollWidth 1265 − clientWidth 1265 = 0px
+   390:  title x=16  · wordmark x=16
+         workspace 1617px  top y=3487                                      — step 12: 1617px, y=3487
+         overflow: scrollWidth 375 − clientWidth 375 = 0px
+  BLOCKED (0) on every run — no paid route and no write was attempted
+```
+
+Every other section is unchanged too (hero 900, audit 900, binder 900, checklist 930, documents
+900, calendar 900, hr 900, start 900 at the two laptop widths), which is the same statement from
+the other end: nothing below the question panel moved.
+
+Read off `shots/pp-12b-question-1440.png`: the first answer is still six lines, ending
+"…and the account has to exist before any commercial cannabis activity⁴."; the source block's
+fourth row reads "cannabis.ca.gov · DCC regulations, 4 CCR §15047.2 · official"; the card's bottom
+edge is inside the section with the waves below it, as before. `shots/pp-12b-question-1280.png` and
+`-390.png` are the other two widths; at 390 the bubble still sits at its 88% and the card runs the
+full width of the page inside a section that did not change height.
