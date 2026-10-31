@@ -1,5 +1,9 @@
 // GATE — chat over documents (docs/PUBLIC-PAGES-PLAN.md §5, no PENDING id yet): the typed question in the box waits on it; the report itself is live today. Walked at step 33.
-// SAMPLE TEXT — the plan, the gap wording and the address are in the product's voice and are replaced at step 12 by a real reading. The three gaps are the RULE's own elements, read at https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 on 30 October 2026: (c)(4) procedures to account for all employees after evacuation; (c)(6) the names or job titles of persons to contact; (d) an employee alarm system with a distinctive signal for each purpose. The freshness line is the product's own nudge (docs/VISION-DOCUMENTS.md, "Freshness has two clocks").
+// SAMPLE TEXT — the plan, the gap wording and the address are in the product's voice and stay sample (§2 rule 2, as narrowed on 30 Oct). The three gaps are the RULE's own elements and step 12 read them again, word for word, at https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 on 30 October 2026 — 1910.38, "Emergency action plans.":
+//   · (c)(4) "Procedures to account for all employees after evacuation;"
+//   · (c)(6) "The name or job title of every employee who may be contacted by employees who need more information about the plan or an explanation of their duties under the plan."
+//   · (d) "An employer must have and maintain an employee alarm system. The employee alarm system must use a distinctive signal for each purpose and comply with the requirements in § 1910.165."
+// The freshness line is the product's own nudge (docs/VISION-DOCUMENTS.md, "Freshness has two clocks").
 // AND THE FRESHNESS LINE THAT SENTENCE NAMES IS NOT ON THE CARD — the owner's follow-up to step 20 removed it and moved the document's date forward: a plan revised last year gets no nudge. The reference above is kept because the nudge is still the product's and a later scene may want it.
 /**
  * PANEL 4 — DOCUMENTS. Public pages step 20 (`docs/PUBLIC-PAGES-PLAN.md` §4 row 4, decisions 5
@@ -7,14 +11,26 @@
  * box carries a file chip above the question — `components/home/AskBox.tsx`'s `file` prop, added
  * for this panel and passed by no other.
  *
- * *** THE WORDS ARE THE REPORT'S OWN WHERE THE REPORT HAS THEM. *** "needs work" is
- * `lib/documentStatus.ts:16`; "3 gaps" is what the report's own header prints
- * (`components/DocumentReport.tsx:574`); "Make a checklist for all 3 gaps" is that button's exact
- * string (`:418`); "Confirm" and "Not right" are the pair the product uses for a fact it wants
- * checked (`components/DocumentReport.tsx:956`–`:958`, and `lib/calendarQueue.ts:84`–`:85`,
- * where the comment says neither word is negotiable). One is NOT the product's: the app says
- * "Draft this section" (`components/DocumentReport.tsx:761`) and this card says "Draft section
- * 4", because on a card with no gap selected "this" has no referent. Step 12 settles it.
+ * *** THE WORDS ARE THE REPORT'S OWN WHERE THE REPORT HAS THEM. *** "Needs work" is
+ * `lib/documentStatus.ts:16` and `components/DocumentReport.tsx:97`; "3 gaps" is what the
+ * report's own header prints (`components/DocumentReport.tsx:574`); "Make a checklist for all 3
+ * gaps" is that button's exact string (`:418`); "Confirm" and "Not right" are the pair the
+ * product uses for a fact it wants checked (`components/DocumentReport.tsx:956`–`:958`, and
+ * `lib/calendarQueue.ts:84`–`:85`, where the comment says neither word is negotiable).
+ *
+ * *** AND STEP 12 (30 October 2026) FIXED THE FOUR THAT WERE NOT. ***
+ *   · the pill was "needs work"; the product writes **"Needs work"**, in all three places it
+ *     prints it (above, and `components/AuditReport.tsx:37`);
+ *   · the footer's second word was "Print"; the report's one control is **"Download"**
+ *     (`components/DocumentReport.tsx:454`–`:455`, `printDrawer` under that word) and there is no
+ *     "Print" on a document report at all;
+ *   · "Draft section 4" is now **"Draft this section"**, the app's exact string
+ *     (`components/DocumentReport.tsx:761`). The old note argued that "this" has no referent on a
+ *     card with no gap selected; it sits under three numbered gaps, which is referent enough, and
+ *     §2 rule 2 asks for the product's word rather than a better one;
+ *   · the box's attach line was "Drop a file, or a whole folder", which the product never says.
+ *     Its two controls are **"Add files"** (`app/documents/page.tsx:855`) and **"Add a folder"**
+ *     (`:859`), and the line now uses them.
  *
  * Grey, because the checklist before it is white (decision 6).
  */
@@ -32,14 +48,14 @@ const WORDS = {
   headline: 'Nobody has opened this plan since 2025.',
   file: { name: 'Emergency-Action-Plan-2025.pdf', meta: '· 9 pages' },
   typed: 'What’s wrong with this plan?',
-  attach: 'Drop a file, or a whole folder',
+  attach: 'Add files, or a whole folder',
   under:
     'It says what the document is, what is wrong with it against the rule it is written to, ' +
     'each gap with its fix, and every date it sets. Then it asks you to confirm what it found.',
   card: {
     title: 'Emergency Action Plan',
     meta: 'program · OSHA · revised February 2025 · read 30 October 2026 · sample company',
-    pill: 'needs work',
+    pill: 'Needs work',
     gapCount: '3 gaps',
     summary:
       'A written emergency action plan for one building. Most of it still holds; three things ' +
@@ -50,8 +66,8 @@ const WORDS = {
     confirm: 'Confirm',
     notRight: 'Not right',
     checklist: 'Make a checklist for all 3 gaps',
-    draft: 'Draft section 4',
-    print: 'Print',
+    draft: 'Draft this section',
+    print: 'Download',
   },
   gaps: [
     {

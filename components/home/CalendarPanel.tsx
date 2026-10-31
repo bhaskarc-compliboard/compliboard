@@ -1,5 +1,8 @@
 // GATE S1 (the Resend sending domain, docs/PUBLIC-PAGES-PLAN.md §5) — "everyone gets the month by email on the 1st" is the only line on this card that waits on anything. The box itself does not: Calendar was the shared chat's first customer (decision 28) and its Ask is live today. Walked at step 33.
-// SAMPLE TEXT — the six dates are a sample company's and are replaced at step 12 by a real run. The THREE RULE ROWS were checked on 30 October 2026 and are not sample: the biennial update's month is the last digit of the USDOT number and its year the next-to-last digit, odd or even (https://www.fmcsa.dot.gov/registration/updating-your-registration) — 3841713 ends in 3, and 1 is odd, so March of an odd year; the Clearinghouse query on every driver is yearly, 49 CFR 382.701(b); an IFTA return is due the last day of the month after the quarter, so the first quarter falls on 30 April.
+// SAMPLE TEXT — the six dates are a sample company's and stay sample (§2 rule 2, as narrowed on 30 Oct). The THREE RULE ROWS are not sample and step 12 read all three again on 30 October 2026, two of them at a BETTER PAGE than the first pass used:
+//   · THE BIENNIAL UPDATE'S MONTH AND YEAR are 49 CFR 390.19(b)(2) and (b)(3), read at https://www.ecfr.gov/current/title-49/subtitle-B/chapter-III/subchapter-B/part-390/subpart-B/section-390.19 — (b)(2) is the table that turns the LAST digit of the USDOT number into the month ("1" → January, "0" → October), (b)(3) the rule that the NEXT-TO-LAST digit decides the year, odd digit in odd years and even in even. USDOT 3841713 ends in 3 and its next-to-last digit is 1, so March of an odd year, and 2027 is odd. The row's own source line still names fmcsa.dot.gov, which is the agency and carries the same schedule; the regulation is recorded here because https://www.fmcsa.dot.gov/registration/updating-your-registration answered 403 to every attempt from this machine on 30 October 2026 and a fact nobody could open is not a fact that was checked.
+//   · THE CLEARINGHOUSE QUERY is 49 CFR 382.701(b)(1), read at https://www.ecfr.gov/current/title-49/subtitle-B/chapter-III/subchapter-B/part-382/subpart-G/section-382.701: "Employers must conduct a query of the Clearinghouse at least once per year" "for information for all employees subject to controlled substance and alcohol testing under this part". Yearly, every driver — which is what the row says.
+//   · THE IFTA RETURN is the last day of the month after the quarter, and Georgia's own table says the date rather than the rule: https://dor.georgia.gov/ifta-due-dates, "1ST QTR 2027" | "4/30/2027" — the row's own date, read off the agency's page.
 // *** THE PILL AND THE BUTTON ARE THE PRODUCT'S WORDS, AND BOTH DIFFER FROM THE BOARD. ***
 //   · The board's "to confirm" is drawn here as "not confirmed", which is what the product prints
 //     on a row for a date nobody has confirmed: `NOT_CONFIRMED` in `lib/calendarView.ts:191`, put
@@ -15,7 +18,12 @@
 //     to use: a confirmed row says nothing about its state, because `metaParts` pushes the state
 //     only when there is something to say (`lib/calendarView.ts:280`–`:284`). The pill column
 //     needs both halves or the rows read as ragged, so the board's word stands. Named in the
-//     report.
+//     report, and named again at step 12, which left it alone for the same reason.
+//   · AND STEP 12 LENGTHENED ONE LINE: "Google · Outlook" is now "Google Calendar · Outlook",
+//     because that is what the sheet calls them — `components/SendCalendarSheet.tsx:99`,
+//     "Google Calendar", under the title "Keep this calendar in Google or Outlook" (`:90`).
+//     The app's tab also carries a "Print" beside Send (`app/calendar/page.tsx:777`) that this
+//     card does not draw; a word the card leaves out is not a word it gets wrong.
 /**
  * PANEL 5 — THE CALENDAR. Public pages step 21 (`docs/PUBLIC-PAGES-PLAN.md` §4 row 5, decisions
  * 5 and 10). The hero's third line points here (`#calendar`).
@@ -53,7 +61,7 @@ const WORDS = {
     title: 'Due in the next 90 days',
     meta: '6 dates · 2 to confirm · from 3 documents and 3 rules · sample company',
     send: 'Send to your calendar',
-    apps: 'Google · Outlook',
+    apps: 'Google Calendar · Outlook',
     email: 'everyone gets the month by email on the 1st',
     confirmed: 'confirmed',
     open: 'not confirmed',

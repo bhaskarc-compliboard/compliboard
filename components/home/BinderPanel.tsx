@@ -13,9 +13,17 @@
  *
  * White, not grey: the panels alternate (decision 6), and the audit before it is grey.
  *
- * *** NOTHING IN THE CARD IS CLICKABLE, as in AuditPanel. *** "report", "add", "Print" and the
- * download button are <span>s wearing link and button clothes, because the page draws the app,
- * it does not pretend to be it. `components/home/AskBox.tsx` says the same about the box.
+ * *** NOTHING IN THE CARD IS CLICKABLE, as in AuditPanel. *** "report", "Add a document",
+ * "Print" and the download button are <span>s wearing link and button clothes, because the page
+ * draws the app, it does not pretend to be it. `components/home/AskBox.tsx` says the same about
+ * the box.
+ *
+ * STEP 12 CARRIED AuditPanel's TWO WORD FIXES ACROSS, because the tabs are that card's rows with
+ * a reference added: the pill is **"Needs work"**, the product's own case
+ * (`lib/documentStatus.ts:16`; the long version of why a document's word is on an audit row is in
+ * `AuditPanel.tsx`'s header), and the link on the tab with nothing behind it is
+ * **"Add a document"** (`components/AuditReport.tsx:233`). The other three pills keep the audits
+ * vocabulary's lower case.
  */
 import Frame from './Frame'
 import AskBox from './AskBox'
@@ -43,7 +51,7 @@ const WORDS = {
     print: 'Print',
     format: 'PDF · 96 pages',
     report: 'report',
-    add: 'add',
+    add: 'Add a document',
   },
   tabs: [
     {
@@ -65,7 +73,7 @@ const WORDS = {
       line:
         'Allergen Control Procedure, 2025 · 6 pages · names no one who checks the labels. ' +
         'Add a name in section 3.',
-      pill: 'needs work',
+      pill: 'Needs work',
       link: 'report',
     },
     {
@@ -86,7 +94,7 @@ const WORDS = {
       lead: null,
       line: 'The tab is left in and says so. Add the plan and the binder updates.',
       pill: 'nothing on file',
-      link: 'add',
+      link: 'Add a document',
     },
   ],
 }

@@ -25,6 +25,7 @@
  * they are written now rather than wired later and forgotten.
  */
 import { PRIMARY_LARGE } from '@/components/buttonStyles'
+import { TRIAL_DAYS } from '@/lib/billing'
 import { EDGES } from './Frame'
 import Waves from './Waves'
 
@@ -39,8 +40,19 @@ import Waves from './Waves'
 export const GROUND = 'linear-gradient(120deg, #FFFFFF 0%, #F6FBF7 50%, var(--green-wash) 100%)'
 /** Where both Start buttons go. */
 export const START_HREF = '/signup'
-/** The line beside both Start buttons. */
-export const SMALL_PRINT = '14 days. No card.'
+/**
+ * The line beside both Start buttons, with the trial's length READ rather than typed.
+ * `TRIAL_DAYS` is `lib/billing.ts:53`, the one place the number lives — the SQL default on
+ * `companies.trial_ends_at` is the same number and migration 087's check 10 is what stops the
+ * two drifting. The price on the closing panel is read from `lib/billingView.ts` for the same
+ * reason (step 24); the trial was still a literal until step 12 noticed. `lib/billing.ts`
+ * imports nothing at all, so nothing travels with it.
+ *
+ * "No card" is the other half and is a fact about the trial, not a number: a company with no
+ * card is a normal, working state for the whole of it (`lib/billingView.ts:490`, "No card yet",
+ * and `lib/billing.ts:130`, where the trial is consulted before anything else is).
+ */
+export const SMALL_PRINT = `${TRIAL_DAYS} days. No card.`
 
 /**
  * THE WAVES ARE THE WHOLE SECTION, NOT A STRIP ALONG THE BOTTOM (step 15c). The board's bands

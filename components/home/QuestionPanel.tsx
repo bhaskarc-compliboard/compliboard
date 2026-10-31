@@ -1,4 +1,8 @@
-// SAMPLE TEXT — the answers are written in the product's voice and are replaced at step 12 by words from a real run. The four FACTS were checked at the source on 30 October 2026 and are not sample: local permits before the DCC licence (https://www.ca.gov/departments/100/services/1281/); 10 mg a serving, 100 mg a package, 500 mg medicinal exception for orally dissolving products (4 CCR §17304, read at https://law.cornell.edu/regulations/california/4-CCR-17304); child-resistant packaging and the universal symbol on the primary panel (https://cannabis.ca.gov/licensees/requirements-cannabis-goods); CCTT runs on Metrc and every licensee uses it after the account-manager training (https://cannabis.ca.gov/wp-content/uploads/sites/2/2022/04/Track-and-Trace_System_5-Steps.pdf). Step 12 confirms the real run cites the DCC's own copy of §17304, not Cornell's.
+// SAMPLE TEXT — the answers are written in the product's voice and stay sample (§2 rule 2, as narrowed on 30 Oct). The four FACTS are not sample and were read again at the agencies' own pages on 30 October 2026, at step 12. Three of the four stand; the fourth does not, and is marked below.
+//   [1] LOCAL FIRST, THEN THE STATE — https://www.ca.gov/departments/100/services/1281/, "Apply for a cannabis license": "To get started, applicants must first secure local permits, gather necessary documents, and apply for a DCC license". The page's title is "Apply for a cannabis license"; the card said "Applying for" and now says the title.
+//   [2] 10 mg / 100 mg / 500 mg — 4 CCR §17304, read at the DCC's OWN copy, https://www.cannabis.ca.gov/cannabis-laws/dcc-regulations/text-of-regulations/: (a) not more than "10 milligrams THC per serving" or "100 milligrams THC per package"; (b) "up to 500 milligrams THC per package" for an orally dissolving product where each piece holds no more than 10 mg, it is labelled "FOR MEDICAL USE ONLY" and it is sold only to medicinal-use patients. That answers the question the first draft of this note left open: the real run can cite the DCC's own text, and this is its address.
+//   [3] CHILD-RESISTANT, AND THE SYMBOL ON THE FRONT — the same DCC text: §17412(a)(1), an edible's package "shall be child-resistant for the life of the product"; §17410, the universal symbol's design and size; §17404(a)(2), which puts "The universal symbol as described in section 17410" on the PRIMARY PANEL of a manufactured product. The card used to cite "Requirements for cannabis goods" at cannabis.ca.gov/licensees/requirements-cannabis-goods — THAT PAGE IS GONE (404 on 30 October 2026, as is the whole /licensees/requirements-cannabis-goods path), so the source row now names the regulation sections, which is where the rule actually lives.
+//   [4] *** METRC, AND THE ONE SENTENCE STEP 12 COULD NOT CONFIRM — LEFT AS IT IS, FOR THE OWNER. *** The card says "Every batch is tracked in Metrc from the first one, so the account-manager training comes before you make anything." The first half checks out: §15047.2(a), "A licensee shall create and maintain an account within the track and trace system" "prior to engaging in any commercial cannabis activity". The second half does not: §15048(b) gives the account manager until "No later than 10 calendar days after license issuance" to "Complete new user system training provided by the Department" — AFTER issuance, not before anything is made. (Other system users are the other way round: §15048.1(a)(1), trained "before the users are permitted to access the track and trace system".) The cited source is gone too: cannabis.ca.gov/wp-content/uploads/sites/2/2022/04/Track-and-Trace_System_5-Steps.pdf is a 404 and the live page, https://www.cannabis.ca.gov/licensees/track-and-trace/, says nothing about training at all. Step 12 reports this and changes NOTHING here: the words and the source row are the owner's to settle. The nearest true sentence is the account, not the training.
 // Everything on this card is live today; this panel waits on no gate item.
 /**
  * PANEL 3a — A QUESTION. Public pages step 18 (`docs/PUBLIC-PAGES-PLAN.md` §4 row 3a,
@@ -18,6 +22,14 @@
  * in .gov, so all four sources carry the word the product itself would give them. A source the
  * product calls "other" is never hidden; it is shown with the line that says so
  * (`OTHER_SOURCE_LINE`), and this scene simply has none.
+ *
+ * *** THE FOOTER'S TWO WORDS, AFTER STEP 12. *** "Make a checklist" is the box's own second
+ * button, word for word (`app/compliance/page.tsx:1328`). "Summarise" was the page's shortening
+ * and is now **"Summarise this conversation"**, which is what the conversation's own control says
+ * (`app/compliance/page.tsx:1280`). The app's third control there is "Download"
+ * (`:1285`) and the checklist button in that row is "Turn this into a checklist" (`:1276`) — a
+ * card showing a conversation could carry either pair; this one carries the box's words because
+ * the panel's left-hand side is the box.
  *
  * Grey, because the binder before it is white (decision 6, the panels alternate).
  */
@@ -48,7 +60,7 @@ const WORDS = {
     kicker: 'Conversation',
     meta: 'started today · sample company',
     checklist: 'Make a checklist',
-    summarise: 'Summarise',
+    summarise: 'Summarise this conversation',
     count: '2 of 2 answers · 4 sources',
     label: 'official',
   },
@@ -73,9 +85,9 @@ const WORDS = {
     { text: '.', mark: null },
   ] as Span[],
   sources: [
-    { n: 1, host: 'ca.gov', title: 'Applying for a cannabis license' },
+    { n: 1, host: 'ca.gov', title: 'Apply for a cannabis license' },
     { n: 2, host: 'cannabis.ca.gov', title: 'DCC regulations, 4 CCR §17304' },
-    { n: 3, host: 'cannabis.ca.gov', title: 'Requirements for cannabis goods' },
+    { n: 3, host: 'cannabis.ca.gov', title: 'DCC regulations, 4 CCR §17410 and §17412' },
     { n: 4, host: 'cannabis.ca.gov', title: 'Track and Trace, five steps' },
   ],
   askedAgain: 'Does the 100 mg cap apply to our medical customers too?',

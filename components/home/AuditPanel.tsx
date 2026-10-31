@@ -8,11 +8,31 @@
  * own words, with the box they typed it into, and on the right what the product gives back, drawn
  * in code with the app's own tokens (decision 5 — screenshots never read clean).
  *
- * *** THE FOUR PILLS ARE THE PRODUCT'S WORDS, NOT THE PAGE'S (§2 rule 2). *** "needs work" is
- * `lib/documentStatus.ts:16`; "out of date" and "nothing on file" are what the Audits page prints
- * for `stale` and `nothing_on_file` (`app/audits/page.tsx:88`–`:89`, and the same pair again at
- * `components/AuditReport.tsx:103`–`:104`); "on file" is `lib/documentStatus.ts:23`. The four
- * words the run itself is allowed to use are `lib/auditRun.ts:827`.
+ * *** THE FOUR PILLS ARE THE PRODUCT'S WORDS, NOT THE PAGE'S (§2 rule 2) — AND THEY COME FROM
+ * TWO VOCABULARIES, WHICH IS THE APP'S OWN DOING. *** Corrected at step 12, 30 October 2026.
+ *
+ * Three of them are AUDIT words, the four a run is allowed to use (`lib/auditRun.ts:827`;
+ * `prompts/audit-agency.ts:95` says "one of these four and no other"), printed lower case:
+ * "on file", "out of date" (`stale`) and "nothing on file" are `app/audits/page.tsx:88`–`:89`
+ * and the same map again at `components/AuditReport.tsx:103`–`:105`.
+ *
+ * "Needs work" is NOT one of those four. It is a DOCUMENT's status
+ * (`lib/documentStatus.ts:16`), and it belongs on an audit row because the audit report itself
+ * puts it there: `components/AuditReport.tsx:268`–`:272` prints a finding's document's own
+ * `display_status` beside its title, through the map at `:36`–`:40`, under the comment at `:29`
+ * — "Documents' own words for a status, so the audit does not invent a second vocabulary for
+ * them." So a row CAN carry it, and this card's amber row does.
+ *
+ * What step 12 changed is the CASE: this file wrote "needs work", and every place the product
+ * prints it writes **"Needs work"** (`lib/documentStatus.ts:16`, `components/DocumentReport.tsx:97`,
+ * `components/AuditReport.tsx:37`). The other three stay lower case because that is how the
+ * audits vocabulary prints them. The mixed case on this card is the app's mixed case, not the
+ * page's invention — and that is the reason to keep it rather than tidy it.
+ *
+ * The missing row's link was "add" and is now **"Add a document"**, the report's own words for
+ * exactly that affordance (`components/AuditReport.tsx:233`). "report" at the end of the three
+ * held rows has no product string behind it — the app opens the document from its title — and is
+ * named in the step 12 report as one of the card's own two words.
  *
  * *** AND NOTHING IN THE CARD IS CLICKABLE, ON PURPOSE. *** "report", "add", "Print", "Audit
  * again" and the binder button are <span>s wearing link and button clothes. They are a drawing of
@@ -47,14 +67,14 @@ const WORDS = {
     missingLabel: 'Nothing on file',
     missingCount: '1',
     report: 'report',
-    add: 'add',
+    add: 'Add a document',
     binder: 'Download the binder',
     print: 'Print',
     again: 'Audit again',
   },
   rows: [
     {
-      pill: 'needs work',
+      pill: 'Needs work',
       tone: 'amber' as const,
       title: 'Hazardous Waste Contingency Plan',
       lead: null,

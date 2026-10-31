@@ -1,4 +1,7 @@
-// SAMPLE TEXT — the item wording is in the product's voice and is replaced at step 12 by a real run. The RULES are not sample; both were read at the text on 30 October 2026: 42 CFR 418.76 (https://www.law.cornell.edu/cfr/text/42/418.76 — (b)(c) 75 hours and the competency evaluation before care; (d) 12 in-service hours per 12 months; (g) the RN writes the aide's patient care instructions; (h) an RN home visit at least every 14 days and an annual observation of each aide) and OAR 333-035-0210 (https://www.law.cornell.edu/regulations/oregon/Or-Admin-Code-SS-333-035-0210 — the check and fitness determination before employment, every three years; (8) licensed professionals exempt). Step 12 confirms the real run cites ecfr.gov and sos.oregon.gov rather than Cornell, and decides whether a checklist item prints the citation (as drawn) or the host, as the app's one-line source does.
+// SAMPLE TEXT — the item wording is in the product's voice and stays sample (§2 rule 2, as narrowed on 30 Oct: the industries rotate, so there is no one fixture to run). The RULES are not sample and were read again at the AGENCIES' OWN TEXT on 30 October 2026, which is the change step 12 made to this note — the first draft cited Cornell for both:
+//   · 42 CFR 418.76, "Condition of participation: Hospice aide and homemaker services", https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-418/subpart-C/section-418.76 — (b) "Classroom and supervised practical training combined must total at least 75 hours" with "A minimum of 16 hours of classroom training must precede" the practical part; (c) an aide may furnish services "only after" the competency evaluation; (h) an on-site visit "No less frequently than every 14 days" and an annual on-site observation of each aide.
+//   · OAR 333-035-0210, "Criminal Records Check", Division 35 (Hospice Program Licensure), https://secure.sos.state.or.us/oard/viewSingleRule.action?ruleVrsnRsn=298768, last amended 27 January 2023 — section (2): the program "must conduct a criminal records check on a subject individual and make a fitness determination prior to employment"; section (10): "a criminal records check is performed on a SI every three years"; section (8): "a hospice program is not required to complete a background check on" a subject individual licensed by a health professional regulatory board (ORS 676.160) or a contractor whose own employer has run one. (The rule was renumbered from 333-035-0060 by PH 204-2022, which is why a search for the old number still finds it.)
+// AND (g) IS GONE WITH THE THIRD MUST-DO (the owner, step 12): the card is four items, so the RN writing each patient's care instructions — 418.76(g), true and checked — is simply not one of the four any more. Nothing on the card cites it.
 // Everything on this card is live today; this panel waits on no gate item.
 /**
  * PANEL 3b — THE CHECKLIST. Public pages step 19 (`docs/PUBLIC-PAGES-PLAN.md` §4 row 3b,
@@ -9,18 +12,27 @@
  * `:27` is Must do (numbered, "in the order to do them · N"), Worth doing ("advice, not a legal
  * rule · N") and To confirm ("open questions · N"), in that order, and an empty group is not
  * shown. The titles here are those titles. The hints are SHORTER than the product's — "Must do,
- * in order · 3" rather than "Must do / in the order to do them · 3" — because the card is the
- * app at about two-thirds and the app prints the hint in its own column on the right. Step 12
- * decides whether the page should print the product's hint exactly; the same question is raised
- * in the SAMPLE TEXT note above about the citation line, and the same answer should serve both.
- * The header's "1 of 6 done" is the same kind of shortening: the app says "1 of 6 must-dos done"
- * (`mustDoLabel`, `lib/checklistView.ts:74`), and counts Must do only.
+ * in order · 2" rather than "Must do / in the order to do them · 2" — because the card is the
+ * app at about two-thirds and the app prints the hint in its own column on the right.
+ *
+ * *** THE SHORTENINGS ARE THE OWNER'S, DECIDED AT STEP 12 (30 October 2026). *** This note used
+ * to say step 12 would decide whether to print the product's hint exactly. It decided not to: the
+ * step 12 instruction writes the three counts out as "Must do, in order · 2", "Worth doing · 1",
+ * "To confirm · 1" and the header as "1 of 4 done". So both shortenings stand and neither is an
+ * accident. The one to remember is the header's, because it is not only shorter but counts
+ * something else: the app's "1 of 2 must-dos done" (`mustDoLabel`, `lib/checklistView.ts:74`)
+ * counts MUST DO ONLY, and "1 of 4 done" counts all four items — as the bar below it does.
  *
  * *** EVERY BOX AT ONE X, WHICH IS THE WHOLE REASON THE ROW IS A GRID. *** `DESIGN.md` §4, and
  * `app/compliance/page.tsx:1540` says it in the app's own words: "the checkbox is the first child
  * at a fixed size, so every one sits at the same x and every text block indents to the same left
  * margin." A 20px first column does that here whatever the row holds — a wash, an opened block of
  * steps, or nothing.
+ *
+ * FOUR ITEMS, NOT SIX (the owner, step 12). The card was too long beside the panel's own words —
+ * `docs/PUBLIC-PAGES-PLAN.md` §6 step 6 carries the note — so one must-do and one piece of advice
+ * came off. What is left is still every group the view has and still one item opened, which is
+ * the whole argument of the panel: the steps, each with the page it came from.
  *
  * White, because the question panel before it is grey (decision 6).
  */
@@ -45,16 +57,18 @@ const WORDS = {
     'steps, each with the page it came from.',
   card: {
     kicker: 'Checklist',
-    progress: '1 of 6 done · sample company',
+    progress: '1 of 4 done · sample company',
     title: 'Before two new aides make their first visit',
     howTo: 'How do I do this?',
-    print: 'Print',
+    /** The app's ONE control on a checklist: `app/compliance/page.tsx:1523`, `printDrawer` under the
+     *  word "Download". There is no "Print" on a checklist, which is what this card drew until
+     *  step 12. */
     download: 'Download',
     count: 'from the conversation · 2 sources',
   },
   groups: {
-    must: 'Must do, in order · 3',
-    worth: 'Worth doing · 2',
+    must: 'Must do, in order · 2',
+    worth: 'Worth doing · 1',
     confirm: 'To confirm · 1',
   },
   items: {
@@ -75,10 +89,6 @@ const WORDS = {
         'File both in the aide’s record; the 12‑hour in‑service clock starts today.',
       ],
       source: 'ecfr.gov · official',
-    },
-    three: {
-      text: 'Have the supervising nurse write the care instructions for each patient the aide will see.',
-      note: '42 CFR 418.76(g)',
     },
     four: {
       text:
@@ -208,9 +218,9 @@ export default function ChecklistPanel() {
                 <p className="text-[12px] text-[var(--ink-soft)]">{WORDS.card.progress}</p>
               </div>
               <p className="mt-2 text-[18px] font-medium text-[var(--ink)]">{WORDS.card.title}</p>
-              {/* One of six, drawn rather than described. `w-1/6` is that fraction exactly. */}
+              {/* One of four, drawn rather than described. `w-1/4` is that fraction exactly. */}
               <div aria-hidden="true" className="mt-3 h-1 w-full rounded-sm bg-[var(--line)]">
-                <div className="h-full w-1/6 rounded-sm bg-[var(--green)]" />
+                <div className="h-full w-1/4 rounded-sm bg-[var(--green)]" />
               </div>
             </div>
 
@@ -239,12 +249,6 @@ export default function ChecklistPanel() {
                 </div>
               </Item>
 
-              <Item box="open" text={WORDS.items.three.text} note={WORDS.items.three.note}>
-                <p className="mt-1 text-[12px] font-medium text-[var(--green)]">
-                  {WORDS.card.howTo}
-                </p>
-              </Item>
-
               <GroupLabel text={WORDS.groups.worth} tone="grey" />
               <Item box="open" text={WORDS.items.four.text} small={WORDS.items.four.small} />
 
@@ -262,8 +266,7 @@ export default function ChecklistPanel() {
                 Below lg the count takes a row of its own. */}
             <div className={`${SIDES} pb-5`}>
               <div className="mt-[14px] flex flex-wrap items-center gap-[18px] border-t border-[var(--line)] pt-3">
-                <span className={`${PRIMARY_SMALL} pointer-events-none`}>{WORDS.card.print}</span>
-                <span className="text-[13px] text-[var(--ink-soft)]">{WORDS.card.download}</span>
+                <span className={`${PRIMARY_SMALL} pointer-events-none`}>{WORDS.card.download}</span>
                 <span className="w-full text-[13px] text-[var(--ink-soft)] lg:ml-auto lg:w-auto">
                   {WORDS.card.count}
                 </span>
