@@ -29,6 +29,44 @@ import { EDGES } from './Frame'
 import Waves from './Waves'
 
 /**
+ * *** THE GROUND, THE WAVES, THE BUTTON'S ADDRESS AND THE SMALL PRINT ARE EXPORTED FROM HERE. ***
+ * The closing panel (`components/home/Invite.tsx`, step 24) is the hero again at the other end of
+ * the page — decision 12: "The closing panel matches it." Two copies of a gradient is two
+ * gradients the day one of them is adjusted, and two copies of "14 days. No card." is two
+ * promises the day the trial changes. So they live once, here, where the hero was built, and the
+ * closing panel imports them.
+ */
+export const GROUND = 'linear-gradient(120deg, #FFFFFF 0%, #F6FBF7 50%, var(--green-wash) 100%)'
+/** Where both Start buttons go. */
+export const START_HREF = '/signup'
+/** The line beside both Start buttons. */
+export const SMALL_PRINT = '14 days. No card.'
+
+/**
+ * THE WAVES ARE THE WHOLE SECTION, NOT A STRIP ALONG THE BOTTOM (step 15c). The board's bands
+ * nest into the bottom-right corner and one of them reaches the top-right, so the drawing is
+ * sized to the section and cropped by its `overflow-hidden`, not fitted into a 150/320px box.
+ * The two sets are the same four bands drawn for the two shapes of screen: a 1440x900 curve
+ * squeezed into a 390-wide phone is not the same curve. Each is in its own wrapper so the display
+ * utility sits on a div and never argues with the svg's own `block`
+ * (`components/buttonStyles.ts` has the long version of why that matters).
+ *
+ * The caller's section must be `relative overflow-hidden`, which is what crops both sets.
+ */
+export function WavesLayer() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+      <div className="absolute inset-0 hidden lg:block">
+        <Waves full />
+      </div>
+      <div className="absolute inset-0 lg:hidden">
+        <Waves full phone />
+      </div>
+    </div>
+  )
+}
+
+/**
  * The four lines, in the order the panels come in. Each is one moment, in the words of the
  * person who does compliance on top of two other jobs (`PUBLIC-PAGES-PLAN.md` §4).
  */
@@ -44,25 +82,9 @@ export default function Hero() {
     <section
       data-public-section="hero"
       className="home-screen relative -mt-[72px] flex items-center overflow-hidden pt-[72px] pb-20 lg:pb-0"
-      style={{
-        background: 'linear-gradient(120deg, #FFFFFF 0%, #F6FBF7 50%, var(--green-wash) 100%)',
-      }}
+      style={{ background: GROUND }}
     >
-      {/* THE WAVES ARE THE WHOLE SECTION, NOT A STRIP ALONG THE BOTTOM (step 15c). The board's
-          bands nest into the bottom-right corner and one of them reaches the top-right, so the
-          drawing is sized to the section and cropped by its `overflow-hidden`, not fitted into a
-          150/320px box. The two sets are the same four bands drawn for the two shapes of screen:
-          a 1440x900 curve squeezed into a 390-wide phone is not the same curve. Each is in its
-          own wrapper so the display utility sits on a div and never argues with the svg's own
-          `block` (`components/buttonStyles.ts` has the long version of why that matters). */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 hidden lg:block">
-          <Waves full />
-        </div>
-        <div className="absolute inset-0 lg:hidden">
-          <Waves full phone />
-        </div>
-      </div>
+      <WavesLayer />
 
       {/* `relative z-10`: the words sit over the drawing. A positioned sibling would paint above
           an earlier one anyway, but the z-index says it rather than relying on source order. */}
@@ -102,10 +124,10 @@ export default function Hero() {
           {/* On a phone the button takes its own row and the small print sits under it; from
               1024px up they are one line, 18px apart. */}
           <div className="flex flex-col items-start gap-3 lg:flex-row lg:items-center lg:gap-[18px]">
-            <a href="/signup" className={PRIMARY_LARGE}>
+            <a href={START_HREF} className={PRIMARY_LARGE}>
               Start free
             </a>
-            <span className="text-[14px] text-[var(--ink-soft)]">14 days. No card.</span>
+            <span className="text-[14px] text-[var(--ink-soft)]">{SMALL_PRINT}</span>
           </div>
         </div>
       </div>

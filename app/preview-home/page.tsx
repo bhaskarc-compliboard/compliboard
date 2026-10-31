@@ -28,6 +28,7 @@ import ChecklistPanel from '@/components/home/ChecklistPanel'
 import DocumentsPanel from '@/components/home/DocumentsPanel'
 import CalendarPanel from '@/components/home/CalendarPanel'
 import HRPanel from '@/components/home/HRPanel'
+import Invite from '@/components/home/Invite'
 import Footer from '@/components/home/Footer'
 
 export const metadata: Metadata = {
@@ -39,9 +40,10 @@ export default function PreviewHomePage() {
   return (
     <main className="bg-[var(--surface)]" data-public-page="preview-home">
       <Nav />
-      {/* The panels, in the order of `docs/PUBLIC-PAGES-PLAN.md` §4. Steps 23 and 24 fill in
-          where we are and the invitation to trial. The tones alternate from here down —
-          documents grey, calendar white, HR grey (decision 6). */}
+      {/* The panels, in the order of `docs/PUBLIC-PAGES-PLAN.md` §4. Step 23 (where we are) is
+          struck, so the invitation closes the page. The tones alternate — documents grey,
+          calendar white, HR grey (decision 6) — and the closing panel is the hero's light ground
+          again (decision 12), which is why it carries no tone of its own. */}
       <Hero />
       <AuditPanel />
       <BinderPanel />
@@ -50,6 +52,7 @@ export default function PreviewHomePage() {
       <DocumentsPanel />
       <CalendarPanel />
       <HRPanel />
+      <Invite />
       <Footer />
     </main>
   )
