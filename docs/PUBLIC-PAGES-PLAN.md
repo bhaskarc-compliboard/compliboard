@@ -1,6 +1,6 @@
 # Public pages — the plan
 
-**Version:** 13 · **Updated:** 2 November 2026 — all eight boards and all eight panels built; the words check done; the four content pages as stubs and **the swap done, so the new page is `app/page.tsx`**; Part C deferred behind the app work; closed out at step 35. **Not pushed — production still serves the old page.** **Written:** 29 October 2026, in the public-pages chat.
+**Version:** 13 · **Updated:** 2 November 2026 — all eight boards and all eight panels built; the words check done; the four content pages as stubs and **the swap done, so the new page is `app/page.tsx`**; Part C deferred behind the app work; closed out at step 35; **pushed 2 Nov, `88394af`, live at compliboard.vercel.app** (step 35b). **Written:** 29 October 2026, in the public-pages chat.
 **Supersedes:** nothing. The homepage at `app/page.tsx` is replaced whole; nothing from it is kept.
 **For:** the owner, this chat, and Claude Code. One step at a time. A step is crossed off here, with its date, before the next one starts.
 **Shape:** boards first (the chat draws, the owner approves), then code (Claude Code builds one board per instruction, in the same order), then the four content pages as stubs, the swap, and the domain. The content pages get their words after the remaining app work (§6, Part C).
@@ -161,10 +161,12 @@ Cross a step off with its date when it is done. A step is done when the owner ha
   the three images only it loaded gone, `/preview-home` 404ing — and step 26's measured walk against a production
   build folded into it. **Closed out at step 35:** `docs/HANDOFF-FROM-PUBLIC-PAGES.md` written, the `STATUS.md`
   row added (v40), **F12 — chat over documents** given an id in `docs/PENDING.md` (v2) as §5 asked, and this file
-  committed for the first time since v4. **NOT pushed:** `git fetch && git log origin/main..HEAD --oneline | wc -l`
-  → **21** on 2 November, `origin/main` still at `5dea8db`, so `https://compliboard.vercel.app/` serves the OLD
-  marketing page and the swap has changed nothing a visitor can see; the push is the owner's and the release is
-  step 34. **What resumes later, and where:** Part C's words (steps 27–30, each ending by taking its page's
+  committed for the first time since v4. **Pushed 2 Nov, `88394af`, live at
+  compliboard.vercel.app** — step 35b, on the owner's word: `git push origin main` → `5dea8db..88394af`, 22
+  commits, Vercel Production `compliboard-fp5x9nr3c` Ready in 47s, and the live `/` checked straight afterwards
+  (200, no `X-Robots-Tag`, no `noindex`, one "read the whole cabinet", zero "Early adopter", `/preview-home` 404,
+  the four stubs 200 with `noindex` each). The four files that said "not pushed" were corrected in the same
+  commit. **What resumes later, and where:** Part C's words (steps 27–30, each ending by taking its page's
   `noindex` off, 27a the privacy map first), `/contact` (30a, still waiting on where it delivers — §7), the domain
   (31–32) and the gate check (33, which also owes F7 a mark on `components/home/AuditPanel.tsx`).
   `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §6 and §7 carry the detail.

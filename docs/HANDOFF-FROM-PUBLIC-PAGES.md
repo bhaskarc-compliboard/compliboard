@@ -7,23 +7,25 @@ the shape of `docs/HANDOFF-FROM-CALENDAR.md` and `docs/HANDOFF-FROM-ACCOUNT.md`,
 it.
 **For:** the session that writes the four content pages' words after the app work (Part C, steps 27–30 and 30a), the
 session that connects the domain (Part D, steps 31–32), the gate check (step 33), and Claude Code.
-**Checked against:** the repository at `5e12cd4` (local `main`, 2 November 2026), `npm run check` (exit 0, 2063
-tests in 510 suites, 0 fail), a `next build` + `next start` walk of the production build, and the greps quoted
-below. **Where this file and the repository disagree, the repository wins: say so and correct this file.**
+**Checked against:** the repository at `5e12cd4` (`main`, 2 November 2026; pushed at `88394af` the same day, see
+the box), `npm run check` (exit 0, 2063 tests in 510 suites, 0 fail), a `next build` + `next start` walk of the
+production build, the live site after the push, and the greps quoted below. **Where this file and the repository disagree, the repository wins: say so and correct this file.**
 
 ---
 
-> ## ⚠ READ THIS FIRST: THE PAGE IS NOT ON PRODUCTION. NOTHING IS PUSHED.
+> ## ✅ PUSHED 2 NOVEMBER 2026, `88394af` — LIVE AT compliboard.vercel.app.
 >
-> `git fetch origin && git log origin/main..HEAD --oneline | wc -l` on 2 November 2026 → **21**. `origin/main` is
-> still at `5dea8db` ("Housekeeping: archive what is no longer live, and one pending list"), from the My Account
-> era. Vercel deploys from GitHub, so **`https://compliboard.vercel.app/` still serves the OLD marketing page** —
-> the one with `$49` struck through, `$29 a month` and "Early adopter price — locked forever".
+> On the owner's word at step 35b: `git push origin main` → `5dea8db..88394af  main -> main`, 22 commits, and
+> Vercel's Production deployment `compliboard-fp5x9nr3c` reached **Ready** in 47s. Checked against the live URL
+> straight afterwards: `curl -sI https://compliboard.vercel.app/` → **HTTP/2 200**, `x-nextjs-prerender: 1`, **no
+> `X-Robots-Tag`**; the HTML has **one** "read the whole cabinet", **zero** "Early adopter", **zero** "noindex",
+> `data-public-page="home"` and all nine sections; the footer's hrefs are exactly `/ /privacy /terms /security
+> /faq` with **no address in it**; `/preview-home` → **404**. The four content pages are **200 with `noindex`
+> each**, titled "Privacy policy · CompliBoard", "Terms of use · CompliBoard", "Security · CompliBoard" and
+> "Questions · CompliBoard".
 >
-> Everything in this file that says "live" means **live in the repository on local `main`**. The push is the
-> owner's (`docs/VISION-DOCUMENTS.md`: "the owner decides product questions, runs production migrations and
-> pushes"), and `docs/RELEASE.md` is the routine. Until it happens, the swap at step 25 has changed nothing a
-> visitor can see.
+> So "live" in this file now means live on production. **What is still not live is the content pages' words** —
+> the stubs are deliberate and `noindex` (§6) — and the domain, which is Part D.
 
 ---
 
@@ -59,7 +61,7 @@ domain is not connected.
 
 ## 2. Where the public pages stand
 
-**In the repository, on local `main` at `5e12cd4`:**
+**On production** (`https://compliboard.vercel.app`, `main` at `88394af`, deployment `compliboard-fp5x9nr3c`, pushed and verified 2 November 2026 — see the box above):
 
 - **`/` is the new page.** `app/preview-home/page.tsx` was moved onto `app/page.tsx` at step 25 (`git mv`), and the
   **first** edit was deleting `robots: { index: false, follow: false }`. The old `app/page.tsx`,
@@ -79,7 +81,8 @@ domain is not connected.
   closing panel is 628px, shorter than the screen — that is decision 6 (no height forced below `lg`), not a defect.
   `shots/pp-25-home-1440.png`, `-1280.png`, `-390.png`.
 
-**Not done, and not a defect:** the push, the four pages' words, `/contact`, the domain, the gate check. §6.
+**Not done, and not a defect:** the four pages' words, `/contact`, the domain, the gate check. §6. *(The push
+was on this list until step 35b did it.)*
 
 ---
 
