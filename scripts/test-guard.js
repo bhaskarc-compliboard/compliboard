@@ -236,7 +236,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   - THE RECORD NAMES THE STATE THAT EARNED THE QUESTION. It did not at first: the route asked
 //     `reconcileNeeded` again afterwards, and a repair settles the row, so every record said "the
 //     mirror looked wrong". Found by reading a row the staging run had written.
-const FLOOR = 2063
+// 2063 -> 2073, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 1, each chat section its own).
+//   Ten: four in tests/unit/askEngine.test.ts for `sectionRuns` — every section's tier, ledger word
+//   and search cap, and that a section with no chat THROWS rather than quietly billing HR; three
+//   more rows in tests/unit/topicList.test.ts's loop, which read `['workspace', 'hr']` and so had
+//   never tested the read for `calendar`, live since 19 October; and two new ones there that nothing
+//   had before — `TOPIC_SECTIONS` against the CHECK constraint that polices it (`costLedger.test.ts`
+//   has had that pairing since `document_scan`; `topics.section` never did), and the night job
+//   reading that one list instead of its own copy, which had been missing `calendar` all along.
+const FLOOR = 2073
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

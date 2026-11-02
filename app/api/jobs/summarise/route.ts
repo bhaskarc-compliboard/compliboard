@@ -51,6 +51,7 @@ import { loadBilling, splitByAccess, logSkips } from '@/lib/accessGate'
 // "Summarise this conversation" uses; each answer reaches it with its sources numbered once (§127).
 import { summariseTopic } from '@/lib/summaryReport'
 import { claimTopic, releaseTopic, nightlyCandidates, type NightlyTopic } from '@/lib/topicClaim'
+import { TOPIC_SECTIONS } from '@/lib/topicList'
 
 export const maxDuration = 800
 
@@ -91,7 +92,12 @@ export async function sweep(admin: SupabaseClient = supabaseAdmin) {
     // HR CONVERSATIONS TOO, SINCE HR STEP 10 (decision 14): the one writer with kind = the topic's section (§172), so
     // an HR conversation's handbook sources are kept. Always since the HR go-live (HR Step 13); a workspace
     // conversation's call is unchanged (no kind), as before.
-    const sections = ['workspace', 'hr']
+    // *** EVERY SECTION'S CONVERSATIONS, FROM THE ONE LIST THAT DEFINES THEM. ***
+    // This was `['workspace', 'hr']` and had been since HR shipped, so Calendar conversations were
+    // never summarised at night — nothing was broken and nothing was reported, because a list that
+    // is short just quietly does less (`docs/GAPS-PLAN.md` decision 10, the owner's yes). Reading
+    // `TOPIC_SECTIONS` means the next section is covered by adding its word in one place.
+    const sections = [...TOPIC_SECTIONS]
     const { data: never, error: e1 } = await admin
       .from('topics').select(cols).in('section', sections).is('summarised_at', null).not('last_turn_at', 'is', null)
     if (e1) throw new Error(`could not list unsummarised topics: ${e1.message}`)

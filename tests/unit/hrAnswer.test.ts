@@ -5,6 +5,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { TOPIC_SECTIONS } from '../../lib/topicList.ts'
 import { normaliseForQuote, verifyQuote } from '../../lib/documentScan.ts'
 import {
   normalisedWithMap, checkQuote, checkPlainQuotes, finishAnswer, appendHandbookSources, loadHandbooksForAnswer, handbookContext,
@@ -271,9 +272,15 @@ describe('the route and the shared changes', () => {
     assert.match(route, /process\.env\.NODE_ENV !== 'production' && process\.env\.HR_TEST_BAD_QUOTE === '1'/)
     assert.match(route, /process\.env\.NODE_ENV !== 'production' && process\.env\.HR_TEST_PLAIN_QUOTES === '1'/)
   })
-  test('the nightly summary: workspace and HR topics always (since the go-live), in both queries; HR\'s writer for HR (step 10)', () => {
+  test('the nightly summary: HR topics always (since the go-live), in both queries; HR\'s writer for HR (step 10)', () => {
     const job = readFileSync('app/api/jobs/summarise/route.ts', 'utf8')
-    assert.match(job, /const sections = \['workspace', 'hr'\]/)
+    // *** WHAT THIS TEST IS FOR IS THAT HR IS NEVER LEFT OUT, not that the list is short. ***
+    // It read `['workspace', 'hr']` as a literal until `docs/GAPS-PLAN.md` Part A step 1, which
+    // found that the literal had been missing `calendar` since the Calendar shipped — so no
+    // Calendar conversation was ever summarised at night. The job now reads `TOPIC_SECTIONS`
+    // (`lib/topicList.ts`), the one list that defines a section, and HR is in it by construction.
+    assert.match(job, /const sections = \[\.\.\.TOPIC_SECTIONS\]/)
+    assert.ok(TOPIC_SECTIONS.includes('hr'), 'HR must be one of the sections the night job sweeps')
     assert.ok(!/hrPreview/.test(job))
     assert.equal((job.match(/\.from\('topics'\)\.select\(cols\)\.in\('section', sections\)/g) ?? []).length, 2)
     // A workspace conversation's call passes no kind, exactly as before step 10; an HR one passes kind 'hr'.

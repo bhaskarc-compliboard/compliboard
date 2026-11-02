@@ -22,7 +22,7 @@ import { MODEL_PRICES, PRICE_PER_SEARCH, type ModelPrice } from '../config/prici
 export type LedgerTask =
   | 'research' | 'checklist' | 'substeps' | 'convert' | 'summarise'
   | 'gate' | 'critique' | 'audit' | 'document_review' | 'document_scan' | 'document_draft' | 'howto' | 'other'
-  | 'hr' | 'hr_check' | 'calendar' | 'website'
+  | 'hr' | 'hr_check' | 'calendar' | 'website' | 'documents' | 'audits_chat'
 
 export const LEDGER_TASKS: readonly LedgerTask[] = [
   'research', 'checklist', 'substeps', 'convert', 'summarise',
@@ -46,6 +46,13 @@ export const LEDGER_TASKS: readonly LedgerTask[] = [
   // do and where they are. The first money this product spends on a company, and the ledger should
   // be able to say so — the two cards read at the step 13 stop had to be logged as `other`.
   'website',
+  // THE DOCUMENTS AND AUDITS CHATS (`docs/GAPS-PLAN.md` Part A step 1, decision 11; migration 091
+  // adds both to `ai_calls_task_check`). One ledger word each, so `npm run cost` can say what a
+  // chat answer cost in that section. `audits_chat` and not `audit`: `audit` is the agency audit,
+  // and a ledger that cannot tell the two apart cannot answer the question it exists for.
+  // Nothing writes either yet — Part A steps 4 and 6 are the callers.
+  'documents',
+  'audits_chat',
 ] as const
 
 export interface CallUsage {

@@ -46,13 +46,26 @@ export const toTopicRow = (r: TopicListRow): TopicRow => ({
 })
 
 /**
- * Which list a conversation belongs to — `topics.section` (migration 066, widened by 073).
- * `readTopicList` below is the ONE place a section is filtered on, so a third section is this word
- * plus the migration and nothing else. **`app/calendar/page.tsx` passes 'calendar' since step 7** —
- * for the Conversations tab and the info bar's count. Nothing WRITES one yet: step 10 is the first,
- * so the read is honest and the answer is zero.
+ * Which list a conversation belongs to — `topics.section` (migration 066, widened by 073 and 091).
+ * `readTopicList` below is the ONE place a section is filtered on, so a new section is this word
+ * plus the migration and nothing else.
+ *
+ * `workspace` and `hr` are written by their own routes; `calendar` by the shared engine
+ * (`lib/ask/engine.ts`). **`documents` and `audits_chat` are declared here and nothing writes them
+ * yet** — Part A steps 4 and 6 of `docs/GAPS-PLAN.md` are the callers, so until then each list reads
+ * honestly and answers zero. The words are added now because the engine, the ledger and the night
+ * summary all have to agree on them at once.
  */
-export type TopicSection = 'workspace' | 'hr' | 'calendar'
+/**
+ * *** ONE LIST, AND THE TYPE IS READ OFF IT. *** `app/api/jobs/summarise/route.ts` kept its own
+ * copy — `['workspace', 'hr']` — and it had been missing `calendar` since the Calendar shipped, so
+ * **no Calendar conversation has ever been summarised at night** and nothing said so. A second copy
+ * of a list is how that happens. The night job now reads this one, so a sixth section is added here
+ * and is covered everywhere by that single edit.
+ */
+export const TOPIC_SECTIONS = ['workspace', 'hr', 'calendar', 'documents', 'audits_chat'] as const
+
+export type TopicSection = (typeof TOPIC_SECTIONS)[number]
 
 /**
  * ONE SECTION'S CONVERSATIONS, NEWEST FIRST, AT MOST `LIST_CAP` — the read the workspace's

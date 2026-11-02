@@ -9,6 +9,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { EXAMPLE_QUESTIONS, HR_EXAMPLE_QUESTIONS } from '../../config/examples.ts'
 import { HR_PAGE_PATH } from '../../lib/handbookCheckNotify.ts'
 import { checkingSections } from '../../lib/handbooks.ts'
+import { TOPIC_SECTIONS } from '../../lib/topicList.ts'
 
 const ROUTES = ['app/api/handbooks/route.ts', 'app/api/handbooks/read/route.ts', 'app/api/hr/answer/route.ts',
   'app/api/hr/handbooks/[id]/check/route.ts', 'app/api/hr/topics/[id]/summarise/route.ts']
@@ -48,9 +49,13 @@ describe('the preview switch is gone, and old HR with it (decision 15)', () => {
       assert.match(post.split('\n').slice(1, 4).join('\n'), /requireCronSecret\(request\)/, f + ': the secret first')
     }
   })
-  test('the summary job picks workspace and HR conversations always', () => {
+  test('the summary job picks HR conversations always, and every other section too', () => {
     const src = readFileSync('app/api/jobs/summarise/route.ts', 'utf8')
-    assert.match(src, /const sections = \['workspace', 'hr'\]/)
+    // The literal `['workspace', 'hr']` went at `docs/GAPS-PLAN.md` Part A step 1: it had been
+    // missing `calendar` since the Calendar shipped, which is how a section can be live for two
+    // weeks with no nightly summary and nothing to say so. HR is in `TOPIC_SECTIONS` by name.
+    assert.match(src, /const sections = \[\.\.\.TOPIC_SECTIONS\]/)
+    assert.ok(TOPIC_SECTIONS.includes('hr'))
     assert.ok(!/hrPreview/.test(src))
   })
 })

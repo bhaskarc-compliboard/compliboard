@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs'
 import { checkBrief, BRIEF_FIELDS, type Brief } from '../../lib/ask/brief.ts'
 import { parseOffers, offerLine, OFFER_KINDS } from '../../lib/ask/offers.ts'
 import { finishAnswer, checkQuote, replacePassageIds, NOT_IN_WHAT_WE_HAVE, tokensOf, type Passage } from '../../lib/ask/passages.ts'
-import { answer } from '../../lib/ask/engine.ts'
+import { answer, sectionRuns } from '../../lib/ask/engine.ts'
 import { calendarBrief, dateLine, readingBlock, contextBudgetTokens, DATES_SHARE, READINGS_SHARE } from '../../lib/ask/calendarBrief.ts'
 import { CALENDAR_SENTENCES } from '../../prompts/calendar-answer.ts'
 import { askPrompt, OFFER_FORMAT_SENTENCE } from '../../prompts/ask.ts'
@@ -270,6 +270,71 @@ describe('the topic is this company\'s, this section\'s, and open', () => {
     const engine = readFileSync('lib/ask/engine.ts', 'utf8')
     assert.match(engine, /section: brief\.section/)
     assert.ok(!/section: 'calendar'/.test(engine), 'the engine names no section of its own')
+  })
+})
+
+/**
+ * *** EACH SECTION RUNS AS ITSELF — `docs/GAPS-PLAN.md` Part A step 1, decision 11. ***
+ *
+ * The engine had `brief.section === 'calendar' ? 'calendar' : 'hr'` in two places and
+ * `AI_SEARCH_MAX_HR` in a third, so a third section's answers would have run on HR's tier, been
+ * billed to HR's ledger word, and been capped by HR's variable. None of that is an error anybody
+ * would see: it is a wrong line in `npm run cost` and a model nobody chose.
+ *
+ * *** WHAT IS PROVED HERE, AND WHAT IS NOT. *** `sectionRuns` is the one lookup and it is tested
+ * directly. That the engine USES it for both the tier and the ledger word — rather than keeping a
+ * literal beside it — is asserted against the source, because the test runner does not mock
+ * modules (`scripts/test-guard.js:254` runs `node --test` with no module-mock flag) and the only
+ * other way to see the argument would be to call a model. The end-to-end evidence that the ledger
+ * word arrives is the one real Calendar answer at the end of step 1, whose `ai_calls` row says
+ * `task = 'calendar'`.
+ */
+describe('each section runs on its own tier, ledger word and search cap', () => {
+  test("a brief with section 'documents' runs the model and the ledger as 'documents'", () => {
+    assert.deepEqual(sectionRuns('documents'),
+      { task: 'documents', cap: 'AI_SEARCH_MAX_DOCUMENTS' })
+  })
+
+  test("and 'calendar' still gets 'calendar' — the Calendar's behaviour does not move", () => {
+    assert.deepEqual(sectionRuns('calendar'),
+      { task: 'calendar', cap: 'AI_SEARCH_MAX_CALENDAR' })
+  })
+
+  test('HR keeps its own word and its own cap, so capping HR cannot cap anybody else', () => {
+    assert.deepEqual(sectionRuns('hr'), { task: 'hr', cap: 'AI_SEARCH_MAX_HR' })
+    assert.deepEqual(sectionRuns('audits_chat'),
+      { task: 'audits_chat', cap: 'AI_SEARCH_MAX_AUDITS_CHAT' })
+    // Four sections, four caps: no two share one.
+    const caps = (['hr', 'calendar', 'documents', 'audits_chat'] as const).map((x) => sectionRuns(x).cap)
+    assert.equal(new Set(caps).size, 4)
+  })
+
+  test('a section with no chat THROWS rather than falling back to somebody else', () => {
+    // `workspace` is a TopicSection and runs `/api/chat`, the owner's open baseline, which this
+    // engine does not touch (decision 2). A fallback here would bill its answers to HR.
+    assert.throws(() => sectionRuns('workspace'), /has no model tier, ledger task or search cap/)
+  })
+
+  test('the engine asks that one lookup, and holds no section of its own', () => {
+    const engine = readFileSync('lib/ask/engine.ts', 'utf8')
+    assert.match(engine, /const runs = sectionRuns\(brief\.section\)/)
+    assert.match(engine, /^\s+task: runs\.task,$/m, 'the tier must come from the lookup')
+    assert.match(engine, /ledger: \{ companyId, task: runs\.task \}/, 'the ledger word must be the same one')
+    assert.match(engine, /searchLimit\(runs\.cap, null\)/, 'the cap must be the section\'s own')
+    /**
+     * THE TWO LITERALS THIS STEP REMOVED — asserted against the CODE, not the comments.
+     *
+     * Written without the comment strip, this test failed twice on prose: once on the paragraph in
+     * the engine that quotes the old `brief.section === 'calendar' ? …` line to say what it
+     * replaced, and once on `SECTION_RUNS`, where `'AI_SEARCH_MAX_HR'` is HR's cap and belongs
+     * there. A substring is not a call site (`calendarShell.test.ts:396`), and the second failure
+     * was the test being wrong rather than the code.
+     */
+    const code = engine.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    assert.ok(!/brief\.section === '/.test(code), 'the engine compares a section against a literal again')
+    // HR's cap is a VALUE in the map, which is right. What must not come back is the engine asking
+    // for it by name, which is what made it every section's cap.
+    assert.ok(!/searchLimit\('AI_SEARCH_MAX_HR'/.test(code), 'the engine reads HR\'s search cap for every section again')
   })
 })
 

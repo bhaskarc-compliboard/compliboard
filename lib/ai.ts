@@ -24,7 +24,26 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto' | 'hr' | 'hr_check' | 'calendar' | 'website'
+/**
+ * *** THIS UNION STAYS ON ONE LINE, AND NOTHING ABOVE IT MAY QUOTE ITS OPENING WORDS. ***
+ *
+ * `scripts/haiku-names.mjs:21` finds this declaration with a single, non-global regular expression
+ * and then reads the quoted words out of **the one line it matched**. Two things therefore break it,
+ * and both break it SILENTLY:
+ *
+ *   1. wrapping the union onto a second line — the tiers on that line are invisible to the guard;
+ *   2. writing the declaration's opening words in a comment ANYWHERE EARLIER IN THIS FILE — the
+ *      regex matches the comment instead, and reads no tiers at all.
+ *
+ * *** THE SECOND ONE IS NOT HYPOTHETICAL: THIS COMMENT CAUSED IT. *** The first draft of it quoted
+ * the pattern in full, and `npm run haiku:check` then printed **"0 of 0 tiers on claude-haiku-4-5"**
+ * and **exited 0** — a guard reporting success while seeing nothing, which would have let a build run
+ * spend Opus money with a green check beside it (`CLAUDE.md` §9a: a check that cannot see a presence
+ * looks exactly like a check that found nothing). So the words are described here and not reproduced.
+ *
+ * Every step that touches this line reports the guard's row count, before and after.
+ */
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto' | 'hr' | 'hr_check' | 'calendar' | 'website' | 'documents' | 'audits_chat'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -149,6 +168,17 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // handbooks. So it falls back to the research tier (`prose`) unset, exactly as `howto` and `hr`
   // do: the pattern copied, not a new one. NOTHING ASKS FOR THIS TIER YET; step 10 is the caller.
   calendar: () => process.env.AI_MODEL_CALENDAR || TASK_MODELS.prose(),
+  // *** THE DOCUMENTS AND AUDITS CHATS — one tier each (`docs/GAPS-PLAN.md` decision 11). ***
+  // Each answers from what that section already holds — the documents' stored readings, or the
+  // audit runs and their findings — and checks the rule at the agency with web search. That is the
+  // same shape as `hr` and `calendar`, so unset they fall back to the research tier (`prose`): the
+  // pattern copied, not a new one. Named so each can be moved on its own.
+  //
+  // `audits_chat`, not `audit`: `audit` above is the agency audit, one long reasoning call over a
+  // filing cabinet. The case for spending more on that is not the case for a chat answer, and the
+  // ledger has to be able to tell them apart (`DECISIONS.md` §128 J).
+  documents: () => process.env.AI_MODEL_DOCUMENTS || TASK_MODELS.prose(),
+  audits_chat: () => process.env.AI_MODEL_AUDITS_CHAT || TASK_MODELS.prose(),
   // *** READING A COMPANY'S OWN WEBSITE — My Account step 13 (`ACCOUNT-PLAN.md` decision 9). ***
   // One read of pages we fetched, with NO search tool, returning strict JSON: what the business
   // does, a NAICS code, the addresses the site lists. That is extraction from a supplied document,
@@ -258,11 +288,31 @@ export function scanStructuredOutput(): boolean {
  *   AI_SEARCH_MAX_HR        an HR answer                  default NONE (HR Step 6b): unset means no limit,
  *                           as today; the testing step measures whether to set one (DECISIONS.md §169)
  *
+ * *** AND ONE CAP PER SECTION'S CHAT, NOT ONE CAP FOR ALL OF THEM *** (`docs/GAPS-PLAN.md` decision 11).
+ * `lib/ask/engine.ts` read `AI_SEARCH_MAX_HR` for every section, so capping HR would quietly have
+ * capped the Calendar, Documents and Audits as well. Each chat now reads its own:
+ *
+ *   AI_SEARCH_MAX_HR           an HR answer
+ *   AI_SEARCH_MAX_CALENDAR     a Calendar answer
+ *   AI_SEARCH_MAX_DOCUMENTS    a Documents answer
+ *   AI_SEARCH_MAX_AUDITS_CHAT  an Audits answer
+ *
+ * **Every one of them is unset by default and unset means NO CAP**, which is what every chat does
+ * today — so this change moves no behaviour. Giving one of them a number is a quality decision and
+ * the owner's (§3.1), which is why the type below refuses a numeric default for a section cap.
+ *
  * A value that is not a whole number above zero is a loud warning and then the default.
  */
-export function searchLimit(name: 'AI_SEARCH_MAX_HOWTO' | 'AI_SEARCH_MAX_COMPLETE', fallback: number): number
-export function searchLimit(name: 'AI_SEARCH_MAX_HR', fallback: null): number | null
-export function searchLimit(name: 'AI_SEARCH_MAX_HOWTO' | 'AI_SEARCH_MAX_COMPLETE' | 'AI_SEARCH_MAX_HR', fallback: number | null): number | null {
+/** The two caps that have a number behind them. */
+export type CountedSearchCap = 'AI_SEARCH_MAX_HOWTO' | 'AI_SEARCH_MAX_COMPLETE'
+/** One chat section's cap. Unset means no cap, so the fallback is always null. */
+export type SectionSearchCap =
+  'AI_SEARCH_MAX_HR' | 'AI_SEARCH_MAX_CALENDAR' | 'AI_SEARCH_MAX_DOCUMENTS' | 'AI_SEARCH_MAX_AUDITS_CHAT'
+export type SearchCapName = CountedSearchCap | SectionSearchCap
+
+export function searchLimit(name: CountedSearchCap, fallback: number): number
+export function searchLimit(name: SectionSearchCap, fallback: null): number | null
+export function searchLimit(name: SearchCapName, fallback: number | null): number | null {
   const raw = String(process.env[name] ?? '').trim()
   if (!raw) return fallback
   const n = Number(raw)

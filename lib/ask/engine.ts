@@ -32,7 +32,12 @@
  * that shape. Copying the claim onto the answer would mean a person could not ask a second
  * question while the first was still writing.
  */
-import { askAIOpenStream, searchLimit, type OpenMessage, type Source, type CitedPassage } from '../ai.ts'
+import {
+  askAIOpenStream, searchLimit,
+  type AITask, type SectionSearchCap, type OpenMessage, type Source, type CitedPassage,
+} from '../ai.ts'
+import type { LedgerTask } from '../costLedger.ts'
+import type { TopicSection } from '../topicList.ts'
 import { buildCompanyContext } from '../companyContext.ts'
 import {
   nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns, setTitleIfFirst,
@@ -46,6 +51,49 @@ import { parseOffers, offerLine, type Offer } from './offers.ts'
 
 /** The workspace's own failed line, which HR copied and this copies from HR. */
 export const FAILED_LINE = 'The answer stopped part-way through. Please try again.'
+
+/**
+ * *** WHICH TIER, WHICH LEDGER WORD, AND WHICH SEARCH CAP A SECTION RUNS ON. ***
+ * `docs/GAPS-PLAN.md` Part A step 1, decision 11.
+ *
+ * This replaced three lines that read `brief.section === 'calendar' ? 'calendar' : 'hr'` twice and
+ * `AI_SEARCH_MAX_HR` once. Every one of them was wrong for any section but those two: a third
+ * section's answers would have been billed to HR, run on HR's tier, and capped by HR's variable —
+ * and none of that would have shown up as an error, only as a wrong line in `npm run cost` and a
+ * model nobody chose.
+ *
+ * *** THE TASK IS BOTH A TIER AND A LEDGER WORD, AND THE TYPE SAYS SO. *** `AITask & LedgerTask` is
+ * the words that are in both unions, so a section whose word exists in only one of them does not
+ * compile. That is the pairing `lib/ai.ts:122`'s note is about — the most expensive call in the
+ * product once ran on a tier no variable could steer because the two lists had drifted apart.
+ *
+ * *** A SECTION WITH NO CHAT IS ABSENT, NOT DEFAULTED. *** `workspace` is a `TopicSection` and has
+ * no row here: it runs `/api/chat`, which is the owner's open baseline and is not moved
+ * (`docs/GAPS-PLAN.md` decision 2). Giving it a row would be inventing a tier for a section that
+ * does not use this engine. `sectionRuns` therefore THROWS rather than falling back, for the reason
+ * `checkBrief` throws: the engine would otherwise run and quietly bill somebody else's section.
+ */
+export interface SectionRun {
+  task: AITask & LedgerTask
+  cap: SectionSearchCap
+}
+
+const SECTION_RUNS: Partial<Record<TopicSection, SectionRun>> = {
+  hr:          { task: 'hr',          cap: 'AI_SEARCH_MAX_HR' },
+  calendar:    { task: 'calendar',    cap: 'AI_SEARCH_MAX_CALENDAR' },
+  documents:   { task: 'documents',   cap: 'AI_SEARCH_MAX_DOCUMENTS' },
+  audits_chat: { task: 'audits_chat', cap: 'AI_SEARCH_MAX_AUDITS_CHAT' },
+}
+
+export function sectionRuns(section: TopicSection): SectionRun {
+  const run = SECTION_RUNS[section]
+  if (!run) {
+    throw new Error(`ask: the section '${section}' has no model tier, ledger task or search cap. `
+      + 'Add one to SECTION_RUNS in lib/ask/engine.ts, with its word in AITask and in LedgerTask, '
+      + 'or that section must not use this engine (docs/GAPS-PLAN.md decision 11).')
+  }
+  return run
+}
 
 export interface AskContext {
   /** The CALLER'S own client: RLS applies, and no function here ever names a company (§3.6). */
@@ -154,14 +202,18 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
   messages.push({ role: 'user', content: `${contextText}\n\nQuestion: ${question}` })
 
   // ---- THE CALL ----
-  const maxSearches = searchLimit('AI_SEARCH_MAX_HR', null) ?? undefined
+  // The section's own tier, its own ledger word and its own search cap — one lookup, used three
+  // times, so the three can never disagree. Unset cap means no cap, which is what every chat does
+  // today (`lib/ai.ts` `searchLimit`).
+  const runs = sectionRuns(brief.section)
+  const maxSearches = searchLimit(runs.cap, null) ?? undefined
   let completed = false
   try {
     for await (const ev of askAIOpenStream(askPrompt(brief.promptSentences), messages, {
-      task: brief.section === 'calendar' ? 'calendar' : 'hr',
+      task: runs.task,
       maxTokens: 16000,
       signal: ctx.signal,
-      ledger: { companyId, task: brief.section === 'calendar' ? 'calendar' : 'hr' },
+      ledger: { companyId, task: runs.task },
       maxSearches,
     })) {
       if (ev.type === 'done') {
