@@ -53,6 +53,16 @@ export const START_HREF = '/signup'
  * and `lib/billing.ts:130`, where the trial is consulted before anything else is).
  */
 export const SMALL_PRINT = `${TRIAL_DAYS} days. No card.`
+/**
+ * THE TURN — the sentence where the page stops describing the problem and says what the product
+ * does. It is exported because `app/page.tsx` uses it as the page's `description` in `metadata`
+ * (step 25, the swap): the one sentence a search result and a shared link show is the one
+ * sentence the page itself opens with, and two copies of it is two pages' worth of promise the
+ * day it is reworded. The same reason `GROUND`, `START_HREF` and `SMALL_PRINT` are up here.
+ */
+export const TURN =
+  'CompliBoard has read the whole cabinet. It knows what to fix, what is due, and where you ' +
+  'stand with each agency.'
 
 /**
  * THE WAVES ARE THE WHOLE SECTION, NOT A STRIP ALONG THE BOTTOM (step 15c). The board's bands
@@ -129,8 +139,7 @@ export default function Hero() {
           </div>
 
           <p className="max-w-[54ch] text-[16px] leading-[1.55] text-[var(--ink)] lg:text-[18px]">
-            CompliBoard has read the whole cabinet. It knows what to fix, what is due, and where you
-            stand with each agency.
+            {TURN}
           </p>
 
           {/* On a phone the button takes its own row and the small print sits under it; from
