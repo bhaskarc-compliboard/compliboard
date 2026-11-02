@@ -1,0 +1,110 @@
+# Closing the gaps — the plan
+
+**Version:** 1 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
+**For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
+**The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame. Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
+**Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
+
+---
+
+## 1. In one paragraph
+
+CompliBoard should work like a very good employee: it gives you what you ask for. The chat is the door. Every section gets the same chat, with the same power, so a person never has to go to another section to get an answer. Each section's chat carries that section's own context. The shared engine (`lib/ask/`) exists already; Calendar is its only customer. This plan finishes the engine, lifts one shared chat screen out of Calendar's, and gives the chat to Documents first and then to Audits. HR and the Compliance Workspace are not touched: they work, and the Workspace's open answer is the baseline everything is measured against. After the chats come the other gaps: reading every file format, the binder, the Resend domain, Stripe live mode, and the homepage's gate walk. Those parts are added to this file when their turn comes.
+
+---
+
+## 2. The standing instruction for every coding job
+
+The owner's, `docs/CALENDAR-PLAN.md` decision 26. It goes at the top of every instruction in this work:
+
+> Before any change, find every file, query, view, job, test and page that reads or writes what you are about to touch — by searching the repository and reading the live staging schema, never from memory and never from the docs alone — and list them in your plan with what happens to each. After the change, re-run every touched section's free checks and walk one real customer path per touched section on Haiku. A change that breaks a section your plan did not name is a stop, not a fix.
+
+And the rules that go with it: `CLAUDE.md` §3.1 (prompts and what feeds them are the owner's), §3.4a (build on Haiku through `npm run haiku --`; judge on Opus), §3.11, §9.1 and §9a. Production is read-only. Nothing is pushed without the owner's word. No model call in a job unless the brief says so for that job.
+
+**Words on screens.** Every new sentence the product shows in this work is written in simple words and short sentences. Old sentences we touch are made simpler too. The owner reads them before they ship.
+
+---
+
+## 3. The decisions (the owner, 2 November 2026)
+
+Each names its effect on other sections.
+
+1. **Order: Documents first, then Audits.** Documents is the heart: audits read its readings, the binder is its documents behind tabs, the report is its report. *Effect: none.*
+2. **HR and the Compliance Workspace are not moved onto the engine in this work.** The Workspace sends the model nothing but the question and the conversation; that is the owner's baseline (`DECISIONS.md` §113, §123) and stays as it is. HR's own engine works and stays. *Effect: none; `app/hr/**`, `app/api/hr/**`, `lib/hrAnswer.ts`, `app/compliance/page.tsx` and `app/api/chat/route.ts` are not edited.*
+3. **One engine, each section's own instructions.** The engine does the machinery. Each section's brief says what its answers are written from. Documents' brief packs the documents' readings; Audits' brief packs the audit findings and the readings behind them. *Effect: none outside `lib/ask/`.*
+4. **The chat looks the same everywhere.** One shared screen, lifted out of `components/CalendarAsk.tsx` the way the engine was lifted out of HR. Calendar renders the shared screen plus its own date offers. *Effect: Calendar changes files but not behaviour; proof is in step 2.*
+5. **Documents' tabs:** Ask a question · Conversations · Documents (N). The Documents tab is today's page with nothing moved. The count is shown like Calendar's; nothing at zero. *Effect: Documents only.*
+6. **"Add a document" in every chat uploads in place.** The file goes through Documents' own upload (storage, then `POST /api/documents`, the pattern of `app/audits/page.tsx` `attachChecklist`), lands in Documents unfiled, gets its own reading, and travels with the question. Calendar's "Add a document", a link today, becomes a real upload. **No folder upload in any chat**; folders stay on the Documents tab. *Effect: Calendar (the control changes; a Calendar answer can read an attached file for the first time — a quality change, measured on Opus); Documents' `?return=` loses its only caller and is kept, with a note.*
+7. **Nothing on file yet (board 1b).** With no documents, the Ask tab shows one line under the box pointing to the Documents tab for files and folders. The line goes when the company has one document. *Effect: none.*
+8. **The action row** in every section's chat: Turn this into a checklist · Summarise this conversation · Download. **A checklist made from any section's conversation lives in the Compliance Workspace's Checklists tab — that is its home.** The conversation's row in its own section links there. *Effect: `components/ConversationList.tsx` gains a link (shared file: HR's and Calendar's free checks re-run). No new tab, no migration.*
+9. **Delete on the shared conversation drawer.** HR has it; Calendar does not. The shared drawer has it, so Calendar gains Delete. `DELETE /api/topics/[id]` already exists and is section-blind. *Effect: Calendar gains a control.*
+10. **The night summary covers every section.** `app/api/jobs/summarise/route.ts:94` lists `['workspace', 'hr']` and skips Calendar. It gains `calendar` and every new section as it is added. *Effect: Calendar conversations start being summarised at night; that is the owner's yes.*
+11. **Each chat is billed and modelled as itself.** New task words `documents` and `audits_chat` (`audit` is taken by the agency audit, `lib/ai.ts:133`). Each section gets its own search cap, `AI_SEARCH_MAX_<SECTION>`, unset meaning no cap, which is today's behaviour. *Effect: `lib/ai.ts`, `lib/costLedger.ts`, one migration restating two CHECKs; Calendar must resolve to the same tier and ledger word as today.*
+12. **The attached file is handed in with the request, not written into the brief.** `AskContext` gains `documentId`; `checkBrief`'s five-field rule stays. The engine does for every section what `app/api/chat/route.ts:213–:284` does for the Workspace: load by id as the caller, carry on every later turn, cap at 3, say so when a file could not be re-read. The attachment is named in the context event as a block that is not priced. *Effect: `lib/ask/engine.ts`; `lib/attachedDocument.ts` read, not changed.*
+13. **Landing on Documents.** The sidebar and the bare address open Ask a question. A link carrying `?add=`, `?return=` or `?document=` opens the Documents tab (`?document=<id>` with that document's report open). Four bare links gain a word in their own files: `app/audits/page.tsx:694`, `app/compliance/page.tsx:1651`, `lib/dashboardView.ts:185`, and the batch email `lib/documentBatch.ts:193`. *Effect: Audits, Workspace, Dashboard, the batch email — each section's free checks re-run.*
+14. **The Documents chat answers from the readings, never the files**, except a file the person attaches. One line per document always; the full report for the documents a question names; the raw extracted text never; what did not fit is said out loud. Measured 2 November on staging: Cascade's 12 readings are 65,573 characters (~26,000 tokens, 22% of the 120,000 budget); at 40 documents full-reports-for-all would be 73%. *Effect: a shared reading packer in `lib/ask/readings.ts`, with Calendar's brief calling it so Calendar's bytes do not move.*
+15. **One summarise route body, shared.** Documents' and Audits' summarise routes call a shared helper. HR's, the Workspace's and Calendar's three copies are left alone until F7 moves them. `requireCompany` and `requireAccess` stay written in each route file, because `scripts/check-schema-contracts.js` check 3 reads the route file's text. *Effect: none outside the new routes.*
+16. **Drive connection is rev 1.5**, OneDrive first, days after release. For rev 1 the folder menu's grey "Connect your drive" stays as it is and no other section shows it. *Effect: none.*
+17. **Reading every file format (`.doc`, `.ppt`, HEIC, TIFF, the honest refusals) is its own part**, after the chats, as `docs/VISION-DOCUMENTS.md` "Where the converting runs" decided. The binder follows it. *Effect: later parts of this file.*
+
+---
+
+## 4. The boards — `docs/documents-chat-boards.html`
+
+1 · Ask a question, first visit · 1b · Ask a question, nothing on file yet · 2 · The answer, from the reports · 3 · A file attached, and the question about it · 4 · Conversations · 5 · Documents — today's page, unchanged. The conversation drawer and the delete sheet are HR's boards, not redrawn.
+
+**Three example questions** (`config/examples.ts`, the owner's file; a starting point): "Which of our permits expire in the next 12 months?" · "What's missing from our emergency action plan, and how do we fix it?" · "Show me all our training records."
+
+---
+
+## 5. Part A — the shared chat: the steps
+
+| # | Step | What happens | The stop | Status |
+|---|---|---|---|---|
+| 0 | The map (read-only) | Claude Code read everything and proposed a plan; reported in the terminal, 2 November. This file records what was decided from it. | The owner's decisions (§3). | done 2 Nov |
+| 1 | The engine runs each section as itself | `brief.section` picks the tier, the ledger task and the search cap (`lib/ask/engine.ts:157, :161, :164`). `documents` and `audits_chat` added to `AITask` (`lib/ai.ts:27`, kept on one line — the Haiku guard reads that line), `TASK_MODELS`, `LedgerTask`/`LEDGER_TASKS` (`lib/costLedger.ts:22–:49`), `TopicSection` (`lib/topicList.ts:55`). One migration restates `ai_calls_task_check` (085:167–:174) and `topics_section_is_known` (073:473–:475) whole, with the two new words. The night summariser's list gains `calendar`, `documents`, `audits_chat` (`app/api/jobs/summarise/route.ts:94`). `tests/unit/costLedger.test.ts:129–:134` re-pointed at the new migration; `tests/unit/topicList.test.ts:19` widened. The three doc corrections from the map (§8). | The report: `npm run haiku:check` 14 → 16 rows, read off the table; `npm run check`; the migration's verify block; one Calendar answer on the isolated Haiku server with `ai_calls.task = 'calendar'` and the same model as before. | not started |
+| 2 | The shared chat screen | `components/AskScreen.tsx` lifted out of `components/CalendarAsk.tsx` with a `section`, its endpoints, words, examples, an attach slot, a thinking line and an `afterAnswer` slot. `CalendarAsk.tsx` keeps only the offers. The conversation drawer lifts to `components/ConversationDrawer.tsx` **with Delete** (decision 9). `app/calendar/page.tsx` keeps its frame, four tabs and date drawers. `tests/unit/calendarShell.test.ts:46–:47, :186–:198, :407–:416` and `readOnlyUi.test.ts:115, :128` edited on purpose. HR, the Workspace: not touched. | Two things the owner sees: (a) **the proof Calendar did not change** — the same question before and after, the assembled messages dumped to a file on the isolated server and diffed byte for byte, plus `check_record.context` compared; (b) **screenshots before and after** — first visit, an answer, an offer accepted, Conversations, the drawer — and the owner picks the action row's shape (HR's or Calendar's). | not started |
+| 3 | The attached file, and "Add a document" as an upload | `AskContext.documentId` (decision 12). `lib/chatUpload.ts` copies `attachChecklist`'s steps 1–6, sends `from_topic_id` when the conversation exists, starts the reading without waiting for it, and does not upload folders. The screen's attach control becomes the upload; Calendar's `attachHref` gives way to it (`lib/ask/calendarBrief.ts:228–:229`; the comments at `lib/ask/brief.ts:58–:59` and `components/AttachControl.tsx:9–:10` updated in the same commit). `app/api/calendar/answer/route.ts` reads `documentId` off the body. | Three: the paused sentence (a read-only company attaches a file: upload works, the question is refused — the owner's words); **one real question on Opus, before and after**, because a Calendar answer can now read a whole file; and PENDING S7 (no size cap on carried files) is now a three-section item — the owner says whether a cap is owed. Proof: attach, ask, ask again (the file is still in the message), reload and ask a third time, delete the document and the transcript still names it; `ai_calls` input-token delta per turn in the report. | not started |
+| 4 | Documents gets the chat | Tabs under the lede; the banner, the toolbar, PausedNote, the error line and the table move inside the Documents tab; the report drawer stays outside the tabs. `?tab=` in the address, derived from `?add=`/`?return=`/`?document=` (decision 13), and **`?document=<id>` opens that report** — which also mends the Calendar chat's reading cards and Company information's fact links (§8). `lib/ask/readings.ts` extracted from `calendarBrief.ts:151–:191`, Calendar calling it unchanged. `lib/ask/documentsBrief.ts` (decision 14), `prompts/documents-answer.ts`, `app/api/documents/answer/route.ts`, `app/api/documents/topics/[id]/summarise/route.ts` on the shared body (decision 15), `DOCUMENTS_EXAMPLE_QUESTIONS`, board 1b's line. The four bare links gain `?tab=documents`. `scripts/check-schema-contracts.js:286` `PAID_COUNT` 19 → 21. `scripts/check-live.js` probes. `components/home/DocumentsPanel.tsx:1`'s gate comment retired; PENDING F12 closed; STATUS's Documents row. | Three, in order: the prompt (`prompts/documents-answer.ts`, §3.1 — the owner reads every sentence); the three example questions; then the walk — Documents (ask, open a cited report from its card, upload in the chat), Calendar (one answer; `check_record.context` against step 2's baseline), Company information (the fact link), Audits and the Dashboard (their links land on the right tab). Screenshots of boards 1, 1b, 2, 3. | not started |
+| 5 | "Turn this into a checklist" from any section | The route already works from any section (`app/api/checklists/from-topic/route.ts:100–:103` never reads the section). The shared action row shows the button; `components/ConversationList.tsx:68`'s "Checklist n of N done" becomes a link to the Workspace's Checklists tab (decision 8). | The owner clicks it from a Documents conversation and lands on the checklist. HR's and Calendar's free checks (shared file). | not started |
+| 6 | Audits gets the chat | First a board: the Audits box must keep starting audits in code (`submitAsk`, `app/audits/page.tsx:437–:465`) while the page gains a chat — one box with two behaviours or two boxes is the owner's drawing. Then F6 settled by **running** a template audit once on Haiku through the guard (`PUBLIC-PAGES-PLAN.md` step 33's question). Then: the hand-rolled two-tab row (`:574–:587`) becomes `components/Tabs` with Ask a question · Conversations · Where you stand · Past audits; `lib/ask/auditsBrief.ts` (the runs, their findings, the readings behind them, through `lib/ask/readings.ts`); `prompts/audits-answer.ts`; two routes; `AUDITS_EXAMPLE_QUESTIONS`; `PAID_COUNT` 21 → 23; the GATE F7 mark added to `components/home/AuditPanel.tsx:1`; PENDING F5 and D5 closed. | The board; the F6 run's result; the prompt; the examples; the walk. | not started |
+
+**Part B — reading every file format**, **Part C — the binder**, **Part D — Resend, Stripe, the gate walk**: written here when Part A is done.
+
+---
+
+## 6. What Part A touches outside its own files (the map, step 0)
+
+| Section | Files | Why |
+|---|---|---|
+| Calendar | `components/CalendarAsk.tsx`, `app/calendar/page.tsx`, `lib/ask/calendarBrief.ts`, `app/api/calendar/answer/route.ts`, `tests/unit/calendarShell.test.ts` | the lift (2), the upload (3), the shared packer (4); behaviour proven unchanged at each |
+| Audits | `app/audits/page.tsx:694` | one word on a bare link (4); then its own chat (6) |
+| Compliance Workspace | `app/compliance/page.tsx:1651` | one word on a bare link (4). Nothing else |
+| Dashboard | `lib/dashboardView.ts:185` | one word on a bare link (4) |
+| Company information | `app/company-information/page.tsx:989` | its fact links start working when `?document=` is read (4); no edit |
+| The batch email | `lib/documentBatch.ts:193` | one word on the "See them all" link (4); it is an email, so it cannot be fixed by a component |
+| HR | none edited | shared files it renders change (`ConversationList.tsx`, `AttachControl.tsx`): its free checks re-run at 2, 3 and 5 |
+| Shared | `lib/ai.ts`, `lib/costLedger.ts`, `lib/topicList.ts`, `app/api/jobs/summarise/route.ts`, `components/ConversationList.tsx`, `scripts/check-schema-contracts.js`, `scripts/check-live.js`, `scripts/haiku-names.mjs` (read: the one-line rule), `docs/SCHEMA.md` | as the steps say |
+
+---
+
+## 7. Open, waiting on the owner
+
+- The paused sentence for a chat upload (step 3).
+- Whether a size cap on carried attachments is owed now (PENDING S7; step 3).
+- The action row's shape, from step 2's screenshots.
+- The Documents prompt and the three examples (step 4).
+- The Audits box board (step 6).
+
+---
+
+## 8. Known defects and document drift recorded by the map (2 November)
+
+- **A reading card in the Calendar chat lands nowhere.** When a Calendar answer cites a document's stored reading (a card labelled "a reading of your document"), its link is `/documents?document=<id>` and the Documents page does not read that word (`app/documents/page.tsx` reads only `add` and `return`, `:185`, `:198`). A date card ("your calendar") is fine: it opens the date drawer, whose second tab shows the report. Company information's fact links (`:989`) have the same dead end. **Fixed in step 4** — the fix is on the Documents page; Calendar needs no change. To be added to `docs/PENDING.md` as a D row at step 1.
+- **The night summary skips Calendar** (`app/api/jobs/summarise/route.ts:94`). Fixed in step 1.
+- **`STATUS.md`'s Audits row** still says the template audit "returns 400, not ready" and the attach control is inert. The code has the template branch (`app/api/audit-runs/route.ts:47` onward) and a live button (`app/audits/page.tsx:616–:619`). The row is corrected at step 1 to say what `PENDING.md` F6 says: three readings disagree; settled by running it at step 6.
+- **`PENDING.md` D5** points at `app/audits/page.tsx:533`; the dead `/compliance` link is at `:621`. Corrected at step 1.
+- **`docs/HANDOFF-FROM-CALENDAR.md`** says thirteen model tiers; `lib/ai.ts:27` has fourteen. Corrected at step 1.
+- **The Haiku guard reads `AITask` off one line** (`scripts/haiku-names.mjs:21`). If that line is wrapped, the guard silently stops seeing some tiers and a build run spends Opus money. Standing rule for this work: the union stays on one line, and every step that touches it reports the guard's row count.
+- **The homepage's Documents panel** says the plan's two contacts "have both left since"; nothing in the product can know that. For the gate walk, not this part.

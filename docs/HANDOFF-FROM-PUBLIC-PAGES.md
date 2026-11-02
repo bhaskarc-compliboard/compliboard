@@ -37,9 +37,9 @@ one file under `components/home/`, holding its own sentences in one `WORDS` obje
 with the app's own tokens — never a screenshot, because screenshots do not read clean (decision 5). `app/page.tsx`
 is the ordered list of panels and holds no words at all. Four content pages — `/privacy`, `/terms`, `/security`,
 `/faq` — exist as **honest one-line stubs**, each `noindex` until its words are written. The page says nothing the
-product cannot do, with seven gate items (§5 below) marked in the panel files that depend on them. **It is not
-pushed** (see the box above), the four pages' words wait for the app work, `/contact` does not exist, and the
-domain is not connected.
+product cannot do, with seven gate items (§5 below) marked in the panel files that depend on them. **It is pushed
+and live at compliboard.vercel.app** (the box above); the four pages' words wait for the app work, `/contact` does
+not exist, and the domain is not connected.
 
 ---
 
@@ -55,7 +55,7 @@ domain is not connected.
 | `docs/PENDING.md` | What the product owes. **F1, F4, F6, F7, S1, D2 and now F12 are this page's gate** |
 | `docs/DESIGN.md` | The app's type scale and token rules. The public pages have their own, larger scale (§3 below) and say so where they depart |
 | `STATUS.md` | The **Public pages** row |
-| `docs/RELEASE.md` | How a change reaches production — the push this work is waiting for |
+| `docs/RELEASE.md` | How a change reaches production — the way this work was pushed at step 35b, and the way the domain release (step 34) will go |
 
 ---
 

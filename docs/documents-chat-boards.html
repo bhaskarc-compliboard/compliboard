@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documents — the chat boards</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Canvas chrome and the app tokens are docs/calendar-boards.html's, unchanged, except the sidebar:
+   it is drawn as the app has it since the Dashboard's decision 12 (components/AppLayout.tsx NAV_ITEMS:
+   the owner's order, a hairline before Company information, the active page underlined, no green box).
+   This CSS is a mock-up and is never a source for the product's spacing, type or colour. */
+:root {
+  --desk: #E9EBEE; --desk-fg: #14171A; --desk-muted: #6B7280; --desk-faint: #9CA3AF; --desk-line: #D6D9DE; --desk-surface: #FFFFFF;
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  --ink: #14171A; --heading: #111827; --text-strong: #1F2937; --text: #4B5563; --text-nav: #5B6470; --text-muted: #6B7280; --text-faint: #9CA3AF;
+  --group-heading: #374151; --dot: #D1D5DB; --line: #E5E7EB; --line-faint: #F0F1F3; --page: #F7F8FA; --surface: #FFFFFF; --panel: #F9FAFB; --bubble: #E5E7EB; --scrim: rgba(20,23,26,0.4);
+  --brand: #2F7D52; --brand-strong: #256541; --brand-tint: #EAF3ED; --warning: #B7791F; --danger: #B42318; --orange: #F94300;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: var(--font-ui); }
+.cv-top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 16px; background: var(--desk-surface); border-bottom: 1px solid var(--desk-line); }
+.cv-top h1 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cv-top .sp { flex: 1; }
+.cv-top select, .cv-top button { font-family: inherit; font-size: 13px; height: 30px; padding: 0 10px; border: 1px solid var(--desk-line); border-radius: 6px; background: var(--desk-surface); color: var(--desk-fg); cursor: pointer; }
+.cv-top button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-strong); }
+.cv-intro { max-width: 900px; padding: 28px 16px 8px; }
+.cv-intro h2 { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; line-height: 1.2; }
+.cv-intro p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--desk-muted); max-width: 76ch; }
+.cv-band { padding: 28px 16px 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.cv-frame { padding: 12px 16px 24px; }
+.cv-label { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; font-size: 13px; color: var(--desk-muted); }
+.cv-label .t { font-weight: 500; color: var(--desk-fg); }
+.cv-label .s { font-size: 11px; color: var(--desk-faint); white-space: nowrap; }
+.cv-note { margin: 0 0 8px; font-size: 13px; line-height: 20px; color: var(--desk-muted); max-width: 86ch; }
+.cv-note b { color: var(--desk-fg); font-weight: 600; }
+.cv-ask { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--warning); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-ask b { font-weight: 600; }
+.cv-dec { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--brand); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-dec b { font-weight: 600; }
+.scaler { position: relative; width: 100%; overflow: hidden; }
+.board { position: relative; width: 1280px; transform-origin: 0 0; background: var(--page); color: var(--ink); font-family: var(--font-ui); box-shadow: 0 1px 3px rgba(20,23,26,0.12), 0 8px 24px rgba(20,23,26,0.06); overflow: hidden; }
+.board a { color: var(--brand-strong); }
+.board button { font-family: inherit; }
+
+/* the app frame */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { height: 57px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .name { font-size: 14px; font-weight: 600; }
+.topbar .org { font-size: 13px; color: var(--text-nav); }
+.bodyrow { display: flex; flex: 1; min-height: 0; }
+.sidebar { width: 224px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 16px 12px; background: var(--surface); border-right: 1px solid var(--line); }
+.board .nav { display: flex; justify-content: space-between; padding: 10px 12px; font-size: 14px; color: var(--text-nav); text-decoration: none; }
+.nav .badge { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.board .nav.active { font-weight: 500; color: var(--brand-strong); }
+.nav.active .l { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.nav-rule { height: 1px; margin: 14px 12px; background: var(--line); }
+.main { flex: 1; display: flex; justify-content: center; padding: 24px 24px 64px; min-width: 0; }
+.column { width: 852px; max-width: 100%; display: flex; flex-direction: column; }
+.page-title { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; }
+.lede { margin: 4px 0 0; font-size: 14px; color: var(--text-muted); }
+.tabs { display: flex; align-items: center; gap: 24px; margin: 20px 0; border-bottom: 1px solid var(--line); }
+.tab { padding: 8px 0 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--brand-strong); border-bottom-color: var(--brand); }
+.tabs .spacer { flex: 1; }
+.tabs .side-link { padding: 8px 0 12px; font-size: 14px; color: var(--text-muted); text-decoration: none; }
+.btn-primary { font-size: 14px; font-weight: 500; padding: 8px 16px; color: #fff; background: var(--brand); border: 0; border-radius: 6px; }
+.btn-text { font-size: 14px; padding: 0; color: var(--text); background: transparent; border: 0; }
+.btn-text.strong { font-weight: 500; color: var(--brand-strong); }
+.attach { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0; background: none; border: 0; font-size: 12px; color: var(--text-muted); }
+.attach span { text-decoration: underline; }
+.send { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--brand); border: 0; border-radius: 8px; color: #fff; }
+.askbox { min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.askbox .inner { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.askbox .example { margin: 0; font-size: 14px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.askbox-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 10px; }
+.thread { display: flex; flex-direction: column; gap: 20px; margin-bottom: 28px; }
+.bubble-row { display: flex; justify-content: flex-end; }
+.bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; background: var(--bubble); font-size: 16px; line-height: 24px; }
+.bubble .chip { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; color: var(--text); }
+.answer { display: flex; flex-direction: column; gap: 14px; }
+.answer h3 { margin: 8px 0 0; font-family: var(--font-reading); font-size: 19px; font-weight: 600; }
+.answer p, .answer li { margin: 0; font-family: var(--font-reading); font-size: 17px; line-height: 28px; }
+.answer ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+.answer .note { font-family: var(--font-ui); font-size: 13px; line-height: 19px; color: var(--text-faint); }
+.cite { margin: 0 2px; padding: 0 4px; border-radius: 4px; background: var(--brand-tint); font-family: var(--font-ui); font-size: 10px; font-weight: 600; color: var(--brand); vertical-align: super; }
+.sources { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sources .label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.source { display: flex; gap: 8px; font-size: 13px; line-height: 18px; }
+.source .n, .source .origin { color: var(--text-faint); }
+.source .quote { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.composer { display: flex; flex-direction: column; padding: 14px 16px 10px; min-height: 104px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.composer .ph { flex: 1; font-size: 16px; line-height: 24px; color: var(--text-faint); }
+.composer .bar { display: flex; justify-content: flex-end; }
+.actions { display: flex; align-items: center; gap: 20px; margin-top: 12px; }
+.actions .q { outline: 2px dashed var(--warning); outline-offset: 4px; border-radius: 2px; }
+.hint { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+/* conversations */
+.day { margin: 4px 0 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.convs { border-top: 1px solid var(--line-faint); border-bottom: 1px solid var(--line-faint); margin-bottom: 24px; }
+.conv { padding: 10px 0; border-top: 1px solid var(--line-faint); }
+.conv:first-child { border-top: 0; }
+.conv .t { font-size: 13px; color: var(--ink); }
+.conv .m { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px; font-size: 12px; color: var(--text-muted); }
+.conv .m .file { display: inline-flex; align-items: center; gap: 4px; }
+
+/* documents tab, today's page */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.ctl { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 14px; color: var(--text-strong); }
+.lbl { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-muted); }
+.toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.btn-add { padding: 10px 20px; border-radius: 6px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 500; }
+.under { font-size: 14px; color: var(--text); text-decoration: underline; }
+.grp { margin-top: 22px; }
+.grp h4 { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.grp h4 span { color: var(--text-faint); font-weight: 400; }
+table.docs { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.docs td:nth-child(2) { width: 11%; } table.docs td:nth-child(3) { width: 19%; } table.docs td:nth-child(4) { width: 12%; } table.docs td:nth-child(5) { width: 12%; }
+table.docs td { padding: 10px 0; border-bottom: 1px solid var(--line-faint); font-size: 12px; color: var(--text); vertical-align: top; }
+table.docs td.doc { font-size: 13px; color: var(--ink); width: 46%; }
+table.docs td.doc span { display: block; font-size: 12px; color: var(--text-muted); }
+table.docs td.st { font-size: 13px; color: var(--text-muted); text-align: right; }
+table.docs td.st.amber { color: var(--warning); }
+
+/* the notes band at the end */
+.notes { max-width: 900px; padding: 0 16px 48px; }
+.notes h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 600; }
+.notes p, .notes li { font-size: 14px; line-height: 22px; color: var(--desk-fg); }
+.notes ul { margin: 0; padding-left: 20px; }
+.notes code { font-size: 12.5px; background: var(--desk-surface); padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="cv-top">
+  <h1>CompliBoard Documents — the chat boards</h1>
+  <span class="sp"></span>
+  <select id="goto" aria-label="Go to a board"><option value="">Go to a board…</option></select>
+  <button type="button" id="z-fit" aria-pressed="true">Fit</button>
+  <button type="button" id="z-75" aria-pressed="false">75%</button>
+  <button type="button" id="z-100" aria-pressed="false">100%</button>
+</div>
+
+<div class="cv-intro">
+  <h2>Documents gets the shared chat</h2>
+  <p><strong>Draft 2, 2 November 2026.</strong> Draft 1's three questions are answered and marked as decisions; board 1b is new. Five boards for a 1280-wide window. The chat and its conversations are Calendar's and HR's exactly: the same box, the same answer, the same action row and the same conversation list, because they will be the same shared screen. The third tab is today's Documents page with nothing changed.</p>
+  <p>The sample company is the Calendar boards': Willamette Vinegar Works, with a Portland plant and a Vancouver warehouse. Today is 2 November 2026 on every board. <strong>Every answer here is sample text in the product's voice, not a reading of a real file.</strong> The three emergency-plan gaps on board 3 are the elements of 29 CFR 1910.38 the homepage's own panel cites. Green boxes are the owner's decisions, with the date.</p>
+</div>
+
+<div class="cv-band">Asking: the door</div>
+
+<!-- ===================== BOARD 1 ===================== -->
+<section class="cv-frame" id="b1">
+  <div class="cv-label"><span class="t">1 · Ask a question, first visit</span><span class="s">1280 × 720</span></div>
+  <p class="cv-note">Calendar board 1 with Documents' words. <b>The tab row is the only new thing on the page:</b> Ask a question · Conversations · Documents, and "+ New conversation" at the right on the first two tabs, as Calendar has it. The three grey lines are <code>config/examples.ts</code>, your file, a new list beside HR's and Calendar's. They are not buttons.</p>
+  <div class="cv-dec"><b>Decided 2 November — the attach line.</b> "Add a document", because this is the documents section. It opens the file picker here; the file goes through Documents' own upload, is read like any other, and travels with the question. <b>Every section's chat uploads the same way</b>, so Calendar's "Add a document", a link to Documents today, becomes a real upload when Calendar moves onto the shared screen. <b>No folder upload in the chat:</b> a folder takes minutes to read, and a person asking wants the answer now. Folders stay on the Documents tab.</div>
+  <div class="scaler"><div class="board" style="height:720px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav active" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Documents</h1>
+          <p class="lede">Everything you hold, read and grouped by what it is — not by where you filed it.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Ask a question</div><div class="tab">Conversations</div><div class="tab">Documents (24)</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div>
+          <div class="askbox"><div class="inner">
+            <p class="example">e.g. Which of our permits expire in the next 12 months?</p>
+            <p class="example">e.g. What’s missing from our emergency action plan, and how do we fix it?</p>
+            <p class="example">e.g. Show me all our training records.</p>
+          </div></div>
+          <div class="askbox-bar"><button class="attach"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span>Add a document</span></button><button class="btn-primary">Ask</button></div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 1b ===================== -->
+<section class="cv-frame" id="b1b">
+  <div class="cv-label"><span class="t">1b · Ask a question, nothing on file yet</span><span class="s">1280 × 720</span></div>
+  <p class="cv-note">A new company's first visit. A chat with an empty cabinet cannot answer anything about documents, so it says so in one line under the box (decision 30's rule: say what you do not know), and the line is where a first-timer learns that a whole folder can go in. "Documents tab" switches to the tab. <b>The line goes the moment the company has one document</b>; a returning person never sees it. The tab reads "Documents" with no count, because a count of nothing is not shown.</p>
+  <div class="cv-dec"><b>Proposed 2 November, for your yes.</b> The words of the line are yours to change.</div>
+  <div class="scaler"><div class="board" style="height:720px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span></a><a class="nav active" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Documents</h1>
+          <p class="lede">Everything you hold, read and grouped by what it is — not by where you filed it.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Ask a question</div><div class="tab">Conversations</div><div class="tab">Documents</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div>
+          <div class="askbox"><div class="inner">
+            <p class="example">e.g. Which of our permits expire in the next 12 months?</p>
+            <p class="example">e.g. What’s missing from our emergency action plan, and how do we fix it?</p>
+            <p class="example">e.g. Show me all our training records.</p>
+          </div></div>
+          <div class="askbox-bar"><button class="attach"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span>Add a document</span></button><button class="btn-primary">Ask</button></div>
+          <p style="margin:18px 0 0;font-size:13px;line-height:20px;color:var(--text-muted)">Nothing on file yet. Add files or a whole folder in the <a href="#" style="color:var(--brand-strong);text-decoration:underline">Documents tab</a>, and ask about them once they’re read.</p>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 2 ===================== -->
+<section class="cv-frame" id="b2">
+  <div class="cv-label"><span class="t">2 · The answer, from the reports</span><span class="s">1280 × 1300</span></div>
+  <p class="cv-note">Calendar board 2's shape. The question is answered from what Documents already read, every document's stored report, and the web for the rule. No file is opened. <b>A document is a source like a date is:</b> its card names the document, says it is yours, and quotes the line the answer rests on; clicking it opens that document's report, the same drawer the Documents tab opens. Source 3 is the product saying what the file does not tell it, rather than guessing.</p>
+  <div class="cv-dec"><b>Decided 2 November — the action row.</b> "Turn this into a checklist" first, then "Summarise this conversation" and "Download": the Workspace's power, in every section's chat.</div>
+  <div class="scaler"><div class="board" style="height:1300px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav active" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Documents</h1>
+          <p class="lede">Everything you hold, read and grouped by what it is — not by where you filed it.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Ask a question</div><div class="tab">Conversations</div><div class="tab">Documents (24)</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div>
+          <div class="thread">
+            <div class="bubble-row"><div class="bubble">Which of our permits expire in the next 12 months?</div></div>
+            <div class="answer">
+              <h3>Two do: the Portland air permit on 15 November, and the Vancouver fire permit in March.</h3>
+              <p>Your Air Contaminant Discharge Permit 26-2841 for the Portland plant is valid through 15 November 2026, thirteen days from today.<span class="cite">1</span> Its report marks it Needs work: there is no renewal application on file.<span class="cite">1</span></p>
+              <p>The fire code operational permit for the Vancouver warehouse expires on 31 March 2027.<span class="cite">2</span> Its report reads it as current.</p>
+              <p>One more permit has no end date in the file. The industrial stormwater registration for Portland reads as current, but the letter itself does not say when the registration ends,<span class="cite">3</span> so that is worth checking with DEQ rather than assuming.</p>
+              <p>An air permit renewal goes to the agency before the permit ends, and DEQ's permit pages say what the application needs.<span class="cite">4</span> If you want, I can turn the steps into a checklist.</p>
+              <p class="note">Answered from the reports of your 24 documents. Both dates are on your calendar.</p>
+              <div class="sources">
+                <div class="label">Sources</div>
+                <div class="source"><span class="n">1.</span><span><a href="#">Air Contaminant Discharge Permit 26-2841</a> <span class="origin">your document · permit · Portland plant</span><span class="quote">Page 1: “This permit is valid through November 15, 2026.”</span></span></div>
+                <div class="source"><span class="n">2.</span><span><a href="#">Fire Code Operational Permit — Vancouver warehouse</a> <span class="origin">your document · permit · Vancouver warehouse</span><span class="quote">“Expires 03/31/2027”</span></span></div>
+                <div class="source"><span class="n">3.</span><span><a href="#">Industrial stormwater registration letter</a> <span class="origin">your document · permit · Portland plant</span><span class="quote">The letter gives the registration number and start date and no end date.</span></span></div>
+                <div class="source"><span class="n">4.</span><span><a href="#">Air quality permits</a> <span class="origin">oregon.gov/deq · official source</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="composer"><div class="ph">Ask about a document, or what you hold…</div><div class="bar"><span class="send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></div>
+          <div class="actions"><button class="attach"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span>Add a document</span></button><span class="push" style="flex:1"></span><button class="btn-text strong">Turn this into a checklist</button><button class="btn-text">Summarise this conversation</button><button class="btn-text">Download</button></div>
+          <div class="hint">One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.</div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 3 ===================== -->
+<section class="cv-frame" id="b3">
+  <div class="cv-label"><span class="t">3 · A file attached, and the question about it</span><span class="s">1280 × 1300</span></div>
+  <p class="cv-note">The homepage's scene. The person attaches the plan and asks. <b>For this answer the file itself is read whole</b>, not only its report, and it is carried on every later question in this conversation, which is the rule the Workspace already uses because carrying only the summary once made a later answer take back a true finding. The file also lands in Documents and gets its own report, like any upload.</p>
+  <p class="cv-note"><b>One honesty note, from drawing this.</b> The homepage's card says the two contacts "have both left since". Nothing in the product can know who has left a company. This board says what the product can know: the plan names people, not job titles, and names go stale. The homepage's sample line is worth correcting at the gate walk.</p>
+  <div class="scaler"><div class="board" style="height:1300px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav active" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Documents</h1>
+          <p class="lede">Everything you hold, read and grouped by what it is — not by where you filed it.</p>
+          <div class="tabs"><div class="tab" aria-selected="true">Ask a question</div><div class="tab">Conversations</div><div class="tab">Documents (24)</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div>
+          <div class="thread">
+            <div class="bubble-row"><div class="bubble"><div class="chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg>Emergency-Action-Plan-2025.pdf · 9 pages</div>What’s wrong with this plan?</div></div>
+            <div class="answer">
+              <h3>Most of it holds. Three things the rule asks for are missing or will go stale.</h3>
+              <p>This is the written emergency action plan for the Portland plant, revised February 2025.<span class="cite">1</span> Measured against OSHA's rule for these plans:<span class="cite">2</span></p>
+              <ol>
+                <li><strong>No way to account for everyone after an evacuation.</strong> Section 4 says where people assemble but not who counts them. The rule asks for procedures to account for all employees after evacuation. Add a headcount step and name who does it.<span class="cite">1</span><span class="cite">2</span></li>
+                <li><strong>The contacts are named people, not job titles.</strong> Section 7 names two people to contact about the plan. That meets the rule today, but names go out of date when people leave; the rule allows the job title instead. If either person has left, the plan needs changing now.<span class="cite">1</span><span class="cite">2</span></li>
+                <li><strong>One alarm for every emergency.</strong> The plan calls the alarm "the bell" for fire, spill and shelter alike. The rule asks for a distinctive signal for each purpose. Say which signal means evacuate and which means shelter.<span class="cite">1</span><span class="cite">2</span></li>
+              </ol>
+              <p>Want me to draft section 4's headcount step, or turn these three into a checklist?</p>
+              <p class="note">Read whole for this answer, and filed in Documents with its own report.</p>
+              <div class="sources">
+                <div class="label">Sources</div>
+                <div class="source"><span class="n">1.</span><span><a href="#">Emergency Action Plan — Portland plant</a> <span class="origin">your document · attached · program · Portland plant</span><span class="quote">Section 7: “Contact Dana Ruiz or Mark Ellison with questions about this plan.”</span></span></div>
+                <div class="source"><span class="n">2.</span><span><a href="#">1910.38 — Emergency action plans</a> <span class="origin">osha.gov · official source</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="composer"><div class="ph">Ask about a document, or what you hold…</div><div class="bar"><span class="send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></div>
+          <div class="actions"><button class="attach"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span>Add a document</span></button><span style="flex:1"></span><button class="btn-text strong">Turn this into a checklist</button><button class="btn-text">Summarise this conversation</button><button class="btn-text">Download</button></div>
+          <div class="hint">One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.</div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">The conversations, and the documents as they are</div>
+
+<!-- ===================== BOARD 4 ===================== -->
+<section class="cv-frame" id="b4">
+  <div class="cv-label"><span class="t">4 · Conversations</span><span class="s">1280 × 640</span></div>
+  <p class="cv-note">The shared conversation list, as Calendar and HR draw it: grouped by day, one grey line per conversation (when · questions · the file, if one was attached · the summary). Opening one opens the same conversation drawer HR has, which is not redrawn here. Only Documents' own conversations show; HR's and Calendar's stay in their sections.</p>
+  <div class="scaler"><div class="board" style="height:640px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav active" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Documents</h1>
+          <p class="lede">Everything you hold, read and grouped by what it is — not by where you filed it.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab" aria-selected="true">Conversations</div><div class="tab">Documents (24)</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div>
+          <p class="day">Today</p>
+          <div class="convs">
+            <div class="conv"><div class="t">Which of our permits expire in the next 12 months?</div><div class="m">10:42 am · 2 questions · Not summarised yet</div></div>
+            <div class="conv"><div class="t">What’s wrong with this plan?</div><div class="m"><span>9:15 am · 1 question ·</span><span class="file"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg>Emergency-Action-Plan-2025.pdf</span><span>· Not summarised yet</span></div></div>
+          </div>
+          <p class="day">This week</p>
+          <div class="convs">
+            <div class="conv"><div class="t">Show me all our training records.</div><div class="m">Wed 28 Oct · 3 questions · Summary ready</div></div>
+          </div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ===================== BOARD 5 ===================== -->
+<section class="cv-frame" id="b5">
+  <div class="cv-label"><span class="t">5 · Documents — today's page, unchanged</span><span class="s">1280 × 900</span></div>
+  <p class="cv-note">Everything under the tab row is today's page: the upload banner when there is one, the folder filter, Group by, the site filter when there are two sites, Add files and Add a folder, and the table with its report drawer. Drawn from <code>app/documents/page.tsx</code> as it stands; nothing on it moves or changes words. "+ New conversation" does not show on this tab, the way Calendar hides it on its own views.</p>
+  <div class="cv-dec"><b>Decided 2 November — the count.</b> "Documents (24)", as Calendar's tabs carry theirs. <b>Drive connection is rev 1.5</b>, OneDrive first, within days of the release; for rev 1 the folder menu's grey "Connect your drive" stays exactly as it is today and no other section shows it.</div>
+  <div class="scaler"><div class="board" style="height:900px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Willamette Vinegar Works</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav active" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Documents</h1>
+          <p class="lede">Everything you hold, read and grouped by what it is — not by where you filed it.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab">Conversations</div><div class="tab" aria-selected="true">Documents (24)</div><span class="spacer"></span></div>
+          <div class="toolbar">
+            <span class="ctl">Folder: All files (24) ▾</span>
+            <span class="lbl">Group by <span class="ctl">Status ▾</span></span>
+            <span class="lbl">Site <span class="ctl">All sites ▾</span></span>
+            <span class="right"><span class="btn-add">Add files</span><span class="under">Add a folder</span></span>
+          </div>
+          <div class="grp"><h4>Needs work <span>· 3</span></h4>
+            <table class="docs">
+              <tr><td class="doc">Air Contaminant Discharge Permit 26-2841<span>ACDP-26-2841.pdf</span></td><td>Permit</td><td>Portland plant</td><td>15 Nov 2026</td><td class="st amber">Needs work</td></tr>
+              <tr><td class="doc">Emergency Action Plan — Portland plant<span>Emergency-Action-Plan-2025.pdf</span></td><td>Program</td><td>Portland plant</td><td>Feb 2025</td><td class="st amber">Needs work</td></tr>
+              <tr><td class="doc">Hazard Communication Program<span>HazCom-Program.docx</span></td><td>Program</td><td>Every site</td><td>12 Jan 2024</td><td class="st amber">Needs work</td></tr>
+            </table>
+          </div>
+          <div class="grp"><h4>Current <span>· 18</span></h4>
+            <table class="docs">
+              <tr><td class="doc">Fire Code Operational Permit — Vancouver warehouse<span>Vancouver-Fire-Permit.pdf</span></td><td>Permit</td><td>Vancouver warehouse</td><td>31 Mar 2027</td><td class="st">Current</td></tr>
+              <tr><td class="doc">Industrial stormwater registration letter<span>1200-Z-registration.pdf</span></td><td>Permit</td><td>Portland plant</td><td>—</td><td class="st">Current</td></tr>
+              <tr><td class="doc">Forklift operator training records, 2026<span>Forklift-Training-2026.xlsx</span></td><td>Record</td><td>Portland plant</td><td>14 Mar 2026</td><td class="st">Current</td></tr>
+              <tr><td class="doc">Respirator fit test results<span>Fit-Test-2026.pdf</span></td><td>Record</td><td>Portland plant</td><td>2 Jun 2026</td><td class="st">Current</td></tr>
+              <tr><td class="doc" style="color:var(--brand-strong)">Show all 18</td><td></td><td></td><td></td><td></td></tr>
+            </table>
+          </div>
+          <div class="grp"><h4>Could not read <span>· 1</span></h4>
+            <table class="docs">
+              <tr><td class="doc">Spill-Plan-2019.doc<span>Spill-Plan-2019.doc</span></td><td>—</td><td>—</td><td>—</td><td class="st amber">Could not read</td></tr>
+            </table>
+          </div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="notes">
+  <h3>Where a person lands when another section sends them here — decided 2 November</h3>
+  <p><b>Documents reads the link it was opened with and picks the tab; the fix lives here, in one place.</b> The sidebar and the bare address open Ask a question. A link that asks for a file to be added (<code>?add=</code>) or says where to come back to (<code>?return=</code>) opens the Documents tab; Documents reads both words today (<code>app/documents/page.tsx:185</code>, <code>:198</code>).</p>
+  <p><b>Found while checking, and to be confirmed with one click before it is called a defect:</b> links that name one document (<code>/documents?document=&lt;id&gt;</code>) are written by Company information beside each fact and by the Calendar chat's source cards, and nothing in the Documents page reads that word. So those links land on Documents and open nothing. Documents learns it here: the Documents tab opens with that document's report in the drawer, which board 2's source cards need anyway.</p>
+  <p><b>Four links carry no word at all</b>, so Documents cannot know what they meant, and each needs one word in its own file (or becomes an upload in place, now that every section can upload): Audits' "Go to Documents", the Workspace after a new version is uploaded, the Dashboard's "Add a document" when nothing is upcoming, and the document-batch email's "See them all". Those are changes in four other sections; the map names each, and each section's free checks run again.</p>
+</div>
+
+<script>
+(function () {
+  var sel = document.getElementById('goto');
+  document.querySelectorAll('.cv-frame').forEach(function (f) {
+    var t = f.querySelector('.cv-label .t'); var o = document.createElement('option'); o.value = f.id; o.textContent = t ? t.textContent : f.id; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { if (sel.value) { var el = document.getElementById(sel.value); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); sel.value = ''; } });
+  var mode = 'fit';
+  function layout() {
+    document.querySelectorAll('.scaler').forEach(function (s) {
+      var b = s.firstElementChild; var w = b.offsetWidth; var h = parseFloat(b.style.height) || b.offsetHeight;
+      var avail = s.clientWidth; var scale = mode === 'fit' ? Math.min(1, avail / w) : mode === '75' ? Math.min(0.75, avail / w) : 1;
+      b.style.transform = 'scale(' + scale + ')';
+      s.style.height = Math.ceil(h * scale) + 'px';
+      s.style.overflowX = (scale === 1 && avail < w) ? 'auto' : 'hidden';
+    });
+  }
+  ['fit', '75', '100'].forEach(function (m) {
+    document.getElementById('z-' + m).addEventListener('click', function () {
+      mode = m; ['fit', '75', '100'].forEach(function (x) { document.getElementById('z-' + x).setAttribute('aria-pressed', x === m ? 'true' : 'false'); }); layout();
+    });
+  });
+  window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  layout();
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href="#"]'); if (a) e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
