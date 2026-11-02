@@ -1,12 +1,16 @@
 # PENDING — everything this product still owes
 
-**Version:** 1 · **Written:** 29 October 2026, by Claude Code at the close of My Account part C.
+**Version:** 2 · **Written:** 29 October 2026, by Claude Code at the close of My Account part C.
+**Updated:** 2 November 2026, at the close of the public pages (`docs/PUBLIC-PAGES-PLAN.md` step 35): **F12, chat
+over documents**, added — it was the one release gate for the homepage with no id here (§5 of that plan said "add
+one at step 35"). Three rows corrected where this build's own greps found them stale: **F4**'s "returns nothing",
+**D2**'s line number, and a note under **F6**. Nothing else re-read; every other row keeps its date.
 **For:** anyone asking *"what is left?"* without reading nine files to find out.
 **Gathered from**, not remembered: `docs/HANDOFF-FROM-ACCOUNT.md` §7 · `docs/HANDOFF-FROM-CALENDAR.md`
 §7 · `docs/HANDOFF-FROM-DASHBOARD.md` §7 · `docs/HANDOFF-FROM-HR.md` §7 · `docs/HANDOFF-AUDITS.md` §8 ·
 `docs/HANDOFF-CODE.md` §7 · `docs/HANDOFF-FOLDER-TEST.md` · `docs/WORKSPACE-PLAN.md` Stage 3 ·
 `docs/TEST-AT-FINISH-LINE.md` · `docs/ACCOUNT-PLAN.md` · `STATUS.md`'s degraded rows · `docs/TODO.md` ·
-`docs/DECISIONS.md`.
+`docs/DECISIONS.md` · `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 and `docs/PUBLIC-PAGES-PLAN.md` §5 (F12).
 
 > **Every line below traces to a file and, where it exists, a line number. Nothing here is invented.**
 > Where an item is a *decision* rather than work, it says so. Where it is a *hypothesis* rather than a
@@ -16,11 +20,12 @@
 
 ## How many, and the five to do first
 
-**47 owed items**, plus 3 hypotheses that are not owed work and 7 things deliberately not built:
+**48 owed items**, plus 3 hypotheses that are not owed work and 7 things deliberately not built:
 
-**11** unfinished features (F) · **14** known defects (D) · **7** security and limits (S) · **8**
+**12** unfinished features (F) · **14** known defects (D) · **7** security and limits (S) · **8**
 waiting on the owner (O) · **7** deliberately not built (N) · **3** hypotheses (H).
-11 + 14 + 7 + 8 + 7 = **47**; the three H rows are claims to settle, not work to do.
+12 + 14 + 7 + 8 + 7 = **48**; the three H rows are claims to settle, not work to do.
+*(47 and 11 until 2 November 2026, when F12 was added.)*
 
 | | do first | why this one |
 |---|---|---|
@@ -42,14 +47,15 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | **F1** | **Stripe live mode.** Six dashboard steps (product + price, webhook endpoint, its six events, the portal's default configuration, the secret key, the coupon and its promotion code) and three variables | `docs/RELEASE.md`, *"When Stripe live mode is ready"*; `docs/HANDOFF-FROM-ACCOUNT.md` §7.1 | **No money can be taken.** Checkout and the portal answer *"Card payment is not set up on this server yet"*. Every one of the six has a sandbox twin that does **not** carry over | a day |
 | **F2** | **The sites screen.** `switch_scope` says **73 of 95 switches are per-site**, and an audit is scoped to a company | `docs/HANDOFF-AUDITS.md` §8.1 | **A two-site company gets one audit that is wrong for both.** A second plant has its own permit, generator category and forklifts | a week |
 | **F3** | **The folder test.** The whole product judged on 20–40 files as a customer actually holds them, one folder a two-site company | `docs/HANDOFF-FOLDER-TEST.md` (written 1 Oct, *"the brief for the next chat"* — **that chat has not happened**) | The first real queue, the first real mess, and the first two-site judgement. Everything so far is measured a piece at a time | a week |
-| **F4** | **The binder.** One PDF: a cover, each cited document as pages behind a tab sheet, the report at the back | `DECISIONS.md` §143 (line 10730); `docs/HANDOFF-AUDITS.md` §8.4 | **Nothing exists in code** — `grep -rin binder app lib components scripts` returns nothing. Depends on D2: built first, it produces a binder with holes. The owner's decision: it **replaces** the download button, *"Download the documents"* becomes *"Download the binder"*, one button not two | a week |
+| **F4** | **The binder.** One PDF: a cover, each cited document as pages behind a tab sheet, the report at the back | `DECISIONS.md` §143 (line 10730); `docs/HANDOFF-AUDITS.md` §8.4 | **No binder code exists.** *(Corrected 2 November 2026: this read "`grep -rin binder app lib components scripts` returns nothing", which stopped being true the day the homepage shipped a panel about it — that grep now returns `components/home/BinderPanel.tsx`, `Hero.tsx`, `AuditPanel.tsx`, `QuestionPanel.tsx` and two lines of `app/page.tsx`, all of them words on a public page. Nothing under `app/api/`, `lib/` or `scripts/`.)* Depends on D2: built first, it produces a binder with holes. The owner's decision: it **replaces** the download button, *"Download the documents"* becomes *"Download the binder"*, one button not two | a week |
 | **F5** | **The question path from the Audits box.** It accepts *"Audit us for Oregon DEQ"*; a person who types *"do we need a stormwater permit?"* gets nothing | `docs/HANDOFF-AUDITS.md` §8.2 | A dead end on a box that invites a question. It belongs in the Workspace and the box should forward it | a day |
-| **F6** | **The template audit** (auditing against a checklist a customer attaches) | `STATUS.md`, Audits row | Returns **400 with a sentence saying it is not ready**; the attach control is inert and says so. Honest, and a named gap | a week |
+| **F6** | **The template audit** (auditing against a checklist a customer attaches) | `STATUS.md`, Audits row; `components/home/BinderPanel.tsx:2` | Returns **400 with a sentence saying it is not ready**; the attach control is inert and says so. Honest, and a named gap. **A release gate for the homepage** (panel 2b's whole scene). **Still a hypothesis, and three readings disagree** — read 2 Nov: `app/api/audit-runs/route.ts:47` has the `kind === 'template'` branch and the lines after it fetch the attached document rather than refuse; "not ready" appears nowhere in that route, `app/audits/page.tsx` or `lib/auditRun.ts`; and `app/audits/page.tsx:615`–`:618` is a working button that opens a file picker, with `:447` setting "Choose the checklist and we will audit against every line of it." **Settled by running it, at `docs/PUBLIC-PAGES-PLAN.md` step 33 — not by grep, and not by this file** | a week |
 | **F7** | **HR, Audits and the Workspace move onto the shared chat engine** `lib/ask/` | `docs/HANDOFF-FROM-CALENDAR.md` §7.4, decision 28 | The link check, quote check, marker numbering and history rebuild exist **twice** today. A test holds that no engine file imports HR's, so the move is a deletion rather than an untangling | a week |
 | **F8** | **The three existing emails onto the one template** (`lib/documentBatch.ts`, `lib/auditNotify.ts`, `lib/handbookCheckNotify.ts`) | `docs/HANDOFF-FROM-CALENDAR.md` §7.3, decision 25 | The footer, the wordmark, what a link looks like are decided in four places, and three of the four send **plain text only** | a day |
 | **F9** | **Conversations in the data export.** `/api/account/export` reads **no `topics` and no `turns`** | `docs/ACCOUNT-PLAN.md` open question 2; `docs/HANDOFF-FROM-ACCOUNT.md` §7.4 | Board 5's *"and conversation, as files"* overstates what the file holds. The page's wording is already honest; the export is what must catch up | a day |
 | **F10** | **A re-read button for the website read** | `DECISIONS.md` §210 (line 15145): *"A re-read button is owed and is not built"* | *"Read once"* is the route's rule, and **two of seven sites measured failed for temporary reasons**. A person who fixes their website is told *"we already tried"* | an hour |
 | **F11** | **An email before a discount ends** | `DECISIONS.md` §221 F; `docs/HANDOFF-FROM-ACCOUNT.md` §7.6 | The Billing tab names the date twice. Nothing sends it, so a customer whose discount lapses finds out from a failed charge | a day |
+| **F12** | **Chat over documents.** *"Show me all training documents"* answered from the reports; *"am I compliant on wastewater"* reads the reports first and opens the file only when needed — the research engine with a different context, the reports as the index | `docs/VISION-DOCUMENTS.md:207`, *"Later, not rev 1"*; `docs/PUBLIC-PAGES-PLAN.md` §5; marked on the page at `components/home/DocumentsPanel.tsx:1` (which says "no PENDING id yet" — this is that id) | **A release gate for the homepage:** panel 4 draws a question typed into the documents box and a conversation line under it, and neither exists. The report itself is live today, so the rest of that panel is true. Nothing is built: the Documents page has no chat surface, and `lib/ask/` has one customer (Calendar) | a week |
 
 ---
 
@@ -58,7 +64,7 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | | what it is | recorded in | what it risks | size |
 |---|---|---|---|---|
 | **D1** | **⚡ The scanner invents switch keys, and they reach a customer's queue AND three prompts.** On production, **30 of 30 pending proposals name a key that is not a switch** — 19 distinct invented names | `docs/HANDOFF-CODE.md` §7, row 1; `lib/documentScan.ts:1059`, `lib/companyContext.ts:357` | *"Waiting for you"* asks only about names the reading made up, and Confirm tries to write a switch that does not exist. The names also reach **every HR answer's and every document draft's context**. The fix is Documents' at the write; filtering the brief is a prompt input, so §3.1 makes it the owner's | a day |
-| **D2** | **⚡ `.doc` and `.ppt` are offered and cannot be read.** `ACCEPTED_FILE_TYPES` includes both (`lib/acceptedFiles.ts:15`); `isWord` claims `.doc` (`lib/documentContent.ts:149`) and hands it to **mammoth, which reads `.docx` only**; `isPowerPoint` claims `.ppt` (`:150`) and the code's own comment says officeparser *"does not list [.ppt] as supported at all — it is left to fail as it always has"* | read from the code, 29 Oct. Related: `docs/HANDOFF-AUDITS.md` §8.4 | **The product invites a file it cannot open.** Worse, because both branches *claim* the file, it never reaches `describeUnsupported()` (`:85`) — the polite *"which cannot be read here… Re-upload it as a PDF"* sentence written for exactly this — and fails by exception instead. §5.1. The audit then holds the document unread, so the evidence has a hole nobody is told about | a day |
+| **D2** | **⚡ `.doc` and `.ppt` are offered and cannot be read.** `ACCEPTED_FILE_TYPES` includes both (`lib/acceptedFiles.ts:14`, read again 2 Nov — this said `:15`); `isWord` claims `.doc` (`lib/documentContent.ts:149`) and hands it to **mammoth, which reads `.docx` only**; `isPowerPoint` claims `.ppt` (`:150`) and the code's own comment says officeparser *"does not list [.ppt] as supported at all — it is left to fail as it always has"* | read from the code, 29 Oct. Related: `docs/HANDOFF-AUDITS.md` §8.4 | **The product invites a file it cannot open.** Worse, because both branches *claim* the file, it never reaches `describeUnsupported()` (`:85`) — the polite *"which cannot be read here… Re-upload it as a PDF"* sentence written for exactly this — and fails by exception instead. §5.1. The audit then holds the document unread, so the evidence has a hole nobody is told about | a day |
 | **D3** | **A scanned PDF yields no text**, so quotes on it cannot be checked | `lib/documentContent.ts:64`, `:127` | The model still reads the image, but the quote check silently has nothing to check against. Named in the code; not surfaced to the person | a day |
 | **D4** | **`/compliance?checklist=<id>` opens nothing** | `docs/HANDOFF-CODE.md` §7; `components/DocumentReport.tsx:701`, `:760` | Confirmed on screen with a real id and a non-existent one: no drawer, no notice, the parameter left in the URL | an hour |
 | **D5** | **The Audits box's typed question is not carried to the workspace** | `docs/HANDOFF-CODE.md` §7; `app/audits/page.tsx:533` — a plain `href="/compliance"` | A sentence typed into the Audits box, the link followed, the workspace's box empty | an hour |
