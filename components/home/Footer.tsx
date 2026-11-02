@@ -3,17 +3,20 @@
  * every panel (`EDGES`, `components/home/Frame.tsx`), so the last line of the page starts where
  * the first one did.
  *
- * THE FOUR LINKS ARE DEAD UNTIL PART C. `/privacy`, `/terms`, `/security` and `/faq` are
- * written at steps 27–30 of `docs/PUBLIC-PAGES-PLAN.md`; today every one of them is a 404. That
- * is acceptable here and nowhere else: this page is unlinked and `noindex` (decision 11), so
- * nobody can arrive at it, and the swap at step 25 cannot ship until Part C has run. The app's
- * own shell footer already links to two of them (`components/AppLayout.tsx:462`–`:463`), so the
- * 404s are not new and are not this step's to fix.
+ * *** THE FOUR LINKS REACH REAL PAGES AS OF STEP 25a (2 November 2026). *** `/privacy`,
+ * `/terms`, `/security` and `/faq` are four routes built on `components/home/PageShell.tsx`,
+ * each one sentence saying it is being written before launch and each `noindex` until its words
+ * go in. Their words come at steps 27–30 of `docs/PUBLIC-PAGES-PLAN.md`, after the remaining app
+ * work (Part C, deferred 2 November). This note used to say every one of them was a 404, which
+ * was true until step 25a and is the reason the swap at step 25 had to wait for it. The app's own
+ * shell footer links to two of them (`components/AppLayout.tsx:462`–`:463`), so those two pages
+ * fix older debt as well — every signed-in person has had those links since the shell was built.
  *
- * The address is TEXT, not a `mailto:` — whether hello@compliboard.com receives mail is one of
- * the two things `PUBLIC-PAGES-PLAN.md` §7 is still waiting on the owner for. A link invites a
- * visitor to write to an address that may bounce; printing it states it and promises nothing.
- * It becomes a link the day the answer is yes.
+ * *** AND THERE IS NO EMAIL ADDRESS HERE, BY DECISION 13 (31 October 2026). *** This footer
+ * printed `hello@compliboard.com` as text until step 25a took it off: the address does not
+ * exist, and the owner has run public mailboxes before — "thousands of fake emails" — so nothing
+ * on the public pages is a `mailto:` or a printed address. Nothing replaces it yet; `/contact`,
+ * a short form with a bot check that delivers to an address nobody publishes, is step 30a.
  */
 import { EDGES } from './Frame'
 import { Wordmark } from './Nav'
@@ -38,7 +41,6 @@ export default function Footer() {
               {l.label}
             </a>
           ))}
-          <span className="text-[var(--ink-faint)]">hello@compliboard.com</span>
         </div>
       </div>
     </footer>
