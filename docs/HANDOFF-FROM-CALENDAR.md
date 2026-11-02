@@ -407,7 +407,7 @@ Build-test conversations and probe dates are on all three; clean them before the
 - **One filter, one writer.** Before you add a second query for "what is on the calendar", or a second place that
   writes a date, read `lib/calendarCounts.ts` and `lib/calendarDates.ts` — both exist because the product once had
   two of each and they disagreed.
-- **Build on Haiku, through `npm run haiku -- <command>`.** The owner's `.env.local` runs Opus on all thirteen
-  tiers, so the guard is the only thing keeping a build run cheap. Its refusal is the proof a run was not on Opus.
+- **Build on Haiku, through `npm run haiku -- <command>`.** The owner's `.env.local` runs Opus on all fourteen
+  tiers (`lib/ai.ts:27` names fourteen tasks — corrected 2 November 2026; this said thirteen), so the guard is the only thing keeping a build run cheap. Its refusal is the proof a run was not on Opus.
 - **`check:live` on port 3999** unless a brief says otherwise, including inside `npm run db:migrate`.
 - **Production is SELECT only, one query per stated need, and the SQL goes in the report.**

@@ -1,6 +1,7 @@
 # PENDING — everything this product still owes
 
 **Version:** 2 · **Written:** 29 October 2026, by Claude Code at the close of My Account part C.
+**Updated:** 2 November 2026, at `docs/GAPS-PLAN.md` Part A step 1: **D15 added** — a Calendar chat reading card's `/documents?document=<id>` link is read by nothing on the Documents page — so the count rises from 48 to 49 and the known defects from 14 to 15. **D5**'s line number corrected, `:533` → `:621`. Both from reading the code, not the docs.
 **Updated:** 2 November 2026, at the close of the public pages (`docs/PUBLIC-PAGES-PLAN.md` step 35): **F12, chat
 over documents**, added — it was the one release gate for the homepage with no id here (§5 of that plan said "add
 one at step 35"). Three rows corrected where this build's own greps found them stale: **F4**'s "returns nothing",
@@ -20,12 +21,12 @@ one at step 35"). Three rows corrected where this build's own greps found them s
 
 ## How many, and the five to do first
 
-**48 owed items**, plus 3 hypotheses that are not owed work and 7 things deliberately not built:
+**49 owed items**, plus 3 hypotheses that are not owed work and 7 things deliberately not built:
 
-**12** unfinished features (F) · **14** known defects (D) · **7** security and limits (S) · **8**
+**12** unfinished features (F) · **15** known defects (D) · **7** security and limits (S) · **8**
 waiting on the owner (O) · **7** deliberately not built (N) · **3** hypotheses (H).
-12 + 14 + 7 + 8 + 7 = **48**; the three H rows are claims to settle, not work to do.
-*(47 and 11 until 2 November 2026, when F12 was added.)*
+12 + 15 + 7 + 8 + 7 = **49**; the three H rows are claims to settle, not work to do.
+*(47 and 11 until 2 November 2026, when F12 was added; 48 and 14 until later the same day, when D15 was added.)*
 
 | | do first | why this one |
 |---|---|---|
@@ -67,7 +68,7 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | **D2** | **⚡ `.doc` and `.ppt` are offered and cannot be read.** `ACCEPTED_FILE_TYPES` includes both (`lib/acceptedFiles.ts:14`, read again 2 Nov — this said `:15`); `isWord` claims `.doc` (`lib/documentContent.ts:149`) and hands it to **mammoth, which reads `.docx` only**; `isPowerPoint` claims `.ppt` (`:150`) and the code's own comment says officeparser *"does not list [.ppt] as supported at all — it is left to fail as it always has"* | read from the code, 29 Oct. Related: `docs/HANDOFF-AUDITS.md` §8.4 | **The product invites a file it cannot open.** Worse, because both branches *claim* the file, it never reaches `describeUnsupported()` (`:85`) — the polite *"which cannot be read here… Re-upload it as a PDF"* sentence written for exactly this — and fails by exception instead. §5.1. The audit then holds the document unread, so the evidence has a hole nobody is told about | a day |
 | **D3** | **A scanned PDF yields no text**, so quotes on it cannot be checked | `lib/documentContent.ts:64`, `:127` | The model still reads the image, but the quote check silently has nothing to check against. Named in the code; not surfaced to the person | a day |
 | **D4** | **`/compliance?checklist=<id>` opens nothing** | `docs/HANDOFF-CODE.md` §7; `components/DocumentReport.tsx:701`, `:760` | Confirmed on screen with a real id and a non-existent one: no drawer, no notice, the parameter left in the URL | an hour |
-| **D5** | **The Audits box's typed question is not carried to the workspace** | `docs/HANDOFF-CODE.md` §7; `app/audits/page.tsx:533` — a plain `href="/compliance"` | A sentence typed into the Audits box, the link followed, the workspace's box empty | an hour |
+| **D5** | **The Audits box's typed question is not carried to the workspace** | `docs/HANDOFF-CODE.md` §7; `app/audits/page.tsx:621` — a plain `href="/compliance"` (read again 2 Nov — this said `:533`) | A sentence typed into the Audits box, the link followed, the workspace's box empty | an hour |
 | **D6** | **`conversation_reset` is sent by the route and read by no page** | `docs/HANDOFF-CODE.md` §7; `app/api/chat/route.ts:82` | *"Start fresh"* in the conversation-lost sentence does nothing — the conversation on screen is not cleared | an hour |
 | **D7** | **The failed line can show a raw provider message** | `docs/HANDOFF-CODE.md` §7; `lib/ai.ts:833–834` via `app/api/chat/route.ts:382` | Every string that can reach `x.error` is listed there. **Unchanged by decision: the owner decides the wording** | an hour |
 | **D8** | **Company information's literal `'FACTS_CHANGED'`** — the page dispatches the constant at `:201` and the *name of the constant* at `:318` | `docs/HANDOFF-FROM-CALENDAR.md` §7.5; `app/company-information/page.tsx:318` | That listener never fires, so the sidebar badge keeps a stale number after whichever write `:318` guards. **One line**, and it needs that page's own walk | an hour |
@@ -77,6 +78,7 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | **D12** | **Three site-scope questions cannot be answered Yes or No** (`air_toxics_program_applicable`, `exposure_vinyl_chloride`, `industrial_stormwater`) | `docs/HANDOFF-CODE.md` §7 | Each offers two alternatives, so Yes cannot say which half. Harmless today because site questions are asked nowhere — **owed to whoever asks a site question first**, with migration 081 §2 as the pattern | an hour |
 | **D13** | **`/upload` is broken and unreachable.** `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket | `STATUS.md`, Upload rows; `docs/TODO.md` §0.7 | Nothing links to it; `/documents` is the upload surface. `INVENTORY-2026-09.md` proposes deleting the page. **A decision, not a fix** | an hour |
 | **D14** | **Ten near-duplicate company names on production** | `docs/HANDOFF-CODE.md` §7; `docs/HANDOFF-FROM-DASHBOARD.md` §7.7 | A tidy-up, not a defect — but any per-company reading of production is hard to read and a demo would be embarrassing. Only `CB-Test-3` holds data | an hour |
+| **D15** | **A reading card in the Calendar chat lands nowhere.** When a Calendar answer cites a document's stored reading, the card's link is `/documents?document=<id>` (`lib/ask/calendarBrief.ts:181`, drawn as a real link by `components/AnswerBody.tsx:198`–`:199`) and **the Documents page reads no such word** — `grep` for `params.get` in `app/documents/page.tsx` returns `add` (`:185`) and `return` (`:198`) and nothing else | read from the code, 2 Nov; `docs/GAPS-PLAN.md` §8 | The click lands on the Documents list with no report open and no sentence saying why. **Company information's fact links have the same dead end** (`app/company-information/page.tsx:989`). A date card is unaffected — it opens the date drawer, whose second tab carries the report. The Calendar chat is live on production, so this is shipped. **Fixed in `docs/GAPS-PLAN.md` Part A step 4**, on the Documents page; Calendar needs no change | an hour |
 
 ---
 
