@@ -4,7 +4,7 @@
 //     --as testgamma@example.com --ask "When is our fire extinguisher maintenance due?"
 //
 // *** IT CALLS A MODEL, SO IT GOES THROUGH THE GUARD. *** `npm run haiku -- …` sets every model
-// variable and refuses unless all thirteen tiers resolve to Haiku (`CLAUDE.md` §3.4a). Without it
+// variable and refuses unless every tier in lib/ai.ts resolves to Haiku (`CLAUDE.md` §3.4a). Without it
 // this script spends Opus money.
 //
 // WHAT IT PRINTS, because a report that says "the answer was good" is a claim and this is the

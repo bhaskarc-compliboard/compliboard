@@ -77,8 +77,15 @@ console.log(`\n  schema-doc: reading ${label} (${ref})\n`)
 function q(sql) {
   let out
   try {
+    // *** `--read-only` IS WHAT THIS SCRIPT ALWAYS WAS, NOW SAID OUT LOUD. ***
+    // Supabase CLI 3.0.0 refuses to run a statement in an agent run unless it is told the
+    // statement is read-only or is given `--yes`: "Confirmation required: Run a SQL statement…
+    // This run can't ask because it writes machine-readable -o json output." Every query here is a
+    // catalog SELECT, so the flag states a fact rather than granting anything — and `--read-only`
+    // rather than `--yes`, because a flag that says "go ahead" on a script that only ever reads
+    // would be the wrong half of the pair to add (2 November 2026).
     out = execFileSync('npx',
-      ['supabase', 'db', 'query', '--project-ref', ref, '--linked', '--agent', 'no', '-o', 'json', sql],
+      ['supabase', 'db', 'query', '--project-ref', ref, '--linked', '--read-only', '--agent', 'no', '-o', 'json', sql],
       { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] })
   } catch (err) {
     // stderr is captured rather than discarded: without it a failure reads only

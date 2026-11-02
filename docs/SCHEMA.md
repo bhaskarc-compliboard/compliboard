@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-29 15:31 UTC
-**Migrations applied:** 91 — `000` to `090`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-11-02 23:19 UTC
+**Migrations applied:** 92 — `000` to `091`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -194,7 +194,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 - `ai_calls_input_tokens_check` — `CHECK ((input_tokens >= 0))`
 - `ai_calls_output_tokens_check` — `CHECK ((output_tokens >= 0))`
 - `ai_calls_searches_check` — `CHECK ((searches >= 0))`
-- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'howto'::text, 'other'::text, 'hr'::text, 'hr_check'::text, 'calendar'::text, 'website'::text])))`
+- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'howto'::text, 'other'::text, 'hr'::text, 'hr_check'::text, 'calendar'::text, 'website'::text, 'documents'::text, 'audits_chat'::text])))`
 - `ai_calls_wall_ms_check` — `CHECK ((wall_ms >= 0))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -3110,7 +3110,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 **Constraints:**
 
 - `topics_closed_has_a_time` — `CHECK ((((status = 'closed'::topic_status) AND (closed_at IS NOT NULL)) OR ((status = 'open'::topic_status) AND (closed_at IS NULL))))`
-- `topics_section_is_known` — `CHECK ((section = ANY (ARRAY['workspace'::text, 'hr'::text, 'calendar'::text])))`
+- `topics_section_is_known` — `CHECK ((section = ANY (ARRAY['workspace'::text, 'hr'::text, 'calendar'::text, 'documents'::text, 'audits_chat'::text])))`
 - `topics_summary_report_is_an_object` — `CHECK (((summary_report IS NULL) OR (jsonb_typeof(summary_report) = 'object'::text)))`
 - `topics_summary_source_is_known` — `CHECK (((summary_source IS NULL) OR (summary_source = ANY (ARRAY['user'::text, 'nightly'::text]))))`
 - `topics_title_is_not_blank` — `CHECK ((length(btrim(title)) > 0))`
@@ -3596,4 +3596,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 088
 089
 090
+091
 ```
