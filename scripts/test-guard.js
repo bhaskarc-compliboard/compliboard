@@ -244,7 +244,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   had before — `TOPIC_SECTIONS` against the CHECK constraint that polices it (`costLedger.test.ts`
 //   has had that pairing since `document_scan`; `topics.section` never did), and the night job
 //   reading that one list instead of its own copy, which had been missing `calendar` all along.
-const FLOOR = 2073
+// 2073 -> 2090, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 2, the shared chat screen).
+//   Seventeen, all in tests/unit/askScreen.test.ts: that no HR word reached the two lifted files
+//   by import OR by copy (with one named exception, a Delete title two sections should agree on),
+//   that the action row is the owner's three in the owner's order with the first gated off until
+//   step 5, that the attach slot draws a link, that the drawer's Delete calls the route that
+//   already existed and says true things about what survives a delete (checked against migration
+//   062, not against a comment), and the two rules the lift is only safe because of — types only
+//   from lib/ask, and the shared screen knowing nothing about dates.
+const FLOOR = 2090
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

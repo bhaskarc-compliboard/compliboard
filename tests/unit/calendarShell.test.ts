@@ -42,9 +42,18 @@ const COUNTS = readFileSync('lib/calendarCounts.ts', 'utf8')
  */
 const QUEUE = readFileSync('lib/calendarQueue.ts', 'utf8')
 const QUEUE_UI = readFileSync('components/DateQueue.tsx', 'utf8')
-/** Step 10b moved the ask box, its examples and its attach line here, with the answer. */
+/**
+ * Step 10b moved the ask box, its examples and its attach line into `CalendarAsk.tsx`; **Part A
+ * step 2 lifted all of that again** into the shared screen and the shared drawer, leaving
+ * `CalendarAsk.tsx` with the offers alone (`docs/GAPS-PLAN.md` step 2, decisions 4 and 9).
+ *
+ * All three are read, and the words test below searches all of them, because WHICH file holds a
+ * shared piece is this section's business and THAT it is drawn from one place is the rule.
+ */
 const ASK_UI = readFileSync('components/CalendarAsk.tsx', 'utf8')
-const SURFACES = `${PAGE}\n${QUEUE}\n${QUEUE_UI}\n${ASK_UI}`
+const ASK_SCREEN = readFileSync('components/AskScreen.tsx', 'utf8')
+const CONV_DRAWER = readFileSync('components/ConversationDrawer.tsx', 'utf8')
+const SURFACES = `${PAGE}\n${QUEUE}\n${QUEUE_UI}\n${ASK_UI}\n${ASK_SCREEN}\n${CONV_DRAWER}`
 
 /** A stand-in for the client that records the query built on it. */
 function fakeDb(rows: unknown[], count = 0) {
@@ -193,7 +202,11 @@ describe('the page is the HR frame, imported and not copied', () => {
       // Step 10b: the answer, the list and the summary are HR's own pieces, imported.
       '@/components/AnswerBody', '@/components/ConversationList', '@/components/ReportView',
       '@/components/Drawer', '@/lib/answerStream']) {
-      assert.match(`${PAGE}\n${ASK_UI}`, new RegExp(`from '${spec.replace(/[/]/g, '\\/')}'`), `${spec} must be imported`)
+      // Part A step 2: four files now, not two. The pieces did not stop being imported — they
+      // moved into the shared screen and the shared drawer, which is the whole point of the lift.
+      // Searching only the page would now fail on five specs that are MORE shared than before.
+      assert.match(`${PAGE}\n${ASK_UI}\n${ASK_SCREEN}\n${CONV_DRAWER}`,
+        new RegExp(`from '${spec.replace(/[/]/g, '\\/')}'`), `${spec} must be imported`)
     }
   })
 
@@ -327,7 +340,9 @@ describe('every word on the page is the owner\'s', () => {
     // company is read-only (decision 11). The third condition is a REASON, not a placeholder:
     // `paused` is null whenever access is full, so a paying company's button is exactly as it was.
     assert.ok(!/<button className=\{PRIMARY\} disabled>Ask<\/button>/.test(PAGE))
-    assert.match(ASK_UI, /disabled=\{busy \|\| Boolean\(paused\) \|\| !box\.trim\(\)\}/)
+    // Part A step 2: the composer, and therefore this button, is in the shared screen now. The
+    // condition is unchanged — the file holding it is not.
+    assert.match(ASK_SCREEN, /disabled=\{busy \|\| Boolean\(paused\) \|\| !box\.trim\(\)\}/)
     const handoff = readFileSync('docs/HANDOFF-CODE.md', 'utf8')
     assert.ok(!handoff.includes('Asking a question arrives with step 10'), '§7 must no longer carry it')
   })
@@ -340,11 +355,15 @@ describe('every word on the page is the owner\'s', () => {
       'What expires in the next 90 days?',
       'Is the fire inspection for the Vancouver warehouse on the calendar?',
     ]) assert.ok(mine.includes(q), `missing example: ${q}`)
-    // The ask view renders them and holds no copy of its own — `config/examples.ts` is the
-    // owner's file. (It was the page's until step 10b moved the box.)
-    assert.match(ASK_UI, /CALENDAR_EXAMPLE_QUESTIONS\.map/)
+    /**
+     * The shared screen renders whatever list it is HANDED, and the page hands it the Calendar's —
+     * so the examples stay the owner's file and a section cannot smuggle its own copy in. It was
+     * the page's until step 10b, and `CalendarAsk.tsx`'s until Part A step 2.
+     */
+    assert.match(ASK_SCREEN, /examples\.map\(/, 'the shared screen draws the list it is given')
+    assert.match(PAGE, /examples=\{CALENDAR_EXAMPLE_QUESTIONS\}/, 'and the page gives it the Calendar\'s')
     for (const q of ['Tier II report', 'next 90 days', 'Vancouver warehouse']) {
-      assert.ok(!`${PAGE}\n${ASK_UI}`.includes(q), `no second copy of: ${q}`)
+      assert.ok(!`${PAGE}\n${ASK_UI}\n${ASK_SCREEN}\n${CONV_DRAWER}`.includes(q), `no second copy of: ${q}`)
     }
   })
   /**
@@ -406,13 +425,21 @@ describe('NOTHING OF THE OLD PAGE CAME ACROSS, and the new one writes nothing', 
   })
   test('every relation the page reads is named here, so a fifth is a deliberate act', () => {
     const named = [...CODE.matchAll(/supabase\s*\.from\('([a-z_]+)'\)/g)].map((m) => m[1]).sort()
-    // `topics` joined the list at step 10b, and this test is why it is a sentence rather than a
-    // slip: the conversation drawer reads `summary_report` for the ONE conversation that is
-    // open. `topic_list_v` carries whether a report exists and not the report itself, and a list
-    // of twenty conversations must not carry twenty reports to show one — HR reads it the same
-    // way (`app/hr/HrWorkspace.tsx:447`).
+    /**
+     * *** SIX, AND IT WAS SEVEN UNTIL PART A STEP 2. ***
+     *
+     * `topics` was on this list for ONE reason: the conversation drawer read `summary_report` for
+     * the single open conversation. The drawer is now `components/ConversationDrawer.tsx`, and the
+     * read went with it, because the drawer is the only thing that shows a report.
+     *
+     * So this is not a test loosened to let a move through — the page genuinely stopped reading
+     * that table, and the shorter list is the truer one. `topic_list_v` is still read here through
+     * `readTopicList`, which is not a `supabase.from(…)` call and never counted.
+     */
     assert.deepEqual([...new Set(named)].sort(),
-      ['audit_findings', 'companies', 'company_folders', 'document_index_v', 'entities', 'profiles', 'topics'])
+      ['audit_findings', 'companies', 'company_folders', 'document_index_v', 'entities', 'profiles'])
+    // And the read that moved is where it moved TO, so this is a relocation and not a deletion.
+    assert.match(CONV_DRAWER, /\.from\('topics'\)\.select\('summary_report'\)/)
   })
   test('it reads calendar_v through the shared filter, not with a query of its own', () => {
     assert.ok(!CODE.includes('calendar_v'), 'the page must not name the view: lib/calendarCounts.ts does')

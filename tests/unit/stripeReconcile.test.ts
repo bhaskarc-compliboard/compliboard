@@ -804,8 +804,13 @@ describe('A 402 IS NOT A QUESTION TO REPHRASE — the owner hit this in the Comp
     assert.equal(askAgainLine(undefined), ASK_AGAIN_LINE)
   })
 
-  test('all three screens ask the shared function, and none carries the sentence itself', () => {
-    for (const f of ['app/compliance/page.tsx', 'app/hr/HrWorkspace.tsx', 'components/CalendarAsk.tsx']) {
+  test('every screen asks the shared function, and none carries the sentence itself', () => {
+    // `components/CalendarAsk.tsx` -> `components/AskScreen.tsx` at `docs/GAPS-PLAN.md` Part A
+    // step 2: the failed line and the status it failed with are part of the streamed answer, which
+    // is now one shared screen. The Calendar's file keeps only its offers. This test was not on
+    // that step's list of tests to edit — the step's own map found it by searching `tests/`, which
+    // is the lesson step 1 wrote down.
+    for (const f of ['app/compliance/page.tsx', 'app/hr/HrWorkspace.tsx', 'components/AskScreen.tsx']) {
       const src = readFileSync(f, 'utf8')
       assert.match(src, /\{askAgainLine\(x\.failedStatus\)\}/, `${f} does not ask the shared function`)
       assert.ok(!/You can ask again, or rephrase the question\./.test(src),
@@ -814,8 +819,8 @@ describe('A 402 IS NOT A QUESTION TO REPHRASE — the owner hit this in the Comp
     }
   })
 
-  test('and the Calendar’s "Try again" goes with it, for the same reason', () => {
-    const src = readFileSync('components/CalendarAsk.tsx', 'utf8')
+  test('and the shared screen’s "Try again" goes with it, for the same reason', () => {
+    const src = readFileSync('components/AskScreen.tsx', 'utf8')
     assert.match(src, /x\.failedStatus !== 402 && \(/)
   })
 })

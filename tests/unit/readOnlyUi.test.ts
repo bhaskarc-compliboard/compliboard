@@ -111,8 +111,27 @@ describe('every screen that owns a paid control shows the same note', () => {
     })
   }
 
+  /**
+   * *** THE LIST IS WRITTEN OUT NOW, AND IT IS NOT `PAGES` PLUS THREE. ***
+   *
+   * `PAGES` above is the five screens that READ the verdict — they all still widen their own
+   * `companies` query and compute `paused`, and the test above holds that. This list is the files
+   * that SHOW the note, and after `docs/GAPS-PLAN.md` Part A step 2 those are not the same set:
+   * the Calendar page's only two notes were inside the ask view and the conversation drawer, and
+   * both are now shared components. The page hands them `paused` and draws no note of its own.
+   *
+   * So `app/calendar/page.tsx` is deliberately absent here and `components/AskScreen.tsx` and
+   * `components/ConversationDrawer.tsx` are deliberately present. Every paid control still sits
+   * beside a note; the note is one component further down.
+   */
+  const SHOWS_THE_NOTE = [
+    'app/compliance/page.tsx', 'app/hr/HrWorkspace.tsx', 'app/audits/page.tsx', 'app/documents/page.tsx',
+    'components/DocumentReport.tsx', 'components/AuditReport.tsx',
+    'components/AskScreen.tsx', 'components/ConversationDrawer.tsx',
+  ]
+
   test('ONE shared component says it, and no page writes its own wording', () => {
-    for (const f of [...PAGES, 'components/DocumentReport.tsx', 'components/AuditReport.tsx', 'components/CalendarAsk.tsx']) {
+    for (const f of SHOWS_THE_NOTE) {
       const src = readFileSync(f, 'utf8')
       assert.match(src, /<PausedNote banner=\{paused\}/, `${f} has no note`)
       assert.ok(!/trial has ended/.test(src), `${f} writes its own copy of the sentence`)
@@ -124,8 +143,11 @@ describe('every screen that owns a paid control shows the same note', () => {
     assert.match(src, /if \(!banner\) return null/)
   })
 
-  test('the three shared report components take a PROP, never a read of their own', () => {
-    for (const f of ['components/DocumentReport.tsx', 'components/AuditReport.tsx', 'components/CalendarAsk.tsx']) {
+  test('every shared component takes a PROP, never a read of its own', () => {
+    // `CalendarAsk.tsx` left this list at Part A step 2: it keeps only the Calendar's offers now
+    // and has no paid control, so it takes no verdict. The two files that took its place do.
+    for (const f of ['components/DocumentReport.tsx', 'components/AuditReport.tsx',
+      'components/AskScreen.tsx', 'components/ConversationDrawer.tsx']) {
       const src = readFileSync(f, 'utf8')
       assert.ok(!/\.from\('companies'\)/.test(src), `${f} reads companies itself`)
       assert.match(src, /paused/, `${f} does not take the verdict`)
