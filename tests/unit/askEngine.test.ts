@@ -654,7 +654,7 @@ describe('the file a conversation carries is something a quote can be checked ag
     assert.equal(ATTACHED_PREFIX, 'A')
     // Every brief in the repository, read as text: none may pack its own A passages, or two
     // different things would answer to one handle and the wrong one would be named.
-    for (const f of ['lib/ask/calendarBrief.ts', 'lib/ask/documentsBrief.ts']) {
+    for (const f of ['lib/ask/calendarBrief.ts', 'lib/ask/documentsBrief.ts', 'lib/ask/auditsBrief.ts']) {
       const src = source(f)
       assert.ok(!/idPrefix: 'A'/.test(src), `${f} must not use the engine's letter`)
       assert.ok(!/`A\$\{/.test(src), `${f} must not build an A id`)

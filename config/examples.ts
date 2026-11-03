@@ -100,3 +100,29 @@ export const DOCUMENTS_EXAMPLE_QUESTIONS: ExampleQuestion[] = [
     question: 'Show me all our training records.',
   },
 ]
+
+/**
+ * THE AUDITS CHAT'S EXAMPLES — the same shape and the same rules as the four above
+ * (`docs/GAPS-PLAN.md` Part A step 6a, decision 34). Shown in the Audits page's empty box, each
+ * prefixed "e.g."; not clickable, not a prompt, and nothing here reaches a model.
+ *
+ * *** THESE THREE LINES ARE THE OWNER'S OWN, 3 NOVEMBER 2026, AND THEY ARE NOT A STARTING POINT
+ * LIKE THE OTHERS. *** They are on `docs/audits-chat-boards.html` board 1 word for word, and the
+ * first two are the only examples in the product that teach a person a COMMAND rather than a
+ * question: the Ask box starts an audit when the words say audit, recognised in code before any
+ * model call (decisions 32 and 38). The third says the box also just answers.
+ */
+export const AUDITS_EXAMPLE_QUESTIONS: ExampleQuestion[] = [
+  {
+    label: 'Against the attached template',
+    question: 'Audit us against the attached template',
+  },
+  {
+    label: 'Against an agency',
+    question: 'Audit us against an agency, like Oregon DEQ',
+  },
+  {
+    label: 'Are we audit ready',
+    question: 'Ask anything about whether you are audit ready',
+  },
+]

@@ -333,7 +333,26 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   shows the claim word and is NOT a link, the click does not also open the conversation, and the
 //   wrapper that had to stop being a <button> kept everything a button gave - role, tabIndex,
 //   Enter and Space with Space preventDefaulted so it does not scroll instead.
-const FLOOR = 2234
+// 2234 -> 2273, 3 November 2026 (`docs/GAPS-PLAN.md` Part A step 6a, the Audits brief measured).
+//   Thirty-nine, all in the new tests/unit/auditsBrief.test.ts, at the database seam: a stand-in
+//   client answers every read the packer makes, so the whole thing runs with no database, no model
+//   and no network. Three of them earn their place and the rest hold the shape.
+//   ONE: an `expected` row is a SUGGESTION, not a finding. Nine of Cascade's 34 open rows are
+//   suggestions carrying the word nothing_on_file, and packed bare they read as nine more things
+//   the company failed to file - the packer making the upgrade the prompt forbids the model from
+//   making. Found by reading the packed block back, not by thinking about it.
+//   TWO: a run line normalises to the EMPTY STRING, because normalisedWithMap skips everything
+//   between < and >, so without runPlain no quote of it could ever match and a person would be
+//   told we cannot find words that are in front of them. Documents paid for that lesson at
+//   4a-test, six of 36 runs; this is the same shape, so the test runs the normaliser rather than
+//   trusting that somebody remembered.
+//   THREE: the one offer is checked against the company's OWN agency labels, in code. The model
+//   proposes and never decides: an agency this company does not hold, or a file the person did not
+//   attach on this turn, is dropped before the card is drawn.
+//   And one that is a tripwire rather than a test: `offers` is [] and lib/ask/offers.ts must not
+//   know the word run_audit, because step 6a may not edit that shared file. The day 6b adds it,
+//   this test is what makes somebody set auditsBrief.offers in the same commit.
+const FLOOR = 2273
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
