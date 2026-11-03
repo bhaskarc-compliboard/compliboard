@@ -1,0 +1,105 @@
+{
+  "question": "What's missing from our emergency action plan, and how do we fix it?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-opus-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 29422,
+      "tokens": 11769,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13501,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "Your **Emergency Action Plan — Portland Facility** is mostly well written. But it has six gaps, and it has not been revised since February 2021, even though it promises a review every January. We read it on October 14, 2026. The rule references below come from that reading, not from a fresh check of the rule text.\n\n## The six gaps and how to fix them\n\n**1. No steps for reporting an emergency.** The plan says where the pull stations are and that the alarm is monitored. It never says who pulls the alarm, who calls 911, or who inside the company must be told. It also doesn't say how to report a chemical spill or medical emergency that doesn't set off the alarm.\n*Fix:* Add a short \"Reporting an emergency\" section between Sections 2 and 3. Say who does each step, which phones to use, and who must be told (for example, the incident coordinator or facilities lead). Our reading ties this to Oregon OSHA's emergency action plan rule, OAR 437-002-0042(2).\n\n**2. No steps for shutting down processes before people leave.** Section 3 tells everyone to leave and secure nothing that takes more than a few seconds. It doesn't say whether any equipment must be shut down or made safe, or who would do it.\n*Fix:* Either say plainly that no one stays behind, or name the job titles that shut down specific equipment and say when they must leave. Our reading ties this to the same rule.\n\n**3. No named contact for questions about the plan.** The plan mentions an \"incident coordinator\" and a \"facilities lead\" but never names them. It also gives no contact for employees with questions about their duties.\n*Fix:* Add a contacts section with names or job titles and phone numbers. Our reading cites OAR 437-002-0042(2)(f) for this.\n\n**4. No record of reviews since 2021.** The plan still carries its February 2021 date, and there is no review log or sign-off. The rule doesn't set a fixed review schedule. But the plan's own Section 6 promises a January review, and the rule says employees must be taken through the plan again whenever it changes.\n*Fix:* Review the plan now. Update the headcount, roster, maps and contacts, and add a dated, signed review log.\n\n**5. Earthquakes are listed but have no procedure.** Section 1 includes earthquakes, but nothing says what to do. The steps differ from a fire evacuation: drop, cover and hold on, don't evacuate during the shaking, then check for spills and damaged storage afterwards.\n*Fix:* Add a short earthquake section. No specific rule asks for this. It is a mismatch inside the plan itself.\n\n**6. The appendices aren't in the file.** Appendix A (evacuation maps) and Appendix B (warden and first-aid roster) are listed, but neither is attached. So we couldn't check exit route assignments or who the wardens are.\n*Fix:* Attach the current, dated maps and roster.\n\n## Other things you should know\n\n- **The headcount doesn't match.** The plan says 42 employees at Portland. Your company record says 38 across the whole company. Use the current number when you revise.\n- **Dates coming up under the plan:** the autumn evacuation drill (by November 30, 2026), the monthly alarm test on the first Monday of each month, and the next annual review in January 2027.\n- **Fire extinguisher service is past due.** The **Certificate of Annual Maintenance, Portable Fire Extinguishers** says the next annual service was due August 20, 2026. It also says units W-3 and L-1 need their six-year internal maintenance before November 2026.\n- **One fact decides how you write gap 2.** Your company record calls you a distributor, but the plan reading treats Portland as a chemical manufacturing site. Do you run any reactors, heating, blending or transfer operations at Portland, or do you only store and ship chemicals? If you run processes, gap 2 needs named shutdown roles. If you only store and ship, a single sentence saying no one stays behind may be enough.\n\nIf you'd like, I can draft the missing reporting, contacts and earthquake sections, written to fit the plan's current structure.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 29422,
+        "tokens": 11769,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 20,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13501,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-opus-5-5",
+      "input": 16328,
+      "output": 1619,
+      "searches": 0,
+      "cost_usd": 0.097692
+    }
+  ],
+  "seconds": 18.9,
+  "topic_id": "9d036af5-7ebb-4f7d-9ea3-28531d1c94ca"
+}

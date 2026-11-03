@@ -1,0 +1,105 @@
+{
+  "question": "What's missing from our emergency action plan, and how do we fix it?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-opus-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 29422,
+      "tokens": 11769,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13501,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "Your **Emergency Action Plan — Portland Facility** is missing six things. Three are items the Oregon OSHA emergency action plan rule asks every plan to include. The plan was last revised in February 2021. This is based on our reading of October 14, 2026.\n\n**Missing items the rule asks for**\n\nThe review of your plan names the rule as OAR 437-002-0042.\n\n1. **How to report an emergency.** The plan says where the pull stations are. It never tells employees who pulls the alarm, who calls 911, or who inside the company must be told. It also doesn't cover a chemical spill that doesn't set off the alarm.\n   *Fix:* Add a short \"Reporting an emergency\" section between Sections 2 and 3. Cover the alarm, 911 (and which phones), the internal contact, and how to report spills and medical emergencies.\n\n2. **What happens to chemical processes when people evacuate.** Section 3 tells everyone to leave and secure nothing that takes more than a few seconds. It never says whether reactors, heating or transfer operations need to be shut down, or by whom.\n   *Fix:* Choose one of two options and write it down:\n   - No one stays behind.\n   - Name the job titles that shut down specific equipment, and say when they must leave.\n\n   Tie this to the real processes in the lab and warehouse.\n\n3. **Who to contact about the plan.** The plan mentions an \"incident coordinator\" and a \"facilities lead\" but never names them. It also lists no one to ask about the plan.\n   *Fix:* Add a contacts section with names or job titles and phone numbers.\n\n**Other gaps**\n\n4. **No record of the yearly reviews.** Section 6 promises a review every January, but there's no review log. The rule also asks that employees be taken through the plan again whenever it changes.\n   *Fix:* Review the plan now. Update the headcount, roster, maps and contacts. Add a dated, signed review log.\n\n5. **Earthquakes have no procedure.** Section 1 lists earthquakes as covered, but no section says what to do.\n   *Fix:* Add steps for during the shaking (drop, cover and hold on), for evacuating afterwards, and for checking for chemical spills and damaged storage.\n\n6. **The appendices aren't in the file.** Appendix A (evacuation maps) and Appendix B (warden and first-aid roster) are listed but missing, so they couldn't be checked.\n   *Fix:* Attach the current, dated versions.\n\n**What you didn't ask but should know**\n\n- **The headcount is out of date.** The plan says 42 employees at Portland, as of 2021. You've told us you have 38 employees company-wide. Update the plan as part of the review.\n- **The autumn evacuation drill is due by November 30, 2026.** That date comes from the plan's own promise of a drill in spring and autumn. Holding it after you revise the plan lets the drill double as retraining.\n- **Fire extinguisher service is overdue.** The **Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units)** gave the next annual service date as August 20, 2026. That date has passed. It also says units W-3 and L-1 need their six-year maintenance before November 2026. No newer certificate is on file.\n\nIf you'd like, I can draft the three missing sections: reporting, process shutdown and contacts. You'd fill in the names and equipment.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 29422,
+        "tokens": 11769,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 20,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13501,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-opus-5-5",
+      "input": 16328,
+      "output": 1356,
+      "searches": 0,
+      "cost_usd": 0.09243199999999999
+    }
+  ],
+  "seconds": 14.8,
+  "topic_id": "e6c35798-9971-4977-a6f9-fc33bcd80ddd"
+}

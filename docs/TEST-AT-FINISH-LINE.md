@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 6 · **Updated:** 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 7 · **Updated:** 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -28,6 +28,71 @@ so nothing is forgotten and nothing is tested twice.
 
 **Rule for cross-section changes.** A section that changes a shared file before the finish line re-runs the free
 checks of every section that uses it. Each section lists its shared files under its part's J.
+
+---
+
+## Which model, per tier — the comparison that runs across every section
+
+*Added 2 November 2026 by Part A step 4a-compare, because three sections had each asked for it separately and
+nobody owned it: HR's G (*"Sonnet 5.5 against Opus 5.5, per task, by measurement"*), the Calendar's G (*"`AI_MODEL_CALENDAR`
+is Opus 5.5 today… worth one measured comparison"*) and the Documents chat's own D. One item, one method, one place
+to put the numbers.*
+
+**What it is not.** It is not a bake-off between models in the abstract, and it is not a cost exercise. It answers
+one question per tier: **does the expensive model do something the cheap one does not, on this product's own
+questions, against keys written before the run.**
+
+**The method, in two steps and that order:**
+
+1. **Quality first, on written keys.** Take the section's own yardstick scenarios (the `D` table in each part).
+   Run the same question three times on each model, with everything the section gives the model and nothing
+   changed between the two but the one `AI_MODEL_*` variable — set in the command's own environment, never in
+   `.env.local`, and with every other tier on the Haiku id so nothing else is being paid for. Score against the
+   key: facts hit, missed, **invented**; quotes shown and how many the check marked; every rule number written and
+   **where each one came from**; documents named by title; searches.
+2. **Then one hard question through the real app, on each model.** The keys are run through the probe, which is
+   the engine and not the product. One question per model goes through the page, signed in, so the stream, the
+   cards, the action row and the stored turn are all in it. **A model difference that only the probe can see is
+   not yet a difference to the person.**
+
+**The rule for reading the result.** A tie on the key is a result, not a failure of the test — it says the key
+does not separate the two models and the tie-break has to be named out loud (hedging, dates carried, what the
+person can click). **A cost ratio is only an argument once the quality question has an answer.**
+
+### First data point — the Documents chat, question 2, 2 November 2026
+
+`claude-sonnet-5-5` against `claude-opus-5-5`, three runs each, the full Documents brief, `DEV_MAX_SEARCHES=2`,
+Cascade on staging. Runs: `tests/golden/documents/chat/runs/q2-A-1..3.json` and `q2-A-opus-1..3.json`.
+
+| | Sonnet 5.5 | Opus 5.5 |
+|---|---|---|
+| the key (6 gaps of the EAP) | **6/6 · 6/6 · 6/6** | **6/6 · 6/6 · 6/6** |
+| facts invented | 0 | 0 |
+| must-nots breached | 0 | 0 |
+| quotes shown / the check marked | 4.3 / **0.7** | 3.0 / **0** |
+| quotes of six words or more (the only kind the check can verify) | **1 in 3 runs** | **0 in 3 runs** |
+| sources the person can click | 0.3 | **0** |
+| rule numbers written | 1.0, all from the reading | 1.7, all from the reading |
+| carried the reading's own hedge | **3 of 3** | 2 of 3 |
+| named the one paragraph letter the reading DID verify, as verified | 0 of 3 | **2 of 3** |
+| documents named by title | 2.0 | 2.0 |
+| searches | 0 | 0 |
+| input / output tokens per answer | 16,411 / 1,170 | 16,328 / 1,485 |
+| words per answer | 605 | 628 |
+| seconds | 9.5 | **16.5** |
+| cost per answer | $0.0445 | **$0.0950** |
+| | | **2.13× the cost, 1.74× the wall time** |
+
+**The tie-break, since the key is level at 6/6:** Opus is more careful with the *provenance* of a rule number —
+it writes the paragraph letter the reading quoted and says so, and marks the ones the reading did not check
+(*"except where shown"*). Sonnet carries the blanket hedge in all three runs but never distinguishes the verified
+letter from the unverified ones. Against that, Sonnet produced the only clickable source in six runs, and Opus
+produced none: both models quote short phrases that fall under the six-word floor, so on Opus **nothing in the
+answer can be verified by the check or opened by the person.** Neither model searched.
+
+**What it does NOT yet say.** Step 2 above has not been run for this tier — there is no page yet (4b). So this is
+a probe result, and `AI_MODEL_DOCUMENTS` is not decided on it.
+
 
 ---
 
