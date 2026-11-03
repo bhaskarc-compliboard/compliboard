@@ -1,6 +1,14 @@
 /**
  * THE HONEST REFUSAL — `docs/GAPS-PLAN.md` Part B step B1, decision 51 (the owner, 3 November 2026).
  *
+ * *** EXTENDED BY B2 ON THE SAME DAY (decisions 52 and 53), and nine of its tests were changed
+ * rather than added to. *** B1 refused `.heic`, `.tif`/`.tiff` and `.bmp` by name, politely, and
+ * nine tests held it to that. B2 READS all five, by converting each to a JPEG inside Vercel
+ * (`lib/imageConvert.ts`), so those nine assertions were describing a product that no longer
+ * exists. **Every one was edited on purpose and says so**; none was deleted, because the rule they
+ * were written for — a type we cannot read is told so in its own words — is unchanged, and `.doc`
+ * and `.ppt` are still held to it. What moved is which types we cannot read.
+ *
  * The rule: *"The product offers only the file types it can read today, and a file it cannot read
  * is told so in the reading's own words — which type, and what to do instead — never 'Something
  * went wrong at our end'. The accepted list is ONE constant."*
@@ -27,9 +35,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  ACCEPTED_FILE_TYPES, ACCEPTED_FILE_TYPES_PROSE, COULD_NOT_OPEN_WORDS, READABLE_EXTENSIONS,
-  REFUSAL_WORDS, extensionOf, isReadable, refusalFor, refusalLabel, skippedLine, skippedSentences,
-  unknownTypeWords,
+  ACCEPTED_FILE_TYPES, ACCEPTED_FILE_TYPES_PROSE, COULD_NOT_OPEN_WORDS, IMAGE_FALLBACK_WORDS,
+  READABLE_EXTENSIONS, REFUSAL_WORDS, extensionOf, isReadable, refusalFor, refusalLabel,
+  skippedLine, skippedSentences, unknownTypeWords,
 } from '../../lib/acceptedFiles.ts'
 import { parseDocumentToBlocks, describeUnsupported } from '../../lib/documentContent.ts'
 import { runDocumentScan } from '../../lib/documentScan.ts'
@@ -93,16 +101,20 @@ describe('the accepted list IS the reader’s branches (B1)', () => {
   })
 
   test('the accept attribute is built from the list, and offers no bare image/*', () => {
-    assert.equal(ACCEPTED_FILE_TYPES, '.pdf,.jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.txt,.docx,.pptx')
+    // Edited by B2: the five image types it converts are now offered. `image/*` stays gone — it is
+    // a wildcard that promises every format there will ever be, and the list is twelve plus five.
+    assert.equal(ACCEPTED_FILE_TYPES,
+      '.pdf,.jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.txt,.docx,.pptx,.heic,.heif,.tif,.tiff,.bmp')
     assert.ok(!ACCEPTED_FILE_TYPES.includes('image/*'))
     assert.ok(!ACCEPTED_FILE_TYPES.includes('.doc,') && !ACCEPTED_FILE_TYPES.endsWith('.doc'))
     assert.ok(!ACCEPTED_FILE_TYPES.includes('.ppt,') && !ACCEPTED_FILE_TYPES.endsWith('.ppt'))
     // The prose and the list are one sentence about one thing and must not part company.
-    for (const word of ['PDF', 'JPEG', 'PNG', 'Excel', 'CSV', '.docx', '.pptx']) {
+    // B2 changed it: it may say "photos" again now, because the product reads the photo formats
+    // the word covers. HEIC and the scans are named, because a person with an iPhone photo or a
+    // scanner's TIFF should be able to see that it is welcome without trying it.
+    for (const word of ['PDF', 'HEIC', 'TIFF', 'BMP', 'Excel', 'CSV', '.docx', '.pptx']) {
       assert.ok(ACCEPTED_FILE_TYPES_PROSE.includes(word), `the prose names ${word}`)
     }
-    assert.ok(!/\bimages\b/.test(ACCEPTED_FILE_TYPES_PROSE),
-      '"images" is the word that promised HEIC; the prose names the four formats instead')
   })
 
   test('SHOWN TO FAIL: a reader that claims .doc again is caught', () => {
@@ -118,12 +130,13 @@ describe('the accepted list IS the reader’s branches (B1)', () => {
 
 describe('the sentences (B1 item 3, the owner reads these)', () => {
   test('each refused type names itself and says what to do instead', () => {
+    // *** EDITED BY B2: three of the five cases moved out of this test, into the one below. ***
+    // `.doc` and `.ppt` are still refused — B3 was struck on 3 November (decision 52), so they
+    // stay refused for rev 1. HEIC, TIFF and BMP are read now, and their sentences live on as
+    // `IMAGE_FALLBACK_WORDS` for a photo of an accepted type that will not open.
     const cases: Array<[string, RegExp[]]> = [
       ['forklift-log-1998.doc', [/old Word format \(\.doc\)/, /cannot read yet/, /Save it as \.docx or PDF/]],
       ['safety-induction-2004.ppt', [/old PowerPoint format \(\.ppt\)/, /Save it as \.pptx or PDF/]],
-      ['fit-test-photo.heic', [/iPhone photo in HEIC/, /Most Compatible/, /JPEG/]],
-      ['scanned-permit-page.tiff', [/TIFF scan/, /Save it as PDF, JPEG or PNG/]],
-      ['site-plan.bmp', [/BMP image/, /Save it as JPEG, PNG or PDF/]],
     ]
     for (const [name, patterns] of cases) {
       const words = refusalFor(name)
@@ -133,6 +146,29 @@ describe('the sentences (B1 item 3, the owner reads these)', () => {
       assert.ok(!/went wrong/i.test(words!), `${name} does not blame our end`)
       assert.ok(!/invalid|corrupt|bad file/i.test(words!), `${name} does not blame the file`)
     }
+  })
+
+  test('B2: the three image types are no longer refused at all', () => {
+    for (const name of ['photo.heic', 'photo.HEIF', 'scan.tif', 'scan.tiff', 'plan.bmp']) {
+      assert.equal(refusalFor(name), null, `${name} is read now, not refused`)
+    }
+    for (const ext of ['heic', 'heif', 'tif', 'tiff', 'bmp']) {
+      assert.ok(!(ext in REFUSAL_WORDS),
+        `.${ext} has no refusal sentence any more — it has a FALLBACK sentence, which is a `
+        + 'different thing said about a different situation')
+    }
+  })
+
+  test('B2: the fallback sentences are about a file we accepted and could not open', () => {
+    assert.match(IMAGE_FALLBACK_WORDS.couldNotOpen, /This photo could not be opened/)
+    assert.match(IMAGE_FALLBACK_WORDS.couldNotOpen, /Share it as JPEG and add it again/)
+    // Never the generic sentence (decision 51), and never the file's fault.
+    assert.ok(!/went wrong/i.test(IMAGE_FALLBACK_WORDS.couldNotOpen))
+    // The ceiling says the number, because "too big" with no number is not an answer.
+    const tooBig = IMAGE_FALLBACK_WORDS.tooBig(81.4)
+    assert.match(tooBig, /about 81 megapixels/)
+    assert.match(tooBig, /add it again/)
+    assert.ok(!/went wrong/i.test(tooBig))
   })
 
   test('a type we have no name for still says which it is and what to do', () => {
@@ -152,10 +188,14 @@ describe('the sentences (B1 item 3, the owner reads these)', () => {
     // `permit`. This worked before B1 and must go on working.
     assert.equal(refusalFor('permit', 'application/pdf'), null)
     assert.ok(isReadable('permit', 'application/pdf'))
-    // And the refused extension beats a readable MIME type: a HEIC a browser called image/jpeg
-    // is still a HEIC, and the API still refuses it.
-    assert.equal(refusalFor('photo.heic', 'image/jpeg'), REFUSAL_WORDS.heic)
-    assert.ok(!isReadable('photo.heic', 'image/jpeg'))
+    // And a refused extension still beats a readable media type: a `.doc` a browser called
+    // `application/pdf` is still a `.doc`, and mammoth still cannot open it.
+    assert.equal(refusalFor('notes.doc', 'application/pdf'), REFUSAL_WORDS.doc)
+    assert.ok(!isReadable('notes.doc', 'application/pdf'))
+    // B2: a HEIC named with no extension but carrying its own media type is read, because
+    // `lib/imageConvert.ts` dispatches on both. Before B2 this line asserted the opposite.
+    assert.equal(refusalFor('photo', 'image/heic'), null)
+    assert.ok(isReadable('photo', 'image/heic'))
   })
 
   test('extensionOf: the cases a stored path actually produces', () => {
@@ -176,12 +216,11 @@ describe('a refused file through the reading path, on a real fixture (B1 item 6)
     context: {} as never,
   })
 
+  // B2 took the three image fixtures out of this loop: they are READ now, and the block below
+  // proves it. The two that remain are the two decision 52 left refused for rev 1.
   for (const [file, pattern] of [
     ['forklift-log-1998.doc', /old Word format \(\.doc\)/],
     ['safety-induction-2004.ppt', /old PowerPoint format \(\.ppt\)/],
-    ['fit-test-photo.heic', /iPhone photo in HEIC/],
-    ['scanned-permit-page.tiff', /TIFF scan/],
-    ['site-plan.bmp', /BMP image/],
   ] as Array<[string, RegExp]>) {
     test(`${file} lands could_not_read with its own sentence, and never the generic one`, async () => {
       const scan = await scanOf(file)
@@ -241,7 +280,8 @@ describe('a refused file through the reading path, on a real fixture (B1 item 6)
   })
 
   test('describeUnsupported says the type’s own sentence', () => {
-    assert.equal(describeUnsupported('x.heic', 'heic').message, REFUSAL_WORDS.heic)
+    // Edited by B2: `.heic` is read now, so the example is one that is still refused.
+    assert.equal(describeUnsupported('x.doc', 'doc').message, REFUSAL_WORDS.doc)
     // The catalogue sentence survives only where there is nothing specific to say, and the list
     // offers .pdf, so a drifted extension falls back rather than claiming to recognise it.
     assert.match(describeUnsupported('x.pdf', 'pdf').message, /can be read/)
@@ -250,21 +290,27 @@ describe('a refused file through the reading path, on a real fixture (B1 item 6)
 
 describe('the folder path reports what it skipped, by type (B1 item 4)', () => {
   test('the count line groups by type', () => {
+    // Edited by B2: the example used a HEIC, which is no longer skipped at all. A `.pages` file
+    // stands in — the unrecognised case, which is the one a folder will keep producing.
     assert.equal(
-      skippedLine(['a.doc', 'b.doc', 'photo.heic']),
-      '3 files skipped: 2 old Word (.doc), 1 HEIC photo')
+      skippedLine(['a.doc', 'b.doc', 'notes.pages']),
+      '3 files skipped: 2 old Word (.doc), 1 .pages file')
     assert.equal(skippedLine(['a.doc']), '1 file skipped: 1 old Word (.doc)')
     assert.equal(skippedLine([]), '')
     assert.equal(skippedLine(['notes.pages']), '1 file skipped: 1 .pages file')
-    assert.equal(refusalLabel('scan.tiff'), 'TIFF scan')
+    // And B2's own: a folder of photographs is skipped NOT AT ALL.
+    assert.equal(skippedLine([].concat()), '')
+    for (const n of ['a.heic', 'b.tiff', 'c.bmp']) assert.equal(refusalFor(n), null, n)
   })
 
   test('and the sentences underneath are one per type, not one per file', () => {
-    const lines = skippedSentences(['a.doc', 'b.doc', 'photo.heic'])
+    const lines = skippedSentences(['a.doc', 'b.doc', 'deck.ppt'])
     assert.equal(lines.length, 2, 'two .doc files, one .doc sentence')
     assert.equal(lines[0], REFUSAL_WORDS.doc)
-    assert.equal(lines[1], REFUSAL_WORDS.heic)
+    assert.equal(lines[1], REFUSAL_WORDS.ppt)
     assert.deepEqual(skippedSentences([]), [])
+    // A folder of photographs produces no skipped line at all since B2.
+    assert.deepEqual(skippedSentences(['a.heic', 'b.tiff', 'c.bmp']), [])
   })
 
   test('the Documents page filters BOTH pickers in code, because a folder picker has no accept', () => {

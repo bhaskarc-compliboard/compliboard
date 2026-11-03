@@ -1,0 +1,118 @@
+{
+  "id": "07-drum-label-photo",
+  "title": "A photograph of a drum label, taken on a phone (HEIC)",
+  "spec": "07-drum-label-photo.md",
+  "fixture": "fixtures/07-drum-label-photo.heic",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: record or other \u2014 a container label is neither a permit nor a program",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "record",
+        "other"
+      ],
+      "forbid": [
+        "permit",
+        "program",
+        "policy"
+      ]
+    },
+    {
+      "id": "title-names-the-chemical",
+      "line": "The title names the chemical. A reading that could not see the label would not have it.",
+      "type": "field_contains",
+      "field": "identity.title",
+      "accept": [
+        "sodium hydroxide",
+        "naoh",
+        "caustic"
+      ]
+    },
+    {
+      "id": "agency-osha",
+      "line": "agency includes OSHA: a GHS container label is 29 CFR 1910.1200(f).",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "osha",
+        "occupational safety and health administration"
+      ]
+    },
+    {
+      "id": "reads-the-hazard-codes",
+      "line": "The reading quotes or names at least one of the codes printed on the label. This is the test that the PHOTOGRAPH was read and not guessed at from the file name.",
+      "type": "text_keywords",
+      "fields": [
+        "summary",
+        "confidence_notes"
+      ],
+      "keywords": [
+        "h314",
+        "h290",
+        "p280",
+        "1310-73-2",
+        "severe skin burns"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "names-the-missing-signal-word",
+      "line": "The planted gap: no signal word. A reading that names it has read the label against the rule; one that does not has described the label back.",
+      "type": "text_keywords",
+      "fields": [
+        "summary",
+        "gaps",
+        "expected_missing",
+        "confidence_notes"
+      ],
+      "keywords": [
+        "signal word",
+        "danger",
+        "warning"
+      ],
+      "min_keywords": 1
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-invented-deadline",
+      "line": "\"Filled 12 August 2026\" is a fill date on a batch, not a compliance deadline. No deadline may be proposed from it.",
+      "type": "absent_item",
+      "collections": [
+        "deadlines"
+      ],
+      "fields": [
+        "title",
+        "basis"
+      ],
+      "subject": [
+        "filled",
+        "batch",
+        "fill date"
+      ],
+      "absence": [],
+      "note": "A label carries no recurring obligation of its own. A deadline here is the model turning a batch record into a calendar entry."
+    }
+  ],
+  "reported": [
+    {
+      "id": "says-it-is-a-photograph",
+      "line": "A note that this is a photograph rather than a document is welcome, not required \u2014 it is what makes a quote unverifiable (there is no extracted text behind an image).",
+      "type": "text_keywords",
+      "fields": [
+        "confidence_notes",
+        "summary"
+      ],
+      "keywords": [
+        "photo",
+        "photograph",
+        "image",
+        "label"
+      ],
+      "min_keywords": 1
+    }
+  ]
+}

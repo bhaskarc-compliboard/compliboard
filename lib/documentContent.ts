@@ -2,8 +2,10 @@ import * as XLSX from 'xlsx'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
 import {
-  ACCEPTED_FILE_TYPES_PROSE, COULD_NOT_OPEN_WORDS, READABLE_EXTENSIONS, extensionOf, refusalFor,
+  ACCEPTED_FILE_TYPES_PROSE, COULD_NOT_OPEN_WORDS, IMAGE_FALLBACK_WORDS, READABLE_EXTENSIONS,
+  extensionOf, refusalFor,
 } from './acceptedFiles.ts'
+import { ImageTooLargeError, convertImage } from './imageConvert.ts'
 
 /**
  * TURNS AN UPLOADED FILE INTO CONTENT BLOCKS THE MODEL CAN ACTUALLY READ.
@@ -81,22 +83,53 @@ export type DocumentParseResult =
        * and `verifyQuote` keeps returning null rather than false for exactly that reason.
        */
       text: string
+      /**
+       * *** THE CONVERTED COPY TO STORE BESIDE THE ORIGINAL — B2, decision 53. ***
+       *
+       * Set only when something was actually converted: a HEIC, a TIFF, a BMP, or an image too
+       * big for the caps. `null` for a PDF, a spreadsheet, and for a JPEG that was already fine —
+       * which is the honest difference between "converted" and "never needed converting", and the
+       * reason `documents.converted_url` is nullable rather than derived from the document's id.
+       *
+       * **This function stores nothing.** It has no database and no company, and giving it either
+       * would make the one shared parser depend on the one thing its seven callers do not share.
+       * The caller that owns a `documents` row writes it to
+       * `<company>/converted/<documentId>.jpg` — two levels, because `app/api/account/route.ts`
+       * walks exactly two when a customer asks to be deleted (`lib/storage.ts`).
+       *
+       * Only the first page of a multi-page TIFF: `converted_url` is one column, a document is
+       * one row, and what the binder and "Open the file" need is one file anything can open.
+       */
+      converted?: { bytes: Buffer; mediaType: string } | null
+      /** What was done to it, in plain words, for the report and the log. */
+      note?: string
     }
   | { ok: false; failure: DocumentParseFailure }
 
 export type DocumentKind = 'pdf' | 'image' | 'excel' | 'csv' | 'text' | 'word' | 'powerpoint'
 
-/** Extension → media type, for the cases where a stored file has no recorded MIME type. */
+/**
+ * Extension → media type, for the cases where a stored file has no recorded MIME type.
+ *
+ * *** SINCE B2 THIS IS NOT THE SAME LIST AS WHAT THE API TAKES. *** The four below `webp` are
+ * read by the product and refused by the model API; `lib/imageConvert.ts` turns each into a JPEG
+ * before it is sent, and holds the list of what the API itself takes, because that is where the
+ * decision "send this one as it is" is made.
+ */
 const IMAGE_TYPES: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
   gif: 'image/gif', webp: 'image/webp',
+  heic: 'image/heic', heif: 'image/heif', tif: 'image/tiff', tiff: 'image/tiff', bmp: 'image/bmp',
 }
 
+
 /**
- * The five media types the model API takes, as a set — for a photo stored with the right MIME
+ * Every image media type the PRODUCT reads, as a set — for a photo stored with the right media
  * type and no extension. **It replaced `type.startsWith('image/')`**, which is the line that let
  * HEIC, TIFF and BMP through to be refused by the API (`docs/VISION-DOCUMENTS.md` §"File types",
- * B1 of `docs/GAPS-PLAN.md` Part B). Derived from the map above so the two cannot part company.
+ * B1 of `docs/GAPS-PLAN.md` Part B). Derived from the map above so the two cannot part company —
+ * which since B2 means it includes the four the API itself will not take, because the product
+ * converts those before sending them.
  */
 const IMAGE_MEDIA = new Set(Object.values(IMAGE_TYPES))
 
@@ -233,11 +266,53 @@ export async function parseDocumentToBlocks(
     }
   }
   if (imageMedia) {
-    return {
-      ok: true, kind: 'image',
-      blocks: [{ type: 'image', source: { type: 'base64', media_type: imageMedia, data: nodeBuffer.toString('base64') } }],
-      // A photograph has no text to extract. Quotes against it stay unverifiable, not false.
-      text: '',
+    /**
+     * *** EVERY IMAGE GOES THROUGH ONE RULE NOW — B2, decisions 52 and 53. ***
+     *
+     * `convertImage` decodes what the API cannot read (HEIC, TIFF, BMP), measures every image
+     * against the same caps, and re-encodes only one that fails a cap. `lib/imageConvert.ts`
+     * carries the numbers and why each is what it is. What matters here is the three answers:
+     *
+     *   · `pages` — one block each. A still photograph has one; a multi-page TIFF has one per
+     *     page, up to twenty, which is where the API starts applying a stricter size limit to
+     *     every image in the request.
+     *   · `converted` — the copy to store beside the original, when something was converted.
+     *     The caller stores it; this function has no database and should not grow one.
+     *   · a THROW is a sentence, never a crash. An image that will not decode is a file we
+     *     accepted and could not open, so it gets `IMAGE_FALLBACK_WORDS` — B1's image sentences,
+     *     kept and turned from a refusal into a fallback — and never "Something went wrong at
+     *     our end" (decision 51).
+     */
+    try {
+      const converted = await convertImage(nodeBuffer, ext, imageMedia)
+      return {
+        ok: true, kind: 'image',
+        blocks: converted.pages.map((p) => ({
+          type: 'image',
+          source: { type: 'base64', media_type: p.mediaType, data: p.bytes.toString('base64') },
+        })),
+        // A photograph has no text to extract. Quotes against it stay unverifiable, not false.
+        text: '',
+        converted: converted.stored
+          ? { bytes: converted.stored.bytes, mediaType: converted.stored.mediaType }
+          : null,
+        note: converted.note,
+      }
+    } catch (e) {
+      if (e instanceof ImageTooLargeError) {
+        console.warn(`document parse: ${JSON.stringify(fileName)} is ${e.megapixels.toFixed(1)} `
+          + 'megapixels and was refused before decoding (lib/imageConvert.ts MAX_MEGAPIXELS)')
+        return { ok: false, failure: {
+          name: fileName, reason: 'could_not_open', extension: ext,
+          message: IMAGE_FALLBACK_WORDS.tooBig(e.megapixels),
+        } }
+      }
+      console.warn(`document parse: the image ${JSON.stringify(fileName)} could not be opened:`,
+        e instanceof Error ? e.message : e)
+      return { ok: false, failure: {
+        name: fileName, reason: 'could_not_open', extension: ext,
+        message: IMAGE_FALLBACK_WORDS.couldNotOpen,
+      } }
     }
   }
 

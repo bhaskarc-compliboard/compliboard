@@ -576,8 +576,18 @@ async function resetCompany(co) {
 // `lib/documentContent.ts` line 148 detects Word by type OR extension — so a mislabelled .docx
 // would have been read correctly by accident, off the filename, with a lie stored in `file_type`
 // for anything that later trusts the column instead of the name.
+//
+// *** B2 ADDED THE PHOTOGRAPH TYPES, 3 November 2026. *** `docs/VISION-DOCUMENTS.md` asks for one
+// golden fixture per type the product reads, so a parser change cannot quietly break one. Since
+// B2 the product reads an iPhone HEIC, a scanner's TIFF and a BMP by converting each to a JPEG
+// before the model call (`lib/imageConvert.ts`), and case 07 is the first fixture that is a
+// photograph rather than a rendered document. The media type matters here for the reason the
+// paragraph above gives: a HEIC labelled `application/pdf` would be refused by the API and the
+// case would fail for a reason that is nothing to do with the reading.
 const MEDIA = { pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  heic: 'image/heic', heif: 'image/heif', tiff: 'image/tiff', tif: 'image/tiff',
+  bmp: 'image/bmp', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' }
 
 async function uploadFixture(co, caseFile) {
   const path = `${caseFile.dir ?? DIR}/${caseFile.fixture}`

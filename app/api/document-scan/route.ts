@@ -43,6 +43,22 @@ import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { runDocumentScan, saveScan, buildScanContext, failedScan } from '@/lib/documentScan'
 
 import { requireAccess } from '@/lib/requireAccess'
+
+/**
+ * *** THIS ROUTE DECLARED NO CEILING AT ALL UNTIL B2 — 3 November 2026. ***
+ *
+ * `app/api/jobs/scan-documents` and `app/api/document-rescan` have each said 800 for months, and
+ * this one — the LIVE path, the one a person watches while their file is read, and the one
+ * `lib/chatUpload.ts` fires when a file is attached to a question — said nothing and took the
+ * platform's default. One reading is a model call of 20 to 120 seconds; since B2 it can also be
+ * a HEIC decode in front of that. The three paths that run the same reading now declare the same
+ * ceiling, which is the least surprising thing they can do.
+ *
+ * `vercel.json` gives this route and the sweep **2048 MB**: the 50-megapixel ceiling in
+ * `lib/imageConvert.ts` admits a 48-megapixel photograph, and one of those measured a peak of
+ * 1,036 MB. A 1 GB function would be killed by the very photo the ceiling lets through.
+ */
+export const maxDuration = 800
 const BUCKET = 'company-documents'
 
 export async function POST(request: NextRequest) {

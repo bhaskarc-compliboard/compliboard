@@ -1,10 +1,19 @@
-# One file per type the product refuses — GAPS-PLAN Part B step B1, decision 51
+# One file per type the product refuses, and one per type it converts
+
+GAPS-PLAN Part B steps **B1** (decisions 51) and **B2** (decisions 52 and 53), 3 November 2026
 
 These exist so the refusal can be tested on a real file rather than on a name. Every one was made
 on the owner's laptop on 3 November 2026 with tools macOS already has; the command is beside each.
 
-**Nothing here is parsed by the test.** The refusal is decided from the file's name and recorded
-media type *before* any byte is opened (`lib/acceptedFiles.ts` `refusalFor`, called at the top of
+> **⚡ B2 CHANGED WHAT THREE OF THESE ARE FOR, on the same day.** B1 refused `.heic`, `.tif`/`.tiff`
+> and `.bmp` by name; B2 **reads** all five, by converting each to a JPEG inside Vercel
+> (`lib/imageConvert.ts`). So `fit-test-photo.heic`, `scanned-permit-page.tiff` and `site-plan.bmp`
+> are no longer refusal fixtures — they are the smallest valid file of each format, kept because a
+> converter that works on a photograph and falls over on a 123-byte one-pixel TIFF is a converter
+> with a hole in it. The files B2 added are at the bottom.
+
+**Nothing in the B1 half is parsed by the test.** The refusal is decided from the file's name and
+recorded media type *before* any byte is opened (`lib/acceptedFiles.ts` `refusalFor`, called at the top of
 `parseDocumentToBlocks`), which is the whole point of B1 — a type we cannot read must cost nothing
 and must never reach a parser. So these files are small on purpose, and a hand-made container is
 as good a test as a full document would be. They are real files all the same, and `file` names each
@@ -28,3 +37,27 @@ one correctly, because a fixture that is not what it claims to be teaches the ne
 files only"* — the library itself confirming what the old comment on `isPowerPoint`
 (`lib/documentContent.ts:280`–`:299` since B1) claimed about `.ppt`, and the reason B1 deleted the
 fork rather than keeping it.
+
+
+---
+
+## What B2 added, 3 November 2026
+
+These ARE parsed, by real decoders, because the three things that go wrong with a photograph are
+all invisible to a stand-in: a decoder that is not built in, a channel order that is backwards,
+and a page silently dropped.
+
+| File | What it is | How it was made | What it holds |
+|---|---|---|---|
+| `drum-label.heic` | a real HEIC, **3024 × 4032**, of a GHS drum label with legible text | drawn as SVG, rendered with sharp, then `sips -s format heic` | that a HEIC reads at all; that the block comes back `image/jpeg` and not `image/heic`; that the long edge lands on 2,576; that a portrait photograph stays portrait |
+| `inspection-sheets-3pages.tiff` | a **3-page** TIFF, 120 × 160, LZW | `tiffutil -cat` three times, then `tiffutil -lzw` | that three pages become three image blocks, in order, and that only the first is stored |
+| `floor-plan.bmp` | a 24-bit BMP | `sips -s format bmp` | that BMP reads (sharp cannot), and that it comes back the right colour — `bmp-ts` returns **ARGB**, and read as RGBA the picture decodes perfectly and is blue |
+| `half-sent-photo.heic` | the first 64 bytes of a real HEIC and nothing behind them | `node`, from `drum-label.heic` | what a half-finished AirDrop leaves: an accepted type that will not open, which must land `could_not_read` with the FALLBACK sentence and never "Something went wrong at our end" |
+| `panorama-81mp.tiff` | a TIFF header **claiming 9000 × 9000** with one byte of pixel data | written by hand with `node` | the ceiling. If it were checked after decoding, this file would be 324 MB of RGBA before anybody noticed. It is refused from the header in under half a second, and the sentence says *"about 81 megapixels"* |
+
+**The 50-megapixel ceiling is the owner's option (ii), decision 53**, and the number behind it is
+measured: `heic-decode` allocates `width * height * 4` and has no scaled decode, so a
+48-megapixel HEIC peaked at **1,036 MB** of RSS. 48 passes; 81 does not.
+
+The drum label is also `tests/golden/documents/fixtures/07-drum-label-photo.heic` — the golden
+set's first photograph, and the container label for the chemical in case 05.

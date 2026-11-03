@@ -67,6 +67,12 @@
  */
 export const READABLE_EXTENSIONS = [
   'pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'xlsx', 'xls', 'csv', 'txt', 'docx', 'pptx',
+  // *** B2 PUT THESE FIVE BACK, 3 November 2026 (decisions 52 and 53). *** B1 refused them
+  // politely; `lib/imageConvert.ts` now converts them inside Vercel, in the same sweep that
+  // reads everything else. `heic`/`heif` through `heic-decode`, `tif`/`tiff` through sharp
+  // (one image block per page), `bmp` through `bmp-ts` — because sharp's prebuilt libvips
+  // can decode neither HEIC nor BMP, which was settled by running it and not by reading.
+  'heic', 'heif', 'tif', 'tiff', 'bmp',
 ] as const
 
 /**
@@ -80,6 +86,9 @@ export const READABLE_EXTENSIONS = [
 export const READABLE_MEDIA_TYPES = [
   'application/pdf',
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  // Converted by `lib/imageConvert.ts` before they are sent (B2). The API itself takes only the
+  // four above — these are types the PRODUCT reads, which since B2 is a larger set.
+  'image/heic', 'image/heif', 'image/tiff', 'image/bmp', 'image/x-ms-bmp',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
   'text/csv', 'text/plain',
@@ -93,7 +102,8 @@ export const ACCEPTED_FILE_TYPES = READABLE_EXTENSIONS.map((e) => `.${e}`).join(
 /** Prose version, for telling a user what they may upload. Kept next to the list so the
  *  two cannot drift. Named formats rather than "images", because "images" is what promised HEIC. */
 export const ACCEPTED_FILE_TYPES_PROSE =
-  'PDFs, photos (JPEG, PNG, GIF, WebP), Excel, CSV, text, Word (.docx) and PowerPoint (.pptx) files'
+  'PDFs, photos (including iPhone HEIC), scans (TIFF, BMP), Excel, CSV, text, Word (.docx) and '
+  + 'PowerPoint (.pptx) files'
 
 /**
  * *** THE SENTENCES. The owner reads these; they are the words a customer sees. ***
@@ -116,22 +126,33 @@ export const ACCEPTED_FILE_TYPES_PROSE =
 export const REFUSAL_WORDS: Record<string, string> = {
   doc: 'This is the old Word format (.doc), which we cannot read yet. Save it as .docx or PDF and add it again.',
   ppt: 'This is the old PowerPoint format (.ppt), which we cannot read yet. Save it as .pptx or PDF and add it again.',
-  heic: 'This is an iPhone photo in HEIC, which we cannot read yet. Change the camera setting to Most Compatible, or share it as JPEG, and add it again.',
-  heif: 'This is a photo in HEIF, which we cannot read yet. Save it as JPEG or PNG and add it again.',
-  tif: 'This is a TIFF scan, which we cannot read yet. Save it as PDF, JPEG or PNG and add it again.',
-  tiff: 'This is a TIFF scan, which we cannot read yet. Save it as PDF, JPEG or PNG and add it again.',
-  bmp: 'This is a BMP image, which we cannot read yet. Save it as JPEG, PNG or PDF and add it again.',
 }
+
+/**
+ * *** THE FIVE IMAGE SENTENCES B1 WROTE DID NOT DIE WITH B2 — THEY BECAME THE FALLBACK. ***
+ *
+ * B1 refused a HEIC, a TIFF and a BMP by name. B2 reads them, so they are no longer refusals —
+ * but a file of an accepted type can still fail to open, and when a photograph fails the person
+ * holding it needs the same kind of sentence: what it is, and what to do instead. These are those
+ * sentences, said about a file we accepted and could not open rather than about a format we do
+ * not take. **Never the generic "Something went wrong at our end"** (decision 51).
+ *
+ * `imageTooBig` is B2's own: `lib/imageConvert.ts` `MAX_MEGAPIXELS` refuses above 50 megapixels
+ * BEFORE decoding, because a 48-megapixel HEIC peaked at 1,036 MB of memory when it was measured
+ * and the decoder has no scaled mode. A 48-megapixel phone passes; a stitched panorama is told
+ * why, which is better than a function that dies without a word.
+ */
+export const IMAGE_FALLBACK_WORDS = {
+  couldNotOpen: 'This photo could not be opened. Share it as JPEG and add it again.',
+  tooBig: (megapixels: number): string =>
+    `This photo is very large (about ${Math.round(megapixels)} megapixels), and we cannot read one `
+    + 'that big yet. Share a normal-sized photo or a JPEG of it and add it again.',
+} as const
 
 /** Short words for the same types, for a line that counts several at once ("2 old Word (.doc)"). */
 export const REFUSAL_LABELS: Record<string, string> = {
   doc: 'old Word (.doc)',
   ppt: 'old PowerPoint (.ppt)',
-  heic: 'HEIC photo',
-  heif: 'HEIF photo',
-  tif: 'TIFF scan',
-  tiff: 'TIFF scan',
-  bmp: 'BMP image',
 }
 
 /**

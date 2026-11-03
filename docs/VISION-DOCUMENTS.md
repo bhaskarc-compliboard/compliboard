@@ -166,15 +166,15 @@ One drawer, and the sections appear by kind. A program shows gaps and drafts; a 
 
 **The rule.** Every type the picker offers is one the product reads, or the picker does not offer it. The picker is a screen and the honesty rules apply to it. Every supported type has a fixture in the golden set so a parser change cannot quietly break one.
 
-**Reads correctly today (eleven types, all scanned on staging).** PDF, sent whole with the text extracted alongside for quote checks. JPEG, PNG, GIF, WebP as images. Excel .xlsx and .xls, sheet by sheet as text. CSV and plain text. Word .docx (mammoth). PowerPoint .pptx (officeparser).
+**Reads correctly today — ELEVEN when this was written, SEVENTEEN EXTENSIONS since B2 (3 November 2026); `lib/acceptedFiles.ts` `READABLE_EXTENSIONS` is the list and the only one.** The count below says eleven because it counts JPEG, PNG, GIF and WebP as four types and does not count `.jpg` and `.jpeg` twice; the constant counts extensions. Nothing is in dispute about which formats work. Added by B2: `.heic`, `.heif`, `.tif`, `.tiff`, `.bmp`. The original: PDF, sent whole with the text extracted alongside for quote checks. JPEG, PNG, GIF, WebP as images. Excel .xlsx and .xls, sheet by sheet as text. CSV and plain text. Word .docx (mammoth). PowerPoint .pptx (officeparser).
 
-**Accepted by the picker but fails on read (the seam to close).** `.doc` and `.ppt` go to parsers that only read the modern formats. `image/*` admits HEIC (every iPhone photo), TIFF (every scanner) and BMP, which the API refuses; since 26 September this shows honestly as "the reading service refused our request", but the picker still promises it.
+**~~Accepted by the picker but fails on read (the seam to close).~~ CLOSED — B1 and B2, 3 November 2026.** B1 stopped the picker promising what nothing reads and gave every refused type its own sentence; B2 then made HEIC, TIFF and BMP read. `.doc` and `.ppt` are still refused, by name, with what to save them as. The original text, for the record: *"`.doc` and `.ppt` go to parsers that only read the modern formats. `image/*` admits HEIC (every iPhone photo), TIFF (every scanner) and BMP, which the API refuses; since 26 September this shows honestly as 'the reading service refused our request', but the picker still promises it."*
 
 **Not accepted and should be.**
 
 | Type | Why it matters | How |
 | --- | --- | --- |
-| HEIC, TIFF, BMP | phone photos, scans | convert to JPEG or PNG on the server before the call; multi-page TIFF becomes a PDF |
+| ~~HEIC, TIFF, BMP~~ **BUILT 3 November 2026 (GAPS-PLAN Part B step B2)** | phone photos, scans | ~~convert to JPEG or PNG on the server before the call; multi-page TIFF becomes a PDF~~ — **the first half is what was built and the second half was wrong.** A multi-page TIFF becomes **one image block per page**, capped at twenty, not a PDF: there was no page-splitting shape to copy (`parseDocumentToBlocks` sends a PDF whole, as one block), one block per page is what the model reads best, and twenty is the API's own threshold, above which it applies a stricter per-image size limit to every image in the request. `lib/imageConvert.ts` |
 | .doc, .ppt | old files in old cabinets | no converter runs on Vercel: a conversion service, or an honest refusal saying "export it as .docx and upload again" |
 | .eml, .msg | permits and notices arrive as email; the attachment is the document | parse the mail, body as text, each attachment its own document in the same batch |
 | .zip | "here is our compliance folder" | expand into a batch, one document per file, folders kept |
@@ -184,6 +184,16 @@ One drawer, and the sections appear by kind. A program shows gaps and drafts; a 
 | password-protected PDF | some agency documents | detect it and ask for the password or an unlocked copy, never a generic failure |
 
 **When.** One small run after the bake-off and before drive connection, because a drive is full of exactly these types: the conversions, email and zip as batches, the honest refusals with export instructions, the page and size limits handled and reported, the picker's list and its prose generated from the same table the parser uses, one fixture per type.
+
+> ### ⚡ CORRECTED 3 NOVEMBER 2026: **HEIC RUNS ON VERCEL, AND THE CONVERSION SERVICE IS NOT BUILT** (the owner, GAPS-PLAN decision 52).
+>
+> The paragraph below says *"HEIC (libheif) and old or Open Office formats (LibreOffice) cannot run there [Vercel], so they go to a small stateless conversion service in a container on Railway or Fly"*. **The first clause is wrong about HEIC and the whole plan was dropped.**
+>
+> `libheif-js@1.23.5` is libheif compiled to **WebAssembly**, with no dependencies and nothing native to install, and it runs in Vercel's Node runtime like any other package. Settled by running it on 3 November, not by reading a changelog: `heic-decode` turned a 12-megapixel HEIC into a 2,576 px JPEG in **299 ms**. What is true is the memory — `heic-decode` allocates `width * height * 4` and has no scaled decode, so a 48-megapixel photograph peaked at **1,036 MB** — which is why `lib/imageConvert.ts` refuses above 50 megapixels from the header, before decoding, and why `vercel.json` gives the two reading routes 2048 MB.
+>
+> **So there is no conversion service.** `.doc` and `.ppt` stay refused for rev 1, in their own words (B1, decision 51), and the container is recorded as rev 2 work in `docs/GAPS-PLAN.md` §5b. sharp's prebuilt libvips reads TIFF and **cannot read BMP** (`bmp-ts` does) and **cannot decode HEIC** — *"Support for this compression format has not been built in"* — both of which this paragraph assumed the other way round.
+>
+> *(The superseded paragraph is kept below, because the history of this one decision is the point: it is the reason B3 existed in the plan at all.)*
 
 **Where the converting runs (decided 27 September 2026).** TIFF and BMP convert with `sharp`, large PDFs split with `pdf-lib`, password detection, email parsing and zip expansion are plain Node: all of that stays in Vercel. HEIC (libheif) and old or Open Office formats (LibreOffice) cannot run there, so they go to a small stateless conversion service in a container on Railway or Fly (Gotenberg, or a short Node service with the two libraries installed): a file in, a PDF, JPEG or text out, the converted copy stored beside the original in the bucket, the original never altered. The sweep calls it; the queue stays cron plus `after()`. This is not the always-on worker of CLAUDE.md §4, but it is the container that becomes it if a queue with visible progress is ever worth having.
 

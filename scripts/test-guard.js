@@ -407,7 +407,21 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   different sentence an ACCEPTED type gets when it will not open, the folder path's skipped line
 //   by type, and that all four pickers plus the chat's own chokepoint read the one constant. The
 //   drift guard is shown to fail on a doctored copy of the reader.
-const FLOOR = 2365
+// 2365 -> 2385, 3 November 2026 (GAPS-PLAN Part B step B2, decisions 52 and 53). TWENTY-ONE in
+//   tests/unit/imageConvert.test.ts and one fewer in fileTypes.test.ts, where nine assertions were
+//   EDITED rather than added to: B1 refused .heic, .tif/.tiff and .bmp politely and nine tests held
+//   it to that; B2 reads all five by converting each to a JPEG inside Vercel, so those assertions
+//   described a product that no longer exists. None was deleted - .doc and .ppt are still held to
+//   the same rule, and what moved is which types we cannot read.
+//
+//   The new ones run real decoders on real files, because the three things that go wrong here are
+//   all invisible to a stand-in: a decoder that is not built in (sharp's prebuilt libvips cannot
+//   decode a HEIC at all and cannot read a BMP), a channel order that is backwards (bmp-ts returns
+//   ARGB and a photograph read as RGBA is perfectly legible and blue), and a page silently dropped
+//   from a multi-page TIFF. The ceiling is held too: an 81-megapixel image is refused FROM ITS
+//   HEADER in under half a second, because heic-decode allocates width*height*4 with no scaled
+//   decode and a 48-megapixel photograph measured 1,036 MB of peak memory.
+const FLOOR = 2385
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
