@@ -298,7 +298,16 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   message, and a section that attaches nothing sends byte-for-byte what it always sent.
 //   One in tests/unit/documentsBrief.test.ts: the three honesty sentences the Calendar's real
 //   runs bought, now this section's too - eight sentences became eleven.
-const FLOOR = 2170
+// 2170 -> 2177, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 4b, the prompt and the index line).
+//   Seven in tests/unit/documentsBrief.test.ts. Five are the quotable index line, and the one that
+//   earns its place is THE DEFECT, PROVED BY RUNNING THE NORMALISER: an index line is one
+//   self-closing tag, normalisedWithMap skips everything between < and >, so all twelve of
+//   Cascade's I passages normalised to the empty string and a quoted title could never match one.
+//   Six of 36 measured runs therefore told a person we could not find the title of a document in
+//   their own list. Plus the half that can break quietly - the block the MODEL is sent is still the
+//   tagged line, byte for byte, and the plain copy must never reach the message. Two more hold the
+//   two sentences 4b measured into existence (a name is not a quote; no offer without a button).
+const FLOOR = 2177
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -13,10 +13,11 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
-  documentsBrief, packDocumentsContext, indexLine, reportBlock, namedBy,
+  documentsBrief, packDocumentsContext, indexLine, indexPlain, reportBlock, namedBy,
   STATUS_ORDER, ATTENTION_ORDER, DROP_ORDER, INDEX_COLUMNS, type IndexRow,
 } from '../../lib/ask/documentsBrief.ts'
 import { checkBrief } from '../../lib/ask/brief.ts'
+import { checkQuote, finishAnswer, normalisedWithMap, NOT_IN_WHAT_WE_HAVE } from '../../lib/ask/passages.ts'
 import { DOCUMENTS_SENTENCES } from '../../prompts/documents-answer.ts'
 import { DOCUMENTS_EXAMPLE_QUESTIONS } from '../../config/examples.ts'
 
@@ -88,14 +89,16 @@ describe('the brief is a brief', () => {
   })
 
   /**
-   * EIGHT AT 4a, ELEVEN AT 4a-TEST. The three added are the Calendar's honesty sentences, each
+   * EIGHT AT 4a, ELEVEN AT 4a-TEST, THIRTEEN AT 4b. The three at 4a-test are the Calendar's
+   * honesty sentences; the two at 4b were bought by measurement — a title marked as an unfindable
+   * quote, and an offer with no button behind it. Of the eleven, the three added at 4a-test are each
    * written after a real run went wrong: an id written at a person, a rule number from memory
    * with `searches=0`, and the one sentence the person was owed withdrawn because it was written
    * before the first search. The failures are the ENGINE's, so the lessons are every section's.
    */
-  test('its sentences are the drafted ones, and there are eleven', () => {
+  test('its sentences are the drafted ones, and there are thirteen', () => {
     assert.deepEqual(documentsBrief.promptSentences, DOCUMENTS_SENTENCES)
-    assert.equal(DOCUMENTS_SENTENCES.length, 11)
+    assert.equal(DOCUMENTS_SENTENCES.length, 13)
     for (const s of DOCUMENTS_SENTENCES) assert.ok(s.trim().length > 0)
   })
 
@@ -335,7 +338,11 @@ describe('the words a person reads', () => {
     assert.match(all, /say plainly that it is not on file/)
     assert.match(all, /based on the older reading/)
     assert.match(all, /do not quote from it/)                          // decision 3b
-    assert.ok(!/offer/i.test(all), 'there is no offer in this chat yet')
+    // *** NOT `!/offer/i` ANY MORE, AND THAT IS THE SAME MISTAKE AS THE `AI` ONE BELOW. ***
+    // The prompt now BANS offering (DOCUMENTS_NO_OFFERS), so of course it contains the word. What
+    // matters is that no sentence INVITES an offer and that the ban is there.
+    assert.match(all, /Do not offer to do things for the person/)
+    assert.ok(!/you may offer|offer to add|the fenced block/i.test(all), 'no sentence invites an offer')
     // The prompt BANS the word, so of course it contains it. What matters is that the ban is
     // there — asserting the word's absence failed on the sentence that forbids it.
     assert.match(all, /Never say "AI"/)
@@ -347,6 +354,17 @@ describe('the words a person reads', () => {
    * section's handles in it, and each exists because of a measured failure rather than a style
    * preference — which is why the test names all three rather than counting them.
    */
+  test('and the two sentences step 4b measured into existence', () => {
+    const all = DOCUMENTS_SENTENCES.join(' ')
+    // A name is not a quote — six of 36 runs put a title in quotation marks and it was marked.
+    assert.match(all, /Write a document's name in plain words, never inside quotation marks/)
+    assert.match(all, /Quotation marks are only for words you read inside a document/)
+    // A quote is the only thing the check can verify, and the only thing that becomes a card.
+    assert.match(all, /quote the line you read something from when the exact words matter/)
+    // And no promise the product cannot keep — it offered in prose in 18 of 36 runs.
+    assert.match(all, /Say what they could do next/)
+  })
+
   test('and the three honesty sentences the Calendar\'s real runs bought', () => {
     const all = DOCUMENTS_SENTENCES.join(' ')
     // The ids rule: the handles of THIS section, and the instruction to name the document.
@@ -359,5 +377,82 @@ describe('the words a person reads', () => {
     assert.match(all, /treated as thinking aloud/)
     // A is the engine's letter for an attached file, and the prompt names it as one.
     assert.match(all, /\bA1\b/)
+  })
+})
+
+/**
+ * *** AN INDEX LINE CAN BE QUOTED — step 4b, the owner's yes, bought by 36 measured runs. ***
+ *
+ * The model is asked to NAME a document (`DOCUMENTS_WHICH_ONE`) and in 6 of 36 runs it did so in
+ * quotation marks. The plain-quote check then treated the title as a quote, found it in nothing,
+ * and the product said *"we could not find these words in what we have on file"* about the title
+ * of a document in the person's own list. The cause is in the normaliser, not in the data, and
+ * these tests say so by running it.
+ */
+describe('an index line can be quoted, and the block the model gets did not change', () => {
+  const eap = doc({
+    document_id: 'd-eap', title: 'Emergency Action Plan — Portland Facility', file_name: '01-eap.pdf',
+    kind: 'program', agencies: ['Oregon OSHA'], site_name: 'Portland',
+    display_status: 'needs_work', significant_date: '2021-02-01', significant_date_kind: 'revised',
+    open_gap_count: 6,
+  })
+
+  /**
+   * THE CAUSE, PROVED RATHER THAN ASSERTED (`CLAUDE.md` §9a: show the input). `normalisedWithMap`
+   * skips everything between `<` and `>`; an index line is one self-closing tag; so the whole
+   * line normalises away. A `<report>` block's body is outside its tags and was always fine.
+   */
+  test('THE DEFECT: the tag-shaped line normalises to nothing', () => {
+    const line = indexLine(eap, 'I1')
+    assert.match(line, /^<document /)
+    assert.equal(normalisedWithMap(line).norm, '', 'a self-closing tag leaves no text to match')
+    // and the fix: the same facts, with no tags.
+    assert.ok(normalisedWithMap(indexPlain(eap)).norm.length > 20)
+  })
+
+  test('the plain copy carries title, kind, agency, site, state and date, in that order', () => {
+    assert.equal(indexPlain(eap),
+      'Emergency Action Plan — Portland Facility · Program · Oregon OSHA · Portland · Needs work · revised 2021-02-01')
+  })
+
+  test('a quoted TITLE now matches its own I passage', async () => {
+    const p = await pack({ index: [eap] })
+    const hit = checkQuote('Emergency Action Plan — Portland Facility', 'I1', p.passages)
+    assert.equal(hit?.id, 'I1')
+    assert.equal(hit?.label, 'your document')
+    assert.equal(hit?.href, '/documents?document=d-eap', 'and the card opens that document')
+  })
+
+  /** End to end, through the check an answer really goes through: a card, not a warning. */
+  test('AND THE WARNING IS GONE — it becomes a numbered source instead', async () => {
+    const p = await pack({ index: [eap] })
+    const checked = finishAnswer(
+      'The “Emergency Action Plan — Portland Facility” is missing six things.', [], [], p.passages, [])
+    assert.ok(!checked.text.includes(NOT_IN_WHAT_WE_HAVE), checked.text)
+    assert.equal(checked.notFound, 0)
+    assert.equal(checked.sources.length, 1)
+    assert.equal((checked.sources[0] as { passage_id: string }).passage_id, 'I1')
+  })
+
+  /**
+   * *** THE BLOCK THE MODEL IS SENT IS UNCHANGED, and this is the half that could break quietly. ***
+   * The passage's text and the block's text are now different strings. If `indexPlain` ever leaked
+   * into the message, every section's token measurement and the step 4a sample would be wrong.
+   */
+  test('the index block sent to the model is still the tagged line, byte for byte', async () => {
+    const p = await pack({ index: [eap] })
+    const block = blockNamed(p, 'your documents')!
+    assert.ok(block.text.includes(indexLine(eap, 'I1')), 'the model still gets the tagged line')
+    assert.ok(!block.text.includes(indexPlain(eap)), 'the plain copy must never reach the message')
+    assert.equal(block.text,
+      `Every document this company holds (1 in all):\n${indexLine(eap, 'I1')}`)
+  })
+
+  test('a document with almost nothing on it still gets a plain copy with its name in it', async () => {
+    const bare = doc({ document_id: 'd2', title: null, file_name: 'scan.pdf', kind: null,
+      agencies: [], subjects: [], display_status: 'on_file', significant_date: null })
+    assert.equal(indexPlain(bare), 'scan.pdf · On file')
+    const p = await pack({ index: [bare] })
+    assert.equal(p.passages[0].text, 'scan.pdf · On file')
   })
 })

@@ -29,17 +29,44 @@
  * brief's `offers` is `[]`, so `parseOffers` drops any block the model writes anyway.
  */
 
-/** What it is given, and the order to answer in — decision 14: the readings, never the files. */
+/**
+ * What it is given, and the order to answer in — decision 14: the readings, never the files.
+ *
+ * *** THE QUOTING CLAUSE IS THE CALENDAR'S, ADDED AFTER 36 MEASURED RUNS PRODUCED ONE SOURCE. ***
+ * `CALENDAR_GIVEN` ends with it and this sentence did not. A quote of six words or more is the
+ * only thing `lib/ask/passages.ts` can verify, and a verified quote is the only thing that becomes
+ * a card — so without it an answer has nothing the person can click and nothing the code can
+ * check. Measured 2 November 2026 on Sonnet 5.5 and again on Opus 5.5, which produced none at all.
+ */
 export const DOCUMENTS_GIVEN =
   'You are given a list of every document this company holds — what each one is, its state, and '
-  + 'the date that matters — and the full reading of the documents the question is about. Answer '
-  + 'from those readings. You are not given the files themselves, except a file the person has '
-  + 'attached to this conversation, which is in the message.'
+  + 'the date that matters — and the full reading of the documents the question is about. You are '
+  + 'not given the files themselves, except a file the person has attached to this conversation, '
+  + 'which is in the message. Answer from those readings, and quote the line you read something '
+  + 'from when the exact words matter, so the person can open the document and see it.'
 
 /** Say which document, every time. The whole product rests on a claim pointing at a document. */
 export const DOCUMENTS_WHICH_ONE =
   'Name the document each thing you say comes from, as the person would see it in their list. If '
   + 'two documents disagree, say so and name both rather than choosing one.'
+
+/**
+ * *** A NAME IS NOT A QUOTE — the owner's yes, 2 November 2026 (step 4a-test). ***
+ *
+ * `DOCUMENTS_WHICH_ONE` asks the model to name the document, and in 6 of 36 measured runs it did
+ * so by putting the title in quotation marks. The plain-quote check treats six words in quotation
+ * marks as a quote to verify (`lib/ask/passages.ts` `PLAIN_QUOTE`), could not find it, and the
+ * product told the person *"we could not find these words in what we have on file"* about the
+ * title of a document sitting in their own list. It happened with the Documents context and
+ * without it, so it is the engine's shape and not this section's data.
+ *
+ * Two halves, and this is the first: the model stops writing a name as a quote. The second is in
+ * `lib/ask/documentsBrief.ts` — an index line became quotable, so a title in quotation marks now
+ * matches and becomes a card instead of a warning.
+ */
+export const DOCUMENTS_PLAIN_NAME =
+  'Write a document\'s name in plain words, never inside quotation marks. Quotation marks are '
+  + 'only for words you read inside a document.'
 
 /** Not on file: the sentence that must never become a guess (decision 30, the standing rule). */
 export const DOCUMENTS_NOT_ON_FILE =
@@ -111,19 +138,38 @@ export const DOCUMENTS_SHAPE =
   'Put the thing that matters most first. Use short sentences and plain words. If the answer is a '
   + 'list of documents, give the list and nothing else.'
 
+/**
+ * *** IT OFFERED IN PROSE IN 18 OF 36 RUNS, AND THERE IS NO BUTTON — the owner's decision,
+ * 2 November 2026 (step 4a-test). ***
+ *
+ * *"I can draft a short service request to Rose City Fire Protection"*, *"Want me to write it?"*.
+ * `offers` is `[]`, so `parseOffers` drops any fenced block the model writes — that part works as
+ * designed. A sentence is not a block: it reaches the person, who says yes to nothing. A promise
+ * the product cannot keep is the failure `CLAUDE.md` §5.1 is about, and the honest version is to
+ * say what THEY could do.
+ */
+export const DOCUMENTS_NO_OFFERS =
+  'Do not offer to do things for the person. Say what they could do next.'
+
 /** Decision 30, the standing rule, applied to this chat. */
 export const DOCUMENTS_UNSURE =
   'Where you do not know something, say so in one clear, polite sentence and ask the one question '
   + 'that would settle it. Never present a guess as something we read.'
 
 /**
- * The sentences, in the order they are added after the shared prompt. **Eleven**, and no more.
- * The order is the Calendar's: what it is given, then what to say when the thing asked about is
- * not there, then the words, then the three honesty rules, then the shape, then the unsure line.
+ * The sentences, in the order they are added after the shared prompt. **Thirteen**, and no more.
+ * The order is the Calendar's: what it is given, how to name a document, what to say when the
+ * thing asked about is not there, then the words, then the three honesty rules, then the shape,
+ * then what not to promise, then the unsure line.
+ *
+ * Eight at step 4a, eleven at 4a-test (the Calendar's three honesty sentences), thirteen at 4b —
+ * and the last two were bought by measurement rather than written from taste: a title marked as
+ * an unfindable quote, and an offer with no button behind it.
  */
 export const DOCUMENTS_SENTENCES: string[] = [
   DOCUMENTS_GIVEN,
   DOCUMENTS_WHICH_ONE,
+  DOCUMENTS_PLAIN_NAME,
   DOCUMENTS_NOT_ON_FILE,
   DOCUMENTS_OLD_READING,
   DOCUMENTS_NO_TEXT,
@@ -132,5 +178,6 @@ export const DOCUMENTS_SENTENCES: string[] = [
   DOCUMENTS_RULE_NUMBERS,
   DOCUMENTS_SEARCH_FIRST,
   DOCUMENTS_SHAPE,
+  DOCUMENTS_NO_OFFERS,
   DOCUMENTS_UNSURE,
 ]

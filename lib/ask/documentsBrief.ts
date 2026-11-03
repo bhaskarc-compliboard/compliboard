@@ -113,6 +113,42 @@ export function indexLine(d: IndexRow, id: string): string {
   return `<document ${parts.join(' ')}/>`
 }
 
+/**
+ * *** THE SAME LINE IN PLAIN WORDS, FOR THE QUOTE CHECK ONLY — step 4b, the owner's yes. ***
+ *
+ * `indexLine` above is what the MODEL is sent, and it is unchanged. This is what a quote is
+ * checked AGAINST, and the two have to be different strings for a reason that is not obvious:
+ *
+ * `lib/ask/passages.ts:79` `normalisedWithMap` skips everything between `<` and `>`, because a
+ * passage is usually a block with tags around its text. An index line is **one self-closing tag**,
+ * so the whole thing is skipped and it normalises to the empty string — proved by running it:
+ *
+ *     normalisedWithMap('<document id="I1" document="Emergency Action Plan — Portland Facility" …/>')
+ *       -> norm: ""      so a quote can match it: false
+ *
+ * All twelve of Cascade's `I` passages were therefore unquotable, which is why a title in
+ * quotation marks came back marked *"we could not find these words in what we have on file"* — six
+ * of 36 measured runs (step 4a-test). A `<report>` block never had the problem: its body sits
+ * outside the tags.
+ *
+ * **The normaliser is not changed**, deliberately: HR and the Calendar check quotes through it too,
+ * and a change there is a change to three sections' behaviour. The passage carries plain text
+ * instead, and the fix is this section's alone.
+ *
+ * It is the same facts in the same order — title, kind, agency, site, state, date — so a quote of
+ * any of them matches, and the card it becomes opens that document.
+ */
+export function indexPlain(d: IndexRow): string {
+  return [
+    attr(d.title ?? d.file_name ?? 'Untitled'),
+    d.kind ? attr(KIND_WORD[d.kind] ?? d.kind) : '',
+    list(d.agencies).join(', '),
+    d.site_name ? attr(d.site_name) : '',
+    attr(STATUS_WORD[d.display_status] ?? d.display_status),
+    d.significant_date ? `${attr(d.significant_date_kind ?? 'date')} ${d.significant_date}` : '',
+  ].filter(Boolean).join(' · ')
+}
+
 export interface ReportParts {
   gaps: Array<{ document_id: string; title: string; description: string | null; fix: string | null
     citation: string | null; locator: string | null; status: string }>
@@ -269,7 +305,9 @@ export async function packDocumentsContext(db: Db, companyId: string, question: 
     const line = indexLine(d, id)
     passages.push({
       id, title: `${d.title ?? d.file_name ?? 'A document'} — its line in your list`,
-      label: 'your document', text: line,
+      // `indexPlain`, NOT `line`: the line is one self-closing tag and the normaliser skips it
+      // whole, so a quote could never match it. The block the model is sent is still `line`.
+      label: 'your document', text: indexPlain(d),
       href: `/documents?document=${d.document_id}`, shortName: d.title ?? d.file_name ?? 'that document',
     })
     return line
