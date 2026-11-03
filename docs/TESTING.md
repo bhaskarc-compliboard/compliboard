@@ -6,7 +6,44 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 45 · **Updated:** 9 October 2026, §184: W-1 and W-4 run by the owner on production. Version 44: 8 October 2026, HR §183: rows W-1 to W-4. Version 43: 8 October 2026, HR Step 11b (§182): row A-1. Version 42: 8 October 2026, HR Step 11a (§179): rows V-1 to V-5. Version 41: 8 October 2026, HR Step 10 (§178): rows N-1 to N-7. Version 40: 8 October 2026, HR Step 9 (§177): rows S-1 to S-6. Version 39: 8 October 2026, HR Step 8 finished (§176): rows E-1 to E-7. Version 38: 8 October 2026, the HR baseline (§175): rows B-1 to B-7. Version 37: 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+> ### ⚡ STAGING FIXTURES: EVERY TRIAL IS PARKED AT 31 JANUARY 2027 (2 November 2026).
+>
+> **Run by the owner in Terminal 3** at `docs/GAPS-PLAN.md` Part A step 2, because a staging write is
+> his and because the Supabase CLI cannot make one through `--linked` at all — that path needs a
+> `database_write` scope the token does not have, and `--yes` does not help: the database answers
+> *"25006: cannot execute UPDATE in a read-only transaction"*.
+>
+> **Why it was needed.** Every staging trial had ended by 28 October, so `requireAccess` answered
+> **402** to every paid route and no fixture could be asked a question. `testgamma@example.com` is the
+> `check:live` and `npm run measure` fixture, so that stopped every walk in every section.
+>
+> **The statement is `docs/RELEASE.md` Release C step 5's, word for word:**
+>
+> ```sql
+> update public.companies
+>    set trial_ends_at = timestamptz '2027-01-31 00:00:00+00'
+>  where stripe_subscription_id is null
+>    and subscription_status is null;
+> ```
+>
+> **An extension, never `subscription_status = 'active'`.** Faking the status would make the Billing
+> tab say *"Active · $199 a month, charged to the card below"* to a company with no card — §221's
+> defect, self-inflicted, in the one table built to be true about money. An extension leaves
+> `stripe_customer_id` and `stripe_subscription_id` null, so `reconcileNeeded` returns null and no
+> Stripe call is ever made.
+>
+> **Eleven of twelve companies.** *Step 20 Card Walk* is skipped by the two null guards because it has
+> a real sandbox subscription; `accessFor` gives it `full / subscribed` regardless
+> (`lib/billing.ts:146`–`:153`), so its `trial_ends_at` in the past is not a problem and must not be
+> "fixed". A read-back column called `read_only_now` is only `trial_ends_at < now()` — it is not the
+> verdict, and that row is the one that shows the difference.
+>
+> **`check:live`'s billing-mirror question is unaffected:** it asks only about companies that HAVE a
+> subscription (`scripts/check-live.js:2041`, `.not('stripe_subscription_id', 'is', null)`).
+>
+> **When a fixture goes read-only again, this is the statement to run.** It is safe to run twice.
+
+**Version:** 46 · **Updated:** 2 November 2026, `docs/GAPS-PLAN.md` Part A step 2: the staging-fixtures note above — every trial parked at 31 January 2027, by the owner, with the statement and the reason. Version 45: 9 October 2026, §184: W-1 and W-4 run by the owner on production. Version 44: 8 October 2026, HR §183: rows W-1 to W-4. Version 43: 8 October 2026, HR Step 11b (§182): row A-1. Version 42: 8 October 2026, HR Step 11a (§179): rows V-1 to V-5. Version 41: 8 October 2026, HR Step 10 (§178): rows N-1 to N-7. Version 40: 8 October 2026, HR Step 9 (§177): rows S-1 to S-6. Version 39: 8 October 2026, HR Step 8 finished (§176): rows E-1 to E-7. Version 38: 8 October 2026, the HR baseline (§175): rows B-1 to B-7. Version 37: 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
