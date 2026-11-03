@@ -279,7 +279,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   when there is nothing in it to quote, and the cap is asked BEFORE an item is added. Plus the
 //   two that hold the Calendar to what it always did - it calls the shared packer, and a document
 //   deleted since its date was filed no longer leaves a hole in the ids.
-const FLOOR = 2135
+// 2135 -> 2160, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 4a, the Documents brief).
+//   Twenty-five in tests/unit/documentsBrief.test.ts, at the database seam so the whole packer
+//   runs with no database and no model. The one that matters most is THE INDEX IS WHOLE: a chat
+//   shown half a company's documents would say "you do not hold that" about a document sitting in
+//   the list, which is CLAUDE.md 5.1's worked example happening in a new place. Plus: a failed
+//   read throws rather than looking like an empty company; what is cut is the least important
+//   status and it is SAID; extracted_text is in no block and is not even asked for; and the
+//   naming rule matches title, file name, kind, agency and subject and nothing else.
+const FLOOR = 2160
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

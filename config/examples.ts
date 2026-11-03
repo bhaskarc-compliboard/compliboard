@@ -79,3 +79,24 @@ export const CALENDAR_EXAMPLE_QUESTIONS: ExampleQuestion[] = [
     question: 'Is the fire inspection for the Vancouver warehouse on the calendar?',
   },
 ]
+
+/**
+ * THE DOCUMENTS CHAT'S EXAMPLES — the same shape and the same rules as the three above
+ * (`docs/GAPS-PLAN.md` Part A step 4a §4, the owner's starting words). Shown in the Documents
+ * page's empty box, each prefixed "e.g."; not clickable, not a prompt, and nothing here reaches a
+ * model. **A starting point: the owner's to change, like every list in this file.**
+ */
+export const DOCUMENTS_EXAMPLE_QUESTIONS: ExampleQuestion[] = [
+  {
+    label: 'Permits expiring',
+    question: 'Which of our permits expire in the next 12 months?',
+  },
+  {
+    label: 'The emergency action plan',
+    question: "What's missing from our emergency action plan, and how do we fix it?",
+  },
+  {
+    label: 'Training records',
+    question: 'Show me all our training records.',
+  },
+]
