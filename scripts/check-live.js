@@ -841,6 +841,81 @@ if (!(await reachable())) {
     if (!pok) failures++
   }
 
+  // 0b. THE DOCUMENTS CHAT'S TWO ROUTES — `docs/GAPS-PLAN.md` Part A step 4b.
+  //
+  // *** THE FREE HALF RUNS ALWAYS; THE ONE QUESTION IS BEHIND A FLAG. *** There was no
+  // calendar-answer probe to copy, so this is HR's shape above. No session is a 401 on both
+  // routes; a request with no question is a 400; a conversation id that is not this company's — or
+  // is another SECTION's — is a 404, and that sameness is the point (`CLAUDE.md` §3.6): a 403 for
+  // one and a 404 for the other would tell a stranger which ids exist.
+  //
+  // *** THE 404 FOR ANOTHER SECTION IS THE PROBE WORTH HAVING, and a made-up uuid cannot make it.
+  // *** An unknown id is a 404 for the trivial reason that no row matches. What this route must
+  // also refuse is a REAL conversation of a real company that belongs to HR or the Calendar, and
+  // that needs a live topic to point at — so it is written here against a topic the probe makes
+  // and removes, and it only runs where the fixture can write one.
+  //
+  // The paid half — one real question, which costs money and writes a topic — runs only with
+  // CHECK_LIVE_DOCUMENTS_ASK=1. §3.11: `check:live` runs on port 3999 where nothing listens, so
+  // the free probes cost nothing by default and the question is never spent by accident.
+  if (want('documents_chat')) {
+    // `ZERO` and `admin` are locals of each table-probe section above and are not in scope out
+    // here — the same trap `calendar_feed`'s `ok()` fell into on its first run. Declared where
+    // they are used.
+    const ZERO = '00000000-0000-0000-0000-000000000000'
+    const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+    const anon = await fetch(`${BASE}/api/documents/answer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    const empty = await fetch(`${BASE}/api/documents/answer`, { method: 'POST', headers: auth, body: JSON.stringify({ question: '' }) })
+    const aok = anon.status === 401 && empty.status === 400
+    console.log(`  ${aok ? '✓' : '✗'} documents answer    no session ${anon.status}, no question ${empty.status}`)
+    if (!aok) failures++
+
+    const sAnon = await fetch(`${BASE}/api/documents/topics/${ZERO}/summarise`, { method: 'POST' })
+    const sMissing = await fetch(`${BASE}/api/documents/topics/${ZERO}/summarise`, { method: 'POST', headers: auth })
+    const sok = sAnon.status === 401 && sMissing.status === 404
+    console.log(`  ${sok ? '✓' : '✗'} documents summary   no session ${sAnon.status}, unknown topic ${sMissing.status}`)
+    if (!sok) failures++
+
+    // A conversation that exists and is NOT this section's. Written as the server (no topic DELETE
+    // for `authenticated` — a topic is closed, not deleted), and removed again the same way.
+    const { data: other } = await admin.from('topics')
+      .insert({ company_id: companyId, title: 'check:live probe', section: 'calendar' })
+      .select('id').maybeSingle()
+    if (!other) {
+      console.log('  ✗ documents summary   could not write a probe topic, so the section guard is UNTESTED this run')
+      failures++
+    } else {
+      const wrongSection = await fetch(`${BASE}/api/documents/topics/${other.id}/summarise`, { method: 'POST', headers: auth })
+      const gok = wrongSection.status === 404
+      console.log(`  ${gok ? '✓' : '✗'} documents summary   a CALENDAR conversation is ${wrongSection.status} here (must be 404, not 403)`)
+      if (!gok) failures++
+      await admin.from('topics').delete().eq('id', other.id)
+    }
+
+    // The page itself, and its three tabs in the address. A tab word the page does not know must
+    // not 404 or throw — it falls back to Ask (`asTab`).
+    const pages = await Promise.all(['', '?tab=documents', '?tab=conversations', '?tab=nonsense']
+      .map((q) => fetch(`${BASE}/documents${q}`, { redirect: 'manual' })))
+    const pok = pages.every((r) => r.status === 200)
+    console.log(`  ${pok ? '✓' : '✗'} documents page      ${pages.map((r) => r.status).join(', ')} for /documents, ?tab=documents, ?tab=conversations, ?tab=nonsense`)
+    if (!pok) failures++
+
+    if (process.env.CHECK_LIVE_DOCUMENTS_ASK === '1') {
+      const r = await fetch(`${BASE}/api/documents/answer`, {
+        method: 'POST', headers: auth,
+        body: JSON.stringify({ question: 'Which of our permits expire in the next 12 months?' }),
+      })
+      const body = r.ok ? await r.text() : ''
+      const done = body.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l) } catch { return null } })
+        .find((e) => e?.type === 'done')
+      const qok = r.status === 200 && !!done?.research
+      console.log(`  ${qok ? '✓' : '✗'} documents question  ${r.status}, ${String(done?.research ?? '').length} chars, ${(done?.sources ?? []).length} source(s)`)
+      if (!qok) failures++
+    } else {
+      console.log('  · documents question  SKIPPED — set CHECK_LIVE_DOCUMENTS_ASK=1 to spend one model call')
+    }
+  }
+
   // 1. RESEARCH streams, and the stream carries sources.
   if (want('research')) {
   const t0 = Date.now()

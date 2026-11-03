@@ -282,8 +282,14 @@ if (!deleted || !exempt) {
 //
 // Nineteen is also asserted as a COUNT. A twentieth paid route is then a deliberate edit here
 // — which is exactly what nobody made when the five above were added.
+//
+// 19 -> 21, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 4b). The Documents chat's two routes:
+// `app/api/documents/answer/route.ts` and `app/api/documents/topics/[id]/summarise/route.ts`. Both
+// spend, both call `requireAccess` in their own text — the summarise route deliberately so, even
+// though its body is `lib/ask/summariseRoute.ts`, because this check reads the route file and a
+// gate that lived only in the helper would pass the type checker and fail here.
 // ---------------------------------------------------------------------------
-const PAID_COUNT = 19;
+const PAID_COUNT = 21;
 
 // Why each of these may reach a model and still not call `requireAccess`.
 const EXEMPT = {
