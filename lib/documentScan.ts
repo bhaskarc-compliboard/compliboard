@@ -162,6 +162,16 @@ export interface DocumentScan {
 
 const KINDS: ScanKind[] = ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other']
 const STATUSES: ScanStatus[] = ['current', 'expiring', 'expired', 'no_gaps_found', 'gaps_found', 'recorded', 'not_judged', 'could_not_read']
+/**
+ * *** THE FIVE WORDS THE DATABASE WILL ACCEPT FOR `doc_date_kind` — read from the live staging
+ * schema, not from this file's memory of it. ***
+ *
+ *   CHECK ((doc_date_kind = ANY (ARRAY['issued','revised','last_entry','effective','unknown'])))
+ *
+ * written by `supabase/migrations/040_document_scan.sql:65`. `prompts/document-scan.ts:216` asks
+ * the model for exactly these five.
+ */
+const DOC_DATE_KINDS = ['issued', 'revised', 'last_entry', 'effective', 'unknown'] as const
 
 const str = (v: unknown): string | null => {
   const s = typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim()
@@ -287,6 +297,46 @@ export function chooseSignificantDate(
   return { date: docDate, kind: docDate ? (docDateKind ?? null) : null }
 }
 
+/**
+ * *** A WORD THE DATABASE WOULD REFUSE BECOMES `unknown`, AND IS SAID OUT LOUD — 3 November 2026
+ * (`docs/GAPS-PLAN.md` Part B step B0, decision 46; the owner's walk, W2). ***
+ *
+ * This field was the one of the three identity words that went to the database unchecked:
+ * `kind` is held against `KINDS` and `status` against `STATUSES`, both a few lines below, and
+ * `doc_date_kind` was `str(id.doc_date_kind)` — whatever the model wrote. The database's own
+ * CHECK then refused the INSERT, `saveScan` threw, the sweep's catch wrote `failedScan(...)`
+ * (`app/api/jobs/scan-documents/route.ts:275`) and the row that landed said **`model:
+ * '(not called)'`** about a call that had just cost $0.114168. It happened to three documents
+ * across two companies in one evening on staging.
+ *
+ * **The shape is `status`'s, not `kind`'s, and that is the choice.** `kind` falls back to `null`
+ * because a document whose kind we did not understand genuinely has no kind. A date, by contrast,
+ * still exists when we cannot name what sort of date it is — and the schema already carries the
+ * word for that, `unknown`, which five current rows on staging hold legitimately because the
+ * prompt offers it. So this maps, where `kind` nulls.
+ *
+ * **The match is exact, as `:361` and `:377` are.** `basisOf` at `:60` lowercases first, so this
+ * file has two shapes; whether all three should match case-insensitively is one small decision
+ * for the owner and not something a fix invents for one field (`GAPS-PLAN.md` §8).
+ *
+ * **Where the raw word is kept: `document_scans.raw_text`**, which holds the model's whole
+ * response and which `saveScan` writes on every scan that reaches it. That is where `kind`'s and
+ * `status`'s rejected words have always been kept too — neither of them records its raw value
+ * anywhere else — so `select raw_text from document_scans` is the query that finds every drift,
+ * and no column had to be added for it. The `console.warn` is this file's own second channel for
+ * a value the product refused: the same choice, with the same reasoning, as the calendar counts
+ * at `:985`, which says plainly that `document_scans` has nowhere to put them and that
+ * `confidence_notes` is the model's own prose and must not be written over.
+ */
+export function normaliseDocDateKind(raw: string | null): string | null {
+  if (!raw) return null
+  if ((DOC_DATE_KINDS as readonly string[]).includes(raw)) return raw
+  console.warn(`document scan: doc_date_kind ${JSON.stringify(raw)} is not one of `
+    + `${DOC_DATE_KINDS.join(', ')} — stored as unknown. The word itself stays in this scan's `
+    + 'raw_text.')
+  return 'unknown'
+}
+
 /** Fill the shape from whatever the model returned, without trusting any of it. */
 function normaliseScanRaw(parsed: Record<string, unknown>, extractedText: string): Omit<DocumentScan,
   'raw_text' | 'json_parsed' | 'model' | 'searches' | 'cited_sources' | 'structured' | 'prompt_sha256' | 'quotes_checked'
@@ -316,7 +366,9 @@ function normaliseScanRaw(parsed: Record<string, unknown>, extractedText: string
       site: str(id.site),
       jurisdiction: arr(id.jurisdiction),
       doc_date: date(id.doc_date),
-      doc_date_kind: str(id.doc_date_kind),
+      // NOT `str(...)` alone: the database refuses a sixth word and the whole reading is lost
+      // with it. `normaliseDocDateKind` above says why it maps where `kind` nulls.
+      doc_date_kind: normaliseDocDateKind(str(id.doc_date_kind)),
       page_refs: (id.page_refs && typeof id.page_refs === 'object' ? id.page_refs : {}) as Record<string, string>,
     },
     summary: str(parsed.summary),

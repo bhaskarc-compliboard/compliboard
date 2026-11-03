@@ -412,7 +412,62 @@ describe('beforeAsk, and the three sections that pass none', () => {
     assert.ok(call > 0, 'beforeAsk is not called')
     assert.ok(call < body.indexOf("setBox('')"), 'the box is cleared before the section has looked')
     assert.ok(call < body.indexOf('await fetch('), 'the question is sent before the section has looked')
-    assert.match(body, /if \(verdict === 'handled'\) \{ setBox\(''\); setPicked\(null\); return \}/)
+    // Edited 3 November 2026 (B0, decision 46): the handled arm now releases `busy` first,
+    // because the look itself sets it. Everything else about this line is unchanged.
+    assert.match(body, /if \(verdict === 'handled'\) \{ setBusy\(false\); setBox\(''\); setPicked\(null\); return \}/)
+  })
+
+  /**
+   * *** THE SIX SECONDS OF NOTHING — the owner's walk, W3, 3 November 2026. ***
+   *
+   * `beforeAsk` can start an audit, which is a POST that spends six seconds extracting a
+   * checklist's lines before it answers. Until this, `busy` was set ten lines further down and
+   * only on an `'ask'` verdict, so for the whole of that the box kept the words, the button kept
+   * saying Ask, and the guard at the top of `ask()` could not refuse a second press. The owner
+   * pressed twice and bought two identical audits.
+   */
+  test('THE SCREEN IS BUSY WHILE THE SECTION LOOKS, so a second press is refused', () => {
+    const fn = code(SCREEN).slice(code(SCREEN).indexOf('async function ask(question: string)'))
+    const body = fn.slice(0, fn.indexOf('\n  const stop ='))
+    const guard = body.indexOf('if (!q || busy)')
+    const set = body.indexOf('setBusy(true)')
+    const call = body.indexOf('await beforeAsk(')
+    assert.ok(guard >= 0 && set > guard, 'the guard reads busy')
+    assert.ok(set < call, 'busy must be set BEFORE the section is asked to look, not after')
+  })
+
+  test('the look releases busy on handled, keeps it on ask, and releases it on a throw', () => {
+    const fn = code(SCREEN).slice(code(SCREEN).indexOf('async function ask(question: string)'))
+    const hook = fn.slice(fn.indexOf('if (beforeAsk) {'), fn.indexOf("    setBox('')\n    const sent"))
+    // handled: released, then the box and the chip are cleared, then nothing is sent.
+    assert.match(hook, /if \(verdict === 'handled'\) \{ setBusy\(false\)/)
+    // a throw: released and re-thrown, so the screen is never frozen with the words in it.
+    assert.match(hook, /catch \(e\) \{[\s\S]*setBusy\(false\)[\s\S]*throw e/)
+    // 'ask': NOT released here. One `setBusy(false)` for handled and one for the catch, no more —
+    // a third would flicker the button back to Ask between the look and the request.
+    assert.equal((hook.match(/setBusy\(false\)/g) ?? []).length, 2)
+  })
+
+  /**
+   * A section that passes nothing must not reach any of it. `busy` is set inside the
+   * `if (beforeAsk)` block, so the Calendar, Documents and HR's screens behave exactly as
+   * before — which the free checks on those sections also say, and which this pins in the file.
+   */
+  test('a section passing no beforeAsk changes no state at that point', () => {
+    const fn = code(SCREEN).slice(code(SCREEN).indexOf('async function ask(question: string)'))
+    const body = fn.slice(0, fn.indexOf('\n  const stop ='))
+    const open = body.indexOf('if (beforeAsk) {')
+    const close = body.indexOf("    setBox('')\n    const sent")
+    const before = body.slice(0, open)
+    assert.ok(open > 0 && close > open)
+    // Nothing between the top of ask() and the hook touches state.
+    assert.equal(/set[A-Z]/.test(before), false,
+      'something now runs before the hook that a section passing none would also run')
+    // And the look's own `setBusy(true)` is INSIDE the hook, not above it — so a section that
+    // passes nothing reaches the first `setBusy(true)` exactly where it always did, just before
+    // the fetch. (The `setBusy(false)` after the hook is the fetch's own `finally`, unchanged.)
+    assert.equal(/setBusy\(true\)/.test(before), false, 'busy is set before the hook is even tested')
+    assert.match(body.slice(open, close), /setBusy\(true\)/)
   })
 
   test('a section that passes nothing behaves exactly as it did', () => {

@@ -271,8 +271,32 @@ export function AskScreen({
      * never reaches this line.
      */
     if (beforeAsk) {
-      const verdict = await beforeAsk(q, picked)
-      if (verdict === 'handled') { setBox(''); setPicked(null); return }
+      /**
+       * *** AND THE SCREEN IS BUSY WHILE IT LOOKS — 3 November 2026 (`docs/GAPS-PLAN.md` Part B
+       * step B0, decision 46; the owner's walk, W3). ***
+       *
+       * `setBusy(true)` used to be ten lines below, reached only on an `'ask'` verdict, so a
+       * section's own look happened with the screen in its resting state: the words stayed in
+       * the box, the button still read `firstVisitButton`, and the guard four lines above —
+       * `if (!q || busy)` — could not refuse a second press, because `busy` was false. The
+       * owner typed an audit command, pressed Enter, saw nothing for the six seconds
+       * `POST /api/audit-runs` spent extracting the checklist's lines, pressed Ask, and got
+       * **two identical audits**. The second cost $0.4924 on Opus 5.5.
+       *
+       * On `'ask'` the flag is deliberately LEFT SET: `setBusy(true)` below is then a no-op, so
+       * the button never flickers back between the look and the request.
+       */
+      setBusy(true)
+      let verdict: 'handled' | 'ask'
+      try {
+        verdict = await beforeAsk(q, picked)
+      } catch (e) {
+        // A section whose own work threw must not leave the screen frozen with the words in it.
+        // The throw still escapes, exactly as it did before; only the flag is released.
+        setBusy(false)
+        throw e
+      }
+      if (verdict === 'handled') { setBusy(false); setBox(''); setPicked(null); return }
     }
     setBox('')
     const sent = picked

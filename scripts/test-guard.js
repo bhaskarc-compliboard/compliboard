@@ -384,7 +384,17 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   a command is now an imperative: a question mark or a leading question word makes it a
 //   question. Seven sentences are held to going to the model, four imperatives to still starting
 //   a run, and the two signals are tested on their own.
-const FLOOR = 2328
+//
+// 2328 -> 2336, 3 November 2026 (GAPS-PLAN Part B step B0, decision 46). EIGHT MORE, and both
+//   halves cost money while they were open. Five on lib/documentScan.ts: doc_date_kind was the
+//   one identity word sent to the database unchecked, so a sixth word made the INSERT throw and
+//   the whole paid reading was lost - three documents, two companies, one evening, and the row
+//   that landed said the model had never been called about a call that had just cost $0.114168.
+//   An unrecognised word is now 'unknown', said out loud, with the word itself still in raw_text.
+//   Three on components/AskScreen.tsx: the screen is busy from the moment a section is asked to
+//   look at the sentence, because it was not, and the owner pressed Ask twice during the six
+//   seconds POST /api/audit-runs spends extracting a checklist and bought two identical audits.
+const FLOOR = 2336
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

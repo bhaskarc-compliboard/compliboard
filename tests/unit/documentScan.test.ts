@@ -6,7 +6,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { verifyQuote, normaliseScan, failedScan, refusedScan, apiFailureStatus } from '../../lib/documentScan.ts'
+import { verifyQuote, normaliseScan, normaliseDocDateKind, failedScan, refusedScan, apiFailureStatus } from '../../lib/documentScan.ts'
  import { extractJsonText } from '../../lib/ai.ts'
 
 describe('a quote is checked against the document', () => {
@@ -255,5 +255,74 @@ describe('version_of and could_not_read are FLAT now, and the nested form still 
     const scan = normaliseScan({ identity: { kind: 'permit' } }, '')
     assert.equal(scan.version_of.title, null)
     assert.equal(scan.could_not_read.reason, null)
+  })
+})
+
+/**
+ * *** THE WORD THE DATABASE WOULD REFUSE — `docs/GAPS-PLAN.md` Part B step B0, decision 46. ***
+ *
+ * `document_scans_doc_date_kind_check` allows five words and nothing else. Until 3 November 2026
+ * `doc_date_kind` was the one identity field passed through unchecked, so a sixth word made the
+ * INSERT throw and the whole paid reading was thrown away with it — measured three times in one
+ * evening on staging, across two companies, with the row that landed claiming the model had
+ * never been called.
+ */
+describe('a doc_date_kind the database would refuse becomes unknown, and is said out loud', () => {
+  /** Silence and capture the one warn, so the suite does not print it and the test can see it. */
+  function warnsWhile(fn: () => void): string[] {
+    const said: string[] = []
+    const real = console.warn
+    console.warn = (...a: unknown[]) => { said.push(a.map(String).join(' ')) }
+    try { fn() } finally { console.warn = real }
+    return said
+  }
+
+  test('all five legal words pass through exactly as the model wrote them', () => {
+    for (const w of ['issued', 'revised', 'last_entry', 'effective', 'unknown']) {
+      assert.equal(normaliseDocDateKind(w), w, w)
+    }
+  })
+
+  test('nothing written is still nothing — never "unknown"', () => {
+    // A document with no date of its own must not acquire a date kind out of this function.
+    assert.equal(normaliseDocDateKind(null), null)
+  })
+
+  test('A SIXTH WORD BECOMES unknown RATHER THAN LOSING THE READING', () => {
+    let out: string | null = null
+    const said = warnsWhile(() => { out = normaliseDocDateKind('published') })
+    assert.equal(out, 'unknown')
+    assert.equal(said.length, 1, 'the refusal is said once')
+    assert.match(said[0], /doc_date_kind "published"/)
+    assert.match(said[0], /stored as unknown/)
+    assert.match(said[0], /raw_text/, 'the warn says where the word itself is kept')
+  })
+
+  test('the whole scan lands, and the parsed answer is left carrying the raw word', () => {
+    // `normaliseScan` is what `runDocumentScan` builds the row from, so this is the real path.
+    // The SAME object is what `raw_text` is written from, so this also pins the thing that makes
+    // "the raw word is kept in raw_text" true: normalising reads the answer, it never edits it.
+    const parsed = {
+      identity: { kind: 'record', title: 'Fit test records', doc_date: '2026-06-09',
+        doc_date_kind: 'published' },
+      status: 'gaps_found',
+    }
+    const said = warnsWhile(() => {
+      const scan = normaliseScan(parsed, '')
+      assert.equal(scan.identity.doc_date_kind, 'unknown')
+      // The date itself is NOT lost with its label — that is why this maps where `kind` nulls.
+      assert.equal(scan.identity.doc_date, '2026-06-09')
+      assert.equal(scan.status, 'gaps_found')
+    })
+    assert.equal(said.length, 1)
+    assert.equal(parsed.identity.doc_date_kind, 'published',
+      'the answer the row stores in raw_text is untouched by the normalising')
+  })
+
+  test('the case is matched exactly, the way kind and status are matched', () => {
+    // `basisOf` in the same file lowercases first; these three do not. Recorded rather than
+    // quietly changed — `docs/GAPS-PLAN.md` §8.
+    const said = warnsWhile(() => { assert.equal(normaliseDocDateKind('Issued'), 'unknown') })
+    assert.equal(said.length, 1)
   })
 })
