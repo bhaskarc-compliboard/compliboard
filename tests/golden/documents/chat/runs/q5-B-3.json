@@ -1,0 +1,60 @@
+{
+  "question": "What does the fire extinguisher certificate say about the six-year maintenance?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell you what the certificate says, because I don't have it. The only document I've seen for Cascade is the \"Emergency Action Plan — Portland Facility.\" (we could not find these words in what we have on file) You haven't given me a fire extinguisher certificate, and I won't guess at its wording.\n\n**What the rule requires (general, not from your certificate)**\n- OSHA's portable fire extinguisher standard is 29 CFR 1910.157. Oregon OSHA enforces its own version of it.\n- Under that standard, you must do a monthly visual check and an annual maintenance check, and you must keep a record of the annual check.\n- The six-year maintenance is not in the OSHA text itself. It comes from the NFPA 10 standard. It applies to stored-pressure dry chemical extinguishers, which must be emptied and given internal maintenance every six years. They also need a hydrostatic test, usually every 12 years.\n- Your local fire marshal or fire code may also require this maintenance.\n- I haven't searched for the current Oregon text, so confirm the details with Oregon OSHA or your fire marshal.\n\n**What the certificate might show**\n- The date of the last six-year maintenance, which tells you when the next one is due.\n- The extinguisher type and serial numbers, which tell you whether the six-year rule applies to each unit.\n- The servicing company's name and its certification.\n\n**Things you didn't ask about**\n- Your records conflict on headcount. You declared 38 employees company-wide, but the emergency action plan, dated 2021, says 42 at Portland. The plan is old, so please confirm the current number. It affects which plan and training requirements apply to you.\n- The same address is listed as two sites. This looks like a duplicate entry. It's worth fixing so your records don't split.\n- As a chemical distributor, you may face further requirements beyond extinguisher upkeep. These include hazard communication, and fire code and emergency planning rules for stored chemicals.\n\nIf you upload or paste the certificate, I'll read it and tell you the maintenance date, when the next one is due, and whether anything is missing.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 1
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3469,
+      "output": 671,
+      "searches": 0,
+      "cost_usd": 0.013648
+    }
+  ],
+  "seconds": 6.8,
+  "topic_id": "7d5d1274-5e0b-40ec-bf89-812d4eb4c353"
+}

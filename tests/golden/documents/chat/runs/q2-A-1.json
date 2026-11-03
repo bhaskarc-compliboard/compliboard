@@ -1,0 +1,105 @@
+{
+  "question": "What's missing from our emergency action plan, and how do we fix it?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 29422,
+      "tokens": 11769,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13501,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "The \"Emergency Action Plan — Portland Facility\" (we could not find these words in what we have on file) has six gaps. It is dated February 1, 2021, and I read it on October 14, 2026. If it has been changed or re-filed since then, this answer is based on the older reading.\n\nThe two most important gaps are the first two. Both are minimum elements the Oregon OSHA emergency action plan rule asks for. The reading cites OAR 437-002-0042(2) for them, but I did not check the exact paragraph letters.\n\n**What's missing and how to fix it**\n\n1. **No procedure for reporting an emergency.**\n   - The plan says pull stations are at each exit and the alarm is monitored. It never says who pulls the alarm, who calls 911, or who inside the company is told.\n   - It also doesn't say how to report a chemical spill that doesn't set off the alarm.\n   - **Fix:** Add a short \"Reporting an emergency\" section between Sections 2 and 3. Cover those points.\n\n2. **No shutdown procedure for chemical processes before evacuating.**\n   - Section 3 says to leave and not to secure anything that takes more than a few seconds. It doesn't say whether any process, heating or transfer operation must be made safe first.\n   - **Fix:** State either that no one stays behind to run or shut down operations, or name the job titles that shut down specific equipment and when they must leave. Tie this to the actual lab and warehouse processes.\n\n3. **No named contact for questions about the plan.**\n   - The plan mentions a \"facilities lead\" and an \"incident coordinator\" but never says who the incident coordinator is.\n   - **Fix:** Add a contacts section with the name or job title, and phone number, of the plan owner and the incident coordinator. Add anyone employees can ask about their duties.\n\n4. **No annual reviews shown.**\n   - Section 6 promises a review every January, but the plan still carries the February 2021 date. There is no review log or sign-off.\n   - The rule says employees must be taken through the plan again when it changes.\n   - **Fix:** Review the plan now. Update the headcount, roster, maps and contacts. Add a revision and review log with dates and signatures. Then retrain employees on the changes.\n\n5. **Earthquake is listed but has no procedure.**\n   - Section 1 covers earthquakes, but no section says what to do in one.\n   - **Fix:** Add a short section on what to do during shaking, when to evacuate afterwards, and how to check for chemical spills and damaged storage.\n\n6. **Appendices are not in the file.**\n   - Appendix A (evacuation maps) and Appendix B (warden and first-aid roster) are listed but not attached. I could not check exit routes or named wardens.\n   - **Fix:** Attach the current maps and roster, with dates.\n\n**What you didn't ask but should know**\n\n- **Headcount may be out of date.** The plan shows 42 employees at Portland. You declared 38 across the whole company. Check this when you update the plan.\n- **Dates coming up.** The plan sets an autumn evacuation drill, which the reading placed at November 30, 2026. The next January review falls in January 2027. Updating the plan first lets you use the drill to test the new sections.\n- **Related document.** The \"Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units)\" (we could not find these words in what we have on file) sets the next annual service for August 20, 2026. That date has passed. The plan relies on fire response, so this is worth fixing alongside it.\n\n**Next step:** I can draft the \"Reporting an emergency\" and process shutdown sections for you to fill in with your names and processes. Would you like that?",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 29422,
+        "tokens": 11769,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 20,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13501,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 2
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 16411,
+      "output": 1179,
+      "searches": 0,
+      "cost_usd": 0.044612
+    }
+  ],
+  "seconds": 9.9,
+  "topic_id": "88a10816-1a6f-41c8-8d42-c369b85a089a"
+}

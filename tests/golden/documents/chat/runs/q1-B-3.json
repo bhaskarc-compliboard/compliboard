@@ -1,0 +1,60 @@
+{
+  "question": "Which of our permits expire in the next 12 months?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell you which permits expire in the next 12 months, because I have no permit records for Cascade. Nothing in your profile lists permits, permit numbers, issue dates, or expiration dates. I'd be guessing if I named any.\n\n**Where to find the dates fast**\n- **Oregon DEQ:** Check your air quality permit, if you have one. Also check any industrial stormwater permit (NPDES 1200-Z) and any wastewater discharge permit to the City of Portland or Clean Water Services. Hazardous waste generator status is an ID registration. It isn't a permit, but you must keep it current. Log in to DEQ's online system (Your DEQ Online) to see the status and expiration dates.\n- **Oregon State Fire Marshal:** The Hazardous Substance Possession Fee and the Community Right-to-Know (CRTK) report are due **annually by March 1**. This is a recurring deadline, not an expiring permit.\n- **Local fire marshal:** Check for an operational fire code permit for hazardous materials. Washington County is likely served by Tualatin Valley Fire & Rescue. These permits are usually annual.\n- **City of Portland:** Check your business license and any wastewater discharge authorization.\n- **Federal:** Check your EPA ID number, DEA or DHS CFATS-type registrations (if any chemicals are covered), and any DOT hazmat registration with PHMSA. The PHMSA registration runs on a July 1 cycle.\n\n**What you didn't ask but need to know**\n- **Your records conflict.** Your profile says \"distributor\" and lists 38 employees, but the name and industry say manufacturer. Your Emergency Action Plan says 42 employees at Portland, as of 2021. Manufacturing versus distribution changes which permits you need, especially air and wastewater. Please confirm what you actually do with chemicals on site.\n- **Duplicate site entry:** \"Site 2\" has the same address as your primary site. If it's a mistake, I should remove it. If it's a second building or unit, the permits may differ.\n- **Your Emergency Action Plan is from 2021.** Review it, since headcount has changed.\n\n**Next step:** If you paste or list your permits and expiration dates, I'll build a 12-month renewal calendar. If you don't have them, I can give you a checklist of the permits a chemical distributor in Washington County typically needs, so you can check each one against your files.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3461,
+      "output": 798,
+      "searches": 0,
+      "cost_usd": 0.014901999999999999
+    }
+  ],
+  "seconds": 7.6,
+  "topic_id": "a8e87da8-f2a4-4fb5-9043-22f28f28ca9f"
+}

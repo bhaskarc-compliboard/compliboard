@@ -1,0 +1,103 @@
+{
+  "question": "Which of our permits expire in the next 12 months?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 25500,
+      "tokens": 10200,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 11932,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "One permit on file expires in the next 12 months: the **Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility**. It expires on November 15, 2026, which is 12 days from today (November 3, 2026). It is the only permit in your list of 12 documents.\n\n**What the permit says about renewal:**\n- The permit set the renewal application deadline at July 18, 2026. That date has passed.\n- It asks you to keep a copy of the renewal application and DEQ's receipt dated on or before that day. Neither is in your list of documents.\n- The permit says you may not operate after it expires unless it has been renewed or a timely renewal application was filed.\n\n**What I can't tell you:** whether a renewal application was filed. If it was filed by July 18, add the application and DEQ's receipt to your file as proof. If it wasn't, call DEQ's Northwest Region office now, because the permit's rule about operating after expiry then becomes the main concern.\n\n**Other items you didn't ask about but should know:**\n- The Annual Report for 2025 is on file with a DEQ receipt, so that one is covered. I don't see the semi-annual monitoring report that was due July 31, 2026, in your documents.\n- The Scrubber Pressure-Drop Log shows a September 9 reading above the permit limit. It also has missing readings and a missing weekly carbon check. A renewal review could draw attention to these.\n- The permit requires a quarterly scrubber inspection, due September 30, 2026. I don't see a record of it in your documents.\n- The permit requires carbon replacement at least every 12 months. I can't see the last replacement date in your documents.\n\nThe readings of these documents are dated October 14, 2026. If you have changed or re-filed anything since then, this answer may be out of date.\n\n**Next step:** I can draft a short checklist of what to gather for DEQ: the renewal receipt, the July report, the quarterly inspection record and the carbon change record. Would you like that?",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 25500,
+        "tokens": 10200,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 18,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 11932,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 14911,
+      "output": 652,
+      "searches": 0,
+      "cost_usd": 0.036342
+    }
+  ],
+  "seconds": 7.8,
+  "topic_id": "04dc50ca-b59b-48b6-83bb-73a08aa849c6"
+}

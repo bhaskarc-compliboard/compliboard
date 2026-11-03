@@ -1,0 +1,66 @@
+{
+  "question": "What dates does this file set?",
+  "variant": "B",
+  "documentId": "7d6a4d4f-84a5-450d-a26e-9bf47e8edd36",
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "**The file sets one hard deadline that has already passed: annual maintenance was due August 20, 2026.** Today is November 3, 2026. Nothing in the file shows that service happened. If it didn't, all 14 extinguishers are overdue.\n\n**Dates in the certificate**\n- **Service date:** August 20, 2025. This was the last annual maintenance, and the technician signed it the same day.\n- **Next annual maintenance due:** August 20, 2026. This is overdue unless you have a newer certificate.\n- **Six-year maintenance due, W-3 and L-1:** November 2026. The certificate says to schedule it before then, so it is due this month.\n- **Six-year maintenance due, 2027:** W-1, W-2, W-4, B-1, A-1 and A-2.\n- **Six-year maintenance due, 2028:** L-2, D-1, D-2 and T-1.\n- **Six-year maintenance due, 2029:** O-1 and O-2.\n- **Manufacture dates:** 2020 to 2023.\n- **Hydrostatic test dates:** L-1 was tested in 2020 and L-2 in 2022. Those are the only two units with a hydrostatic test date.\n- **Monthly inspections:** The certificate says these are your responsibility. It gives no date, but they should be recorded on each unit's tag every month.\n\n**Things to check**\n- **Hydrostatic testing:** I'm going from my own knowledge of NFPA 10 here, not from a source I searched. CO2 extinguishers need hydrostatic testing every 5 years. L-1 was tested in 2020, so its test would be due in 2025. The certificate doesn't mention it. It lists only a 6-year maintenance date for L-1, which applies to dry chemical units. Ask Rose City about this. The same goes for L-2, which is due in 2027.\n- **The \"6-year\" dates:** The 6-year maintenance dates for the dry chemical units look like they follow the manufacture year. The certificate doesn't say that's the basis, so confirm it with Rose City.\n- **Addresses:** The certificate lists 4410 NW Front Avenue. Your company profile lists 14604 NW Wendy Lane, and the Portland site appears twice. Check that the certificate covers the right site. If you have two facilities, the second one needs its own certificate.\n- **Employee count:** The profile shows 38 employees company-wide. The 2021 emergency action plan shows 42 at Portland. That doesn't change these dates, but the emergency action plan is out of date.\n\n**What I can do next:** I can draft a short email to Rose City. It would ask for the overdue annual service, the W-3 and L-1 six-year service in November, and the CO2 hydrostatic status on L-1 and L-2. Want me to write it?",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "the attached file",
+        "chars": 0,
+        "tokens": 0,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 1,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 1,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 6137,
+      "output": 923,
+      "searches": 0,
+      "cost_usd": 0.021504000000000002
+    }
+  ],
+  "seconds": 10.5,
+  "topic_id": "98eecbc7-0070-4ec8-9d95-a26d52717544"
+}

@@ -1,0 +1,106 @@
+{
+  "question": "Do we have a stormwater permit?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30353,
+      "tokens": 12142,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13874,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "No. A stormwater permit is not on file. None of the 12 documents in your list is a stormwater permit or anything related to stormwater. If you hold one, you could add it.\n\nWhether you need one depends on a fact I don't have: what activities happen outdoors at the Portland site. Oregon's industrial stormwater permitting turns on the type of activity and on whether materials or operations are exposed to rain.\n- **If chemicals, equipment or processes are exposed outdoors (for example, outdoor storage, loading or tank areas):** a permit may apply, and a permit would be expected to be on file.\n- **If everything is fully indoors or covered:** you may qualify for an exemption, such as a \"no exposure\" certification. In that case, a copy of that certification is what you would keep.\n\nYou said the business is a distributor of chemicals, but your industry is recorded as chemical manufacturing. Stormwater coverage can depend on which category applies. Please confirm which one is right.\n\n**What you didn't ask but should know:**\n- The only DEQ permit on file is Standard Air Contaminant Discharge Permit No. 26-2841-ST-01. That is an air permit and does not cover stormwater.\n- That air permit expires November 15, 2026. It required a renewal application by July 18, 2026. The documents you hold do not include a copy of that application or DEQ's acknowledgment. Please confirm it was filed, because the permit does not allow operation after expiry without a renewed permit or a timely renewal application.\n- Your list also records the Portland site twice, at the same address. That may affect how any permit gets matched to a site.\n\n**Question for you:** Are any chemicals, containers, tanks or loading activities kept or handled outdoors at 14604 NW Wendy Lane?\n\n**Next step I can take:** Once you answer, I can check Oregon DEQ's current stormwater permit requirements for your activity and tell you which permit or exemption would apply.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30353,
+        "tokens": 12142,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 21,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13874,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 16626,
+      "output": 629,
+      "searches": 0,
+      "cost_usd": 0.039541999999999994
+    }
+  ],
+  "seconds": 7.1,
+  "topic_id": "5c33aa3a-be3a-4b82-9b7f-40122635bf6c"
+}

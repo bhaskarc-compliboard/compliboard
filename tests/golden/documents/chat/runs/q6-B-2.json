@@ -1,0 +1,66 @@
+{
+  "question": "What dates does this file set?",
+  "variant": "B",
+  "documentId": "7d6a4d4f-84a5-450d-a26e-9bf47e8edd36",
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "**The file sets one hard deadline that has already passed: annual maintenance was due August 20, 2026.** Today is November 3, 2026. Nothing in the file shows that the service happened.\n\n**Dates in the certificate**\n- **Service date:** August 20, 2025. This is when the 14 units were serviced and signed off.\n- **Next annual maintenance due:** August 20, 2026. That is about 2½ months ago.\n- **Six-year maintenance due in November 2026:**\n  - Unit W-3 (20 lb ABC, made 2020, warehouse drum rack).\n  - Unit L-1 (10 lb CO2, made 2020, laboratory entry). The certificate shows its last hydrostatic test as 2020.\n  - The certificate says to schedule both before November 2026. That is this month.\n- **Later six-year dates:**\n  - 2027: W-1, W-2, W-4, B-1, A-1, A-2.\n  - 2028: L-2, D-1, D-2, T-1.\n  - 2029: O-1, O-2.\n- **Monthly inspections:** These are your responsibility and have no fixed date. The certificate says to record them on each unit's tag.\n\n**What you didn't ask but need to know**\n1. **Check whether a 2026 service happened.** If it did, you need that newer certificate. If it didn't, all 14 units are overdue for annual maintenance. That matters most for the units covering the solvent cage, the acid and caustic lines, and the tank farm.\n2. **W-3 and L-1 are now due.** Book them with the annual service if you can. The CO2 unit L-1 may also need a hydrostatic test. Ask Rose City to confirm what NFPA 10 requires for each unit.\n3. **The certificate may not match your records.**\n   - It lists the facility at 4410 NW Front Avenue, Portland 97210. Your company profile lists 14604 NW Wendy Lane, Portland 97229, and lists the same address twice.\n   - Confirm which site this certificate covers. If the Wendy Lane site has its own extinguishers, you need a certificate for them.\n   - Your profile lists 42 employees at Portland in a 2021 plan and 38 enterprise-wide. Those figures conflict, which affects other obligations.\n4. **I haven't checked the legal basis.** NFPA 10 is the standard this certificate cites. I haven't confirmed here how Oregon fire code or OSHA's portable extinguisher rule (29 CFR 1910.157) applies to you. Both generally require annual maintenance and monthly checks.\n\n**Next step:** I can draft a short checklist of the overdue and upcoming service items, with questions to send Rose City. I can also look up the Oregon and OSHA requirements and cite them.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "the attached file",
+        "chars": 0,
+        "tokens": 0,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 1,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 1,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 6137,
+      "output": 914,
+      "searches": 0,
+      "cost_usd": 0.021414000000000002
+    }
+  ],
+  "seconds": 9.4,
+  "topic_id": "1c304850-6f15-4ee6-bf30-5708165d88ca"
+}

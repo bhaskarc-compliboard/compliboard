@@ -1,0 +1,60 @@
+{
+  "question": "Do we have a stormwater permit?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell from what I have whether you hold a stormwater permit. Nothing in your company record shows a permit, a permit number, or a \"no exposure\" certification. Someone at the company needs to check.\n\n**Whether you need one depends on a fact I don't have.** In Oregon, the Department of Environmental Quality (DEQ) runs the industrial stormwater program. It issues a general permit called the 1200-Z. The permit applies to industrial sites where stormwater can touch industrial activity or materials. For you, the question is whether chemicals, containers, or equipment are stored, loaded, or handled outdoors, or in a way that rain can reach.\n\n- **Everything is fully indoors or covered, and rain can't reach it.** You may not need a permit. DEQ has a \"no exposure\" option, but you would need to file for it. Having no permit isn't enough.\n- **Anything is outdoors or exposed.** You likely need 1200-Z coverage if your activity falls in a covered industrial category. Chemical manufacturing and chemical wholesale distribution often fall in those categories, but it depends on your SIC or NAICS code. Coverage brings monitoring, a written stormwater plan, and reporting.\n- **The site discharges to a sewer instead of a stream or storm drain.** Different rules may apply, such as a local pretreatment permit. Check this with the local sewer authority.\n\n**Things to check on your end:**\n1. Look in your files for DEQ correspondence, a 1200-Z permit number, or a stormwater pollution control plan (SWPCP).\n2. Search DEQ's permit lookup for your address.\n3. Confirm your classification. Your record says \"chemical-manufacturing,\" but you declared yourselves a distributor. Your permit category could change depending on which is accurate.\n\n**Record problems:**\n- Your two listed sites have the same address. This is probably a duplicate entry. If it isn't, each site may need its own permit.\n- Your records show 38 employees company-wide and 42 at Portland, from a 2021 document. The numbers conflict. Headcount doesn't decide stormwater coverage, but it matters for other rules.\n\nI haven't run a search for this answer. Before you rely on it, check the current 1200-Z requirements on DEQ's website.\n\n**Next step:** If you tell me whether any chemicals or containers sit or are loaded outdoors, and what your NAICS code is, I can tell you whether 1200-Z likely applies and what you'd need to file.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3457,
+      "output": 811,
+      "searches": 0,
+      "cost_usd": 0.015024
+    }
+  ],
+  "seconds": 9.1,
+  "topic_id": "619b8a08-d015-46e9-ba98-064215462aeb"
+}

@@ -1,0 +1,103 @@
+{
+  "question": "Which of our permits expire in the next 12 months?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 25500,
+      "tokens": 10200,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 11932,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "**One permit on file expires in the next 12 months:** Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility. It expires on November 15, 2026, which is 12 days from today (November 3, 2026).\n\n**The renewal deadline has passed.** The permit asked for a complete renewal application on or before July 18, 2026. Your documents don't show whether one was filed. The list has no renewal application and no DEQ receipt for one. The permit says you shouldn't operate after expiry without a renewed permit or a timely renewal application. So a copy of the application and DEQ's acknowledgment is the key thing to find.\n\n**What I can't tell from your documents:** whether a renewal application was filed on time.\n- If it was, add it and DEQ's receipt to your file. That is the proof the permit asks you to keep.\n- If it wasn't, contact DEQ's Northwest Region right away, before November 15.\n\n**Other things you didn't ask about:**\n- The permit shows two dates that have passed. One is the semi-annual monitoring report for January to June 2026, due July 31, 2026. The other is the quarterly scrubber inspection, due by September 30, 2026. Your documents don't show either one. The only report on file is the Annual Report for Reporting Year 2025.\n- The Scrubber Pressure-Drop Log shows an S-2 reading of 6.4 on September 9, above the permit's 6.0 limit, with no note. The permit asks for notice to DEQ within 24 hours of a deviation.\n- That same log has no readings for August 17–21 and no C-1 check for the week of September 14.\n- No carbon replacement record is on file. The permit asks for one at least every 12 months.\n\nOther documents with dates, such as the fire extinguisher certificate, are not permits. The extinguisher certificate was serviced August 20, 2025, so the next annual service falls around August 2026. That is my reading of \"annual\", not a date the document sets.\n\n**Next step:** I can draft a short checklist of the proof to gather for the DEQ renewal. It would cover the application, the receipt, and the late reports and deviation notice. Would you like that?",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 25500,
+        "tokens": 10200,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 18,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 11932,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 14911,
+      "output": 712,
+      "searches": 0,
+      "cost_usd": 0.036942
+    }
+  ],
+  "seconds": 7,
+  "topic_id": "699ad938-f82d-4175-bdb3-8833fb635575"
+}

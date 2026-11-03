@@ -1,0 +1,60 @@
+{
+  "question": "What's missing from our emergency action plan, and how do we fix it?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell you what's missing yet, because I don't have the plan's text. I only have its title and one fact from it: it lists 42 employees at Portland, as of 2021-02-01. Below is what an Emergency Action Plan (EAP) must contain, so you can check your plan against it. I haven't searched for the current text, so confirm it against the rule itself, 29 CFR 1910.38, on osha.gov.\n\n**Required elements under 29 CFR 1910.38(c)**\n1. How to report a fire or other emergency.\n2. Evacuation procedures and emergency escape route assignments.\n3. Procedures for employees who stay to operate critical plant operations before they evacuate. For a chemical operation this usually means shutting down processes or isolating tanks.\n4. Procedures to account for all employees after evacuation.\n5. Rescue and medical duties for any employees assigned to them.\n6. Names or job titles of people employees can contact for more information about the plan.\n\n**Other requirements**\n- **Alarm system (1910.38(d)):** It must give a distinct signal and be usable by everyone, including employees with disabilities.\n- **Training (1910.38(e)):** You must train a designated group of employees to assist in evacuation. You must also review the plan with each employee when the plan is first made, when their responsibilities change, and when the plan changes.\n- **Review (1910.38(f)):** Update the plan when conditions change.\n- **Written plan (1910.38(b)):** With 10 or fewer employees you may communicate the plan orally. You have 38 or more, so it must be written and kept where employees can see it.\n\n**Likely gaps in your plan**\n- **Headcount:** The plan says 42 employees at Portland, but you've told us 38 enterprise-wide. One of those figures is out of date. The 2021 plan is probably stale, and so are its rosters and assignments.\n- **Site list:** Your sites are listed twice at the same address. If that's a duplicate entry, remove it. If it's two separate buildings or operations, each needs its own routes and assembly points.\n- **Chemical hazards:** Check that the plan addresses spills, releases, and toxic vapors, not only fire. Chemical sites often need shelter-in-place options, and they need a link to your hazard communication program and Safety Data Sheets.\n\n**What you didn't ask but need to know**\n- **Hazardous chemical rules:** If you handle hazardous chemicals, other rules may apply. Oregon is a state-plan state, so Oregon OSHA enforces its own rules, which mirror the federal ones. Check Oregon OSHA's version of the EAP rule, which is in Oregon Administrative Rules Chapter 437, Division 2.\n- **Emergency response:** You said you're a distributor. If employees would respond to spills themselves instead of evacuating, HAZWOPER (1910.120) emergency response training applies. If everyone evacuates and outside responders handle spills, the EAP alone covers it.\n- **Fire prevention plan:** A separate written fire prevention plan is required under 1910.39.\n- **Other reporting:** Check your Tier II and local emergency planning reporting duties.\n\n**How to fix it**\n1. Walk through the list above and mark each element as present, missing, or outdated.\n2. Update the roster and the site details.\n3. Assign and train the evacuation helpers.\n4. Retrain all employees.\n5. Run a drill.\n\nIf you paste the plan's text here, I'll compare it line by line against these requirements and give you a list of exact gaps and suggested wording.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3466,
+      "output": 1168,
+      "searches": 0,
+      "cost_usd": 0.018612
+    }
+  ],
+  "seconds": 11.7,
+  "topic_id": "ce8b9d0b-ef5b-4ded-9b09-cd9f35f375d6"
+}

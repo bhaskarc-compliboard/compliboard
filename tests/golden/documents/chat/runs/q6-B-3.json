@@ -1,0 +1,66 @@
+{
+  "question": "What dates does this file set?",
+  "variant": "B",
+  "documentId": "7d6a4d4f-84a5-450d-a26e-9bf47e8edd36",
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "**Short answer:** The certificate sets one firm deadline, which has already passed. It also sets two six-year maintenance dates that are close or overdue.\n\n**Dates the file sets**\n\n- **Service date: August 20, 2025.** This is when the annual maintenance was done and the certificate was signed.\n- **Next annual maintenance due: August 20, 2026.** Today is November 3, 2026, so this is about 2.5 months overdue unless a newer service record exists. I can't tell from this file whether one does.\n- **Six-year maintenance due in November 2026 for W-3 and L-1.** W-3 is a 20 lb ABC unit made in 2020. L-1 is a CO2 10 lb unit made in 2020. The certificate says to schedule the work before November 2026, so this is due now, this month.\n- **Six-year maintenance due in 2027** for W-1, W-2, W-4, B-1, A-1 and A-2.\n- **Six-year maintenance due in 2028** for L-2, D-1, D-2 and T-1.\n- **Six-year maintenance due in 2029** for O-1 and O-2.\n- **Hydrostatic test dates:** L-1 was tested in 2020 and L-2 in 2022. No other unit shows a test date. The certificate does not give a next hydrostatic due date for either CO2 unit.\n- **Monthly visual inspections** are ongoing. The certificate says they are the customer's job and should be recorded on the unit tag.\n\n**What you didn't ask but need to know**\n\n1. **Check for a newer certificate.** If the August 2026 service happened, this file is out of date. If it didn't, all 14 units are past their annual service. Fire marshals check service tags during inspections.\n2. **L-1 needs a hydrostatic test.** A CO2 extinguisher normally needs one every 5 years under NFPA 10. L-1 was tested in 2020, so that test would have been due in 2025. The certificate doesn't show it, so ask Rose City about it. I haven't checked the NFPA 10 text for this, so confirm it with them.\n3. **The certificate and your company records don't match.**\n   - The certificate lists the facility at 4410 NW Front Avenue. Your records list 14604 NW Wendy Lane.\n   - The certificate has one site. Your records list two sites at the same address.\n   - Make sure the extinguisher records cover the building you actually operate.\n4. **Your records disagree on headcount.**\n   - Your records show 38 employees enterprise-wide.\n   - They also show 42 at Portland, taken from a 2021 emergency action plan.\n   - Update the emergency action plan, since a 2021 plan is probably stale.\n5. **Your records call you a distributor.** The certificate lists acid and caustic repackaging lines and a tank farm. That looks like manufacturing or repackaging, which can bring more rules, such as hazard communication and fire code permits. Please confirm which description is right.\n\n**Next step:** I can draft a short checklist for Rose City. It would cover the overdue annual service, the W-3 and L-1 six-year maintenance, and the L-1 hydrostatic test. It would also set up a monthly inspection log. Want me to write it?",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "the attached file",
+        "chars": 0,
+        "tokens": 0,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 1,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 1,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 6137,
+      "output": 1060,
+      "searches": 0,
+      "cost_usd": 0.022874
+    }
+  ],
+  "seconds": 9.7,
+  "topic_id": "bc18963b-33fa-4b0d-b005-75ba9e2007d9"
+}

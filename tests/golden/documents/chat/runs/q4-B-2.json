@@ -1,0 +1,60 @@
+{
+  "question": "Do we have a stormwater permit?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell from what I have whether you hold a stormwater permit. Nothing in your company record shows a permit, a permit number, or a \"no exposure\" certification. Someone at the company will need to check for one.\n\n**Whether you need one depends on facts I don't have.**\n\nOregon's industrial stormwater permits come from the Department of Environmental Quality (DEQ). They cover facilities in certain industrial categories that discharge stormwater to surface water or to storm sewers that lead to it. Chemical manufacturing is a covered category. Your record says you act as a **distributor**, so the answer turns on a few points:\n\n1. **Is any manufacturing, blending, or repackaging done on site?** If so, you're likely a covered industrial activity, and you'd need coverage under the DEQ general permit. This is usually the 1200-Z permit. Check DEQ's current permit page to confirm.\n2. **Is your distribution activity classified under a covered code, such as chemical wholesale or bulk storage?** Some are covered and some aren't. Your SIC or NAICS code matters here.\n3. **Are chemicals, containers, or equipment stored or handled outdoors where rain can reach them?** If everything is fully indoors or covered, you may qualify for a \"no exposure\" exclusion. That exclusion usually still has to be filed with DEQ.\n4. **Where does the site drain?** The options are a storm drain, surface water, or the sanitary sewer. The answer decides whether a stormwater permit applies at all.\n\n**How to check quickly:** Look for a DEQ permit file number or a Stormwater Pollution Control Plan (SWPCP). You can also search your facility address in DEQ's permit database, or call DEQ's stormwater program.\n\n**What you didn't ask but should know:**\n\n- **Your records conflict.** They show 38 employees company-wide and 42 at Portland, and the Portland count is larger than the company total. The two numbers need reconciling. Headcount thresholds for other rules, such as safety and chemical reporting, depend on them.\n- **Your sites are duplicated.** Both site entries have the same address. If there is really one site, merge the entries. If there are two, one is wrongly entered.\n- **Related chemical rules may apply.** Two examples are Oregon's Community Right-to-Know hazardous substance reporting and the federal EPCRA Tier II reporting. Both are triggered by the quantities you store, not by stormwater coverage.\n\nI haven't searched DEQ's current permit requirements for this answer, so confirm the details with DEQ.\n\n**Next step:** If you tell me whether you do any blending or repackaging, and whether chemicals are ever stored outdoors, I can tell you whether you most likely need coverage or can claim no exposure. I can also look up DEQ's current permit requirements.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3457,
+      "output": 922,
+      "searches": 0,
+      "cost_usd": 0.016134
+    }
+  ],
+  "seconds": 9.7,
+  "topic_id": "89632e65-a9cd-471d-8fb1-543a22addf62"
+}

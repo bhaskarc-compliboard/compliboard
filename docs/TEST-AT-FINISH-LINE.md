@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 5 · **Updated:** 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 6 · **Updated:** 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -724,3 +724,73 @@ tab's words in every state, the 402 wording, and the two repairs are all covered
 and were walked on staging against a production build. **The deferred email tests from HR and the
 Calendar are unchanged by this part** — billing sends no email, and the one it owes (before a
 discount ends, §221 F) is not built.
+
+---
+
+# The Documents chat
+
+*Added 2 November 2026 by Part A step 4a-test (`docs/GAPS-PLAN.md`). The other sections' parts are A to J;
+this one is A, D and E only, because the chat's page and routes are not built yet (step 4b) and the rest has
+nothing to describe. It is written now because **the six keys exist and have been run**, and a key written
+after an answer is not a key.*
+
+### A. Where the Documents chat stands (2 November 2026)
+
+- **The brief, the prompt and the quote fix are built; the page and the routes are not** (step 4a done,
+  4a-test done, 4b not started). There is nothing on screen to walk.
+- **Measured on `claude-sonnet-5-5`, 2 November 2026**, 39 calls, $1.14, against Cascade's twelve real
+  readings on staging: `tests/golden/documents/chat/keys.md` and `.../runs/`.
+- **Held for the finish line:** the same six keys on **Opus 5.5 at production settings**, the switches below,
+  and whatever the owner changes in the prompt after reading 4a-test's three side-by-side answers.
+
+### D. The yardstick: the six scenarios, each with a key written before the run
+
+**Where they live:** `tests/golden/documents/chat/keys.md` — written from `packDocumentsContext`'s own output
+with `--pack-only`, which calls no model. The fixture is **Cascade on staging**, twelve documents, one permit.
+Reproduce the context with:
+
+```
+node --env-file=.env.local scripts/probe-documents-answer.mjs \
+  --as testcascade@example.com --ask "<the question>" --pack-only --show
+```
+
+**Every scenario runs twice: WITH the brief and the eleven sentences (A), and WITHOUT either (B)** — B being
+`packContext` returning only the company block and no section sentences, which is the Compliance Workspace's
+open answer and the owner's baseline (decision 2). Three runs each. A key that only A can pass proves the
+context is worth its tokens; a key B passes too proves it is not.
+
+| # | The question | The key: what must be true | Sonnet, 2 Nov |
+|---|---|---|---|
+| 1 | "Which of our permits expire in the next 12 months?" | **The air permit 26-2841-ST-01, expiring 15 November 2026**, named as the person sees it. The renewal application was due 18 July 2026 and that date has passed. **It is the only permit on file** — the DEQ annual report, the blank DEQ checklist and the SDS all carry "Oregon DEQ" and are not permits | A **4/4** ×3 · B **0/4** ×3, and B names a stormwater permit the company does not hold |
+| 2 | "What's missing from our emergency action plan, and how do we fix it?" | **The six gaps in the reading, with their fixes, and no seventh.** Last revised February 2021; promises a January review. Where the reading hedges a rule number, the answer hedges it too | A **6/6** ×3 · B **3.7/6**, and B lists the federal elements from memory with `searches=0` |
+| 3 | "Show me all our training records." | **One document: the PIT Operator Training and Evaluation Record.** The two forklift pre-shift logs are the same subject and the same kind and are **not** training records. Patel's three-year evaluation is overdue | A **3/3** ×3 · B **0/3** ×3 |
+| 4 | "Do we have a stormwater permit?" | **Plainly, that it is not on file.** Not what one would contain; no implication they failed to keep one; no 1200-Z number from memory. Name the air permit they do hold | A **2/2** ×3 · B **0/3**: B never answers the question and gives the 1200-Z with `searches=0` |
+| 5 | "What does the fire extinguisher certificate say about the six-year maintenance?" | **Units W-3 and L-1, before November 2026.** No other unit (2027, 2028, 2029). No NFPA section the reading itself hedged. **The certificate is Current, so it is in the message only because the question names it** — this scenario is the naming rule earning its keep | A **3/3** ×3 · B **0/3** ×3 |
+| 6 | "What dates does this file set?", with the certificate **attached** | Every date in the file: service 20 Aug 2025, next annual 20 Aug 2026, W-3 and L-1 Nov 2026, the other units 2027/2028/2029, L-1's 2020 hydrostatic test. **Not** the reading's worked-out 2025 date as one the file sets. **And a quote from the file must come back clean** | A **4/4** · B **4/4** — **the one scenario where A is not ahead**, and B found the certificate's address (4410 NW Front Avenue) disagreeing with the company's (14604 NW Wendy Lane) in 3 runs of 3 where A found it in 1 |
+
+**Scenario 6a, for the quote fix only** (added because scenarios 1–6 produced no quote from the attached file
+at all): *"Quote the file's own sentence that lists what the technician did to each unit during the service."*
+The key is that the quote comes back **clean, as source [1], against passage A1** — the sentence is in the file
+and in no stored reading, so only the attached file's own text can match it. Run 2 November:
+`attached_passages: 1`, `quotes_found_in_nothing: 1` — and that one mark was on a **document title in
+quotation marks**, not on the quote (see E).
+
+### E. The yardstick: what to judge
+
+1. **Did it name the document, as the person would see it in their list** — never "R6", never "the permit in
+   your list". `replacePassageIds` catches a bare handle; nothing catches "the permit".
+2. **How many sources came back.** On Sonnet, 2 November: **1 across 36 runs.** An answer with no source is an
+   answer with nothing to click, and step 4b's walk is "open a cited report from its card". Judge whether the
+   prompt change proposed in 4a-test's report fixed it.
+3. **Quote marks on a document TITLE.** Six of 36 runs put a title in quotation marks and the check marked it
+   *"we could not find these words in what we have on file"*. It happens in B as well as A, so it is the
+   engine's and not this section's. Two fixes are proposed in 4a-test's report; judge both.
+4. **A rule number with `searches=0`.** Every number A wrote came out of a document it was given; B wrote one
+   from memory in 12 of 18 runs. This is `CLAUDE.md` §3.3 measured, and it is the strongest single argument
+   for the context.
+5. **"Not on file", said plainly, when it should be** (scenarios 3 and 4).
+6. **Whether it offers what it cannot do.** `offers` is `[]`, so `parseOffers` drops any block — but the model
+   offered in prose in **18 of 36 runs** ("I can draft…", "Want me to?"). On screen that is a promise with no
+   button. The owner's open question in `docs/GAPS-PLAN.md` §7 is now a measured one.
+7. **Cost.** A costs about **2.4×** B for the same question ($0.039 against $0.016 on Sonnet), and that is the
+   price of every key above.

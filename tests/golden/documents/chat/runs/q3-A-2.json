@@ -1,0 +1,103 @@
+{
+  "question": "Show me all our training records.",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 25500,
+      "tokens": 10200,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 11932,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "The training records on file are below.\n\n- **Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility.** This is the only document that is mainly a training record. It lists three forklift and pallet jack operators, and a signed certificate for Michael Chen is attached.\n  - It was dated 2025-06-02 and read on 2026-10-14. It shows as \"Needs work.\"\n  - R. Patel's three-year evaluation was due 2026-05-19. The record shows no re-evaluation.\n  - The Notes column is blank for Patel's certificate.\n  - J. Rivera's certificate is listed as on file but is not attached.\n\nThese documents mention training but are not training records:\n- **Emergency Action Plan — Portland Facility** says floor wardens and first-aid responders are trained annually. It also says evacuation drills are held in spring and autumn. No training or drill records are in it.\n- **Forklift Pre-Shift Inspection Log, Unit FL-2, September 2026, Portland Warehouse** (two copies) names Chen and Rivera and their evaluation due dates. Chen is due 2027-03-11 and Rivera 2028-06-02.\n\nI can't see any records for hazard communication training, emergency action plan training, or fire extinguisher training. Do you have any of these? If you add them, I can check them too.\n\n**Next step:** I can draft a short checklist of the training records to gather. It would start with Patel's certificate and her re-evaluation, then Rivera's certificate.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 25500,
+        "tokens": 10200,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 18,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 11932,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 14903,
+      "output": 508,
+      "searches": 0,
+      "cost_usd": 0.034886
+    }
+  ],
+  "seconds": 5.2,
+  "topic_id": "31f13853-df4e-45f6-905b-df946fedca51"
+}

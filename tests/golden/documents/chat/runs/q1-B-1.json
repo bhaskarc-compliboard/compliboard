@@ -1,0 +1,60 @@
+{
+  "question": "Which of our permits expire in the next 12 months?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell you which permits expire in the next 12 months, because I don't have your permit records. Nothing in the company profile lists permits, permit numbers, or expiration dates. Guessing would be worse than useless. A missed renewal can mean fines or a stop on operations.\n\n**The fastest way to get the answer**\nPull the expiration dates from the sources below. Then sort them by date, and flag anything expiring before November 2027.\n\n**Where your permits are likely recorded**\nBased on a chemical business in Portland, Oregon, these are the ones to check first. I haven't confirmed that any of them apply to you.\n- **Oregon DEQ:** air quality permits, industrial wastewater or stormwater permits (such as the NPDES 1200-Z), and hazardous waste generator status. Generator status is a registration, not a permit, but it needs yearly attention.\n- **City of Portland BES:** industrial wastewater discharge authorization, if you discharge to the sewer.\n- **Oregon Fire Marshal:** the Hazardous Substance Possessor Fee and the annual Community Right-to-Know reporting. Tier II reporting is due March 1 each year.\n- **Tualatin Valley Fire & Rescue:** operational fire code permits for hazardous materials storage. Your address in Washington County likely falls within their service area, but please verify that.\n- **Federal:** DEA or ATF registrations if you handle listed chemicals, and an EPA ID number if you generate hazardous waste. Whether these apply depends on which chemicals you handle.\n- **DOT:** hazmat registration if you ship placarded quantities. It renews on a cycle, and the fee is due annually.\n- **Business licenses:** Oregon and Portland registrations.\n\n**What you didn't ask but should know**\n- **Your records conflict on size.** You declared 38 employees company-wide. Your Portland Emergency Action Plan, dated February 2021, says 42. That plan is old. Thresholds for some programs depend on headcount, so update it.\n- **Your two sites share one address.** \"Portland\" and \"Site 2 Portland\" are listed at the same address. If that's a duplicate entry, remove it. If they are really separate operations, permits may be held separately for each.\n- **Your industry label and your declared activity differ.** The profile says chemical manufacturing, but you declared yourself a distributor. Manufacturing triggers different air, waste, and TSCA obligations. Which one is accurate changes which permits you need.\n\n**What I can do next:** If you send me a list of your chemicals and activities, I can build a permit checklist for your Portland site, with the likely renewal cycle for each permit and the agency that issues it.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3461,
+      "output": 884,
+      "searches": 0,
+      "cost_usd": 0.015762
+    }
+  ],
+  "seconds": 9.3,
+  "topic_id": "e63a9ccb-6e30-4e3f-a3a9-5677883337b4"
+}

@@ -1,0 +1,60 @@
+{
+  "question": "Which of our permits expire in the next 12 months?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell you which permits expire in the next 12 months, because I don't have any permit records for Cascade Specialty Chemicals. The company profile has no permit list, no issue dates and no expiration dates. I'd rather say that than guess at dates.\n\n**Where to get the dates**\n- **Your permit documents.** The expiration date is printed on most permits and registrations.\n- **The issuing agency's portal or your account.** Oregon DEQ, Oregon OSHA, the City of Portland and Washington County all keep records of what they have issued to you.\n- **Your own calendar or compliance tracker,** if you keep one.\n\n**Permits a chemical distributor in Portland often holds**\nThis list is based on your profile. I haven't confirmed that you hold any of these. Each one depends on a fact I don't have.\n- **Hazardous waste generator ID (EPA/Oregon DEQ).** You need one if you generate hazardous waste. Whether you do depends on whether you repackage, blend or have spills or off-spec product. Oregon DEQ generator status is usually renewed annually.\n- **Air quality permit (DEQ or Lane/other regional authority).** This applies if you have emission sources such as blending, tanks or vents. Terms vary by permit type.\n- **Stormwater permit (NPDES 1200-Z).** You need it if you have industrial activities exposed to rain. It is tied to a permit cycle.\n- **Wastewater or industrial pretreatment permit (City of Portland BES).** You need it if you discharge process water to the sewer.\n- **Fire code operational permits (Portland Fire & Rescue).** You need them for storing hazardous materials above threshold amounts. They are typically renewed annually.\n- **Business license and registration items (City of Portland, state).**\n- **DOT hazmat registration (PHMSA).** This applies if you offer or transport certain hazmat quantities. It is renewed annually.\n\n**Other things to check**\n- **Chemical inventory reporting.** Oregon's Community Right-to-Know report (Hazardous Substance Information Survey) and EPA Tier II are due **March 1 each year**. They are not permits, but they are recurring deadlines.\n- **Conflicting records.** Your profile lists two sites at the same address. Your emergency action plan shows 42 employees as of 2021, while the declared company-wide count is 38. Please confirm whether it is one site or two. Permits are issued per site, so a duplicate record could hide a gap.\n\n**What I can do next:** If you send me the permits you hold, or tell me what you do on site (repackaging, blending, outdoor storage, waste, sewer discharge), I'll build a list of the permits that likely apply. It will show each permit's issuing agency and renewal cycle.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3461,
+      "output": 909,
+      "searches": 0,
+      "cost_usd": 0.016012
+    }
+  ],
+  "seconds": 9.7,
+  "topic_id": "0f43ade1-b23f-4eca-9812-49d8a478d9f4"
+}

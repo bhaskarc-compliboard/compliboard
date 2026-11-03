@@ -1,0 +1,106 @@
+{
+  "question": "Do we have a stormwater permit?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30353,
+      "tokens": 12142,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13874,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "No. A stormwater permit is not on file. None of the 12 documents in your list is a stormwater permit or a stormwater plan. Nothing I read mentions stormwater.\n\nI can't tell from your documents whether one applies to the Portland site. That depends on what happens outdoors. Do you store chemicals, run loading or transfer, or handle materials outside where rain could reach them? If yes, Oregon DEQ may require industrial stormwater coverage. If everything is indoors, it may not apply. DEQ can confirm. I haven't searched for the current rules, so I'm not citing any.\n\nIf you do hold one, you can add it to your list and I will read it.\n\n**What you didn't ask but need to know**\n- **Air permit expires soon.** The Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 expires November 15, 2026. It set the renewal application deadline at July 18, 2026. No renewal application is on file, so please confirm it was filed.\n- **Semi-annual report not on file.** The permit's January–June 2026 monitoring report was due July 31, 2026. It is not among your documents either.\n- **Carbon replacement not on file.** The Annual Report, Reporting Year 2025 set the next C-1 carbon replacement for on or before March 14, 2026. No record of that replacement is on file.\n- **Scrubber log gaps.** The Scrubber Pressure-Drop Log has a missing week in August and a missing weekly C-1 check in September. It also shows an S-2 reading above the permit limit on September 9, with no note about it.\n- **Overdue forklift evaluation.** The Powered Industrial Truck Operator Training and Evaluation Record shows R. Patel's three-year evaluation was due May 19, 2026. It shows no re-evaluation.\n\n**Next step:** I can check Oregon DEQ's current industrial stormwater rules against your chemical-handling activities. I would then tell you whether coverage likely applies to the Portland site.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30353,
+        "tokens": 12142,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 21,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13874,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 16626,
+      "output": 656,
+      "searches": 0,
+      "cost_usd": 0.039812
+    }
+  ],
+  "seconds": 6.8,
+  "topic_id": "50afb22a-7477-470a-9f7e-6fac9c265b00"
+}

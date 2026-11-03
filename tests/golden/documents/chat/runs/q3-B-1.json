@@ -1,0 +1,60 @@
+{
+  "question": "Show me all our training records.",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't show you your training records. I don't have access to your files, your training system, or any records. The only things I have are the company profile and the one document it cites, the 2021 Emergency Action Plan for the Portland facility. Nothing in that gives me training dates, attendees, or certificates.\n\n**Where they usually are**\n- Your HR or safety files, a learning management system, or sign-in sheets and certificates kept by whoever runs safety.\n- Outside trainers or vendors, who often keep their own copies of attendance and completion records.\n- Your Emergency Action Plan binder, if training was documented along with the plan.\n\n**What you didn't ask but need to know**\n- **Headcount conflict.** Your declared enterprise-wide count is 38 employees. The 2021 plan says 42 at Portland alone. The plan is older, so the 38 may just reflect downsizing. Which one is current matters, because some thresholds depend on employee count, such as written-plan requirements and recordkeeping rules. If 42 is still right, that changes things.\n- **Duplicate site.** \"Portland\" and \"Site 2 portland\" have the same address. That is probably a data-entry duplicate. If it is, I'd merge them so training and inspection obligations aren't counted twice.\n- **Likely training you should have records for.** As a chemical distributor with employees, you probably need records for these:\n  - Hazard Communication (chemical labels and safety data sheets).\n  - Emergency action and fire prevention.\n  - PPE.\n  - Hazardous waste handling, if you generate waste.\n  - Forklift operation, if you use forklifts.\n  \n  Oregon OSHA administers workplace safety in Oregon, so its rules apply. I haven't checked the exact record-retention requirements for each topic in this answer. Retention periods differ by topic, so I wouldn't assume one rule covers them all.\n\n**Next step:** I can build a training-records checklist for a chemical distributor in Oregon. It would list each required training, who needs it, how long to keep the records, and what to look for in your files. Want me to do that? If so, tell me whether you use forklifts and whether you generate hazardous waste.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3453,
+      "output": 702,
+      "searches": 0,
+      "cost_usd": 0.013926000000000001
+    }
+  ],
+  "seconds": 8.7,
+  "topic_id": "12eea1df-b78f-4162-949a-37e667109fff"
+}

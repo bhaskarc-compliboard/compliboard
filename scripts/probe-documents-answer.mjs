@@ -48,11 +48,21 @@ const showPrompt = process.argv.includes('--prompt')
  * It is a measuring instrument, not a product behaviour: nothing ships a Documents chat with no
  * context and no instructions. `checkBrief`'s five fields are kept so it is a real brief and runs
  * down exactly the same path — same tier, same ledger word, same search cap, same check.
+ *
+ * *** IT IS `['']` AND NOT `[]`, AND THAT IS `checkBrief` REFUSING, NOT A CHOICE. ***
+ * The step's brief asked for `promptSentences` empty. `lib/ask/brief.ts:103` throws on an empty
+ * list — *"the documents brief has no prompt sentences"* — deliberately, because a section with no
+ * instructions at all is a mistake in a product and the engine will not run one. The nearest thing
+ * is one empty string: `askPrompt([''])` is `askPrompt([])` plus a trailing blank line, and
+ * `askPrompt([])` is byte-for-byte what the Compliance Workspace sends for an open answer
+ * (`prompts/ask.ts` `askPrompt`, `app/api/chat/route.ts:371` — the same
+ * `buildSystemPrompt('research', null, { open: true })`). So variant B really is the owner's
+ * baseline, with two characters of whitespace on the end of its system prompt.
  */
 const baselineBrief = {
   ...documentsBrief,
   packContext: async (db, companyId) => ({ blocks: [await companyBlock(db, companyId)], passages: [] }),
-  promptSentences: [],
+  promptSentences: [''],
 }
 const brief = without ? baselineBrief : documentsBrief
 

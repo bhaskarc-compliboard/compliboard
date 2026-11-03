@@ -1,0 +1,105 @@
+{
+  "question": "What does the fire extinguisher certificate say about the six-year maintenance?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 29422,
+      "tokens": 11769,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13501,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "The Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, says two units need six-year internal maintenance. Those units are W-3 and L-1. The certificate says both reach the six-year interval in 2026. It says to schedule the work before November 2026.\n\n**What the documents show**\n- The certificate is the contractor's record, and it dates from August 20, 2025. It shows all 14 extinguishers passed that day.\n- Nothing in your list shows the six-year work on W-3 or L-1 has been done. The certificate is the only document that mentions it. It would be settled by a contractor record dated after August 2025.\n- This answer comes from a reading made on 2026-10-14. If the certificate has been replaced or re-filed since then, this answer may be out of date.\n\n**What you didn't ask but need to know**\n- **The annual service looks overdue.** The certificate says the next annual maintenance was due August 20, 2026. Nothing newer is on file. The Monthly EHS Self-Check is a blank template, so it doesn't show any service.\n- **L-1 has a second item.** The certificate lists L-1, a 10 lb CO2 unit in the laboratory, with a 2020 test date. CO2 units generally need a hydrostatic test every 5 years. That reading is worked out from the certificate and is not stated in it. The reading also notes an entry reading \"November 2026\" on that line. Ask your contractor which date applies.\n- **Monthly checks are yours to do.** The certificate says monthly visual inspections are the customer's job. They are recorded on each unit's tag. No monthly log is on file.\n\nThe six-year deadline is near, because it falls before November 2026. I can draft a short service request to Rose City Fire Protection. It would cover the overdue annual service, the six-year work on W-3 and L-1, and the L-1 hydrostatic test.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 29422,
+        "tokens": 11769,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 20,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13501,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 16414,
+      "output": 623,
+      "searches": 0,
+      "cost_usd": 0.039058
+    }
+  ],
+  "seconds": 6.4,
+  "topic_id": "3453af4d-6ee0-486f-ac88-1ab3b7bd824b"
+}

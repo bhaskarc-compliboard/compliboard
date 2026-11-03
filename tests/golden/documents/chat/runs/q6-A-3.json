@@ -1,0 +1,109 @@
+{
+  "question": "What dates does this file set?",
+  "variant": "A",
+  "documentId": "7d6a4d4f-84a5-450d-a26e-9bf47e8edd36",
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 25500,
+      "tokens": 10200,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 11932,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "The file is the \"Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility.\" (we could not find these words in what we have on file) It sets these dates:\n\n- **Service date: August 20, 2025.** This is when all 14 units were serviced. All 14 passed, and none were removed from service.\n- **Next annual maintenance: August 20, 2026.** The certificate says this is due. The date has passed. Your list shows no newer certificate, so I can't tell whether the 2026 service was done.\n- **Six-year internal maintenance for W-3 and L-1: November 2026.** W-3 is the 20 lb ABC unit at the warehouse drum rack. L-1 is the CO2 unit at the laboratory entry. The certificate says to schedule this before November 2026, which is now.\n- **Later six-year dates by unit:**\n  - 2027: W-1, W-2, W-4, B-1, A-1 and A-2.\n  - 2028: L-2, D-1, D-2 and T-1.\n  - 2029: O-1 and O-2.\n- **Monthly visual inspections: every month.** The certificate says these are your responsibility and are to be recorded on the unit tag. It gives no day. The certificate can't show whether they were done.\n\n**Not asked, but worth knowing:**\n- The certificate lists a hydrostatic test date only for the two CO2 units, L-1 and L-2. It shows no hydrostatic test dates for the dry chemical units, so I can't say when those are due.\n- The certificate's \"Last hydrostatic test\" column shows 2020 for L-1. The certificate gives no date for its next hydrostatic test.\n- The list shows this certificate as \"Current.\" That reflects the 2025 service date and does not take the August 2026 due date into account.\n- The \"Monthly EHS Self-Check (blank internal checklist template)\" (we could not find these words in what we have on file) covers portable fire extinguishers. It is blank, so it doesn't show any monthly checks.\n\n**What I don't know:** whether the August 2026 annual service happened. If it did, adding that certificate would update this picture. If it didn't, that annual service is the open item, along with the W-3 and L-1 work in November.\n\nI can build you a one-page calendar of these extinguisher dates, with the 2026 items first. Want me to do that?",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 25500,
+        "tokens": 10200,
+        "left_out": null
+      },
+      {
+        "name": "the attached file",
+        "chars": 0,
+        "tokens": 0,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 19,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 11932,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 1,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 2
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 17587,
+      "output": 756,
+      "searches": 0,
+      "cost_usd": 0.042733999999999994
+    }
+  ],
+  "seconds": 7.9,
+  "topic_id": "3c513e2f-a14b-4c71-ad33-58deb866d3f2"
+}

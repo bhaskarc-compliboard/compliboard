@@ -1,0 +1,103 @@
+{
+  "question": "Show me all our training records.",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 25500,
+      "tokens": 10200,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 11932,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "Here are the training records on file, by document title:\n\n- **Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility.** This is the only document whose main purpose is training. It lists three operators: M. Chen, J. Rivera and R. Patel. Chen's signed certificate is attached.\n\nTwo other documents mention training, but they are not training records:\n\n- **Emergency Action Plan — Portland Facility.** It says floor wardens and first-aid responders are trained annually. It also says evacuation drills are held twice a year. No sign-in sheets or drill records are on file.\n- **Forklift Pre-Shift Inspection Log, Unit FL-2, September 2026, Portland Warehouse.** There are two copies of this log. They name Chen and Rivera with their certification dates, but they are inspection logs.\n\nWhat the forklift training record shows (reading dated 2026-10-14):\n\n- **R. Patel:** Her last evaluation was 2023-05-19. The next one was due 2026-05-19, and nothing shows it was done. Her Notes column is blank on whether a certificate exists.\n- **M. Chen:** His next evaluation is due 2027-03-11.\n- **J. Rivera:** The roster says a certificate is on file, but it is not attached to this record. Her next evaluation is due 2028-06-02. (The roster lists her as Jose Rivera.)\n- **Last update:** The record has not been updated since 2025-06-02.\n\nWhat you didn't ask but should know:\n\n- No training records are on file for hazard communication (the Safety Data Sheet is the only item on file for that subject), for emergency action plan training, or for fire extinguisher use.\n- Your declared headcount is 38 across the company. The Emergency Action Plan puts the Portland facility alone at 42 as of 2021. Those two figures disagree, so one may need updating.\n\nIf you upload any of those other training records, I can add them to the list. I can also draft a checklist of the training records still missing for you to collect.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 25500,
+        "tokens": 10200,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 18,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 11932,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 14903,
+      "output": 669,
+      "searches": 0,
+      "cost_usd": 0.036496
+    }
+  ],
+  "seconds": 6.7,
+  "topic_id": "af3455c3-e82d-4c1c-b181-2decc99fa9a2"
+}

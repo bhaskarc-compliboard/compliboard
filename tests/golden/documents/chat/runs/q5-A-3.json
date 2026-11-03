@@ -1,0 +1,105 @@
+{
+  "question": "What does the fire extinguisher certificate say about the six-year maintenance?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 29422,
+      "tokens": 11769,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13501,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "The Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, says that units W-3 and L-1 reach their six-year internal maintenance interval in 2026. It tells you to schedule that work before November 2026.\n\n**What this means now**\n- Today is November 3, 2026. The certificate's own timeframe ends October 31, so that date has passed.\n- No document on file shows the six-year maintenance was done for W-3 or L-1. The certificate is dated August 2025, so it would not show work done after that.\n- The same certificate gave August 20, 2026 as the next annual maintenance date. Nothing on file shows a newer certificate.\n\n**What you didn't ask but should know**\n- The certificate lists L-1, a CO2 10 lb unit, with a 2020 test date. A CO2 unit usually needs a hydrostatic test every 5 years. I worked that out myself, and the certificate doesn't state it. L-1 may be due for that test as well.\n- The certificate says monthly visual checks are your responsibility and should be recorded on each unit's tag. The Monthly EHS Self-Check is a blank template, so it doesn't show any checks were done.\n- I'm basing this on a reading dated October 14, 2026. If you've had the extinguishers serviced since then, this answer is out of date.\n\n**One question that would settle it:** Has Rose City Fire Protection, or another contractor, serviced W-3 and L-1 since August 2025?\n\n**Next step:** I can draft a short service request to the contractor. It would cover the six-year maintenance for W-3 and L-1, the L-1 hydrostatic test, and the overdue annual service for all 14 units.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 29422,
+        "tokens": 11769,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 20,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13501,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 16414,
+      "output": 562,
+      "searches": 0,
+      "cost_usd": 0.038448
+    }
+  ],
+  "seconds": 6.2,
+  "topic_id": "99251241-6f26-4fd2-b27d-06cd4e6004f1"
+}

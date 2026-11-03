@@ -1,0 +1,60 @@
+{
+  "question": "Do we have a stormwater permit?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 367,
+  "passages": [],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "I can't tell from the information I have whether you hold a stormwater permit. Nothing in your company record shows a permit, a permit number, or a stormwater plan. Someone at the company needs to check. Look for an Oregon DEQ permit file or number, usually a 1200-Z registration.\n\n**Whether you need one**\n\nIn Oregon, DEQ runs the federal industrial stormwater program. Its general permit for industrial stormwater is the 1200-Z. Whether you need it depends on what happens at the site, not on your headcount.\n\n- **Chemical manufacturing:** If you make chemicals at the site, you are likely covered. Chemical manufacturing falls under SIC code 28, which is a regulated category. This applies if you have any exposed activity, material, or runoff.\n- **Distributor only (what you declared):** Pure distribution or wholesale (SIC 5169, chemicals wholesale) is not automatically a regulated category. You would still need a permit if you do something else on site that is regulated. Examples are blending, repackaging, or running a hazardous waste facility. Another trigger is having an exposed stormwater discharge to waters or a storm sewer from areas where chemicals are handled or stored.\n- **If everything is indoors or covered and there is no industrial exposure:** You might qualify for a \"no exposure\" exclusion. That has to be certified. It isn't automatic.\n\n**Things to sort out first**\n\n1. Your record lists the industry as chemical manufacturing, but you declared yourselves a distributor. These conflict, and the answer to the permit question turns on which is true. Do you only buy and resell, or do you blend, mix, or repackage?\n2. Your two listed sites have the same address. This is probably a duplicate entry, but please confirm it is one site.\n3. The Emergency Action Plan says 42 employees as of 2021. Your declared count is 38. This doesn't affect the permit. It may matter for other rules, so keep the records consistent.\n\n**Other points**\n\n- Operating without a required permit is a violation. Penalties can be significant.\n- If you are covered, you would need a stormwater pollution control plan, sampling, and an annual report. Those are the usual 1200-Z obligations.\n- I haven't run a search to confirm the current 1200-Z permit terms or your DEQ status. Verify them with DEQ.\n\n**Next step:** Tell me exactly what you do with chemicals on site, and whether any of it happens outdoors. With that I can say whether you most likely need the 1200-Z, qualify for no exposure, or are outside the program. I can also search DEQ's current permit requirements.",
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 0,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 367,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 3457,
+      "output": 852,
+      "searches": 0,
+      "cost_usd": 0.015434
+    }
+  ],
+  "seconds": 8.2,
+  "topic_id": "d4954830-8f4f-406e-9345-6367eb22d644"
+}

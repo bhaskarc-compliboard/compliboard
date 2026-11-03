@@ -1,0 +1,132 @@
+{
+  "question": "Quote the exact line in this file that sets the six-year maintenance, and the exact line that sets the next annual service.",
+  "variant": "A",
+  "documentId": "7d6a4d4f-84a5-450d-a26e-9bf47e8edd36",
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3411,
+      "tokens": 1365,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30252,
+      "tokens": 12101,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13833,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "answer": "Both lines are on the one page of the Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025. The file is a text PDF, so I can quote it.\n\n**Next annual service:**\n“NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.”[1]\n\n**Six-year maintenance:**\n“Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.”[2]\n\nThe certificate's table also has a \"6-year maintenance due\" column. It shows November 2026 for W-3 and L-1. Other units show 2027, 2028 or 2029.\n\n**What you didn't ask but need to know:**\n- The certificate is the only service record on file. It is dated August 20, 2025. The annual service date of August 20, 2026 has passed, and I have no newer certificate in your list. If a newer service was done, adding it would settle this.\n- The six-year window for W-3 and L-1 closes at the end of this month. It is November 3, 2026.\n- The certificate says monthly visual checks are the company's job and go on the unit tag. I see no monthly inspection log in your list.\n- The certificate lists L-1's last hydrostatic test as 2020. The five-year date for a CO2 unit is my own calculation. The certificate doesn't state it. Ask Rose City Fire Protection to confirm it when they service L-1.\n\n**Next step:** I can draft a short note to Rose City Fire Protection. It would ask for the overdue annual service and the W-3 and L-1 six-year maintenance, and it would ask them to confirm the L-1 hydrostatic test date.",
+  "sources": [
+    {
+      "n": 1,
+      "kind": "passage",
+      "title": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility — what we read in it",
+      "url": "",
+      "label": "your document",
+      "passage_id": "R1",
+      "quote": "NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.",
+      "href": "/documents?document=7d6a4d4f-84a5-450d-a26e-9bf47e8edd36"
+    },
+    {
+      "n": 2,
+      "kind": "passage",
+      "title": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility — what we read in it",
+      "url": "",
+      "label": "your document",
+      "passage_id": "R1",
+      "quote": "Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.",
+      "href": "/documents?document=7d6a4d4f-84a5-450d-a26e-9bf47e8edd36"
+    }
+  ],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3411,
+        "tokens": 1365,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30252,
+        "tokens": 12101,
+        "left_out": null
+      },
+      {
+        "name": "the attached file",
+        "chars": 0,
+        "tokens": 0,
+        "left_out": null
+      }
+    ],
+    "section": "documents",
+    "passages": 21,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13833,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 1,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "documents",
+      "model": "claude-sonnet-5-5",
+      "input": 19436,
+      "output": 553,
+      "searches": 0,
+      "cost_usd": 0.044402
+    }
+  ],
+  "seconds": 6.9,
+  "topic_id": "9f025e50-48e4-4163-92f6-cdbb2beae198"
+}
