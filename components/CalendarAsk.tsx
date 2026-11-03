@@ -25,7 +25,7 @@ import {
   offerWords, matchOffer, unconfirmedCited, unconfirmedNote,
   ON_YOUR_CALENDAR, ALREADY_ON_YOUR_CALENDAR, COULD_NOT_ADD, type CalendarRow,
 } from '@/lib/calendarView'
-import type { Offer } from '@/lib/ask/offers'
+import type { AddDateOffer } from '@/lib/ask/offers'
 import type { Exchange } from '@/components/AskScreen'
 
 /** The composer's hint, board 2. */
@@ -72,7 +72,7 @@ export const calendarThinkingLine = (x: Exchange): string =>
  * say it is (§5.1).
  */
 async function accept(
-  x: Exchange, i: number, offer: Offer,
+  x: Exchange, i: number, offer: AddDateOffer,
   patch: (p: Partial<Exchange>) => void,
   onChanged: () => Promise<void> | void,
 ) {
@@ -108,7 +108,15 @@ export function calendarAfterAnswer(
     return (
       <>
         {/* THE OFFER, board 2: one underlined line, and what it says after it is pressed. */}
-        {x.phase === 'done' && x.offers.map((o, i) => {
+        {/*
+            *** ONLY `add_date` IS DRAWN HERE, AND THE NARROWING IS NEW ON 3 NOVEMBER 2026. ***
+            `Offer` became a union when Audits gained `run_audit` (decision 43). `calendarBrief`
+            declares `offers: ['add_date']` and `parseOffers` already drops anything else, so this
+            filter changes no behaviour today — it makes that a type guarantee rather than a fact
+            about a list in another file, and the index below is the index in THIS list so a
+            pressed card still marks itself.
+        */}
+        {x.phase === 'done' && x.offers.filter((o) => o.kind === 'add_date').map((o, i) => {
           const state = x.added?.[i]
           const already = matchOffer(rows, o)
           const landed = state?.id ?? already?.id ?? null

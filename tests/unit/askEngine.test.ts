@@ -10,6 +10,7 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { checkBrief, BRIEF_FIELDS, type Brief } from '../../lib/ask/brief.ts'
+import type { Offer, AddDateOffer } from '../../lib/ask/offers.ts'
 import { parseOffers, offerLine, OFFER_KINDS } from '../../lib/ask/offers.ts'
 import { finishAnswer, checkQuote, replacePassageIds, NOT_IN_WHAT_WE_HAVE, tokensOf, ATTACHED_PREFIX, type Passage } from '../../lib/ask/passages.ts'
 import {
@@ -64,6 +65,16 @@ describe('a brief has five things, and a sixth is a stop', () => {
   })
 })
 
+/**
+ * `Offer` became a union on 3 November 2026 when Audits gained `run_audit` (decision 43), so a
+ * test that reads `.title` off one has to say WHICH kind it means. These assertions were always
+ * about `add_date`; this narrows them and throws loudly if a run_audit offer ever reaches them.
+ */
+function addDate(o: Offer): AddDateOffer {
+  assert.equal(o.kind, 'add_date', 'this assertion is about an add_date offer')
+  return o as AddDateOffer
+}
+
 describe('the offers, and the check that an offer is not more trusted than a citation', () => {
   const searched = [{ url: 'https://www.oregon.gov/deq/tier-ii', title: 'Oregon DEQ — Tier II' }]
   const good = (over: Record<string, unknown> = {}) => '```offer\n' + JSON.stringify({
@@ -75,8 +86,8 @@ describe('the offers, and the check that an offer is not more trusted than a cit
   test('a good offer is parsed, and taken OUT of what the person reads', () => {
     const p = parseOffers(`Here is the rule.\n\n${good()}`, ['add_date'], searched)
     assert.equal(p.offers.length, 1)
-    assert.equal(p.offers[0].title, 'Tier II inventory report')
-    assert.equal(p.offers[0].period, 'year')
+    assert.equal(addDate(p.offers[0]).title, 'Tier II inventory report')
+    assert.equal(addDate(p.offers[0]).period, 'year')
     assert.ok(!p.text.includes('```'), 'no fence is left on screen')
     assert.equal(p.text, 'Here is the rule.')
   })
@@ -115,8 +126,8 @@ describe('the offers, and the check that an offer is not more trusted than a cit
   test('a repeating date with no day is a real offer — decision 23', () => {
     const p = parseOffers(good({ due_on: null, recurs: true, period: null }), ['add_date'], searched)
     assert.equal(p.offers.length, 1)
-    assert.equal(p.offers[0].due_on, null)
-    assert.equal(p.offers[0].period, null)
+    assert.equal(addDate(p.offers[0]).due_on, null)
+    assert.equal(addDate(p.offers[0]).period, null)
   })
 
   test('two offers in one answer are both read', () => {
@@ -125,8 +136,14 @@ describe('the offers, and the check that an offer is not more trusted than a cit
     assert.equal(p.text, '')
   })
 
+  /**
+   * `run_audit` joined it on 3 November 2026 (decision 43): Audits' one offer, "start the audit
+   * this answer is about". A third kind is a deliberate edit here, which is what a closed list is
+   * for — `parseOffers` acts on what a section declares, so a kind nobody agreed to must not be
+   * addable by writing a block.
+   */
   test('the kinds are a closed list', () => {
-    assert.deepEqual([...OFFER_KINDS], ['add_date'])
+    assert.deepEqual([...OFFER_KINDS], ['add_date', 'run_audit'])
   })
 })
 
@@ -650,15 +667,37 @@ describe('the file a conversation carries is something a quote can be checked ag
     assert.match(src, /It is never sent to the model/)
   })
 
-  test('A is the engine\'s letter, and no brief may take it for a kind of its own', () => {
-    assert.equal(ATTACHED_PREFIX, 'A')
-    // Every brief in the repository, read as text: none may pack its own A passages, or two
+  /**
+   * *** IT WAS `A` AND IS `AF` SINCE 3 NOVEMBER 2026 — decision 44, found by step 6a's runs. ***
+   * An auditor's checklist numbers its own lines A1…A5, so `replacePassageIds` was rewriting
+   * *"line A1"* into the attached file's name and the person read
+   * *"line 12-auditor-checklist-deq-air.docx"*. Three runs of three, in the Documents brief as
+   * well as the Audits one. The test below this one holds the fix at the place it bit.
+   */
+  test('AF is the engine\'s letter, and no brief may take it for a kind of its own', () => {
+    assert.equal(ATTACHED_PREFIX, 'AF')
+    // Every brief in the repository, read as text: none may pack its own AF passages, or two
     // different things would answer to one handle and the wrong one would be named.
     for (const f of ['lib/ask/calendarBrief.ts', 'lib/ask/documentsBrief.ts', 'lib/ask/auditsBrief.ts']) {
       const src = source(f)
-      assert.ok(!/idPrefix: 'A'/.test(src), `${f} must not use the engine's letter`)
-      assert.ok(!/`A\$\{/.test(src), `${f} must not build an A id`)
+      assert.ok(!/idPrefix: 'AF?'/.test(src), `${f} must not use the engine's letter`)
+      assert.ok(!/`AF?\$\{/.test(src), `${f} must not build an attached-file id`)
     }
+  })
+
+  /**
+   * *** THE COLLISION, AT THE PLACE IT BIT. *** A person attaches an auditor's checklist and the
+   * answer says "line A1". With `A` as the attached file's handle that sentence came out naming
+   * the file; with `AF` it is left alone, and the real handle is still replaced.
+   */
+  test('a checklist\'s own A1 survives the answer; the engine\'s AF1 is still named', () => {
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: { ...file('deq-air-checklist.docx', LINE, 'd1'), id: 'd1', name: 'deq-air-checklist.docx' } }
+    const passages = attachedPassages(files)
+    assert.equal(replacePassageIds('Line A1 asks for a current permit.', passages),
+      'Line A1 asks for a current permit.')
+    assert.equal(replacePassageIds('As AF1 shows, the permit is on file.', passages),
+      'As deq-air-checklist.docx shows, the permit is on file.')
   })
 
   test('every carried file gets a passage, this turn\'s first, numbered from 1', () => {
@@ -666,7 +705,7 @@ describe('the file a conversation carries is something a quote can be checked ag
       attached: { ...file('Certificate.pdf', LINE, 'doc-9'), id: 'doc-9', name: 'Certificate.pdf' },
       documents: [file('Older.pdf', 'something else entirely, in words')] }
     const ps = attachedPassages(files)
-    assert.deepEqual(ps.map((p) => p.id), ['A1', 'A2'])
+    assert.deepEqual(ps.map((p) => p.id), ['AF1', 'AF2'])
     assert.equal(ps[0].shortName, 'Certificate.pdf')
     assert.equal(ps[0].label, 'the file you attached')
     assert.equal(ps[0].href, '/documents?document=doc-9', 'the card opens the document')
@@ -678,14 +717,14 @@ describe('the file a conversation carries is something a quote can be checked ag
       attached: { ...file('Certificate.pdf', `Service record\n${LINE}\nNext annual due 2026-08-20.`, 'd1'),
         id: 'd1', name: 'Certificate.pdf' } }
     const passages = attachedPassages(files)
-    const hit = checkQuote(LINE, 'A1', passages)
-    assert.equal(hit?.id, 'A1', 'a quote from the attached file is found')
+    const hit = checkQuote(LINE, 'AF1', passages)
+    assert.equal(hit?.id, 'AF1', 'a quote from the attached file is found')
     // And end to end, through the check the answer really goes through: no marking, one source.
     const checked = finishAnswer(`The certificate says “${LINE}”`, [], [], passages, [])
     assert.ok(!checked.text.includes(NOT_IN_WHAT_WE_HAVE), checked.text)
     assert.equal(checked.notFound, 0)
     assert.equal(checked.sources.length, 1)
-    assert.equal((checked.sources[0] as { passage_id: string }).passage_id, 'A1')
+    assert.equal((checked.sources[0] as { passage_id: string }).passage_id, 'AF1')
   })
 
   /**
@@ -705,11 +744,11 @@ describe('the file a conversation carries is something a quote can be checked ag
   })
 
   test('a passage with nothing in it still gets the file\'s NAME into the sentence', () => {
-    // `replacePassageIds`' reason: an answer that writes "A1" at a person is the Calendar's
+    // `replacePassageIds`' reason: an answer that writes "AF1" at a person is the Calendar's
     // "dates C6 and C7" happening in a new place.
     const files: CarriedFiles = { ...NO_CARRIED_FILES,
       attached: { ...file('Scan.pdf', '', 'd2'), id: 'd2', name: 'Scan.pdf' } }
-    assert.equal(replacePassageIds('as A1 shows', attachedPassages(files)), 'as Scan.pdf shows')
+    assert.equal(replacePassageIds('as AF1 shows', attachedPassages(files)), 'as Scan.pdf shows')
   })
 
   test('the files with no text are named in the message, and counted', () => {

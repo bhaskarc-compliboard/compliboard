@@ -379,15 +379,22 @@ describe('the words a person reads', () => {
   test('and the three honesty sentences the Calendar\'s real runs bought', () => {
     const all = DOCUMENTS_SENTENCES.join(' ')
     // The ids rule: the handles of THIS section, and the instruction to name the document.
-    assert.match(all, /\(I3, R1, A1\) are handles for citing a passage/)
+    assert.match(all, /\(I3, R1, AF1\) are handles for citing a passage/)
     assert.match(all, /Never write one in a sentence/)
     // A rule number is a claim.
     assert.match(all, /Do not give a rule number from memory/)
     // Search first, or lib/ai.ts withdraws the sentence the person was owed.
     assert.match(all, /search before you begin the answer/)
     assert.match(all, /treated as thinking aloud/)
-    // A is the engine's letter for an attached file, and the prompt names it as one.
-    assert.match(all, /\bA1\b/)
+    /**
+     * *** THE ENGINE'S LETTER IS `AF` SINCE 3 NOVEMBER 2026 (decision 44), AND THIS PROMPT HAD
+     * THE SAME DEFECT AUDITS FOUND. *** It was `A`, and an auditor's checklist numbers its own
+     * lines A1…A5 — so a Documents answer about an attached checklist had "line A1" rewritten
+     * into the file's name by `replacePassageIds`. Measured in three runs of three with THIS
+     * brief. The prompt names the new handle, and must not name the old one.
+     */
+    assert.match(all, /\bAF1\b/)
+    assert.ok(!/\bA1\b/.test(all), 'the prompt still teaches the old handle')
   })
 })
 

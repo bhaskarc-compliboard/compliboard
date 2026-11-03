@@ -138,14 +138,25 @@ export const AUDITS_ONE_OFFER =
   + 'Never say you have run, are running, or will run an audit: you are proposing one, and the '
   + 'person starts it.'
 
-/** The block's shape, written here because this offer is not the Calendar's (see above). */
+/**
+ * The block's shape, written here because this offer is not the Calendar's (see above).
+ *
+ * *** IT ASKED FOR AN ID THE MODEL IS NEVER SHOWN, AND GOT A PASSAGE HANDLE — the owner's fix,
+ * decision 45, 3 November 2026. *** Step 6a measured 18 offer blocks in 18 runs. Fifteen were
+ * accepted; **all three the code refused wrote `{"kind":"run_audit","document_id":"I7"}`** — a
+ * handle out of the context where a uuid belonged, which is the only id the model has. It was the
+ * prompt's fault. The block now carries `attached: true` and no id, and
+ * `lib/ask/auditsBrief.ts` `checkRunAuditOffer` resolves the file from what the page already
+ * holds for this turn.
+ */
 export const AUDITS_OFFER_FORMAT =
   'To offer it, end the answer with a fenced block — three backticks, the word offer, a JSON '
-  + 'object, three backticks — and nothing after it. The object takes: kind "run_audit"; agency, '
-  + 'one of the agency names exactly as it appears in what you were given, or "all" for every '
-  + 'agency; or, for a checklist the person attached, document_id, the id of that attached file '
-  + 'and no agency. Write the offer in the fenced block only and do not describe its fields in '
-  + 'the prose. An agency this company does not hold is dropped before anyone sees it.'
+  + 'object, three backticks — and nothing after it. The object takes EITHER agency, one of the '
+  + 'agency names exactly as it appears in what you were given, or "all" for every agency; OR, '
+  + 'for a checklist the person attached to this conversation, attached true and no agency. It '
+  + 'always carries kind "run_audit". Never put an id in it: you are not given one, and the '
+  + 'product fills it in. Write the offer in the fenced block only and do not describe its fields '
+  + 'in the prose. An agency this company does not hold is dropped before anyone sees it.'
 
 /**
  * THE IDS ARE FOR MARKERS, NOT FOR SENTENCES — `DOCUMENTS_IDS` with this chat's handles. It
@@ -154,7 +165,7 @@ export const AUDITS_OFFER_FORMAT =
  * recorded in D4"*), so the model is shown one and may copy it out.
  */
 export const AUDITS_IDS =
-  'The ids in what you are given (U1, F2, I3, R1, A1) are handles for citing a passage inside '
+  'The ids in what you are given (U1, F2, I3, R1, AF1) are handles for citing a passage inside '
   + 'square brackets. Never write one in a sentence: name the audit by its agency and date and the '
   + 'document by its title, as the person would see it. If a finding\'s own words contain a handle '
   + 'like D4, do not repeat it — say which document it means.'

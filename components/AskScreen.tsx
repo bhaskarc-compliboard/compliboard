@@ -145,7 +145,7 @@ export function AskScreen({
   section, endpoints, words, examples, companyName, paused,
   topicId, initial, onTopicId, onChanged, onSummarise, summaryBusy,
   attach, thinkingLine, afterAnswer,
-  canMakeChecklist = false, onMakeChecklist, checklistBusy = false, checklistReadyId = null,
+  canMakeChecklist = false, onMakeChecklist, checklistBusy = false, checklistReadyId = null, beforeAsk,
 }: {
   section: TopicSection
   endpoints: { answer: string }
@@ -194,6 +194,25 @@ export function AskScreen({
   checklistBusy?: boolean
   /** The checklist that just landed for this conversation, so the ready line can link to it. */
   checklistReadyId?: string | null
+  /**
+   * *** ONE LOOK AT THE SENTENCE BEFORE IT IS SENT — the owner, 3 November 2026
+   * (`docs/GAPS-PLAN.md` decision 37). ***
+   *
+   * The Audits box takes audit COMMANDS as well as questions, and which it is must be decided in
+   * CODE and never by a model (decision 32): *"what's missing is a database query and never an AI
+   * guess"* is the product's first rule, and a box that asked a model which agency a sentence
+   * meant would be guessing at something the database knows. There was nowhere to do it — `ask()`
+   * is called from four places inside this file and nothing could get between the press and the
+   * fetch — so this is that place.
+   *
+   * It is handed the question and the file picked on this turn, because the recogniser needs
+   * both and `picked` is this component's own state. `'handled'` means the section did something
+   * with it: the box and the chip are cleared and nothing is sent. `'ask'`, or no prop at all,
+   * behaves exactly as this screen always has.
+   *
+   * **Three of the four sections pass nothing**, and `tests/unit/askScreen.test.ts` holds that.
+   */
+  beforeAsk?: (question: string, file: { id: string; name: string } | null) => Promise<'handled' | 'ask'>
 }) {
   const [exchanges, setExchanges] = useState<Exchange[]>(initial)
   const [box, setBox] = useState('')
@@ -245,6 +264,16 @@ export function AskScreen({
     // A FILE WITH NO WORDS IS STILL A QUESTION — the Workspace's own sentence for it.
     const q = question.trim() || (picked ? DEFAULT_FILE_QUESTION : '')
     if (!q || busy) { composerRef.current?.focus(); return }
+    /**
+     * THE SECTION'S OWN LOOK, FIRST AND IN CODE (decision 37). It runs before the box is cleared
+     * so a section that refuses can leave the words where the person typed them, and before any
+     * row is written so a handled command creates no conversation. A section that passes nothing
+     * never reaches this line.
+     */
+    if (beforeAsk) {
+      const verdict = await beforeAsk(q, picked)
+      if (verdict === 'handled') { setBox(''); setPicked(null); return }
+    }
     setBox('')
     const sent = picked
     setPicked(null)

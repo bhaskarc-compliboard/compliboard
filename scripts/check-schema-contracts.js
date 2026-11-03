@@ -289,7 +289,13 @@ if (!deleted || !exempt) {
 // though its body is `lib/ask/summariseRoute.ts`, because this check reads the route file and a
 // gate that lived only in the helper would pass the type checker and fail here.
 // ---------------------------------------------------------------------------
-const PAID_COUNT = 21;
+//
+// 21 -> 23, 3 November 2026 (`docs/GAPS-PLAN.md` Part A step 6b). The Audits chat's two routes:
+// `app/api/audits/answer/route.ts` and `app/api/audits/topics/[id]/summarise/route.ts`. Both
+// spend, both call `requireAccess` in their own text — the summarise route deliberately so, even
+// though its body is `lib/ask/summariseRoute.ts`, because this check reads the route file and a
+// gate that lived only in the helper would pass the type checker and fail here.
+const PAID_COUNT = 23;
 
 // Why each of these may reach a model and still not call `requireAccess`.
 const EXEMPT = {

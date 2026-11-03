@@ -250,56 +250,14 @@ export function findingBlock(
   return `<finding ${head}>\n${body}\n</finding>`
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   THE ONE OFFER — decision 41, the owner, 3 November 2026.
-   ──────────────────────────────────────────────────────────────────────────── */
-
 /**
- * *** THE MODEL PROPOSES; THE CODE CHECKS; THE PERSON PRESSES. ***
- *
- * An offer here starts a run over the company's own documents. It carries no `source_url` and
- * nothing to verify against the web, which is why `prompts/ask.ts`'s shared `OFFER_FORMAT_SENTENCE`
- * is NOT used (it demands one) and `prompts/audits-answer.ts` writes its own.
- *
- * What is checked, in code and never trusted from the model, is the only thing that can be wrong
- * in a way that matters: **the agency**. `lib/audit.ts` `auditAgenciesFor` is the company's own
- * vocabulary and `app/api/audit-runs/route.ts:122`–`:134` refuses anything else with the
- * company's labels said back. The same list is checked here, so a bad offer is dropped before it
- * is drawn rather than after it is pressed.
+ * *** THE ONE OFFER'S CHECK LIVES IN `lib/auditsOffer.ts` AND IS RE-EXPORTED HERE. ***
+ * It was written in this file at step 6a. Step 6b gave the press to `app/audits/page.tsx`, which
+ * is a client file and may not reach `lib/ai.ts` through this brief
+ * (`tests/unit/clientImports.test.ts`), so the check moved to a file with no imports. Everything
+ * that read it from here still can.
  */
-export interface RunAuditOffer {
-  kind: 'run_audit'
-  /** An agency label the company holds, or 'all'. Null for a checklist. */
-  agency: string | null
-  /** The attached file to audit against. Null for an agency. */
-  document_id: string | null
-}
-
-/**
- * Check one offer against this company's own labels and this turn's attached file.
- * Returns null for anything that cannot be started, which is the drop.
- */
-export function checkRunAuditOffer(
-  raw: unknown,
-  known: { agencies: string[]; attachedDocumentId: string | null },
-): RunAuditOffer | null {
-  const o = (raw ?? {}) as Record<string, unknown>
-  if (String(o.kind ?? '').trim() !== 'run_audit') return null
-  const documentId = typeof o.document_id === 'string' ? o.document_id.trim() : ''
-  const agency = typeof o.agency === 'string' ? o.agency.trim() : ''
-  // A checklist offer may only name the file the person attached on this turn. Any other id is
-  // an offer to audit against a document nobody put in front of us.
-  if (documentId) {
-    if (!known.attachedDocumentId || documentId !== known.attachedDocumentId) return null
-    return { kind: 'run_audit', agency: null, document_id: documentId }
-  }
-  if (!agency) return null
-  if (agency === 'all') return { kind: 'run_audit', agency: 'all', document_id: null }
-  // Case-insensitively, because the model is shown the label and may re-case it; the label that
-  // goes out is the company's own spelling and never the model's.
-  const hit = known.agencies.find((a) => a.toLowerCase() === agency.toLowerCase())
-  return hit ? { kind: 'run_audit', agency: hit, document_id: null } : null
-}
+export { checkRunAuditOffer, type CheckedRunAudit } from '../auditsOffer.ts'
 
 /** How the three blocks say what they could not carry. */
 export const RUNS_LEFT_OUT = (n: number) =>
@@ -546,20 +504,16 @@ export const auditsBrief: Brief = {
   packContext: (db, companyId, question) => packAuditsContext(db, companyId, question),
   promptSentences: AUDITS_SENTENCES,
   /**
-   * *** EMPTY TODAY, AND IT IS A STOP RATHER THAN A DECISION — step 6a's report. ***
+   * *** ONE OFFER — decision 41, wired in 6b after decision 43 let `lib/ask/offers.ts` learn it. ***
    *
-   * Decision 41 gives this chat ONE offer, `run_audit`, and this file defines it whole:
-   * `RunAuditOffer`, `checkRunAuditOffer` (the company's own labels, checked in code and never
-   * trusted from the model) and the card's words in `lib/auditsWords.ts` `runAuditCardWords`.
-   * `prompts/audits-answer.ts` asks the model for the fenced block, and step 6a MEASURES that it
-   * writes one in the right places.
+   * The model proposes; `checkRunAuditOffer` above holds the payload against the company's own
+   * agency labels; the press in `app/audits/page.tsx` starts the run through the same
+   * `POST /api/audit-runs` the Audit button calls. The model never starts one.
    *
-   * What is missing is three lines in `lib/ask/offers.ts` — `run_audit` in `OFFER_KINDS`, the
-   * interface in the `Offer` union, and a branch in `parseOffers` that does NOT apply the
-   * `source_url` check (this offer carries no link). **That file is shared by the Calendar and
-   * Documents, and step 6a's brief says a shared piece that seems to need a change is a stop.**
-   * So it stays `[]`, `parseOffers` drops the block as a kind this section does not offer, and
-   * the exact edit is written out in the step's report for the owner. Step 6b wires the press.
+   * Measured before it was wired (step 6a, 18 runs on Sonnet): the model wrote the block in 18 of
+   * 18, named an agency the company does not hold in 0, and the three the code refused all wrote
+   * a passage handle where an id belonged — which is why the block now carries `attached: true`
+   * and no id at all (decision 45).
    */
-  offers: [],
+  offers: ['run_audit'],
 }

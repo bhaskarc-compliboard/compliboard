@@ -916,6 +916,48 @@ if (!(await reachable())) {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // THE AUDITS CHAT — `docs/GAPS-PLAN.md` Part A step 6b. Documents' pair above, copied, with
+  // one probe of its own: the Audits PAGE answers to three tab words AND to the two old ones
+  // (`?tab=past`, `?tab=stand`), because an old bookmark or an email is the only thing that
+  // still sends them and both now mean the Audits tab.
+  // ---------------------------------------------------------------------------
+  if (want('audits_chat')) {
+    const ZERO = '00000000-0000-0000-0000-000000000000'
+    const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+    const anon = await fetch(`${BASE}/api/audits/answer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    const empty = await fetch(`${BASE}/api/audits/answer`, { method: 'POST', headers: auth, body: JSON.stringify({ question: '' }) })
+    const aok = anon.status === 401 && empty.status === 400
+    console.log(`  ${aok ? '✓' : '✗'} audits answer       no session ${anon.status}, no question ${empty.status}`)
+    if (!aok) failures++
+
+    const sAnon = await fetch(`${BASE}/api/audits/topics/${ZERO}/summarise`, { method: 'POST' })
+    const sMissing = await fetch(`${BASE}/api/audits/topics/${ZERO}/summarise`, { method: 'POST', headers: auth })
+    const sok = sAnon.status === 401 && sMissing.status === 404
+    console.log(`  ${sok ? '✓' : '✗'} audits summary      no session ${sAnon.status}, unknown topic ${sMissing.status}`)
+    if (!sok) failures++
+
+    const { data: other } = await admin.from('topics')
+      .insert({ company_id: companyId, title: 'check:live probe', section: 'calendar' })
+      .select('id').maybeSingle()
+    if (!other) {
+      console.log('  ✗ audits summary      could not write a probe topic, so the section guard is UNTESTED this run')
+      failures++
+    } else {
+      const wrongSection = await fetch(`${BASE}/api/audits/topics/${other.id}/summarise`, { method: 'POST', headers: auth })
+      const gok = wrongSection.status === 404
+      console.log(`  ${gok ? '✓' : '✗'} audits summary      a CALENDAR conversation is ${wrongSection.status} here (must be 404, not 403)`)
+      if (!gok) failures++
+      await admin.from('topics').delete().eq('id', other.id)
+    }
+
+    const qs = ['', '?tab=audits', '?tab=conversations', '?tab=nonsense', '?tab=past', '?tab=stand']
+    const pages = await Promise.all(qs.map((q) => fetch(`${BASE}/audits${q}`, { redirect: 'manual' })))
+    const pok = pages.every((r) => r.status === 200)
+    console.log(`  ${pok ? '✓' : '✗'} audits page         ${pages.map((r) => r.status).join(', ')} for /audits${qs.slice(1).map((q) => `, ${q}`).join('')}`)
+    if (!pok) failures++
+  }
+
   // 1. RESEARCH streams, and the stream carries sources.
   if (want('research')) {
   const t0 = Date.now()

@@ -352,7 +352,32 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   And one that is a tripwire rather than a test: `offers` is [] and lib/ask/offers.ts must not
 //   know the word run_audit, because step 6a may not edit that shared file. The day 6b adds it,
 //   this test is what makes somebody set auditsBrief.offers in the same commit.
-const FLOOR = 2273
+// 2273 -> 2318, 3 November 2026 (`docs/GAPS-PLAN.md` Part A step 6b, Audits gets the chat).
+//   Forty-five. Thirty-two in the new tests/unit/auditsPage.test.ts and six in askScreen's, and
+//   the rest are three shared files re-pointed deliberately.
+//   THE LOOKER IS WHY MOST OF THEM EXIST. It decides, in code and with no model call, whether a
+//   sentence starts an audit or gets answered - which is the product's first rule in one function
+//   (CLAUDE.md section 1: what's missing is a database query and never an AI guess). The two
+//   cases that earn their place are the two that must NOT start a run: "Do we have all our
+//   permits?" contains "all", and "Are we ready for an Oregon OSHA inspection?" contains an
+//   agency label, and the old box would have audited on both. The audit word comes first now
+//   (decision 38) and a test holds each.
+//   AND A GREP, BECAUSE A DELETED CONTROL COMES BACK BY ACCIDENT: submitAsk, attachChecklist,
+//   runningTemplate, landedTemplate, seenTemplate and the dead /compliance link are gone, and one
+//   POST starts an agency run rather than two.
+//   The merged tab: an earlier run appears under its agency (read off the SECTIONS, because an
+//   "all agencies" run carries every label in one string), a template run has a row of its own,
+//   and every line Past audits carried - the closed count, the person's scope, the amber
+//   did-not-finish - came with it rather than being lost in the fold.
+//   The offer press: checked against the company's OWN labels before any POST, resolved to the
+//   file the PAGE holds rather than any id the model wrote, and marked before the call so it
+//   cannot be pressed twice.
+//   Three re-pointed on purpose. askEngine: the attached-file handle is AF and not A, because an
+//   auditor's checklist numbers its own lines A1..A5 and the person was reading "line
+//   12-auditor-checklist-deq-air.docx" - measured in three runs of three, in the Documents brief
+//   as well as the Audits one. auditDrawer: three tabs, with the 20 October hotfix's five rules
+//   kept word for word and a sixth added for the derived tab. documentsBrief: the same handle.
+const FLOOR = 2318
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

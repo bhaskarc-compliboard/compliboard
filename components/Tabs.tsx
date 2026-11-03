@@ -2,7 +2,11 @@
  * THE TAB ROW — lifted out of `app/compliance/page.tsx` unchanged, HR Step 3a (`docs/HR-PLAN.md`
  * decision 1), so the workspace and HR show the very same piece. Moved, not rewritten.
  *
- * They are Audits' tabs (`app/audits/page.tsx:502–515`, classes copied by the workspace layout pass).
+ * They are Audits' tabs — the classes were copied out of that page by the workspace layout pass.
+ * *** AND AUDITS RENDERS THIS COMPONENT ITSELF SINCE 3 NOVEMBER 2026 *** (`docs/GAPS-PLAN.md` Part A
+ * step 6b, decision 31): its hand-rolled two-button row became three tabs through this file, so the
+ * classes are in one place again. The line numbers this comment used to give (`:502`–`:515`) had
+ * moved to `:573`–`:587` and are left out rather than corrected, because the row they named is gone.
  * The caller owns the words, including any count inside a label ("Checklists (3)"), and whatever
  * sits at the right of the row (the workspace's "New conversation").
  */

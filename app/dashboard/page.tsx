@@ -367,9 +367,12 @@ export default function Dashboard() {
               )
               const when = longDay(r.finished_at ?? r.created_at)
               return (
-                // *** /audits ALREADY OPENS A RUN FROM ITS ADDRESS. *** `app/audits/page.tsx:208`
-                // reads `?run=`, `:791` draws that report. Nothing had to be taught; the Calendar's
-                // `?date=` lesson had already been learnt on this page.
+                // *** /audits ALREADY OPENS A RUN FROM ITS ADDRESS. *** It reads `?run=` into
+                // state and draws that report; `tests/unit/auditDrawer.test.ts` holds both, and
+                // holds that `?run=` still lands on the Audits tab now that page has three
+                // (`docs/GAPS-PLAN.md` Part A step 6b). The line numbers this comment used to
+                // give — `:208` and `:791` — had drifted to `:246` and `:862` before the rewrite
+                // moved them again, which is why it names the test instead.
                 <a key={r.id} href={`/audits?run=${r.id}`}
                    className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
                   <span className="min-w-0 flex-1">

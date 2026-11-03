@@ -275,6 +275,11 @@ describe('every paid route applies it, at the same place', () => {
     'app/api/document-scan/route.ts', 'app/api/audit-runs/route.ts', 'app/api/website-read/route.ts',
     'app/api/handbooks/route.ts', 'app/api/document-rescan/route.ts', 'app/api/document-batches/route.ts',
     'app/api/audit-runs/[id]/sections/[sid]/retry/route.ts',
+    // The Documents chat's pair (step 4b) and the Audits chat's pair (step 6b). Each summarise
+    // route writes its own gate although its body is `lib/ask/summariseRoute.ts`, because
+    // `scripts/check-schema-contracts.js` check 3 reads THE ROUTE FILE'S text.
+    'app/api/documents/answer/route.ts', 'app/api/documents/topics/[id]/summarise/route.ts',
+    'app/api/audits/answer/route.ts', 'app/api/audits/topics/[id]/summarise/route.ts',
   ]
   for (const f of GATED) {
     test(`${f} calls requireAccess and returns what it gives back`, () => {

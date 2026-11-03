@@ -29,7 +29,8 @@
 // dropped, the rows written, and the ledger row with its cost.
 import { createClient } from '@supabase/supabase-js'
 import { answer } from '../lib/ask/engine.ts'
-import { auditsBrief, packAuditsContext, checkRunAuditOffer } from '../lib/ask/auditsBrief.ts'
+import { auditsBrief, packAuditsContext } from '../lib/ask/auditsBrief.ts'
+import { checkRunAuditOffer } from '../lib/auditsOffer.ts'
 import { documentsBrief, packDocumentsContext } from '../lib/ask/documentsBrief.ts'
 import { runAuditCardWords } from '../lib/auditsWords.ts'
 import { askPrompt } from '../prompts/ask.ts'

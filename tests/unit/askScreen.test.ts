@@ -384,3 +384,52 @@ describe('the lift is safe only because of these two rules', () => {
       'the shared screen must not know what a date is')
   })
 })
+
+/**
+ * *** ONE LOOK BEFORE THE SEND — `docs/GAPS-PLAN.md` Part A step 6b, decision 37. ***
+ *
+ * The Audits box takes audit COMMANDS as well as questions, and which it is has to be decided in
+ * code and never by a model. `ask()` is called from four places inside this file and there was
+ * nowhere to get between the press and the fetch, so the screen gained one optional prop. The
+ * whole value of it being optional is that three of the four sections do not pass it and behave
+ * exactly as they did; these tests are what hold that true.
+ */
+describe('beforeAsk, and the three sections that pass none', () => {
+  test('the prop is optional, and takes the question and this turn\'s file', () => {
+    assert.match(SCREEN, /beforeAsk\?: \(question: string, file: \{ id: string; name: string \} \| null\) => Promise<'handled' \| 'ask'>/)
+  })
+
+  /**
+   * *** IT RUNS BEFORE THE BOX IS CLEARED AND BEFORE ANYTHING IS SENT, and both matter. ***
+   * Before the box: a section that refuses can leave the words where the person typed them.
+   * Before the fetch: a handled command writes no turn and creates no conversation, which is
+   * decision 39 and is the difference between a command and a question.
+   */
+  test('it is called at the top of ask(), before the box is cleared and before the fetch', () => {
+    const fn = code(SCREEN).slice(code(SCREEN).indexOf('async function ask(question: string)'))
+    const body = fn.slice(0, fn.indexOf('\n  const stop ='))
+    const call = body.indexOf('await beforeAsk(')
+    assert.ok(call > 0, 'beforeAsk is not called')
+    assert.ok(call < body.indexOf("setBox('')"), 'the box is cleared before the section has looked')
+    assert.ok(call < body.indexOf('await fetch('), 'the question is sent before the section has looked')
+    assert.match(body, /if \(verdict === 'handled'\) \{ setBox\(''\); setPicked\(null\); return \}/)
+  })
+
+  test('a section that passes nothing behaves exactly as it did', () => {
+    const fn = code(SCREEN).slice(code(SCREEN).indexOf('async function ask(question: string)'))
+    assert.match(fn.slice(0, 900), /if \(beforeAsk\) \{/, 'the hook must be skipped entirely when absent')
+  })
+
+  /**
+   * Read from the pages themselves, not from memory. Audits is the only caller; the Calendar
+   * mounts the screen from its own page (`components/CalendarAsk.tsx` holds only its offers
+   * since step 2), and Documents mounts it directly.
+   */
+  test('only the Audits page passes one', () => {
+    const passes = (f: string) => /beforeAsk=/.test(readFileSync(f, 'utf8'))
+    assert.equal(passes('app/audits/page.tsx'), true, 'Audits must pass the looker')
+    for (const f of ['app/documents/page.tsx', 'app/calendar/page.tsx', 'components/CalendarAsk.tsx']) {
+      assert.equal(passes(f), false, `${f} passes a beforeAsk — its behaviour has changed`)
+    }
+  })
+})

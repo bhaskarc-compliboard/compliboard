@@ -116,10 +116,12 @@ export const DOCUMENTS_WORDS =
  * first real run wrote *"we have this on your calendar as dates C6 and C7"* at a person. The code
  * replaces a bare id with the thing it names (`lib/ask/passages.ts` `replacePassageIds`); this
  * stops it being written at all. This chat's handles are I (a line in the list), R (a reading) and
- * A (a file attached to this conversation).
+ * AF (a file attached to this conversation). **It was `A` until 3 November 2026** and became two
+ * letters at decision 44, because `A1` is also what an auditor's checklist calls its first line —
+ * measured in three runs of three, with THIS brief as well as the Audits one.
  */
 export const DOCUMENTS_IDS =
-  'The ids in what you are given (I3, R1, A1) are handles for citing a passage inside square '
+  'The ids in what you are given (I3, R1, AF1) are handles for citing a passage inside square '
   + 'brackets. Never write one in a sentence: name the document by its title instead, as the '
   + 'person would see it in their list.'
 

@@ -31,11 +31,40 @@ const DRAWER = readFileSync('components/Drawer.tsx', 'utf8')
 const CAL = readFileSync('app/calendar/page.tsx', 'utf8')
 
 describe('the drawer is state, seeded from the address', () => {
+  /**
+   * *** RE-POINTED AT `docs/GAPS-PLAN.md` PART A STEP 6b, DELIBERATELY, AND THE RULE IS
+   * UNCHANGED. *** The page went from two tabs to three (decision 31), so the union it holds is
+   * `Tab` and not `'stand' | 'past'`. What this file is about did not move an inch: the drawer
+   * and the tab are STATE SEEDED FROM THE ADDRESS, because deriving them from the address on
+   * every render meant a report opened from the address could not be closed on a production
+   * build. All five rules below still hold, and the one that was nearly lost in the rewrite is
+   * the last: an address with no parameters left is written WITHOUT the router.
+   */
   test('`run` and `tab` are no longer read from the address on every render', () => {
     assert.ok(!/const openRun = params\.get\('run'\)/.test(CODE), 'the drawer is derived from the address again')
     assert.ok(!/const tab = params\.get\('tab'\)/.test(CODE), 'the tab is derived from the address again')
     assert.match(CODE, /const \[openRun, setOpenRun\] = useState<string \| null>\(runParam\)/)
-    assert.match(CODE, /const \[tab, setTab\] = useState<'stand' \| 'past'>\(tabParam\)/)
+    assert.match(CODE, /const \[tab, setTab\] = useState<Tab>\(tabParam\)/)
+  })
+
+  /**
+   * *** AND EVERY ADDRESS THAT EXISTS TODAY STILL LANDS WHERE IT DID. *** The map of step 6 read
+   * every link into this page out of the repository: the sidebar and the Dashboard send a bare
+   * `/audits`; the Dashboard's rows, the audit email, `components/AuditReport.tsx` and the
+   * bakeoff script send `?run=`; and `?tab=past` / `?tab=stand` are written and read by this
+   * page alone, so the only carrier is an old bookmark. Three rules, and the derivation is
+   * checked as a unit rather than described.
+   */
+  test('the derived tab: the two old words fold into Audits, ?run= lands there, the rest is ask', () => {
+    const at = CODE.indexOf('const tabParam: Tab =')
+    assert.ok(at > 0, 'the tab is no longer derived in one place')
+    const rule = CODE.slice(at, CODE.indexOf('const [openRun', at))
+    assert.match(rule, /rawTab === 'past' \|\| rawTab === 'stand' \? 'audits'/)
+    assert.match(rule, /runParam \? 'audits'/)
+    assert.match(rule, /: 'ask'/)
+    // And `setParam` says the same thing, or a click would disagree with a link.
+    const fn = CODE.slice(CODE.indexOf('const setParam = (k: string'))
+    assert.match(fn.slice(0, fn.indexOf('\n  }') + 4), /v === 'past' \|\| v === 'stand' \? 'audits'/)
   })
 
   /**

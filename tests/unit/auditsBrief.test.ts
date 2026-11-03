@@ -27,6 +27,7 @@ import {
   type RunRow, type FindingRow, type SectionRow,
 } from '../../lib/ask/auditsBrief.ts'
 import { checkBrief } from '../../lib/ask/brief.ts'
+import { parseOffers } from '../../lib/ask/offers.ts'
 import { checkQuote, normalisedWithMap, type Passage } from '../../lib/ask/passages.ts'
 import { AUDITS_SENTENCES } from '../../prompts/audits-answer.ts'
 import { AUDITS_EXAMPLE_QUESTIONS } from '../../config/examples.ts'
@@ -121,15 +122,44 @@ describe('the brief is a brief', () => {
   })
 
   /**
-   * `offers` is EMPTY and that is step 6a's stop, not a decision: `run_audit` needs three lines in
-   * the shared `lib/ask/offers.ts`, which this step may not edit. The day it is added, this test
-   * is the one that has to change, and it says why.
+   * *** THIS TEST IS THE TRIPWIRE THAT WORKED. *** At step 6a it read "offers is empty until
+   * lib/ask/offers.ts learns run_audit", and it failed the moment 6b taught it — which is what
+   * made the two move in one commit. Re-pointed at the finished state: the shared file knows the
+   * kind, the brief names it, and neither can be true alone.
    */
-  test('offers is empty until lib/ask/offers.ts learns run_audit (step 6b)', () => {
-    assert.deepEqual(auditsBrief.offers, [])
+  test('the brief names the one offer, and the shared file knows the kind', () => {
+    assert.deepEqual(auditsBrief.offers, ['run_audit'])
     const offers = readFileSync('lib/ask/offers.ts', 'utf8')
-    assert.ok(!offers.includes('run_audit'),
-      'lib/ask/offers.ts now knows run_audit — set auditsBrief.offers and change this test together')
+    assert.match(offers, /OFFER_KINDS = \['add_date', 'run_audit'\]/)
+    for (const kind of auditsBrief.offers) {
+      assert.ok(offers.includes(`'${kind}'`), `lib/ask/offers.ts does not know ${kind}`)
+    }
+  })
+
+  /**
+   * The link check is `add_date`'s and must never reach this kind (decision 43): a run over the
+   * company's own documents has no page to verify, so a `source_url` rule would drop every valid
+   * offer — which is what it did to three of step 6a's eighteen.
+   */
+  test('a run_audit offer is parsed, and the source_url check does not touch it', () => {
+    const block = '```offer\n' + JSON.stringify({ kind: 'run_audit', agency: 'Oregon DEQ' }) + '\n```'
+    const p = parseOffers(`We have not audited that yet.\n\n${block}`, ['run_audit'], [])
+    assert.equal(p.offers.length, 1, 'the offer was dropped — is findReturned being applied?')
+    assert.deepEqual(p.offers[0], { kind: 'run_audit', agency: 'Oregon DEQ', attached: false })
+    assert.equal(p.dropped.unverifiedLink, 0)
+    assert.equal(p.text, 'We have not audited that yet.')
+  })
+
+  test('a block naming neither an agency nor the attached file is badly shaped', () => {
+    const block = '```offer\n' + JSON.stringify({ kind: 'run_audit' }) + '\n```'
+    const p = parseOffers(block, ['run_audit'], [])
+    assert.equal(p.offers.length, 0)
+    assert.equal(p.dropped.badShape, 1)
+  })
+
+  test('a section that does not offer it still drops it', () => {
+    const block = '```offer\n' + JSON.stringify({ kind: 'run_audit', agency: 'Oregon DEQ' }) + '\n```'
+    assert.equal(parseOffers(block, ['add_date'], []).dropped.unknownKind, 1)
   })
 
   test('it does not take the engine\'s letter', () => {
@@ -368,12 +398,12 @@ describe('the one offer is checked in code, never trusted from the model', () =>
 
   test('an agency the company holds is accepted, in the company\'s own spelling', () => {
     assert.deepEqual(checkRunAuditOffer({ kind: 'run_audit', agency: 'oregon deq' }, known),
-      { kind: 'run_audit', agency: 'Oregon DEQ', document_id: null })
+      { agency: 'Oregon DEQ', documentId: null })
   })
 
   test('"all" is accepted — the box has always taken it', () => {
     assert.deepEqual(checkRunAuditOffer({ kind: 'run_audit', agency: 'all' }, known),
-      { kind: 'run_audit', agency: 'all', document_id: null })
+      { agency: 'all', documentId: null })
   })
 
   test('an agency the company does NOT hold is dropped', () => {
@@ -381,12 +411,21 @@ describe('the one offer is checked in code, never trusted from the model', () =>
     assert.equal(checkRunAuditOffer({ kind: 'run_audit', agency: '' }, known), null)
   })
 
-  test('a checklist offer may only name the file attached on THIS turn', () => {
-    assert.deepEqual(checkRunAuditOffer({ kind: 'run_audit', document_id: 'doc-7' }, known),
-      { kind: 'run_audit', agency: null, document_id: 'doc-7' })
-    assert.equal(checkRunAuditOffer({ kind: 'run_audit', document_id: 'doc-9' }, known), null)
-    assert.equal(checkRunAuditOffer({ kind: 'run_audit', document_id: 'doc-7' },
+  /**
+   * *** THE MARKER, NOT AN ID — decision 45, from the runs. *** The model is never shown the
+   * file's id and wrote a passage handle when asked for one, three times in eighteen. So the
+   * block says only THAT it is about the attached file, and the code supplies which.
+   */
+  test('the attached marker resolves to the file the PAGE holds, not to anything the model wrote', () => {
+    assert.deepEqual(checkRunAuditOffer({ kind: 'run_audit', attached: true }, known),
+      { agency: null, documentId: 'doc-7' })
+    // No file on this turn: there is nothing to audit against, so there is no offer.
+    assert.equal(checkRunAuditOffer({ kind: 'run_audit', attached: true },
       { ...known, attachedDocumentId: null }), null)
+    // An id the model made up is not read at all — the marker is the only thing that counts.
+    assert.deepEqual(checkRunAuditOffer({ kind: 'run_audit', attached: true, document_id: 'I7' }, known),
+      { agency: null, documentId: 'doc-7' })
+    assert.equal(checkRunAuditOffer({ kind: 'run_audit', document_id: 'doc-7' }, known), null)
   })
 
   test('another kind of offer is not this one', () => {

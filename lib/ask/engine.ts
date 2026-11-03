@@ -148,11 +148,12 @@ export const carriedList = (c: CarriedFiles): CarriedFile[] =>
  *
  * *** EVERY CARRIED FILE GETS ONE, EVEN WITH NOTHING IN IT TO QUOTE. *** `lib/ask/readings.ts`'s
  * second rule, paid for by a real run: a block with no card is a handle naming nothing, and an
- * answer that writes "A2" at a person then gets the id instead of the file's name. `checkQuote`
+ * answer that writes "AF2" at a person then gets the id instead of the file's name. `checkQuote`
  * skips a passage whose text is empty, so an empty one can never match a quote — which is the
  * right answer for a photograph of a page, not a failure (`PENDING.md` D3).
  *
- * The letter is `A` for every section, and `lib/ask/passages.ts` `ATTACHED_PREFIX` says why.
+ * The letter is `AF` for every section, and `lib/ask/passages.ts` `ATTACHED_PREFIX` says why it
+ * is two letters and not the `A` it was until 3 November 2026 (decision 44).
  */
 export function attachedPassages(c: CarriedFiles): Passage[] {
   return carriedList(c).map((f, i) => ({

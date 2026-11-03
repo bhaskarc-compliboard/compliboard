@@ -26,10 +26,27 @@ import AuditReport from '@/components/AuditReport'
 import { runName, checklistTitle as sharedChecklistTitle } from '@/lib/auditView'
 import DocumentReport from '@/components/DocumentReport'
 import { authHeaders, createClient } from '@/lib/supabase'
-import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
 import { pausedFromRow, type BillingRow } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
+import { Tabs } from '@/components/Tabs'
+import { Empty } from '@/components/Empty'
+import { ConversationList } from '@/components/ConversationList'
+import { ConversationDrawer } from '@/components/ConversationDrawer'
+import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import { AskScreen, useAskConversations, type Exchange } from '@/components/AskScreen'
+import { readTopicList, type TopicRow } from '@/lib/topicList'
+import { AUDITS_EXAMPLE_QUESTIONS } from '@/config/examples'
+import {
+  AUDITS_LEDE, AUDITS_COMPOSER_HINT, AUDITS_FIRST_VISIT_BUTTON, AUDITS_ONE_TOPIC_LINE,
+  AUDITS_EMPTY_CONVERSATIONS, AUDITS_EMPTY_CONVERSATIONS_TITLE, AUDITS_NOT_SUMMARISED,
+  AUDITS_ATTACH_LABEL, auditsThinkingLine, runAuditCardWords,
+  auditsCommandAgencyLine, auditsCommandTemplateLine,
+  WHICH_AGENCY, NO_AGENCIES, ATTACH_THE_FILE, COULD_NOT_AUDIT, AUDITS_COMMAND_TAB_LINK,
+} from '@/lib/auditsWords'
+import { checkRunAuditOffer } from '@/lib/auditsOffer'
+import { readCommand } from '@/lib/auditsCommand'
+import type { Offer } from '@/lib/ask/offers'
 /* ── the shapes the one read returns ──────────────────────────────────────── */
 interface Doc {
   document_id: string; title: string; file_name: string; kind: string | null
@@ -61,6 +78,8 @@ interface Run {
   started_at: string | null; finished_at: string | null; summary: RunSummary | null
   notified_at: string | null; dismissed_at: string | null; previous_run_id: string | null
   template_document_id: string | null
+  /** The checklist's own sections and lines, for the By template row's "16 lines in 3 sections". */
+  template_lines: unknown
   closed_count: number; estimate: string | null
 }
 interface Index {
@@ -151,13 +170,15 @@ const AGENCY_ROW =
   'flex w-full items-start gap-3 py-3 text-left cursor-pointer rounded-md ' +
   'hover:bg-gray-50/70 transition-colors'
 
+/** The two group headings on the Audits tab — board 4's small uppercase label. */
+const GROUP_LABEL = 'mt-6 mb-0.5 text-[11px] uppercase tracking-wide text-gray-400'
+
 const ACTION_GREEN =
   'cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)] ' +
   'disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline'
 const ACTION_QUIET = 'cursor-pointer text-[13px] text-gray-500 hover:text-gray-800'
-const ACTION_PRIMARY =
-  'cursor-pointer rounded-md bg-[var(--green)] px-4 py-2 text-[14px] font-medium text-white ' +
-  'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
+// `ACTION_PRIMARY` went with the box at step 6b: the Ask tab's own Send button is the shared
+// screen's, and nothing else on this page is a filled green button.
 const controlClass =
   'rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[14px] text-gray-700 hover:border-gray-300'
 
@@ -190,6 +211,12 @@ const titleOfTemplate = (run: { template_document_id: string | null }, idx: Inde
 /** Kept at this page's own two call sites (the running and the landed banner), now one line. */
 const checklistTitle = (run: { template_document_id: string | null; scope: string | null }, idx: Index): string =>
   sharedChecklistTitle(run, titleOfTemplate(run, idx))
+/**
+ * The run's name as the DASHBOARD writes it — "Against Fire marshal checklist". It was the Past
+ * audits row's own line until step 6b; it is now the hover on a By template row, whose visible
+ * text is the file name (board 4's words). Both pages still name a run with one function, which
+ * is what `tests/unit/dashboardView.test.ts` holds and what `lib/auditView.ts` exists for.
+ */
 const runTitle = (run: Run, idx: Index): string => runName(run, titleOfTemplate(run, idx))
 
 const fmt = (iso: string | null | undefined) => {
@@ -198,6 +225,17 @@ const fmt = (iso: string | null | undefined) => {
   return Number.isNaN(d.getTime()) ? ''
     : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
+/**
+ * *** THE THREE TABS — `docs/GAPS-PLAN.md` Part A step 6b, decision 31. ***
+ *
+ * Ask a question · Conversations · Audits (N). The first two are the shared screen the Calendar
+ * and Documents already use; the third is the page's old two tabs folded into one, with the box
+ * taken out of it (decision 32). The key is also the `?tab=` word, and the pattern is
+ * `app/documents/page.tsx:139`–`:141`, copied.
+ */
+type Tab = 'ask' | 'conversations' | 'audits'
+const TAB_KEYS: readonly Tab[] = ['ask', 'conversations', 'audits'] as const
+
 const daysUntil = (iso: string, today: string) =>
   Math.round((Date.parse(`${iso}T00:00:00`) - Date.parse(`${today}T00:00:00`)) / 86400_000)
 
@@ -244,9 +282,31 @@ function Audits() {
    * reload, Back — never on a re-render, which is what let a closed drawer come back.
    */
   const runParam = params.get('run')
-  const tabParam = params.get('tab') === 'past' ? 'past' : 'stand'
+  /**
+   * *** THE DERIVED TAB — `docs/GAPS-PLAN.md` Part A step 6b, decision 31. ***
+   *
+   * Three tabs now, and `ask` is where a bare `/audits` lands: the chat is the door (§1). Two
+   * rules keep every link that exists today landing where it did, and they were read out of the
+   * repository rather than remembered (step 6's map):
+   *
+   *   · **`?run=`** — the Dashboard's Recent audits rows, the audit email (`lib/auditNotify.ts`),
+   *     `components/AuditReport.tsx`'s three links and the bakeoff script all send it and nothing
+   *     else. The drawer is mounted outside the tabs and opens either way; the tab BEHIND it has
+   *     to be the one the report belongs to, so `?run=` lands on Audits.
+   *   · **`?tab=past` and `?tab=stand`** — written and read by this page alone (proved by
+   *     grepping `app lib components scripts tests`), so the only carrier is an old bookmark.
+   *     Both fold into the one Audits tab, which is what they both became.
+   *
+   * Anything else, including nothing, is `ask`.
+   */
+  const rawTab = params.get('tab')
+  const tabParam: Tab =
+    rawTab === 'past' || rawTab === 'stand' ? 'audits'
+    : TAB_KEYS.includes((rawTab ?? '') as Tab) ? (rawTab as Tab)
+    : runParam ? 'audits'
+    : 'ask'
   const [openRun, setOpenRun] = useState<string | null>(runParam)
-  const [tab, setTab] = useState<'stand' | 'past'>(tabParam)
+  const [tab, setTab] = useState<Tab>(tabParam)
   useEffect(() => { setOpenRun(runParam) }, [runParam])
   useEffect(() => { setTab(tabParam) }, [tabParam])
 
@@ -260,7 +320,6 @@ function Audits() {
 
   const [idx, setIdx] = useState<Index | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [ask, setAsk] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [choices, setChoices] = useState<string[] | null>(null)
@@ -277,10 +336,23 @@ function Audits() {
   const [fromAudit, setFromAudit] = useState<string | null>(null)
   const [site, setSite] = useState('all')
   const [groupBy, setGroupBy] = useState<'agency' | 'subject' | 'site'>('agency')
-  const checklistInput = useRef<HTMLInputElement>(null)
-  const [attaching, setAttaching] = useState<string | null>(null)
-  /** Checklist runs whose "is done" line has been opened and so should not show again. */
-  const [seenTemplate, setSeenTemplate] = useState<string[]>([])
+  /** Agency rows whose "Earlier audits" list has been opened out. */
+  const [openEarlier, setOpenEarlier] = useState<Record<string, boolean>>({})
+  /**
+   * *** WHAT A HANDLED COMMAND LEAVES ON THE ASK TAB — decision 39. ***
+   * A command writes no turn and no topic, so the thread cannot hold it. It is one notice above
+   * the composer: the words the person typed, and the one line saying what started. `choices` is
+   * the other half — an audit word with no agency in it shows the agency names, which is what the
+   * box has always done when it could not match (`:467`–`:468` before this step).
+   */
+  const [commandLine, setCommandLine] = useState<{ asked: string; said: string } | null>(null)
+  /**
+   * The file the paperclip put in on this turn. The OFFER's press needs it — a `run_audit` offer
+   * about an attached file carries a marker and no id (decision 45), so the code supplies which
+   * file it meant, and this is where the page holds it.
+   */
+  const [attached, setAttached] = useState<{ id: string; name: string } | null>(null)
+  const [topics, setTopics] = useState<TopicRow[]>([])
 
   const load = useCallback(async () => {
     try {
@@ -295,6 +367,22 @@ function Audits() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  /**
+   * THE CONVERSATIONS, read as the page's own read and handed to the hook — Documents' shape
+   * (`app/documents/page.tsx:380`–`:387`). One reader, not two.
+   */
+  const supabase = useMemo(() => createClient(), [])
+  const reloadTopics = useCallback(async () => {
+    const rows = await readTopicList(supabase, 'audits_chat')
+    setTopics(rows)
+    return rows
+  }, [supabase])
+  useEffect(() => { void reloadTopics() }, [reloadTopics])
+
+  const conv = useAskConversations({
+    topics, reloadTopics, summarisePath: (id) => `/api/audits/topics/${id}/summarise`,
+  })
 
   // THE COMPANY, FOR PAPER — board 10. Every printed drawer names the company at the top of every
   // page; this page passed none (the audit) or `null` (a document's report). Read as /documents reads it.
@@ -348,120 +436,200 @@ function Audits() {
     return idx.documents.filter((d) => d.site_name === name)
   }, [idx, site])
 
-  /* ── starting a run: the sentence is matched here, in code ────────────────── */
+  /**
+   * *** THE AUDIT BUTTON ON A ROW. *** One POST, and the notice above the rows. It is
+   * `startAgencyRun` below plus this tab's own line, so the button and a typed command cannot
+   * start a run two different ways — which they did until step 6b, because the box had its own
+   * copy of this call.
+   */
   async function startRun(agency: string, scope?: string | null) {
-    setBusy(true); setNotice(null); setChoices(null)
+    setNotice(null); setChoices(null)
+    const out = await startAgencyRun(agency, scope ?? null)
+    setNotice(out.line)
+  }
+
+  /**
+   * *** AUDITING AGAINST A FILE THE PERSON HAS ALREADY ATTACHED — Run 4b's `attachChecklist`,
+   * with its first half removed. ***
+   *
+   * It used to do six things: pick a file, upload it to storage, write the row through
+   * `POST /api/documents`, then start the run. The first three are `lib/chatUpload.ts`'s now
+   * (decision 40) — the paperclip on the Ask tab puts the file in through Documents' own path and
+   * asks for the reading, which `attachChecklist` never did and which is why a checklist used to
+   * sit in the list saying "Not read yet" for ever. What is left is the fourth thing.
+   *
+   * The reading of the checklist AS A DOCUMENT and the extraction of its LINES are still
+   * different questions asked of the same file, and the second still does not wait for the
+   * first: a template audit needs the lines, not the scan's verdict.
+   */
+  async function startTemplateRun(documentId: string, fileName: string, scope: string | null) {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/audit-runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({
+          kind: 'template', template_document_id: documentId,
+          ...(scope ? { scope } : {}),
+        }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok) return { ok: false as const, line: json?.error ?? COULD_NOT_AUDIT }
+      await load()
+      // The note comes back when a file held no lines; it is the honest line and it wins.
+      return {
+        ok: true as const,
+        line: json.note ?? auditsCommandTemplateLine(fileName, json.lines ?? 0, json.sections ?? 0),
+        runId: json.id as string | null,
+      }
+    } finally { setBusy(false) }
+  }
+
+  /** The same, for an agency — `startRun` with its words rather than its notice. */
+  async function startAgencyRun(agency: string, scope: string | null) {
+    setBusy(true)
     try {
       const res = await fetch('/api/audit-runs', {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({ kind: 'agency', agency, ...(scope ? { scope } : {}) }),
       })
-      const json = await res.json()
-      if (!res.ok) { setNotice(json?.error ?? 'We could not start that audit just now.'); return }
-      setAsk('')
-      setNotice(json.estimate ? `Started. ${json.estimate}` : 'Started.')
+      const json = await res.json().catch(() => null)
+      if (!res.ok) return { ok: false as const, line: json?.error ?? COULD_NOT_AUDIT }
       await load()
+      return {
+        ok: true as const,
+        line: auditsCommandAgencyLine(agency === 'all' ? 'all-agency' : agency),
+        runId: json.id as string | null,
+      }
     } finally { setBusy(false) }
   }
 
   /**
-   * *** ATTACHING A CHECKLIST — Audits Run 4b, item 8. ***
-   *
-   * It goes in through DOCUMENTS' path — storage, then `POST /api/documents` — because a checklist
-   * IS a document: it belongs in the list, it gets read like anything else, and a second upload
-   * path would mean two places that decide where a file lives. §143's batch is deliberately not
-   * used: a batch exists so a folder drop can be answered once by email, and this is one file the
-   * person is standing in front of.
-   *
-   * Then the audit. The reading of the checklist AS A DOCUMENT and the extraction of its LINES are
-   * different questions asked of the same file, and the second does not wait for the first: a
-   * template audit needs the lines, not the scan's verdict.
+   * The hook `components/AskScreen.tsx` calls before it sends anything (decision 37). `'handled'`
+   * means a run started, or the page asked a question back; the screen then clears the box and
+   * the chip and writes NO topic and NO turn. `'ask'` sends the sentence to the model.
    */
-  async function attachChecklist(file: File) {
-    setAttaching('Uploading…'); setNotice(null); setChoices(null)
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data: profile } = await supabase.from('profiles')
-        .select('company_id').eq('id', user?.id ?? '').single()
-      const companyId = profile?.company_id
-      if (!companyId) { setNotice('We could not tell which company this is. Try reloading.'); return }
-
-      const path = `${companyId}/unfiled/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
-      const { error: upErr } = await supabase.storage.from('company-documents').upload(path, file)
-      if (upErr) { setNotice(`We could not upload that file: ${upErr.message}`); return }
-
-      const dbRes = await fetch('/api/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({
-          name: file.name, file_url: path,
-          file_type: file.type || 'application/octet-stream',
-          file_size: file.size, folder_id: null,
-        }),
-      })
-      if (!dbRes.ok) { setNotice(`We could not save ${file.name}.`); return }
-      const { id: documentId } = await dbRes.json()
-
-      setAttaching('Reading the checklist…')
-      const res = await fetch('/api/audit-runs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({
-          kind: 'template', template_document_id: documentId,
-          ...(ask.trim() ? { scope: ask.trim() } : {}),
-        }),
-      })
-      const json = await res.json()
-      if (!res.ok) { setNotice(json?.error ?? 'We could not audit against that just now.'); return }
-      setAsk('')
-      setNotice(json.note
-        ? json.note
-        : `Auditing against ${file.name} — ${json.lines} line`
-          + `${json.lines === 1 ? '' : 's'} in ${json.sections} section`
-          + `${json.sections === 1 ? '' : 's'}.${json.estimate ? ` ${json.estimate}` : ''}`)
-      await load()
-      if (json.id && json.sections) setParam('run', json.id)
-    } finally { setAttaching(null) }
+  async function beforeAsk(question: string, file: { id: string; name: string } | null) {
+    if (!idx) return 'ask' as const
+    const cmd = readCommand(question, idx.agencies, Boolean(file))
+    if (!cmd) return 'ask' as const
+    setChoices(null)
+    if (cmd.kind === 'choose') {
+      if (!idx.agencies.length) {
+        setCommandLine({ asked: question, said: NO_AGENCIES }); return 'handled' as const
+      }
+      setCommandLine({ asked: question, said: WHICH_AGENCY })
+      setChoices(idx.agencies)
+      return 'handled' as const
+    }
+    if (cmd.kind === 'template') {
+      if (!file) { setCommandLine({ asked: question, said: ATTACH_THE_FILE }); return 'handled' as const }
+      const out = await startTemplateRun(file.id, file.name, question)
+      setCommandLine({ asked: question, said: out.line })
+      return 'handled' as const
+    }
+    const out = await startAgencyRun(cmd.agency, cmd.scope)
+    setCommandLine({ asked: question, said: out.line })
+    return 'handled' as const
   }
 
   /**
-   * THE BOX, AND WHAT IT DOES WITH A SENTENCE.
+   * *** THE OFFER'S PRESS — decisions 41, 43 and 45. ***
    *
-   * Case-insensitive substring against the company's own agency labels, longest label first so
-   * "Oregon OSHA" wins over a shorter label that is contained in it. "everything" or "all" runs
-   * every agency. No match shows the agency names as one-click choices — which is the honest answer:
-   * the page knows exactly which agencies it can audit, so it says them rather than guessing.
+   * The model proposed; this starts it. `checkRunAuditOffer` holds the payload against the
+   * company's OWN agency labels (`lib/audit.ts` `auditAgenciesFor` reads the same rows the page's
+   * `idx.agencies` came from), so an agency the company does not hold never reaches
+   * `/api/audit-runs` — and that route would refuse it a second time anyway.
+   *
+   * **It writes the same line a typed command writes**, because the person did the same thing.
    */
-  function submitAsk() {
-    if (!idx) return
-    const text = ask.trim()
-    if (!text) return
-    if (!idx.agencies.length) { setNotice('None of your documents carries an agency yet.'); return }
+  async function pressOffer(offer: Offer, attachedId: string | null, attachedName: string | null) {
+    if (offer.kind !== 'run_audit' || !idx) return { ok: false as const, line: COULD_NOT_AUDIT }
+    const checked = checkRunAuditOffer(offer, {
+      agencies: idx.agencies, attachedDocumentId: attachedId,
+    })
+    if (!checked) return { ok: false as const, line: COULD_NOT_AUDIT }
+    const out = checked.documentId
+      ? await startTemplateRun(checked.documentId, attachedName ?? 'the attached file', null)
+      : await startAgencyRun(checked.agency as string, null)
+    return out
+  }
 
-    const lower = text.toLowerCase()
-    // "Audit us against the attached checklist" — the third example line. It cannot be answered
-    // without a file, so it opens the picker rather than refusing.
-    if (/\b(checklist|template|attached|attach)\b/.test(lower)) {
-      setNotice('Choose the checklist and we will audit against every line of it.')
-      checklistInput.current?.click()
-      return
-    }
-    if (/\b(everything|all|every agency|all agencies)\b/.test(lower)) {
-      startRun('all', text); return
-    }
-    const hit = [...idx.agencies].sort((a, b) => b.length - a.length)
-      .find((a) => lower.includes(a.toLowerCase()))
-    if (hit) {
-      // The rest of the sentence is kept as the scope, verbatim: "for the Portland plant only"
-      // is the person's own words about what they meant, and it is shown back to them on the run.
-      const rest = text.replace(new RegExp(hit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '').trim()
-      startRun(hit, rest || text)
-      return
-    }
-    setChoices(idx.agencies)
-    setNotice(null)
+  /**
+   * *** EVERY EARLIER RUN FOR ONE AGENCY — what the Past audits tab held that an agency row did
+   * not (decision 31). ***
+   *
+   * The agency row shows the LATEST done run. Past audits showed them all, so folding the two
+   * tabs into one would have lost every run but the newest unless they came back somewhere, and
+   * this is where. Read off the SECTIONS and not off `agency_label`, for the reason
+   * `app/api/audits/index/route.ts:88`–`:91` gives: an "all agencies" run carries every label in
+   * one string, and its SECTIONS are what belong to one agency.
+   */
+  function earlierFor(label: string): Run[] {
+    if (!idx) return []
+    const latest = idx.last_done[label] ?? null
+    const active = idx.active[label] ?? null
+    return idx.runs.filter((r) => {
+      if (r.id === latest || r.id === active) return false
+      if (r.kind === 'template') return false
+      return idx.sections.some((x) => x.run_id === r.id && x.title === label)
+    })
+  }
+
+  /**
+   * *** WHAT GOES UNDER AN ANSWER — the shared screen's `afterAnswer` slot, and Audits puts one
+   * thing in it: the offer (decision 41). ***
+   *
+   * `components/CalendarAsk.tsx` `calendarAfterAnswer` is the shape, copied: the offers the
+   * answer carried, each a line the person can press, and what the line says once it has been.
+   * **The card cannot be pressed twice** — `x.added` is the shared screen's own per-offer record
+   * and the moment it is set the line stops being a button. A second press would be a second
+   * `POST /api/audit-runs`, and the route's own claim answers 409 anyway; this means the person
+   * never gets that far.
+   */
+  function auditsAfterAnswer(x: Exchange, patch: (p: Partial<Exchange>) => void) {
+    return (
+      <>
+        {x.phase === 'done' && x.offers.filter((o) => o.kind === 'run_audit').map((o, i) => {
+          const state = x.added?.[i]
+          if (state) {
+            return (
+              <p key={i} className="mt-3 text-[15px] text-gray-800">
+                {state.failed ? COULD_NOT_AUDIT : (
+                  <>
+                    {state.id ?? ''}{' '}
+                    <button onClick={() => selectTab('audits')} className={ACTION_GREEN}>
+                      Open the Audits tab
+                    </button>
+                  </>
+                )}
+              </p>
+            )
+          }
+          return (
+            <p key={i} className="mt-3 text-[15px]">
+              <button
+                disabled={busy || Boolean(paused)}
+                onClick={async () => {
+                  // Marked BEFORE the call, so the line stops being a button at the first press.
+                  patch({ added: { ...(x.added ?? {}), [i]: { id: null, already: false } } })
+                  const out = await pressOffer(o, attached?.id ?? null, attached?.name ?? null)
+                  patch({ added: { ...(x.added ?? {}), [i]: {
+                    id: out.ok ? out.line : null, already: false, failed: !out.ok,
+                  } } })
+                }}
+                className="text-left text-[var(--green-ink)] underline underline-offset-2 hover:no-underline disabled:text-gray-300">
+                {runAuditCardWords({
+                  agency: o.agency,
+                  fileName: o.attached ? (attached?.name ?? 'the attached file') : null,
+                })}
+              </button>
+            </p>
+          )
+        })}
+      </>
+    )
   }
 
   async function dismissRun(id: string) {
@@ -486,13 +654,29 @@ function Audits() {
    */
   const setParam = (k: string, v: string | null) => {
     if (k === 'run') setOpenRun(v)
-    if (k === 'tab') setTab(v === 'past' ? 'past' : 'stand')
+    // Three tabs since step 6b, and `ask` is still what an unknown word falls back to — a tab
+    // name arrives from links, bookmarks and typing. The old two words both mean Audits.
+    if (k === 'tab') setTab(v === 'past' || v === 'stand' ? 'audits'
+      : TAB_KEYS.includes((v ?? '') as Tab) ? (v as Tab) : 'ask')
     const p = new URLSearchParams(searchRef.current)
     if (v === null) p.delete(k); else p.set(k, v)
     searchRef.current = p.toString()
     const url = `/audits${p.toString() ? `?${p}` : ''}`
     if (p.toString()) router.replace(url, { scroll: false })
     else window.history.replaceState(null, '', url)
+  }
+  /** The default tab DELETES the key, so the plain `/audits` the sidebar links to stays plain. */
+  const selectTab = (k: Tab) => setParam('tab', k === 'ask' ? null : k)
+
+  /**
+   * "+ NEW CONVERSATION" IS A BUTTON, not a link, and the reason is React's own lint rule: it has
+   * to CLEAR the open conversation, which is a state change, and an effect that watched the
+   * address for it is refused. Documents and the Calendar both reached the same answer.
+   */
+  const startNewConversation = () => {
+    conv.startNewConversation()
+    setCommandLine(null); setChoices(null); setAttached(null)
+    selectTab('ask')
   }
 
   /* ── per-agency derived numbers, all off the one read ─────────────────────── */
@@ -546,120 +730,163 @@ function Audits() {
   const newestDone = idx.runs.find((r) => r.status === 'done')?.finished_at
     ?? idx.runs.find((r) => r.status === 'done')?.created_at ?? null
   /**
-   * *** A CHECKLIST RUN IS THE ONE THING THE PAGE CANNOT OTHERWISE SHOW. ***
-   * It has no agency line to live on — its questions come from a form, not a regulator — so it gets
-   * one grey line under the box while it runs and one when it lands, and nothing else on the page
-   * changes for it. Opening it takes the line away, in browser state: there is nothing to record,
-   * because the run is in Past audits either way.
+   * *** THE TEMPLATE RUNS NOW HAVE A HOME, so the two grey lines that stood in for one are gone. ***
+   *
+   * What stood here was `runningTemplate` / `landedTemplate` / `seenTemplate`: one line under the
+   * box while a checklist run went, one when it landed, and browser state so the second did not
+   * come back. Its own comment said why — *"a checklist run is the one thing the page cannot
+   * otherwise show… it has no agency line to live on"*. The **By template** group below is that
+   * home (decision 31), so the stand-in is deleted rather than moved.
    */
   const templateRuns = idx.runs.filter((r) => r.kind === 'template')
-  const runningTemplate = templateRuns.find((r) => r.status !== 'done') ?? null
-  const landedTemplate = templateRuns.find((r) => r.status === 'done' && !seenTemplate.includes(r.id)) ?? null
 
   return (
     <AppLayout>
-      <input ref={checklistInput} type="file" accept={ACCEPTED_FILE_TYPES} className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) attachChecklist(f); e.target.value = '' }} />
-
       <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
         <div className="no-print pt-6">
           <h1 className="font-serif text-[28px] font-normal text-gray-900">Audits</h1>
-          <p className="mt-1 text-[14px] text-gray-500">
-            Where you stand with each agency, from the documents you have given us. Every line points
-            at a document, or at something we do not see.
-          </p>
+          {/* The lede moved into `lib/auditsWords.ts` at step 6a, unchanged, so the brief and the
+              page read one copy of it. The words are the ones this page has always shown. */}
+          <p className="mt-1 text-[14px] text-gray-500">{AUDITS_LEDE}</p>
         </div>
 
-        {/* THE TABS, in the old page's shape — the one piece of its chrome worth keeping. */}
-        <div className="no-print mb-5 mt-5 flex items-center gap-6 border-b border-gray-200">
-          <button onClick={() => setParam('tab', null)}
-            className={`-mb-px border-b-2 pb-3 text-[14px] font-medium transition-colors ${
-              tab === 'stand' ? 'border-[var(--green)] text-[var(--green-ink)]'
-                             : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-            Where you stand
-          </button>
-          <button onClick={() => setParam('tab', 'past')}
-            className={`-mb-px border-b-2 pb-3 text-[14px] font-medium transition-colors ${
-              tab === 'past' ? 'border-[var(--green)] text-[var(--green-ink)]'
-                            : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-            Past audits{runCount ? ` (${runCount})` : ''}
-          </button>
-        </div>
+        {/*
+          *** THE TAB ROW — decision 31. Ask a question · Conversations · Audits (N). ***
 
-        {tab === 'stand' && (
-          <>
-            {/* ── THE BOX ────────────────────────────────────────────────── */}
-            <div className="no-print relative mb-3">
-              <textarea value={ask} onChange={(e) => setAsk(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitAsk() }}
-                rows={4}
-                className="w-full resize-none rounded-xl border border-gray-200 bg-white p-4 text-[14px] text-gray-800 focus:border-[var(--green)] focus:outline-none" />
-              {/* The examples are an OVERLAY, not a placeholder: three lines of guidance, gone the
-                  moment a person types. A placeholder can only hold one line. */}
-              {!ask && (
-                <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-4">
-                  <p className="text-[14px] text-gray-400">e.g. Audit us for Oregon DEQ</p>
-                  <p className="text-[14px] text-gray-400">e.g. Audit everything</p>
-                  <p className="text-[14px] text-gray-400">e.g. Audit us against the attached checklist</p>
-                </div>
-              )}
-            </div>
+          `components/Tabs.tsx`, imported and not edited; it owns its own `mb-5 mt-5` and the
+          hairline, so this page adds no margin of its own. The hand-rolled two-button row that
+          stood here had exactly these classes — Tabs was lifted out of this page's chrome at HR
+          step 3a — so the row does not move.
 
-            <div className="no-print mb-6 flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                {/* Real since Run 4b. It was inert and said so; now it opens a picker, uploads
-                    through Documents' path, and starts a template audit. */}
-                {/* *** ONE LINE, WITH ITS SEPARATOR. *** The two were stacked and the " · " between
-                    them went when the attach control became a button (Run 4b). Same grey, same
-                    size, one line — they are two ways to ask for the same kind of help. */}
-                <p className="text-[12px] text-gray-500">
-                  <button onClick={() => checklistInput.current?.click()} disabled={!!attaching || busy}
-                    className="cursor-pointer underline hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline">
-                    {attaching ?? 'Attach a checklist, your own or your auditor\u2019s'}
-                  </button>
-                  {' · '}
-                  <a href="/compliance" className="underline hover:text-gray-800">
-                    Or ask a question in the Compliance Workspace
-                  </a>
+          The count's rule is Documents': zero is hidden, and so is a count nobody has read yet.
+          "+ New conversation" is on the two conversation tabs only; on the Audits tab the thing a
+          person wants at the right is an Audit button, and every row carries one.
+        */}
+        <Tabs active={tab} onSelect={selectTab}
+          tabs={[
+            { key: 'ask', label: 'Ask a question' },
+            { key: 'conversations', label: 'Conversations' },
+            { key: 'audits', label: `Audits${runCount ? ` (${runCount})` : ''}` },
+          ]}
+          right={tab === 'audits' ? null : (
+            <button onClick={startNewConversation}
+              className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              <span className="hidden sm:inline">New conversation</span>
+            </button>
+          )} />
+
+        {/* ================= ASK A QUESTION — boards 1, 2 and 3 ================= */}
+        {tab === 'ask' && (
+          <div>
+            <AskScreen
+              key={conv.askKey}
+              section="audits_chat"
+              endpoints={{ answer: '/api/audits/answer' }}
+              words={{
+                composerHint: AUDITS_COMPOSER_HINT,
+                firstVisitButton: AUDITS_FIRST_VISIT_BUTTON,
+                emptyConversations: AUDITS_EMPTY_CONVERSATIONS,
+                oneTopicLine: AUDITS_ONE_TOPIC_LINE,
+              }}
+              examples={AUDITS_EXAMPLE_QUESTIONS}
+              companyName={companyName}
+              paused={paused}
+              topicId={conv.askTopicId}
+              initial={conv.askInitial}
+              onTopicId={conv.setAskTopicId}
+              onChanged={async () => { await load(); await reloadTopics() }}
+              onSummarise={conv.summarise}
+              summaryBusy={conv.summaryRunning(conv.askTopicId)}
+              /* Decision 33's words, and decision 40's reading: the paperclip puts the file in
+                 through Documents' own path (`lib/chatUpload.ts`), which asks for the scan.
+                 `attachChecklist` never did, which is why a checklist used to sit in the list
+                 saying "Not read yet" for ever. */
+              attach={{ label: AUDITS_ATTACH_LABEL, onPick: (d) => { setAttached(d); void load() } }}
+              canMakeChecklist
+              onMakeChecklist={conv.makeChecklist}
+              checklistBusy={conv.checklistRunning(conv.askTopicId)}
+              checklistReadyId={conv.checklistReady?.topicId === conv.askTopicId ? conv.checklistReady.id : null}
+              thinkingLine={auditsThinkingLine}
+              /* THE ONE OFFER (decision 41). The press is `pressOffer`, in code. */
+              afterAnswer={auditsAfterAnswer}
+              /* THE LOOKER (decisions 32, 37, 38). Code looks first; only a question goes on. */
+              beforeAsk={beforeAsk}
+            />
+
+            {/* *** WHAT A HANDLED COMMAND LEAVES BEHIND — decision 39. ***
+                No topic, no turn: the question and the one line, above the composer, until the
+                next thing happens. */}
+            {commandLine && (
+              <div className="no-print mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <p className="text-[13px] text-gray-500">&ldquo;{commandLine.asked}&rdquo;</p>
+                <p className="mt-1 text-[14px] text-gray-800">
+                  {commandLine.said}
                 </p>
+                {/* "Audits tab" is a control, not prose: the person is already on the page, so it
+                    switches tabs rather than linking and reloading the whole thing. */}
+                {commandLine.said.endsWith(`${AUDITS_COMMAND_TAB_LINK}.`) && (
+                  <button onClick={() => selectTab('audits')} className={`mt-1 ${ACTION_GREEN}`}>
+                    Open the Audits tab
+                  </button>
+                )}
+                {choices && (
+                  <div className="mt-2 flex flex-wrap gap-3">
+                    {choices.map((a) => (
+                      <button key={a} onClick={async () => {
+                        const out = await startAgencyRun(a, null)
+                        setChoices(null); setCommandLine({ asked: commandLine.asked, said: out.line })
+                      }} className={ACTION_GREEN}>{a}</button>
+                    ))}
+                    <button onClick={async () => {
+                      const out = await startAgencyRun('all', null)
+                      setChoices(null); setCommandLine({ asked: commandLine.asked, said: out.line })
+                    }} className={ACTION_GREEN}>Everything</button>
+                  </div>
+                )}
               </div>
-              <button onClick={submitAsk} disabled={busy || Boolean(paused) || !ask.trim()} className={ACTION_PRIMARY}>
-                {busy ? 'Starting…' : 'Audit'}
-              </button>
-            </div>
+            )}
+            {conv.notice && (
+              <div className="no-print mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                {conv.notice}
+                <button onClick={() => conv.setNotice(null)} className="ml-3 underline">Dismiss</button>
+              </div>
+            )}
+          </div>
+        )}
 
+        {/* ================= CONVERSATIONS — HR's board 9, its list and its drawer ================= */}
+        {tab === 'conversations' && (
+          <div className="pt-1">
+            {topics.length === 0 ? (
+              <Empty title={AUDITS_EMPTY_CONVERSATIONS_TITLE} note={AUDITS_EMPTY_CONVERSATIONS} />
+            ) : (
+              <ConversationList topics={topics}
+                running={(t, kind) => kind === 'summary' && conv.summaryRunning(t.id)}
+                onOpen={conv.setConvDrawer} />
+            )}
+          </div>
+        )}
+
+        {tab === 'audits' && (
+          <>
+            {/*
+              *** THE BOX IS GONE FROM THIS TAB — decision 32, the owner, 3 November 2026. ***
+
+              What stood here was the textarea, its three example lines as an overlay, the attach
+              link, the "Or ask a question in the Compliance Workspace" link and the Audit button.
+              Typing happens on the Ask tab now, and the matching that lived behind that button is
+              `readCommand` at the top of this file, unchanged in what it does. The Workspace link
+              went with it (decision 35): it was a bare `href="/compliance"` that carried nothing
+              the person had typed, and this page answers the question where it was asked.
+
+              **`PausedNote` stays**, and it has to: the Audit and Audit again buttons below are
+              paid controls, and `tests/unit/readOnlyUi.test.ts:128`–`:145` holds that every screen
+              owning one shows the same note.
+            */}
             <PausedNote banner={paused} />
 
             {notice && <p className="no-print mb-4 text-[13px] text-gray-600">{notice}</p>}
-
-            {runningTemplate && (
-              <p className="no-print mb-4 text-[13px] text-gray-500">
-                Your audit against {checklistTitle(runningTemplate, idx)} is running
-                {' · '}{runningTemplate.estimate ?? idx.estimate}
-              </p>
-            )}
-            {!runningTemplate && landedTemplate && (
-              <p className="no-print mb-4 text-[13px] text-gray-600">
-                Your audit against {checklistTitle(landedTemplate, idx)} is done
-                {' · '}{needsOf(landedTemplate.summary)} to look at{' · '}
-                <button onClick={() => {
-                  setSeenTemplate((x) => [...x, landedTemplate.id]); setParam('run', landedTemplate.id)
-                }} className={ACTION_GREEN}>Open</button>
-              </p>
-            )}
-            {choices && (
-              <div className="no-print mb-5 rounded-lg border border-gray-200 bg-white px-4 py-3">
-                <p className="text-[13px] text-gray-700">
-                  We audit by agency, and these are the agencies your documents mention.
-                </p>
-                <div className="mt-2 flex flex-wrap gap-3">
-                  {choices.map((a) => (
-                    <button key={a} onClick={() => startRun(a, ask.trim() || null)} className={ACTION_GREEN}>{a}</button>
-                  ))}
-                  <button onClick={() => startRun('all', ask.trim() || null)} className={ACTION_GREEN}>Everything</button>
-                </div>
-              </div>
-            )}
 
             {/* ── the thin line ──────────────────────────────────────────── */}
             <div className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
@@ -707,6 +934,7 @@ function Audits() {
                   all of it. `audit_runs.dismissed_at` stays as a column — a dismissal already
                   recorded is not ours to erase — and nothing here reads it.
                 */}
+                <p className={GROUP_LABEL}>By agency</p>
                 <div className="mt-1">
                   {idx.agencies.map((label) => {
                     const v = agencyView(label)!
@@ -759,9 +987,15 @@ function Audits() {
                           </div>
                         </div>
 
-                        {open && <AgencyBody label={label} idx={idx} v={v}
-                          onOpenRun={(w) => { setDrawerWord(w); setParam('run', v.lastRun!.id) }}
-                          onOpenDoc={(d) => { setFromAudit(null); setOpenDoc(d) }} />}
+                        {open && <>
+                          <AgencyBody label={label} idx={idx} v={v}
+                            onOpenRun={(w) => { setDrawerWord(w); setParam('run', v.lastRun!.id) }}
+                            onOpenDoc={(d) => { setFromAudit(null); setOpenDoc(d) }} />
+                          <EarlierRuns runs={earlierFor(label)} idx={idx}
+                            open={!!openEarlier[label]}
+                            onToggle={() => setOpenEarlier((o) => ({ ...o, [label]: !o[label] }))}
+                            onOpen={(id) => setParam('run', id)} />
+                        </>}
                       </div>
                     )
                   })}
@@ -798,62 +1032,72 @@ function Audits() {
                 </div>
               </div>
             )}
-          </>
-        )}
 
-        {tab === 'past' && (
-          <>
-            {idx.runs.length === 0 ? (
-              <p className="mt-2 text-[14px] text-gray-600">No audits yet.</p>
-            ) : (
-              <>
-                <div>
-                  {idx.runs.map((r) => {
-                    const secs = idx.sections.filter((s) => s.run_id === r.id)
-                    const docsRead = new Set(secs.flatMap(() => [] as string[])).size
-                    const failed = secs.filter((s) => s.status === 'could_not_complete')
-                    const prev = r.previous_run_id ? idx.runs.find((x) => x.id === r.previous_run_id) : null
-                    const prevOpen = needsOf(prev?.summary) + (r.closed_count ?? 0)
-                    return (
-                      <div key={r.id} className="flex items-start gap-3 border-b border-gray-100 py-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[14px] text-gray-900">
-                            {fmt(r.finished_at ?? r.created_at)}
-                            {/* The run's name, from `lib/auditView.ts` — the same words the
-                                Dashboard's Recent audits draws. */}
-                            <span className="ml-2 text-gray-600">{runTitle(r, idx)}</span>
+            {/*
+              *** BY TEMPLATE — the second group, decision 31. ***
+
+              One row per audit against a checklist, newest first. It is the home the two grey
+              lines under the old box were standing in for: a template run has no agency line to
+              live on, because its questions come from a form and not from a regulator.
+            */}
+            {templateRuns.length > 0 && (<>
+              <p className={GROUP_LABEL}>By template</p>
+              <div className="mt-1">
+                {templateRuns.map((r) => {
+                  const failed = idx.sections.filter((x) => x.run_id === r.id && x.status === 'could_not_complete')
+                  const lines = Array.isArray(r.template_lines)
+                    ? (r.template_lines as Array<{ lines?: unknown[] }>)
+                      .reduce((n, sec) => n + (Array.isArray(sec?.lines) ? sec.lines.length : 0), 0)
+                    : 0
+                  return (
+                    <div key={r.id} className="flex items-start gap-3 border-b border-gray-100 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] text-gray-900" title={runTitle(r, idx)}>
+                          {checklistTitle(r, idx)}
+                        </p>
+                        <p className="mt-0.5 text-[12px] text-gray-500">
+                          {r.status !== 'done'
+                            ? `Audit running · ${r.estimate ?? idx.estimate}`
+                            : <>
+                                {lines ? `${lines} line${lines === 1 ? '' : 's'} in ` : ''}
+                                {r.section_count} section{r.section_count === 1 ? '' : 's'}
+                                {' · '}audited {fmt(r.finished_at ?? r.created_at)}
+                                {' · '}{needsOf(r.summary)} to look at
+                              </>}
+                        </p>
+                        {failed.length > 0 && r.status === 'done' && (
+                          <p className="mt-0.5 text-[12px] text-[var(--amber)]">
+                            {failed.map((f) => f.title).join(', ')} did not finish.
                           </p>
-                          <p className="mt-0.5 text-[12px] text-gray-500">
-                            {r.status !== 'done'
-                              ? `Running · ${r.estimate ?? idx.estimate}`
-                              : <>
-                                  {needsOf(r.summary)} to look at
-                                  {` · ${r.summary?.sections_done ?? 0} of ${r.section_count} section${r.section_count === 1 ? '' : 's'}`}
-                                  {prev && r.closed_count > 0
-                                    ? ` · ${r.closed_count} of ${prevOpen} from ${fmt(prev.finished_at ?? prev.created_at)} closed`
-                                    : ''}
-                                </>}
-                          </p>
-                          {failed.length > 0 && (
-                            <p className="mt-0.5 text-[12px] text-[var(--amber)]">
-                              {failed.map((f) => f.title).join(', ')} did not finish.
-                            </p>
-                          )}
-                          {r.scope && <p className="mt-0.5 text-[12px] text-gray-400">&ldquo;{r.scope}&rdquo;</p>}
-                        </div>
-                        <button onClick={() => setParam('run', r.id)} className={`shrink-0 ${ACTION_GREEN}`}>Open</button>
+                        )}
+                        {r.scope && <p className="mt-0.5 text-[12px] text-gray-400">&ldquo;{r.scope}&rdquo;</p>}
                       </div>
-                    )
-                  })}
-                </div>
-                <p className="mt-4 text-[12px] text-gray-500">
-                  Every audit is kept. Open one and its report is exactly what it said on the day,
-                  against the documents as they stood then.
-                </p>
-              </>
+                      <div className="shrink-0 space-x-3 text-right">
+                        <button onClick={() => setParam('run', r.id)} className={ACTION_GREEN}>Open</button>
+                        {/* *** NO "Audit again" HERE, AND IT IS NOT AN OVERSIGHT. ***
+                            `POST /api/audit-runs { kind: 'template' }` reads the file out of
+                            storage every time, so "again" is the same file and the same lines —
+                            which is exactly what the person wants, and it is one line of code.
+                            But `template_document_id` can point at a document that has since
+                            been deleted, and a button that fails with "That file was not found"
+                            is worse than no button. It waits for the row to say whether the file
+                            is still there. §7. */}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>)}
+
+            {idx.runs.length > 0 && (
+              <p className="mt-4 text-[12px] text-gray-500">
+                Every audit is kept. Open one and its report is exactly what it said on the day,
+                against the documents as they stood then.
+              </p>
             )}
           </>
         )}
+
       </div>
 
       {/* The audit report. Hidden, not unmounted, while a document's report is on top of it, so
@@ -905,7 +1149,80 @@ function Audits() {
           />
         </>
       )}
+
+      {/* ================= THE CONVERSATION DRAWER — `components/ConversationDrawer.tsx` =================
+          The shared one, with Delete, and the workspace's report shape (`WEB_SOURCE`): an Audits
+          answer's sources are web pages and passage quotes, which is what that shape draws. */}
+      {conv.convDrawer && (
+        <ConversationDrawer
+          topic={conv.convDrawer}
+          companyName={companyName}
+          paused={paused}
+          notSummarisedLine={AUDITS_NOT_SUMMARISED}
+          sourceShape={WEB_SOURCE as unknown as SourceShape<{ n: number; title: string; url: string }>}
+          factsLine={null}
+          onClose={() => conv.setConvDrawer(null)}
+          onOpen={async (t) => { if (await conv.openConversation(t)) selectTab('ask') }}
+          onSummarise={conv.summarise}
+          summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
+          onDeleted={() => { conv.setConvDrawer(null); void reloadTopics() }}
+        />
+      )}
     </AppLayout>
+  )
+}
+
+/**
+ * *** THE EARLIER RUNS FOR ONE AGENCY — every line the Past audits tab carried that an agency
+ * row did not (decision 31). ***
+ *
+ * Folded in rather than copied: the date, the count to look at, how many of the previous run's
+ * findings this one closed, the person's own scope in quotation marks, and the amber line where
+ * a part did not finish. Each opens the same `?run=` the Past audits list opened.
+ *
+ * It is collapsed by default for the reason the agency rows are (Run 7b, item 3: *"a page whose
+ * job is 'where do I stand' should answer that in one screen"*) — six earlier runs under an open
+ * agency would be most of a screen of history above the documents the person came to read.
+ */
+function EarlierRuns({ runs, idx, open, onToggle, onOpen }: {
+  runs: Run[]; idx: Index; open: boolean; onToggle: () => void; onOpen: (id: string) => void
+}) {
+  if (!runs.length) return null
+  return (
+    <div className="mb-4 pl-6">
+      <button onClick={onToggle} className="text-[12px] text-gray-500 hover:text-gray-800">
+        {open ? '▾' : '▸'} Earlier audits ({runs.length})
+      </button>
+      {open && runs.map((r) => {
+        const failed = idx.sections.filter((x) => x.run_id === r.id && x.status === 'could_not_complete')
+        const prev = r.previous_run_id ? idx.runs.find((x) => x.id === r.previous_run_id) : null
+        const prevOpen = needsOf(prev?.summary) + (r.closed_count ?? 0)
+        return (
+          <div key={r.id} className="mt-1 flex items-start gap-3 border-t border-gray-100 pt-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] text-gray-600">
+                {fmt(r.finished_at ?? r.created_at)}
+                {r.status !== 'done'
+                  ? ` · Running · ${r.estimate ?? idx.estimate}`
+                  : <>
+                      {` · ${needsOf(r.summary)} to look at`}
+                      {prev && r.closed_count > 0
+                        ? ` · ${r.closed_count} of ${prevOpen} from ${fmt(prev.finished_at ?? prev.created_at)} closed`
+                        : ''}
+                    </>}
+              </p>
+              {failed.length > 0 && (
+                <p className="text-[12px] text-[var(--amber)]">
+                  {failed.map((f) => f.title).join(', ')} did not finish.
+                </p>
+              )}
+              {r.scope && <p className="text-[12px] text-gray-400">&ldquo;{r.scope}&rdquo;</p>}
+            </div>
+            <button onClick={() => onOpen(r.id)} className={`shrink-0 ${ACTION_GREEN}`}>Open</button>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

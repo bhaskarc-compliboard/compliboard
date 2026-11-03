@@ -87,6 +87,22 @@ export const auditsCommandTemplateLine = (fileName: string, lines: number, secti
   + `${sections} section${sections === 1 ? '' : 's'}. It is on the ${AUDITS_COMMAND_TAB_LINK}.`
 
 /**
+ * *** THE THREE THINGS A COMMAND CAN SAY BACK WHEN IT DOES NOT START A RUN. ***
+ *
+ * `WHICH_AGENCY` is the sentence over the one-click agency names, which the box has shown since
+ * the first build when a sentence matched nothing: *"We audit by agency, and these are the
+ * agencies your documents mention."* It is the honest answer, because the page knows exactly
+ * which agencies it can audit and so says them rather than guessing (`app/audits/page.tsx`).
+ */
+export const WHICH_AGENCY = 'We audit by agency, and these are the agencies your documents mention.'
+/** Said when an audit word arrived with no file and no agency the documents name. */
+export const NO_AGENCIES = 'None of your documents carries an agency yet, so there is nothing to audit against. Add a permit, a plan or a record first.'
+/** The box's own line since Run 4b, moved here: an audit against a file needs the file. */
+export const ATTACH_THE_FILE = 'Attach the checklist or template first, with the paperclip, and we will audit against every line of it.'
+/** §5.1: ours, plainly, and nothing was started. */
+export const COULD_NOT_AUDIT = 'We could not start that audit just now. Nothing was changed. Please try again.'
+
+/**
  * *** THE ONE OFFER'S CARD — DECISION 41, THE OWNER'S, 3 NOVEMBER 2026. ***
  *
  * The model PROPOSES and the press starts the run in code, with the same checks the box uses

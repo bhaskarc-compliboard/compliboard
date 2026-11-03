@@ -4,7 +4,11 @@
  * An offer is the one piece of an answer that is not prose: a structured thing the person can
  * accept with one click. Calendar's only offer is **add this date to the calendar** (decision 17:
  * a date a person adds is confirmed at once, with their name on it), acted on in 10b through
- * `proposeDate` with `source: 'rule'`.
+ * `proposeDate` with `source: 'rule'`. **Audits' only offer is `run_audit`** — start the audit
+ * the answer is about — added 3 November 2026 (`docs/GAPS-PLAN.md` decisions 41 and 43).
+ *
+ * *** THE TWO KINDS ARE CHECKED DIFFERENTLY ON PURPOSE, and the rule below says why at the
+ * branch. *** The paragraph after this one is about `add_date` and holds for it unchanged.
  *
  * *** AN OFFER IS CHECKED LIKE A CITATION, AND DROPPED LIKE ONE. *** The owner's rule for this
  * step: an offer whose `source_url` this call's web search did not return is dropped, and the drop
@@ -21,7 +25,7 @@
  */
 import { findReturned } from '../howTo.ts'
 
-export const OFFER_KINDS = ['add_date'] as const
+export const OFFER_KINDS = ['add_date', 'run_audit'] as const
 export type OfferKind = (typeof OFFER_KINDS)[number]
 
 /** Calendar's offer, in the shape `proposeDate` takes (`lib/calendarDates.ts`). */
@@ -39,7 +43,26 @@ export interface AddDateOffer {
   source_line: string
 }
 
-export type Offer = AddDateOffer
+/**
+ * *** AUDITS' ONE OFFER — the owner, 3 November 2026 (`docs/GAPS-PLAN.md` decisions 41 and 43). ***
+ *
+ * "Do you want me to run the Oregon DEQ audit?" The model PROPOSES; the press starts the run in
+ * `app/audits/page.tsx` through the same `POST /api/audit-runs` the Audit button calls.
+ *
+ * `agency` is a label the company's own documents produced, or `'all'`. `attached` says the
+ * offer is about the file the person put on THIS turn — a marker and not an id, because **the
+ * model is never shown the file's id** and asking for one got a passage handle three times in
+ * step 6a's eighteen runs. The code fills the id in, from what it already holds.
+ */
+export interface RunAuditOffer {
+  kind: 'run_audit'
+  /** An agency label, or 'all'. Null when the offer is about the attached file. */
+  agency: string | null
+  /** True when the offer is to audit against the file attached on this turn. */
+  attached: boolean
+}
+
+export type Offer = AddDateOffer | RunAuditOffer
 
 export interface ParsedOffers {
   /** The answer with every offer block removed, ready to be shown. */
@@ -89,6 +112,28 @@ export function parseOffers(
         site: str(o.site) || null,
         source_url, source_line,
       })
+      return ''
+    }
+    /**
+     * *** THE LINK CHECK DOES NOT APPLY TO THIS KIND, AND THAT IS THE OWNER'S DECISION 43, NOT AN
+     * OVERSIGHT. *** `add_date` above carries a date out of a regulation into a customer's
+     * calendar, so "where did this come from" must be answerable and `findReturned` answers it.
+     * A `run_audit` offer carries nothing out of the web: it starts a run over the company's own
+     * documents, and there is no page to verify. Demanding a `source_url` here would drop every
+     * valid offer — which is exactly what it did for three of step 6a's eighteen.
+     *
+     * What IS checked, and in code rather than here, is the only thing that can be wrong in a way
+     * that matters: the agency. `lib/ask/auditsBrief.ts` `checkRunAuditOffer` holds it against
+     * `lib/audit.ts` `auditAgenciesFor` — the company's own labels — exactly as
+     * `app/api/audit-runs/route.ts:122`–`:134` refuses anything else. This function cannot do it,
+     * because it is given no company.
+     */
+    if (kind === 'run_audit') {
+      const agency = str(o.agency)
+      const attached = o.attached === true
+      // One or the other, never neither: an offer naming nothing is a button with nothing behind it.
+      if (!agency && !attached) { dropped.badShape++; return '' }
+      offers.push({ kind: 'run_audit', agency: agency || null, attached })
       return ''
     }
     dropped.unknownKind++

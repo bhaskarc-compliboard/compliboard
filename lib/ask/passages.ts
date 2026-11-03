@@ -58,11 +58,25 @@ export interface Passage {
  * (`lib/ask/engine.ts` `attachedPassages`) — because an attachment belongs to the conversation
  * and not to any one section's context.
  *
- * So a brief must not use `A` for a kind of its own, or two different things would answer to one
- * handle and `replacePassageIds` would name the wrong one. `tests/unit/askEngine.test.ts` holds
- * every brief in the repository to that.
+ * So a brief must not use this letter for a kind of its own, or two different things would answer
+ * to one handle and `replacePassageIds` would name the wrong one. `tests/unit/askEngine.test.ts`
+ * holds every brief in the repository to that.
+ *
+ * *** ⚡ IT WAS `A`, AND `A1` TURNED OUT TO MEAN TWO THINGS — the owner, 3 November 2026
+ * (`docs/GAPS-PLAN.md` decision 44, found by step 6a's runs). ***
+ *
+ * An auditor's checklist numbers its own lines A1…A5, B1…B6, C1…C5, and that is what a person
+ * calls them. With `A` as the attached file's handle, a model that wrote *"line A1"* about the
+ * checklist in front of it had that rewritten by `replacePassageIds` into the FILE'S NAME, so the
+ * person read *"line 12-auditor-checklist-deq-air.docx"*. Measured in three runs of three, in BOTH
+ * the Audits brief and the Documents brief — so it was never one section's bug, and **Documents
+ * had it too** the day anybody attached a lettered form.
+ *
+ * `AF` is two letters, which `PASSAGE_ID` has always allowed (`[A-Z]{1,2}\d{1,3}`), and no
+ * checklist, permit or form numbers a line `AF1`. One character, and it closes the collision for
+ * every section at once.
  */
-export const ATTACHED_PREFIX = 'A'
+export const ATTACHED_PREFIX = 'AF'
 
 export interface AskWebSource { n: number; kind: 'web'; title: string; url: string; label: 'official' | 'other' }
 export interface AskPassageSource {
