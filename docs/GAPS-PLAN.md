@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 12 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 13 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -16,6 +16,7 @@
 **Updated:** 3 November 2026 — **Part A step 6a done** (§5). Two commits: `fdc83c3` the brief, the prompt, the words, the examples and the six keys written first, and the plan's own. §3 gains the owner's decisions **37–42**. **The verdict in one line: the Audits chat scores 57 of 64 against keys written before any run; the Documents chat on the same six questions scores 12, and on four of them it cannot score at all because it cannot see that the company has been audited.** It costs 1.44× and scores 4.75×. §7 loses the four answered questions and gains **two stops**: `lib/ask/offers.ts` must learn `run_audit`, and the engine's `A` handle collides with a checklist's own A1–A5 line labels. §8 gains five things the runs found.
 **Updated:** 3 November 2026 — **Part A step 6b done, and PART A IS COMPLETE** (§5). Two commits: `cca74dc` the page, the looker, the merged tab, the two routes and the three shared edits, and the plan's own. §3 gains decisions **43–45**. The Audits page has three tabs; the box left the audits tab and the Ask box took its job. **The agency rows did not move: 0 differing pixels** over the whole group at −192px, with 14 on the bottom edge of two native dropdowns. §7's two stops are closed. §8 gains **two defects the walk found**, one of them in the rule the owner wrote: a QUESTION about an audit was starting one. Walked on Haiku for **$0.7136**.
 **Updated:** 3 November 2026 — **PART A IS CLOSED, THE OWNER'S OWN WALK IS RECORDED, AND PARTS B TO E ARE MAPPED** (§5a). Read-only: no code, one commit, this file. The owner walked the finished product on Opus on his own dev server — a folder of eight synthetic documents, a ten-line auditor checklist on the paperclip, *"Audit us against the attached template"* typed into the Ask box — and **the audit scored 10 of 10 against his key and caught two errors in the key**. Nine things the walk found are W1–W9, every one of them read back from staging's own rows with the Supabase CLI's read-only connection. §7 gains **the audit's fifth word** as the first open question, with the whole map of where the word lives, plus the template-reads-its-own-template question and the legal-name question. §8 gains six findings, of which two are new product defects with a price on them: **a reading that failed on an unchecked field while its row says the model was never called** (three scans, two companies, one evening), and **six seconds of nothing on screen after a typed command, which bought a second identical audit for $0.49**. §5a writes Parts B (file formats), C (the binder), D (Resend, Stripe, the loose ends) and E (the display pass) as step tables with what exists today by file and line.
+**Updated:** 3 November 2026 — **PART B STEP B0 DONE, and the owner's five decisions after the walk are §3's 46–50.** One commit of code, `43b304e`. Both fixes cost money while they were open. **The reader** sent `doc_date_kind` to the database unchecked while holding `kind` and `status` against their lists, so a sixth word made the INSERT throw and the whole paid reading was lost — three documents, two companies, one evening, and the row that landed said the model had never been called about a call that had just cost $0.114168. An unrecognised word is now `unknown`, said out loud, with the word itself still in `raw_text`; the constraint is unchanged; the three real failures were re-read on Haiku and **all three landed**. **The screen** set `busy` only on an `'ask'` verdict, so a section's look happened with the screen at rest and a second press went through: **a double press was 2 × `POST /api/audit-runs` before and 1 after**, photographed at 700 ms on two isolated servers. `npm run check` **2,336 tests**, floor 2328 → 2336. **§5a is reordered to the owner's addendum**: B0, the rest of B, then **E0 and E1 before C** so the binder is built once on the finished report, then the rest of E; what was Part D is now **§5b, pre-release work in a separate chat**, carrying the S1 correction. §8's W2 and W3 are closed with the fix and the proof, and three things B0 found and did not change are recorded there.
 **Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
 
 ---
@@ -183,6 +184,33 @@ Each names its effect on other sections.
     carries `attached: true` and no id, and `checkRunAuditOffer` resolves the file from what the page already
     holds for this turn. *Effect: `prompts/audits-answer.ts` and `lib/auditsOffer.ts` only.*
 
+### The owner's decisions after the walk report, 3 November 2026 (commit `77ec7e4`)
+
+46. **B0 now: the reader's missing check and the handed-command busy state** (the owner, 3 November 2026).
+    The two things the walk found that cost money while they were open — W2 and W3 in §8 — are done before
+    anything else in Part B. *Effect: `lib/documentScan.ts` reaches **every section that holds a document**
+    (Documents, Audits, the Calendar, the Workspace, HR's handbooks); `components/AskScreen.tsx` is rendered
+    by **the Calendar, Documents and Audits** and by neither HR nor the Workspace. Both re-checked below.*
+47. **The audit gains a fifth word for a line that is on file with gaps underneath** (the owner, 3 November
+    2026). His words on the screen: **"on file, gaps found"**; the stored value is Claude Code's to propose.
+    **Built in E0, "the audit's words", not in B0.** *Effect: the whole map is in §7 — a migration, one
+    prompt, `lib/auditRun.ts`'s `WORDS`, seven screens, the checklist's `NEEDS_PERSON`, the email, the
+    golden set and three test files. The dashboard and the Calendar's `findingBlock` are untouched.*
+48. **A document's status turns to Needs work only on a gap READ FROM THE PAGE** (the owner, 3 November
+    2026). A gap the reader inferred and hedged leaves the status alone and shows as a note. A quality rule.
+    **Built in E0 with 47.** *Effect: `lib/documentScan.ts`'s status, `document_index_v`'s `display_status`
+    (migration 043 and its successors), and every surface that reads it — Documents, Audits, the Workspace,
+    the Dashboard, the batch email.*
+49. **A template run does not read its own template as evidence** (the owner, 3 November 2026):
+    `template_document_id` is left out of `documents_read`, because the attached checklist is the question
+    sheet and not the evidence. **Built in E0 with 47 and 48.** *Effect: `lib/audit.ts` `buildAuditInput`,
+    which is called by `lib/auditRun.ts` only.*
+50. **A template audit is reported row by row in the auditor's own order and numbering** (the owner,
+    3 November 2026): one row per checklist line, **never regrouped by agency, word or document**, and a
+    line that could not be answered is still a row. The drawer, the print and the binder all keep that
+    order. *Effect: E0 and E1 draw it; **Part C packages it**, with the documents behind each row in the
+    same order — which is why C now comes after E0 and E1 and not before them.*
+
 17. **Reading every file format (`.doc`, `.ppt`, HEIC, TIFF, the honest refusals) is its own part**, after the chats, as `docs/VISION-DOCUMENTS.md` "Where the converting runs" decided. The binder follows it. *Effect: later parts of this file.*
 
 ---
@@ -236,7 +264,7 @@ order, and is the source for 6a's brief.
 
 ## 5a. Parts B to E — the map
 
-Written 3 November 2026, read-only, from `grep` and the live staging schema. **Nothing in these four parts is built.** Each row's *what exists today* is a fact about the code at commit `3748b11`, by file and line; *touches* is the map, not the work. The order is the owner's: **B, then C, then D, then E, then the finish line.**
+Written 3 November 2026, read-only, from `grep` and the live staging schema. Each row's *what exists today* is a fact about the code, by file and line; *touches* is the map, not the work. **The order is the owner's, and it changed on 3 November after the walk** (the addendum): **B0 now** — the two fixes that cost money while they were open — then the rest of **B** (file formats), then **E0 and E1** (the audit's words and the audit report), then **C** (the binder, built once on the finished report), then the rest of **E**, then the finish line. What was Part D has moved to §5b: pre-release work, in a separate chat. **Everything below is unbuilt except B0.**
 
 ### Part B — reading every file format (`PENDING.md` D2, a release gate)
 
@@ -246,7 +274,8 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. **N
 
 | # | Step | What exists today, by file and line | Touches | Status |
 |---|---|---|---|---|
-| B0 | The map and the owner's decision | This row. The spec is `VISION-DOCUMENTS.md:165`–`:188`; the gap is `PENDING.md` D2 | — | **mapped 3 Nov** |
+| B0 | **The two small fixes the walk found** — the reader's missing check and the handed-command busy state (decision 46) | `lib/documentScan.ts` held `kind` and `status` against their lists and sent `doc_date_kind` through unchecked, so a sixth word made the INSERT throw and the whole paid reading was lost; `components/AskScreen.tsx` set `busy` only on an `'ask'` verdict, so a section's look happened with the screen at rest and a second press went through | `lib/documentScan.ts` (Documents, Audits, the Calendar, the Workspace, HR's handbooks); `components/AskScreen.tsx` (the Calendar, Documents, Audits — not HR, not the Workspace, by grep) | **done 3 Nov** — `43b304e`. An unrecognised `doc_date_kind` becomes `unknown`, is said out loud, and the word itself stays in `raw_text`; the screen is busy from the moment it calls `beforeAsk`. **Measured on the harness: a double press was 2 × `POST /api/audit-runs` before and 1 after.** The three real failures were re-read on Haiku and all three landed. `npm run check` 2,336 tests, floor 2328 → 2336 |
+| B0a | The map of Parts B to E | The spec is `VISION-DOCUMENTS.md:165`–`:188`; the gap is `PENDING.md` D2 | — | **mapped 3 Nov** — `77ec7e4` |
 | B1 | **The honest refusal, before any converter.** The picker stops promising what nothing reads, and a file that cannot be read gets the sentence written for it | `lib/acceptedFiles.ts:14` — `ACCEPTED_FILE_TYPES` is `'.pdf,.xlsx,.xls,.csv,.txt,.doc,.docx,.ppt,.pptx,image/*'`, so `.doc`, `.ppt` and (through `image/*`) HEIC, TIFF and BMP are all offered. `lib/documentContent.ts:149` `isWord` claims `.doc` and `:186`–`:191` hands it to **mammoth with no `try`**, so it throws; `:150` `isPowerPoint` claims `.ppt` and `:192`–`:199` hands it to `parseOffice` **with no `fileType` hint**, which the file's own comment at `:107`–`:118` records as the call that throws inside the server build. Because both branches *claim* the file, **`describeUnsupported` at `:85` — the polite sentence written for exactly this — is never reached** | `lib/acceptedFiles.ts` (every picker in the app: `app/documents/page.tsx`, `app/compliance/page.tsx`, `app/upload/page.tsx`, `components/AskScreen.tsx` through `lib/chatUpload.ts`), `lib/documentContent.ts`, `lib/documentScan.ts`, and the FAQ's file-type list (`PUBLIC-PAGES-PLAN.md` step 30) | not started |
 | B2 | **The images: HEIC, TIFF, BMP.** Convert to JPEG or PNG before the call; a multi-page TIFF becomes a PDF | `lib/documentContent.ts:76`–`:79` `IMAGE_TYPES` maps **five** extensions (jpg, jpeg, png, gif, webp) and none of the three; `:143` `type.startsWith('image/')` passes a HEIC straight through to the API, which refuses it. `sharp` is not a dependency | `lib/documentContent.ts`, `package.json`, the golden fixture set (one per type, `VISION-DOCUMENTS.md`'s own rule) | not started |
 | B3 | **The old binaries: `.doc` and `.ppt`** — the conversion service, or the refusal | Nothing. The spec's container does not exist; `app/api/jobs/scan-documents/route.ts:257` calls `runDocumentScan` directly off the downloaded blob with no conversion step | a new service (Railway or Fly) outside this repository; `app/api/jobs/scan-documents/route.ts`; `app/api/document-scan/route.ts`; `app/api/document-rescan/route.ts`; `docs/RELEASE.md`'s variable table | not started |
@@ -257,9 +286,19 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. **N
 
 **What a first customer path looks like — a `.doc` dropped in a folder, traced through the code:** the browser writes the row (`app/documents/page.tsx:486`–`:490`) with `status: 'uploaded'`; the sweep claims it and sets `reading` (`app/api/jobs/scan-documents/route.ts:236`); `parseDocumentToBlocks` takes the `isWord` branch at `:186` and **mammoth throws**; the `catch` at `:264` writes `failedScan('Something went wrong at our end while reading this one.')` (`:275`–`:278`). So **the customer is told the product broke, when the truth is that the product cannot read that format and the picker should never have offered it** — and the one sentence written to say so politely is unreachable. W2 below shows this exact path firing for a different reason on the owner's own walk.
 
-### Part C — the binder (`PENDING.md` F4, a release gate)
+### Part E, first — the audit's words and the audit report (BEFORE the binder)
 
-**Stored, not streamed**, for the reason Part B's last paragraph gives. One PDF: a cover, each cited document as pages behind a tab sheet, the report at the back. It **replaces** the audit drawer's download — one button, not two (`DECISIONS.md` §143).
+**Reordered 3 November 2026 (the owner's addendum): E0 and E1 come BEFORE Part C, so the binder is built once, on the finished report.** Boards first, before any code. The pixel method on every shared piece, and every section that draws the piece walked. The owner's shape for a finding, from W9: **one scannable row** (word pill · line · requirement · document) opening to three labelled parts — *What we found* · *The line we read* · *What to do* — with caveats, handles and *"that is a date, not a finding"* asides in a fourth fold, **Also noted**; and a **ten-cell coloured strip** at the top in place of the counts sentence.
+
+| # | Step | The shared files it touches | The sections that render them, from `grep` | Status |
+|---|---|---|---|---|
+| E0 | **THE AUDIT'S WORDS** — four items in one job, because they are one vocabulary (decisions 47, 48, 49 and W5) | **(1)** the fifth word, *"on file, gaps found"* (47): the migration that restates `audit_findings_word_check`, `lib/auditRun.ts:827` `WORDS` and `normaliseWord`, `prompts/audit-agency.ts:95` and `:124`–`:130`, `app/audits/page.tsx:70`–`:71`, `:107`–`:111`, `:128`–`:131`, `:147`, `:197`–`:198`, `:704`, `components/AuditReport.tsx:85`–`:86`, `:103`–`:111`, `:125`–`:126`, `:231`, `:585`, `:702`–`:704`, `lib/ask/auditsBrief.ts:135`–`:140`, `:150`–`:161`, `:238`, `prompts/audits-answer.ts` `AUDITS_FOUR_WORDS`, `lib/auditNotify.ts:32`–`:35`, and **`app/api/audit-checklist/route.ts:22` `NEEDS_PERSON`, which must be decided into or out of** · **(2)** Needs work only on a gap read from the page (48) · **(3)** a template run stops reading its own template (49): `lib/audit.ts:122`–`:124` gains the id, `:148`–`:150` excludes it · **(4)** the handle leak (W5): 6 of 10 lines wrote a bare `D<n>` at the person, which `prompts/audit-agency.ts:81` already half-forbids | `lib/auditRun.ts`, `lib/audit.ts`, `prompts/audit-agency.ts`, `components/AuditReport.tsx` (**Audits and the Calendar**), `app/audits/page.tsx`, `lib/ask/auditsBrief.ts`, `lib/auditNotify.ts`, `app/api/audit-checklist/route.ts`, one migration | not started — **the measurement is the golden set plus the owner's Clackamas template run re-run and compared line by line** |
+| E0b | The boards for E1 | `docs/audit-report-boards.html` (new), in the Calendar boards' frame | — | not started |
+| E1 | **The audit report's display and print** — the row body, the drawer sub-item, the print (W9), **in the auditor's own order and numbering** (decision 50: one row per checklist line, never regrouped, an unanswered line still a row) | `components/AuditReport.tsx` (1,000+ lines: the pills at `:103`–`:111`, `AMBER_WORD` `:109`, `WORD_ORDER` `:111`, the filter chips `:702`–`:704`, the footer `:673`), `components/Drawer.tsx`, `app/audits/page.tsx`'s own rows (`:107`–`:131`, `:147`) | **`app/audits/page.tsx` and `app/calendar/page.tsx`** both render `AuditReport`; `Drawer` is also rendered by `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/DocumentReport.tsx`, `components/ConversationDrawer.tsx` and `components/CalendarDateDrawer.tsx` | not started |
+
+### Part C — the binder (`PENDING.md` F4, a release gate) — AFTER E0 and E1
+
+**Reordered 3 November 2026 (the owner's addendum): the binder is built once, on the finished report, so E0 and E1 come first.** It packages the report in the auditor's own order with the documents behind each row in that same order (decision 50). **Stored, not streamed**, for the reason Part B's last paragraph gives. One PDF: a cover, each cited document as pages behind a tab sheet, the report at the back. It **replaces** the audit drawer's download — one button, not two (`DECISIONS.md` §143).
 
 | # | Step | What exists today, by file and line | Touches | Status |
 |---|---|---|---|---|
@@ -268,33 +307,32 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. **N
 | C2 | **The link replaces the button** | `components/AuditReport.tsx:673`–`:692` is the footer; `:686` is the words *"Download the documents"*; `:622`–`:659` is `downloadDocuments`, which fetches the zip with `authHeaders()` and saves the blob — written that way because a plain `<a href>` sends no `Authorization` header and returned `{"error":"Unauthorized"}` on production (the comment at `:599`–`:620` records it) | `components/AuditReport.tsx` — rendered by **`app/audits/page.tsx` and `app/calendar/page.tsx`**, so both sections' free checks re-run | not started |
 | C3 | **The homepage's gate comes off** | `components/home/AuditPanel.tsx:1` — `// GATE F4 … "Download the binder" waits on the binder being built. Walked at step 33.` The card's button at `:241` is a `<span>` with `pointer-events-none`; `WORDS.card.binder` at `:77` is *'Download the binder'* | `components/home/AuditPanel.tsx`, `docs/PENDING.md` F4, `docs/PUBLIC-PAGES-PLAN.md` §5 | not started |
 
-### Part D — the loose ends
+### Part E, the rest — the display pass, after the binder
+
+| # | Step | The shared files it touches | The sections that render them, from `grep` | Status |
+|---|---|---|---|---|
+| E2 | **The summary report** — What applies first and **open**, the rest folded with counts, a little colour | `components/ReportView.tsx` (176 lines; the fold is `:14`–`:16`, the heading `:123`). It folds *What applies* on first view today — this inverts that | **five renderers**: `app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `app/documents/page.tsx`, plus `components/ConversationDrawer.tsx` | not started |
+| E3 | **The answer body and the source cards** | `components/AnswerBody.tsx`, `lib/ask/passages.ts` | `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/ConversationDrawer.tsx`, `components/AskScreen.tsx` — **and through AskScreen, the Calendar, Documents and Audits**. Seven surfaces in all | not started |
+| E4 | **The document report drawer and the Documents page** — W1's progress line included | `components/DocumentReport.tsx`, `app/documents/page.tsx` (the banner `:979`–`:1017`, the controls `:1019`, the row words `lib/documentStatus.ts:86`–`:95`) | `DocumentReport` is rendered by **`app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx` and `app/documents/page.tsx`** | not started |
+| E5 | ~~The Enter-after-pick notice (W3)~~ **— done at B0, `43b304e`** — and **"Audit again" on a By template row**, which still waits for the row to say whether the template file still exists | `app/audits/page.tsx`'s By template group | Audits only | not started |
+
+**After the rest of E: the finish line.** The Opus 5.5 against Sonnet 5.5 comparison (`docs/TEST-AT-FINISH-LINE.md`), then the gate walk — which is in §5b with the rest of the pre-release work.
+
+---
+
+## 5b. Not in this plan — pre-release, in a separate chat
+
+**Moved out of §5a on 3 November 2026 (the owner's addendum).** These were Part D. None of them is display work and two of them are not engineering at all, so they are done beside this plan rather than inside it, before release. **The S1 correction stands and is the work:** `PENDING.md` says *"all four senders"*; there are **six**, and only two refuse on production, so `SANDBOX_FROM` is not one line to change.
 
 | # | Step | What exists today, by file and line | Touches | Status |
 |---|---|---|---|---|
-| D0 | The map | This row | — | **mapped 3 Nov** |
+| D0 | The map | This row | — | **mapped 3 Nov** — `77ec7e4` |
 | D1 | **The Resend sending domain** (`PENDING.md` S1). DNS, then one line per sender | **`PENDING.md` S1 says "all four senders". `grep` says SIX**, and only two of them refuse on production: `app/api/jobs/calendar-month/route.ts:203` (**refuses** — `sandboxSenderRefusal` at `:92`) · `app/api/invitations/route.ts:56` and `:149` (**refuses** — `invitationMailBlocked` at `:55`, which `lib/invitationEmail.ts:115` builds on `sandboxSenderRefusal`) · `app/api/feedback/route.ts:11` · `lib/auditNotify.ts:186` · `lib/documentBatch.ts:217` · `lib/handbookCheckNotify.ts:103`. The last four hold a literal `'CompliBoard <onboarding@resend.dev>'` and **send on production today**. The rule itself is `lib/email.ts:183`–`:189`; the one line to change is `SANDBOX_FROM` at `:176`, which only two of the six use | `lib/email.ts`, the six files above, `docs/RELEASE.md`'s variable table, `docs/PENDING.md` S1 (the count), `docs/PUBLIC-PAGES-PLAN.md` steps 31 and 32 | not started — **the owner's DNS, then an hour of code** |
 | D2 | **Stripe live mode** (`PENDING.md` F1) | **The owner's hands:** six dashboard steps (product and price, the webhook endpoint and its six events, the portal's default configuration, the secret key, the coupon and its promotion code) — `docs/RELEASE.md`, *"When Stripe live mode is ready"*. **The code's:** nothing, and that is the point. `lib/stripe.ts:65` builds the client from `required('STRIPE_SECRET_KEY')` **inside a function, never at module scope** (the comment at `:10` says why), and the three call sites already answer honestly with no key: `app/api/billing/checkout/route.ts:134`, `app/api/billing/portal/route.ts:57`, `app/api/billing/reconcile/route.ts:92` — *"Card payment is not set up on this server yet."* The four variables are `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_API_VERSION`. `docs/ACCOUNT-MACHINERY.md` is the behaviour it switches on | Vercel's dashboard; `docs/RELEASE.md`; `docs/PENDING.md` F1; `PUBLIC-PAGES-PLAN.md` step 32 (the webhook address moves with the domain) | not started — **a dashboard afternoon, not engineering** |
 | D3 | **The two `hello@compliboard.com` prints and the `/contact` form they wait on** | Both still there, re-read 3 November: `lib/signupView.ts:97` — *"Email hello@compliboard.com and we will clear it so you can try again"* — and `components/AppLayout.tsx:464`, a `mailto:` behind the signed-in footer's word **Contact**. The address **does not exist** (`PUBLIC-PAGES-PLAN.md` §7, answered 31 Oct). The public footer's printed copy came off at step 25a; `components/home/Footer.tsx:16` records it. **`app/contact/` does not exist** | `lib/signupView.ts`, `components/AppLayout.tsx`, a new `/contact` route, `docs/PUBLIC-PAGES-PLAN.md` step 30a — **which is blocked on the owner's answer to "where does the form deliver"** (that plan's §7) | not started |
 | D4 | **The homepage's Documents sentence, and D1's invented switch keys** | The panel's gate is closed — `components/home/DocumentsPanel.tsx:1` says so — and the sentence left is *"The box on this panel is the marketing page's own and still types nothing; what it promised now exists behind the login."* That is a page decision, not code. **The invented switch keys are not:** `lib/documentScan.ts:1061` writes `switch_key: f.key.slice(0, 120)` into `fact_proposals` **with no check against the switches table**, and `lib/companyContext.ts:368`–`:371` reads those same proposed keys back into the shared context. On production **30 of 30 pending proposals name a key that is not a switch**, 19 distinct invented names (`PENDING.md` D1) | `lib/documentScan.ts`, `lib/companyContext.ts`, `components/CompanyQuestions.tsx`, `components/DashboardQuestions.tsx`, and **three prompts** — which makes the filter a §3.1 quality change and the owner's | not started — **the only open defect that puts fabricated content in front of a customer** |
 | D5 | **The gate walk** (`PUBLIC-PAGES-PLAN.md` step 33), last | F6, F7 and chat-over-documents are closed; F4, F1, S1 and D2 are B, C and D above. Every `GATE` comment in `components/home/` is walked against the shipped product | `components/home/*.tsx`, `docs/PUBLIC-PAGES-PLAN.md`, `docs/PENDING.md` | not started |
 
-### Part E — the display pass, after D and before the gate walk
-
-**Boards first, before any code.** The pixel method on every shared piece, and every section that draws the piece walked. The owner's shape for a finding, from W9: **one scannable row** (word pill · line · requirement · document) opening to three labelled parts — *What we found* · *The line we read* · *What to do* — with caveats, handles and *"that is a date, not a finding"* asides in a fourth fold, **Also noted**; and a **ten-cell coloured strip** at the top in place of the counts sentence.
-
-| # | Step | The shared files it touches | The sections that render them, from `grep` | Status |
-|---|---|---|---|---|
-| E0 | The boards | `docs/audit-report-boards.html` (new), in the Calendar boards' frame | — | **mapped 3 Nov** |
-| E1 | **The audit report** — the row body, the drawer sub-item, the print (W9) | `components/AuditReport.tsx` (1,000+ lines: the pills at `:103`–`:111`, `AMBER_WORD` `:109`, `WORD_ORDER` `:111`, the filter chips `:702`–`:704`, the footer `:673`), `components/Drawer.tsx`, `app/audits/page.tsx`'s own rows (`:107`–`:131`, `:147`) | **`app/audits/page.tsx` and `app/calendar/page.tsx`** both render `AuditReport`; `Drawer` is also rendered by `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/DocumentReport.tsx`, `components/ConversationDrawer.tsx` and `components/CalendarDateDrawer.tsx` | not started |
-| E2 | **The summary report** — What applies first and **open**, the rest folded with counts, a little colour | `components/ReportView.tsx` (176 lines; the fold is `:14`–`:16`, the heading `:123`). It folds *What applies* on first view today — this inverts that | **five renderers**: `app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `app/documents/page.tsx`, plus `components/ConversationDrawer.tsx` | not started |
-| E3 | **The answer body and the source cards** | `components/AnswerBody.tsx`, `lib/ask/passages.ts` | `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/ConversationDrawer.tsx`, `components/AskScreen.tsx` — **and through AskScreen, the Calendar, Documents and Audits**. Seven surfaces in all | not started |
-| E4 | **The document report drawer and the Documents page** — W1's progress line included | `components/DocumentReport.tsx`, `app/documents/page.tsx` (the banner `:979`–`:1017`, the controls `:1019`, the row words `lib/documentStatus.ts:86`–`:95`) | `DocumentReport` is rendered by **`app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx` and `app/documents/page.tsx`** | not started |
-| E5 | **The Enter-after-pick notice (W3) and "Audit again" on a By template row** | `components/AskScreen.tsx:266`–`:283` (the in-flight gap), `app/audits/page.tsx:466`, `:490`, `:528`–`:533`, `:820` | `AskScreen` is rendered by **`app/calendar/page.tsx`, `app/documents/page.tsx`, `app/audits/page.tsx` and `components/CalendarAsk.tsx`** — four sections for a one-line change | not started |
-
-**After E: the finish line.** The Opus 5.5 against Sonnet 5.5 comparison (`docs/TEST-AT-FINISH-LINE.md`), then the gate walk (D5).
-
----
 
 ## 6. What Part A touches outside its own files (the map, step 0)
 
@@ -425,16 +463,75 @@ survives and `AF1` is still replaced.
 
 ### ⚡ What the OWNER's walk found (3 November 2026)
 
+> **⚡ B0 CLOSED THE TWO THAT COST MONEY — 3 November 2026, commit `43b304e`.** Both are below with their
+> original evidence intact; this is what was done and how it was proved.
+>
+> **W2 — `lib/documentScan.ts`.** `doc_date_kind` is now held against the five words the live CHECK allows,
+> **in `status`'s shape and not `kind`'s** (`normaliseDocDateKind`, called at the `doc_date_kind:` line in
+> `normaliseScanRaw`): `kind` falls back to `null` because a document whose kind we did not understand has
+> no kind, but a date still exists when we cannot name what sort of date it is, and the schema already
+> carries the word — **five current rows on staging hold `unknown` legitimately, because the prompt offers
+> it.** An unrecognised word becomes `unknown` and is said out loud with `console.warn`, which is this
+> file's own second channel for a value the product refused (the same choice, with the same reasoning, as
+> the calendar counts, whose comment says plainly that `document_scans` has nowhere to put them and that
+> `confidence_notes` is the model's own prose). **The raw word is kept in `document_scans.raw_text`** —
+> where `kind`'s and `status`'s rejected words have always gone, because neither of them records its raw
+> value anywhere else — so `select raw_text from document_scans` finds every drift and no column was added.
+> **The constraint is unchanged.** *Proved two ways, because one would not do it:* five tests drive the real
+> off-list word through `normaliseScan` and hold that the row lands with `unknown`, that the date itself
+> survives, that the warn names the word and says where it is kept, and that the parsed answer `raw_text` is
+> written from is left untouched; and **the three real failures were re-read on Haiku through the guard**
+> (`npm run haiku -- npm run scan -- --document <id>`) and **all three landed** — `10-osha-300a-2025.pdf`
+> scan `8e5c0a6d`, `08-deq-annual-report-2025.pdf` scan `2c774c55`, `Respirator_Fit_Test_Records_June_2026.pdf`
+> scan `fc1d0f13`, every one `json_parsed = true`, `is_current = true`, `model = claude-haiku-4-5` and
+> **`doc_date_kind = 'issued'`**, read back from staging. *Said plainly: all three re-reads happened to write
+> a legal word, so they prove the path still works and they do **not** re-create the original failure — the
+> original was Opus writing an off-list word, and the guarantee against it is the test, not the re-read.*
+> **$0.1843 for the three** ($0.0455 + $0.0747 + $0.0641, all Haiku).
+>
+> **W3 — `components/AskScreen.tsx`.** The screen is busy from the moment it calls `beforeAsk` until the
+> verdict returns: released on `'handled'` before the box and the chip are cleared, released and re-thrown on
+> a throw so a section whose own work failed cannot freeze the screen with the words in it, and **left set on
+> `'ask'`**, so `setBusy(true)` below is a no-op and the button never flickers back between the look and the
+> request. The words stay in the box until the verdict, as before. Three tests, and one existing test edited
+> on purpose (the handled arm now releases `busy` first). **Measured on the harness, before and after, the
+> same command on two isolated Haiku servers — `77ec7e4` on 3997 and `43b304e` on 3998, both 16 of 16 tiers
+> on `claude-haiku-4-5`:**
+>
+> | | at 700 ms, `shots/b0-*-700ms.png` | `POST /api/audit-runs` on a double press |
+> |---|---|---|
+> | **before** | the words in the box, the button a live green **Ask** | **2** |
+> | **after** | the words still in the box, the button a disabled pale **Asking…** | **1** |
+>
+> The second press after the fix is the proof in one line of harness output: `--click "=Ask"` **found no
+> button at all**, because the button no longer says Ask — and `--click "=Asking…"` then reported
+> `clicked: Asking…` with the POST count still at one. `BLOCKED (0)` on both runs.
+>
+> **Two things B0 found and did NOT change, recorded rather than done:**
+> · **`failedScan` writes `raw_text: ''`, and the model's raw text WAS available two statements earlier.**
+> In the sweep, `const scan = await runDocumentScan(...)` is declared **inside** the `try`, so in the `catch`
+> that calls `failedScan` it is out of scope. Keeping it is not one line — it needs the variable hoisted, a
+> fourth parameter on `failedScan`, and four other call sites considered — so §5.1's *"fold in the raw
+> response"* is still unmet on this path, and the technical detail lives only in `job_runs.errors`. **The same
+> scope is why that row says `model: '(not called)'` about a call that had been made and billed.**
+> · **The file now has two matching shapes.** `kind`, `status` and `doc_date_kind` match exactly;
+> `basisOf` lowercases first. So `"Issued"` becomes `unknown` rather than `issued` — better than today, where
+> it loses the whole reading, but not right. **Whether all three should match case-insensitively is one small
+> decision for the owner**, and inventing it for one field under a fix would be the wrong way to take it.
+> · *(A third, cosmetic, seen in the re-reads: Haiku wrote `could_not_read_reason = '.none'` on a scan whose
+> status is `recorded`. `str()` does not treat `".none"` as nothing. It is never shown — the page only prints
+> that column when `display_status` is `could_not_read` — so it is noted and not chased.)*
+
 Company *"Step 20 Card Walk"*, `61b26cc0-0d28-411b-b2e4-943189363b08`, on **staging**. Every row below was read through the Supabase CLI's own read-only DB connection (`npx supabase db query --project-ref amzsavsrabrlcprltpom --linked --read-only`), **not** the service role. Production was not touched. W4, W6 and W7 are in §7 because they are decisions; these are the findings.
 
-- **⚡ W2. A READING FAILED BECAUSE OF AN UNCHECKED FIELD, NOT BECAUSE OF THE MODEL — AND THE ROW SAYS THE MODEL WAS NEVER CALLED.** `Respirator_Fit_Test_Records_June_2026.pdf` (2.7 KB) needed *"Read it again"*. The scan row (`c11c6f56-b37c-45a3-9db0-842c73ae337e`) carries `status = 'could_not_read'`, `model = '(not called)'`, `raw_text` of **length 0**, and `could_not_read_reason` = *"Something went wrong at our end while reading this one."* **There is no `error_message` column on `document_scans`** — the technical detail goes to `job_runs`, and `job_runs` has it:
+- **⚡ ~~W2~~ — FIXED 3 November 2026, `43b304e` (B0, decision 46). A READING FAILED BECAUSE OF AN UNCHECKED FIELD, NOT BECAUSE OF THE MODEL — AND THE ROW SAID THE MODEL WAS NEVER CALLED.** `Respirator_Fit_Test_Records_June_2026.pdf` (2.7 KB) needed *"Read it again"*. The scan row (`c11c6f56-b37c-45a3-9db0-842c73ae337e`) carries `status = 'could_not_read'`, `model = '(not called)'`, `raw_text` of **length 0**, and `could_not_read_reason` = *"Something went wrong at our end while reading this one."* **There is no `error_message` column on `document_scans`** — the technical detail goes to `job_runs`, and `job_runs` has it:
   > `{"document":"ad55343c-4152-4d1d-b1b2-956a813a6b93","error":"document_scans: new row for relation \"document_scans\" violates check constraint \"document_scans_doc_date_kind_check\""}`
   (run `f7b3ac1f-d465-46af-8b2f-9e3d6934f842`, `scan_documents`, 19:25:22 → 19:34:05 UTC.)
   **The cause is the reader, at one line.** `document_scans_doc_date_kind_check` allows `issued | revised | last_entry | effective | unknown`. `lib/documentScan.ts:319` writes `doc_date_kind: str(id.doc_date_kind)` — **the model's string, passed through with no list check** — while the line eight above it holds `kind` against `KINDS` (`:311`) and the line six below holds `status` against `STATUSES` (`:325`), with a comment there saying *"An unrecognised status is NOT quietly turned into something valid"*. `doc_date_kind` is the one of the three that was left open, and the database catches what the code did not.
   **And the model WAS called and paid for.** `ai_calls` `5cb96667-8f63-4cf4-a269-2b5bceee59e2`, 19:31:05 UTC, `claude-opus-5-5`, 9,527 in / 3,803 out, 42.4 s, **$0.114168** — two seconds before the scan row landed. The row saying `(not called)` is `lib/documentScan.ts:610`'s placeholder for a scan that never reached the model, and it is wrong whenever this path fires. **The re-read succeeded with `doc_date_kind = 'issued'`**, which is why pressing the button worked: the same prompt, a different word.
   **It is not one document.** The same constraint refused **three scans in one evening across two companies** — `10-osha-300a-2025.pdf` and `08-deq-annual-report-2025.pdf` on *Test Gamma Solvents* (run `c3e05ae5-bdd9-4282-9454-7d6ccf96212d`) as well as this one.
 
-- **⚡ W3. ENTER WORKED. NOTHING ON THE SCREEN DID — AND IT COST A SECOND AUDIT, $0.49.** Two template runs exist, six seconds apart: `8707eea9-6c58-4c98-ab9d-4ec5825642cd` at **19:38:23.010** and `45724268-c3e2-45c4-a2d0-75be0dcded04` at **19:38:29.020** — same `template_document_id`, same scope, same `extraction_ai_call_id`, identical summaries. **No `audits_chat` topic and no turn was written by either**: the company's only `audits_chat` topic is from 18:59, so the handled-command path did exactly what decision 39 asked. **Enter is not the defect, and cannot be:** `components/AskScreen.tsx:351`'s `onKeyDown` and the first-visit button at `:435` both call `ask(box)`, the same function with the same argument.
+- **⚡ ~~W3~~ — FIXED 3 November 2026, `43b304e` (B0, decision 46). ENTER WORKED. NOTHING ON THE SCREEN DID — AND IT COST A SECOND AUDIT, $0.49.** Two template runs exist, six seconds apart: `8707eea9-6c58-4c98-ab9d-4ec5825642cd` at **19:38:23.010** and `45724268-c3e2-45c4-a2d0-75be0dcded04` at **19:38:29.020** — same `template_document_id`, same scope, same `extraction_ai_call_id`, identical summaries. **No `audits_chat` topic and no turn was written by either**: the company's only `audits_chat` topic is from 18:59, so the handled-command path did exactly what decision 39 asked. **Enter is not the defect, and cannot be:** `components/AskScreen.tsx:351`'s `onKeyDown` and the first-visit button at `:435` both call `ask(box)`, the same function with the same argument.
   **The gap is six seconds of nothing, and the clock proves it.** The extraction call `422052fd-bef0-46ae-8ea6-e9e99c2aa21b` ran **5,995 ms** and landed at 19:38:29.119 — so the POST the first press made was still in flight when the second press happened. During that window: `components/AskScreen.tsx:274` is awaiting `beforeAsk`, **`setBusy(true)` at `:283` has not run** (it is only reached when the verdict is `'ask'`), so the composer keeps the words, the button keeps saying **Ask** instead of **Asking…** (`:436`), and the guard at `:266` — `if (!q || busy)` — **cannot refuse the second press, because `busy` is false**. `app/audits/page.tsx:466` does set a `busy`, but it is the page's own and is read only at `:613`, `:981`, `:1009` and `:1381` — **all four inside the Audits tab**. The notice at `:820` is set at `:529`, after the POST returns.
   **Reproduced on the harness** (`npm run haiku -- npm run measure -- /audits --base http://localhost:3998 --as testcascade@example.com --wait 1500 --type "Audit us for Oregon DEQ" --click "=Ask" …`). The harness has no key-press action and cannot drive the file picker, so the agency command stands in for the template one — the same `beforeAsk` path, and the one that proves Enter is innocent is the two lines above. **`shots/w3-2-inflight-700ms.png`: 700 ms after the press, the sentence is still in the box, the Ask button is still green and enabled, no notice, tab still *Audits (6)*.** `shots/w3-3-after.png` on a warm route: the notice *"Audit us for Oregon DEQ" / Starting the Oregon DEQ audit. It is on the Audits tab. / Open the Audits tab*, and the tab at *Audits (7)*. **`BLOCKED (0)` and exactly one `POST /api/audit-runs` in both runs.**
   **The price of the missing in-flight state:** the duplicate run's three sections cost **$0.4924** on `claude-opus-5-5` (the first's cost $0.3657; the shared extraction $0.0236). **This is Part E job 5 and it is one line of state, not a redesign.**
