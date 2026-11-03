@@ -1,9 +1,9 @@
 # Closing the gaps — the plan
 
-**Version:** 8 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 9 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
-**The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame. Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
+**The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
 **Updated:** 2 November 2026 — **Part A step 1 done** (§5). Four commits: `d14ac16` the plan and the boards, `877d67f` the four doc corrections, `29324c5` the engine and migration 091, `bfdbd67` the types and the schema doc. §8 gains three things the step found: the Haiku guard could pass while seeing no tiers at all, two HR tests pinned the old night-summary list, and Supabase CLI 3.0.0 broke the project's own migrate and schema-doc scripts.
 **Updated:** 2 November 2026 — **Part A step 2 done** (§5). Two commits — `b93757c` the lift and `4431ee4` the proof — plus the staging trial parking, which the OWNER ran in Terminal 3 and which has no commit because it is data and not code. §7 gains the action row for the owner to pick. §8 gains what the step found: the Supabase CLI cannot write to staging through `--linked` at all, and the Calendar page no longer draws a paused note of its own.
 **Updated:** 2 November 2026 — **Part A step 3 done** (§5). Three commits: `4c6652c` the engine's carry, `0c76344` the upload, `dafc786` the two defects the Haiku proof found. §3 records the two step-2 decisions now in force (the action row keeps Calendar's layout; the Delete sheet's words stand). §7 gains the paused sentence and S7's measured number. §8 gains three findings, one of which is a quality question for the owner.
@@ -12,6 +12,7 @@
 **Updated:** 2 November 2026 — **Part A step 4a-compare done** (§5). One commit: `54f509c`. The owner's three prompt decisions and the index-passage decision are **YES** and are done in 4b, not in that run; the action row is struck from §7 as decided at step 2. `docs/TEST-AT-FINISH-LINE.md` gains **"Which model, per tier"** as a shared item, with this as its first data point.
 **Updated:** 2 November 2026 — **Part A step 4b done** (§5), so **Part A's Documents work is finished** and only steps 5 and 6 remain. Four commits: `7d6662e` the thirteen sentences and the quotable index line, `0319c1a` the two routes and the shared summarise body, `31162e0` the page, and the plan's own. §3 gains decisions 24–27. §7 loses four items that are now answered. §8 gains two things the walk found. `docs/PENDING.md` F12 and D15 closed; `STATUS.md`'s Documents row says the page has the chat.
 **Updated:** 2 November 2026 — **Part A step 5 done** (§5). Two commits: `7849018` the checklist from any chat, and the plan's own. §3 gains decisions 28–30 (the ?checklist= address, the row's wrapper, the Queued sentence). **The owner's own walk of 4b passed on Opus** — recorded on 4b's row. §8 gains the one thing this walk found, which was in the harness and not the product. **Only step 6 is left in Part A**, and it begins with the owner's board of the Audits box.
+**Updated:** 3 November 2026 — **Part A step 6 MAPPED** (§5), read-only, and **F6 is settled by running it**: one template audit against `tests/golden/audits/fixtures/12-auditor-checklist-deq-air.docx` on the isolated Haiku server finished in 43 seconds — 3 sections, 16 lines, 16 findings, 0 could-not-complete, $0.0829 — and the rows were read back from staging with the CLI. `docs/PENDING.md` F6's "returns 400, not ready" is **wrong and has been wrong for a while**. §3 gains the owner's six decisions of 3 November (31–36). §5's step 6 row is rewritten to the three-tab design and split into 6a and 6b. §7 gains the HR line and four open questions. §8 gains what the map found — including **the one thing that cannot be built without editing a shared component**. One commit: the boards and this file.
 **Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
 
 ---
@@ -106,15 +107,57 @@ Each names its effect on other sections.
     in the message and you can read it. Its line in the list may still say Queued; that says nothing about whether
     you can read it."* Fourteen sentences. *Effect: Documents only.*
 
+31. **Audits gets THREE tabs, not four** (the owner, 3 November 2026): Ask a question · Conversations · Audits (N).
+    Today's "Where you stand" and "Past audits" fold into ONE tab with two groups — **By agency** (today's rows
+    exactly as they are: document count, last audit, count to look at, the Audit / Audit again button, the row
+    opening to the latest findings, **plus that agency's earlier runs listed under the open row**, so nothing Past
+    audits shows today is lost; the unplaced-documents list stays at the bottom of this group) and **By template**
+    (one row per checklist audited against, the same shape, Audit again on the row). The hand-rolled two-button row
+    (`app/audits/page.tsx:573`–`:587`) becomes `components/Tabs`. *Effect: Audits only. `components/Tabs.tsx` is
+    imported, not edited; the Workspace, HR, the Calendar and Documents already render it and its props do not
+    change.*
+32. **The box leaves the Audits tab; typing happens on the Ask tab** (the owner, 3 November 2026). The Ask box takes
+    audit commands AND questions: when the person presses Ask, **CODE looks first** — is this an audit command,
+    which agency does it name, is a file attached? A command starts the audit exactly as today's box does (the same
+    matching as `submitAsk`, `app/audits/page.tsx:437`–`:465`, no model call). Only a question that is not a command
+    reaches the model. **The model never decides to start an audit.** *Effect: Audits' page — AND `components/AskScreen.tsx`,
+    which today has no way to look at a sentence before it is sent. See §8; it is a stop.*
+33. **The paperclip is the shared attach control with Audits' words** (the owner, 3 November 2026): *"Attach a
+    template or checklist from your auditor"*. An attached file is **the template** when the words are an audit
+    command, and **context for the answer** when they are a question. *Effect: none on the shared control —
+    `attach.label` is already a prop (`components/AskScreen.tsx:175`).*
+34. **The three example lines are the owner's** (3 November 2026), for `config/examples.ts`:
+    *"Audit us against the attached template"* · *"Audit us against an agency, like Oregon DEQ"* ·
+    *"Ask anything about whether you are audit ready"*. *Effect: `config/examples.ts` only.*
+35. **The "Or ask a question in the Compliance Workspace" link goes** (the owner, 3 November 2026).
+    `app/audits/page.tsx:621` is a bare `href="/compliance"` that carries nothing the person typed. The Audits chat
+    answers the question where it was asked, so the link has nothing left to do. **`docs/PENDING.md` F5 and D5 close
+    with this step.** *Effect: Audits only.*
+36. **HR stays on its own engine for rev 1** (the owner, 3 November 2026). Moving `lib/hrAnswer.ts` onto `lib/ask/`
+    is rev 2 work. *Effect: none; `PENDING.md` F7 stays open after this step and §7 carries the line.*
+
 17. **Reading every file format (`.doc`, `.ppt`, HEIC, TIFF, the honest refusals) is its own part**, after the chats, as `docs/VISION-DOCUMENTS.md` "Where the converting runs" decided. The binder follows it. *Effect: later parts of this file.*
 
 ---
 
-## 4. The boards — `docs/documents-chat-boards.html`
+## 4. The boards
+
+### `docs/documents-chat-boards.html` — Documents
 
 1 · Ask a question, first visit · 1b · Ask a question, nothing on file yet · 2 · The answer, from the reports · 3 · A file attached, and the question about it · 4 · Conversations · 5 · Documents — today's page, unchanged. The conversation drawer and the delete sheet are HR's boards, not redrawn.
 
 **Three example questions** (`config/examples.ts`, the owner's file; a starting point): "Which of our permits expire in the next 12 months?" · "What's missing from our emergency action plan, and how do we fix it?" · "Show me all our training records."
+
+### `docs/audits-chat-boards.html` — Audits (draft 3, 3 November 2026)
+
+Five boards, in the same frame. 1 · Ask a question, first visit · 2 · "What is our status on everything OSHA?" ·
+3 · "I see gaps in three reports. How do I fix them?" · 4 · Audits — the home of every audit · 5 · Conversations.
+The sample company is Willamette Vinegar Works and every answer on them is sample text in the product's voice.
+The green boxes are decisions (now §3's 31–36); the notes band at the end says what the Audits chat is given, in
+order, and is the source for 6a's brief.
+
+**Three example lines** (`config/examples.ts`, the owner's, 3 November): "Audit us against the attached template" ·
+"Audit us against an agency, like Oregon DEQ" · "Ask anything about whether you are audit ready".
 
 ---
 
@@ -132,7 +175,10 @@ Each names its effect on other sections.
 | 4a-compare | The same question on Opus 5.5 | Question 2 only, variant A only, three runs on `claude-opus-5-5`, everything else identical to `q2-A-1..3` (same fixture, same key, same probe, `DEV_MAX_SEARCHES=2`). **No code change, no prompt change.** | The owner reads the two best answers side by side and judges. | **done 2 Nov** — `54f509c`. **The key does not separate them: 6/6 in all three runs on both models, 0 invented, 0 must-nots.** Opus writes the one paragraph letter the reading verified and marks the rest as unchecked (2 of 3 runs); Sonnet carries the blanket hedge in 3 of 3 but never distinguishes the two. **Sonnet produced the only clickable source in six runs; Opus produced none** — both quote phrases under the six-word floor, so on Opus nothing in the answer can be checked or opened. Neither searched. **$0.0950 against $0.0445 an answer — 2.13× the cost and 1.74× the wall time** ($0.285 of a $1.00 budget). `docs/TEST-AT-FINISH-LINE.md` §"Which model, per tier" holds the table. |
 | 4b | The page, the routes, the links, the walk | The tab row and `?tab=`; `?document=` read (closing `PENDING.md` D15); `app/api/documents/answer/route.ts` and the summarise route on a shared body (decision 15); the four bare links; `PAID_COUNT` 19 → 21; `check:live` probes; `components/home/DocumentsPanel.tsx`'s gate comment retired; `PENDING.md` F12 closed. | **The owner's yes on the prompt and the examples first**, then the walk: ask, open a cited report from its card, upload in the chat. | **done 2 Nov** — `7d6662e`, `0319c1a`, `31162e0`. Three tabs, with everything that was on the page inside the Documents tab and **proved unchanged to the pixel**: the table photographed before and after at 1280px is 0 differing pixels once the scrollbar is excluded, the whole body exactly 55px lower. **The letterbox walked live:** a real source card in a real answer, clicked, landed on the Documents tab with that permit's report open. Board 1b, board 3's paperclip and `from_topic_id`, board 4's drawer, the made-up id's one plain line, and the Audits and Dashboard links all walked on Haiku; `npm run check` 2,212 tests; every section's free checks green; all five shared-piece pages measured unmoved. **$0.0406 of Haiku.** **Two things the walk found** (§8), neither a defect in this step's code. **AND THE OWNER WALKED IT HIMSELF ON OPUS on 2 November and it passed** — six `documents` calls on `claude-opus-5-5` in the ledger between 05:17 and 05:37 UTC, plus one `document_scan`: the three example questions, a question about a document not on file, a question with a file attached, a click on a source card, and the Documents tab as before. |
 | 5 | "Turn this into a checklist" from any section | The route already works from any section (`app/api/checklists/from-topic/route.ts` never reads the section). The shared action row shows the button; `components/ConversationList.tsx`'s "Checklist n of N done" becomes a link to the Workspace's Checklists tab (decision 8). | The owner clicks it from a Documents conversation and lands on the checklist. HR's and Calendar's free checks (shared file). | **done 2 Nov** — `7849018`. The machinery is the Workspace's, read and copied: the claim before any model call, 202-or-409-building, and the SAME 5-second poll the summary already uses. It lives in `useAskConversations`, not in the screen, so four sections share one rule. **The address did not exist and the owner's yes made it** (decision 28). **Walked on Haiku:** the button, "Checklist being built…", the ready line, and the row's link clicked in the Documents Conversations tab landing on `/compliance` with the Checklists tab active and that checklist open — 11 items, 9 must-dos. The Workspace's own row shows the link too, on real Test Gamma data. **$0.0446**, 4 calls. **One thing the walk found** (§8), in the harness and not the product. |
-| 6 | Audits gets the chat | First a board: the Audits box must keep starting audits in code (`submitAsk`, `app/audits/page.tsx:437–:465`) while the page gains a chat — one box with two behaviours or two boxes is the owner's drawing. Then F6 settled by **running** a template audit once on Haiku through the guard (`PUBLIC-PAGES-PLAN.md` step 33's question). Then: the hand-rolled two-tab row (`:574–:587`) becomes `components/Tabs` with Ask a question · Conversations · Where you stand · Past audits; `lib/ask/auditsBrief.ts` (the runs, their findings, the readings behind them, through `lib/ask/readings.ts`); `prompts/audits-answer.ts`; two routes; `AUDITS_EXAMPLE_QUESTIONS`; `PAID_COUNT` 21 → 23; the GATE F7 mark added to `components/home/AuditPanel.tsx:1`; PENDING F5 and D5 closed. | The board; the F6 run's result; the prompt; the examples; the walk. | not started |
+| 6 | Audits gets the chat | **Mapped read-only on 3 November and split into 6a and 6b below.** The owner's decisions 31–36 replace this row's old four-tab design. | | **mapped 3 Nov** |
+| 6-F6 | F6 settled by running it | One template audit, the way the page runs one — storage, `POST /api/documents`, `POST /api/audit-runs { kind: 'template' }` — as `testcascade@example.com` against the isolated Haiku server on 3998, with `tests/golden/audits/fixtures/12-auditor-checklist-deq-air.docx`. No code change. | The rows, read back from staging with the CLI, read-only. | **done 3 Nov.** Run `de251fbf-f838-45d8-a38a-11a8372e2ef6`: **status done, 3 of 3 sections, 16 lines, 16 findings, 0 could-not-complete, 43 seconds**, every section `json_parsed = true` on `claude-haiku-4-5` with 13 documents read and 0 held unread. Summary: 8 on file, 5 nothing on file, 1 out of date, 2 not a document question, 8 needing a person. **Every finding carries its checklist line** (A1–A5, B1–B6, C1–C5). **Four ledger rows, $0.0829** — one `audit` call for the extraction ($0.0054) and one per section. The drawer opens at `/audits?run=<id>` and is titled *"Against 12-auditor-checklist-deq-air.docx"*; Past audits shows *"8 to look at · 3 of 3 sections"*. **So `PENDING.md` F6's "returns 400 with a sentence saying it is not ready" is wrong**, and the attach control is not inert: one click fires `Page.fileChooserOpened`. |
+| 6a | The brief, the prompt and the examples, measured | `lib/ask/auditsBrief.ts` (the runs, the latest run's findings per agency, the index of every document through the same `document_index_v` read the Documents chat uses, and the full reports of the documents the question or a finding names — the boards' notes band, in that order, with a budget and what did not fit said out loud); `prompts/audits-answer.ts`; `AUDITS_EXAMPLE_QUESTIONS` (decision 34). A new passage letter for an audit run, whose card opens `/audits?run=<id>`. **No route, no page.** | 4a-test's method: keys written against Cascade's own rows BEFORE any run, then each question three times WITH the audit context and three times WITHOUT, on `claude-sonnet-5-5`, with a budget the owner sets. Then the owner reads the prompt (§3.1) and the three example lines. | not started |
+| 6b | The page, the recogniser, the merged tab, the routes, the walk | Three tabs through `components/Tabs` (decision 31); the merged Audits tab with its two groups; the box moves to the Ask tab and the command recogniser runs in code before any model call (decision 32); `app/api/audits/answer/route.ts` and `app/api/audits/topics/[id]/summarise/route.ts` on the shared body (`lib/ask/summariseRoute.ts`); `?tab=` and the derived-tab rule that keeps every `?run=` link landing where it did; `app/audits/page.tsx:621`'s link removed (decision 35); `PAID_COUNT` 21 → 23; `check:live` probes; the `GATE F7` mark on `components/home/AuditPanel.tsx:1`, which carries only `GATE F4` today; `PENDING.md` F5 and D5 closed. | **The owner's yes on the prompt and the examples first** (6a), **and his answer to the AskScreen question in §7** — the recogniser cannot be built without it. Then the walk: an agency command, a question, a template command with a file, a source card clicked, and the Audits tab photographed against today's two tabs at the same width. | not started |
 
 **Part B — reading every file format**, **Part C — the binder**, **Part D — Resend, Stripe, the gate walk**: written here when Part A is done.
 
@@ -179,11 +225,87 @@ Each names its effect on other sections.
 - **The paused sentence for a chat upload — the owner's yes.** Shipped as: *"Your file is saved in Documents. It will be read, and
   you can ask about it, once you add a card."* It is shown ABOVE the 402, because the file really is saved and a bare refusal would
   read as though it were lost. In `components/AskScreen.tsx`'s `PAUSED_FILE_SAVED`, one place.
-- The Audits box board (step 6).
+- ~~The Audits box board (step 6).~~ — **drawn: `docs/audits-chat-boards.html`, and the owner's six decisions are
+  §3's 31–36.**
+- **HR stays on its own engine for rev 1** (decision 36). `PENDING.md` F7 — HR, Audits and the Workspace onto
+  `lib/ask/` — is **half closed** by this step: Audits moves, HR does not, and the Workspace was never in Part A
+  (decision 2). F7 stays open for HR and the Workspace, and its mark goes on `components/home/AuditPanel.tsx:1` at 6b.
+
+**The four questions step 6 cannot start without, each with the recommendation and why.**
+
+1. **⚡ `components/AskScreen.tsx` MUST BE EDITED, or decision 32 cannot be built — and that file has been
+   "imported, not edited" since step 2.** The screen calls `ask(question)` from four places
+   (`:322` Enter, `:333` Send, `:406` the first-visit button, `:461`/`:476` Try again) and there is no hook between
+   the press and the fetch. The recogniser also needs the picked file, which is the screen's own state (`:202`).
+   **Recommended: one optional prop, `beforeAsk?: (question, file) => Promise<'handled' | 'ask'>`**, called at the
+   top of `ask()`; a section that passes none behaves exactly as today, and a test holds that three of the four
+   sections pass none. It is additive and about twelve lines. The alternative — Audits keeping a second box of its
+   own above the chat — is two boxes on one screen, which the owner's decision 32 explicitly rejected.
+2. **What the person sees in the conversation when a command starts an audit.** A command writes no answer, so the
+   thread would otherwise show a question with nothing under it. **Recommended words, for the owner to change:** the
+   question stays in its bubble, and under it one line — *"Starting the Oregon DEQ audit. It is on the Audits tab,
+   and we will email you when it is done."* — with "Audits tab" as the link. For a template: *"Auditing against
+   <file name> — 16 lines in 3 sections. It is on the Audits tab."* For no match: today's behaviour, the agency
+   names as one-click choices (`app/audits/page.tsx:467`–`:468`). **And a command must not create a conversation**:
+   `topics` would fill with rows holding one question and no answer.
+3. **A template audit started from the chat pays for a reading the Audits box does not.** `lib/chatUpload.ts`
+   fires `POST /api/document-scan` and `attachChecklist` never did (`app/audits/page.tsx:381`–`:427`), so the same
+   file costs one extra `document_scan` call — **$0.0161 on Haiku, and $0.1128 on Opus** (`CLAUDE.md` §3.4a's
+   measured figure). **Recommended: pay it.** A checklist in the Documents list with no reading shows as "Not read
+   yet" for ever, which is what the F6 run has just left on Cascade's list.
+4. **Whether the Audits chat may offer anything.** `offers` is `[]` for Documents and the measured runs showed the
+   model offering in prose anyway (§8). The Audits boards say "Offers: none for rev 1". **Recommended: `[]`, and
+   `prompts/audits-answer.ts` carries `DOCUMENTS_NO_OFFERS`'s sentence from the start** rather than learning it
+   again from 18 of 36 runs.
 
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### What step 6's map found (3 November)
+
+- **⚡ `PENDING.md` F6 IS WRONG, AND RUNNING IT IS THE ONLY THING THAT COULD HAVE SAID SO.** F6 has said since
+  September that the template audit *"returns 400 with a sentence saying it is not ready"* and that *"the attach
+  control is inert and says so"*. Both are false. One run through the page's own three calls finished in 43 seconds
+  with 16 findings, and one click on the control fires `Page.fileChooserOpened`. Three readings disagreed and none
+  of them could settle it, which is exactly what the row itself said: *"Settled by running it… not by grep."*
+  The row is corrected, and `STATUS.md`'s Audits row with it, at 6b.
+- **⚡ THE COMMAND RECOGNISER CANNOT BE BUILT WITHOUT EDITING `components/AskScreen.tsx` — a stop, not a fix.**
+  Decision 32 asks code to look at the sentence before it is sent. `ask()` is called from four places inside the
+  screen and nothing can get between the press and the fetch; the file picker's result is the screen's own state.
+  §7 question 1 carries the recommendation. This is the first time a section's need has reached a shared component
+  since step 2's addendum, and it is reported rather than done.
+- **A template run's row is named by its FILE NAME, not its title.** `runName` falls back to the document's title
+  and there is none, because `attachChecklist` asks for no reading. The F6 run shows as *"Against
+  12-auditor-checklist-deq-air.docx"* in Past audits and in the drawer's header. It is honest, and it is what the
+  By template group (decision 31) will show unless §7 question 3 is answered yes.
+- **`audit_findings.quote_verified` is NULL on all sixteen findings of the F6 run**, including the eight that carry
+  a quote and a document. The column exists and nothing in the template path sets it. Not a defect this step
+  creates and not one it fixes; recorded because an audit source card in the chat (6a) will want to know whether a
+  quote was checked, and today the answer is "nobody asked".
+- **Nothing outside the Audits page uses `?tab=`.** Read, not recalled: `grep -rn "tab=past|'past'" app lib
+  components scripts tests` returns only `app/audits/page.tsx` and `tests/unit/auditDrawer.test.ts`. Every external
+  link into the page is either bare `/audits` (`app/dashboard/page.tsx:346`, `lib/dashboardView.ts:192`,
+  `components/AppLayout.tsx:61`) or `/audits?run=<id>` (`app/dashboard/page.tsx:373`, `lib/auditNotify.ts:162` — the
+  email — `components/AuditReport.tsx:578`, `:842`, `:1196`, `scripts/bakeoff-audit-capture.mjs:158`). So the
+  derived-tab rule has exactly two cases to get right: a bare `/audits` lands on Ask, and anything carrying `?run=`
+  — or an old `?tab=past` or `?tab=stand` bookmark — lands on Audits.
+- **The 20 October drawer hotfix must survive the merge, and one test pins its spelling.**
+  `tests/unit/auditDrawer.test.ts:38` asserts `useState<'stand' | 'past'>(tabParam)` word for word, and `:56`
+  asserts `if (k === 'tab') setTab(`. Both are re-pointed at 6b, deliberately. What must NOT move is why they
+  exist: the state moves before the router, and an address with no parameters left is written with
+  `history.replaceState`, because `router.replace` to the bare path of this prerendered route does not navigate on
+  a production build.
+- **Two comments carry line numbers that have moved.** `components/Tabs.tsx:5` says the tab row's classes are
+  `app/audits/page.tsx:502–515`; they are at `:573`–`:587`. `app/dashboard/page.tsx:370` says `/audits` reads
+  `?run=` at `:208` and draws the report at `:791`; they are at `:246` and `:862`. Both are corrected at 6b, in the
+  commits that touch those lines.
+- **The F6 run was kept, on purpose, and it moves one number.** Cascade now holds **13** documents, not 12 — the
+  checklist is the thirteenth and shows as "Not read yet" — and has **one** audit run where it had none. Both are
+  wanted: 6a's measurement needs an audit to pack, and a company with no audits cannot measure a chat about audits.
+  The Documents chat's index baseline moves 12 → 13 with it, which the 4a-test figures do not. Say so before citing
+  them again.
+
 
 - **A reading card in the Calendar chat lands nowhere.** When a Calendar answer cites a document's stored reading (a card labelled "a reading of your document"), its link is `/documents?document=<id>` and the Documents page does not read that word (`app/documents/page.tsx` reads only `add` and `return`, `:185`, `:198`). A date card ("your calendar") is fine: it opens the date drawer, whose second tab shows the report. Company information's fact links (`:989`) have the same dead end. **Fixed in step 4** — the fix is on the Documents page; Calendar needs no change. To be added to `docs/PENDING.md` as a D row at step 1.
 - **The night summary skips Calendar** (`app/api/jobs/summarise/route.ts:94`). Fixed in step 1.
