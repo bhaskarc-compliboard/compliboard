@@ -134,10 +134,17 @@ describe('the attach slot', () => {
     assert.match(control, /<a href=\{href\}/)
   })
 
-  test('and the Calendar still points it at Documents, with `return=` and no `add=`', () => {
-    assert.match(PAGE, /attach=\{\{ label: 'Add a document', href: '\/documents\?return=%2Fcalendar%3Ftab%3Dask' \}\}/)
-    assert.ok(!/documents\?add=/.test(PAGE.slice(PAGE.indexOf('<AskScreen'), PAGE.indexOf('afterAnswer'))),
-      'the chat must not send an add= hint it cannot fill in')
+  /**
+   * *** CHANGED BY PART A STEP 3: THE CALENDAR UPLOADS INSTEAD OF LINKING. *** This pinned the
+   * inline `href` the page passed at step 2. The href is still there as the fallback a section
+   * without an uploader would use, but the Calendar now gives `onPick`, and the screen prefers it.
+   */
+  test('the Calendar keeps `return=` and no `add=` on the link it falls back to', () => {
+    const href = named(readFileSync('components/CalendarAsk.tsx', 'utf8'), 'CALENDAR_ATTACH_HREF', 'CalendarAsk')
+    assert.equal(href, '/documents?return=%2Fcalendar%3Ftab%3Dask')
+    // `add=` is Documents' hint line for WHAT to upload, and a chat does not know what the person
+    // is about to add. Photographed with both at step 10b, it read "Add: 1".
+    assert.ok(!href.includes('add='), 'the chat must not send an add= hint it cannot fill in')
   })
 })
 
@@ -184,6 +191,71 @@ describe('the conversation drawer has Delete, and says true things about it', ()
     // strip this failed on its own explanation.
     assert.ok(!code(DRAWER).includes('Your handbooks and their checks stay'),
       'a shared drawer must not say something only true of HR')
+  })
+})
+
+describe('adding a document from inside the chat (Part A step 3, decision 6)', () => {
+  test('the attach slot becomes a picker when a section gives onPick, and stays a link otherwise', () => {
+    assert.match(SCREEN, /attach\.onPick \? \(/, 'onPick must choose the branch')
+    assert.match(SCREEN, /<AttachControl label=\{uploading \? 'Adding…' : attach\.label\}\s*\n?\s*onClick=/)
+    assert.match(SCREEN, /<AttachControl label=\{attach\.label\} href=\{attach\.href\} \/>/, 'the link branch stays')
+    // AttachControl itself is untouched: one of the two handlers, never both, never neither.
+    const control = readFileSync('components/AttachControl.tsx', 'utf8')
+    assert.match(control, /\{ label, onClick, href, disabled \}/)
+  })
+
+  test('ONE FILE, NEVER A FOLDER — a folder cannot honestly say "wait here"', () => {
+    // THE CODE WITHOUT ITS COMMENTS — for the third time this run, a comment that explains why a
+    // thing is absent was read as the thing being present. A substring is not a call site.
+    const c = code(SCREEN)
+    assert.ok(!/webkitdirectory/i.test(c), 'a folder picker must not be in the chat')
+    assert.ok(!/multiple/.test(c.slice(c.indexOf('type="file"'), c.indexOf('type="file"') + 200)),
+      'the input takes one file')
+    assert.match(SCREEN, /accept=\{ACCEPTED_FILE_TYPES\}/, 'and only the kinds we can read')
+  })
+
+  test('a picked file is a chip with a × , and it rides into the bubble with its question', () => {
+    assert.match(SCREEN, /\{picked && \(/)
+    assert.match(SCREEN, /aria-label=\{`Remove \$\{picked\.name\}`\}/)
+    assert.match(SCREEN, /setPicked\(null\)/, 'the × takes it off before sending')
+    // and the bubble keeps it, so a person can see which question the file went with (board 3).
+    assert.match(SCREEN, /\{x\.file && \(/)
+  })
+
+  test('a file with no words still asks something, in the Workspace\'s own sentence', () => {
+    const q = named(SCREEN, 'DEFAULT_FILE_QUESTION', 'AskScreen')
+    assert.equal(q, 'Summarize what this document is, what it covers, and flag anything that looks off, expired, or missing.')
+    // Word for word the Workspace's, so attaching a file means the same thing in both places.
+    assert.ok(readFileSync('app/api/chat/route.ts', 'utf8').includes(q),
+      'it must be the same sentence app/api/chat/route.ts:191 uses')
+    assert.match(SCREEN, /question\.trim\(\) \|\| \(picked \? DEFAULT_FILE_QUESTION : ''\)/)
+  })
+
+  test('the question carries the document id, and only when a file went with it', () => {
+    assert.match(SCREEN, /\.\.\.\(sent \? \{ documentId: sent\.id \} : \{\}\)/)
+  })
+
+  /**
+   * *** THE READ-ONLY CASE IS TWO ANSWERS IN ONE MOMENT. *** The file IS saved — uploading calls no
+   * model and no non-model write is gated — while the reading and the question are refused. A bare
+   * 402 would read as "your file was lost", so what DID happen is said first.
+   */
+  test('when the company is read-only the upload still works and the screen says so', () => {
+    const paused = named(SCREEN, 'PAUSED_FILE_SAVED', 'AskScreen')
+    assert.match(paused, /saved in Documents/)
+    assert.match(paused, /once you add a card/)
+    assert.match(SCREEN, /res\.status === 402 && sent \? \{ savedNote: PAUSED_FILE_SAVED \}/)
+    assert.match(SCREEN, /\{x\.savedNote && <p className="mb-1">\{x\.savedNote\}<\/p>\}/)
+    // THE UPLOAD IS NOT DISABLED BY `paused` — the same rule readOnlyUi holds for the Documents
+    // page. Only `uploading` disables it, so a read-only company can still put a file somewhere safe.
+    assert.match(SCREEN, /onClick=\{\(\) => fileInput\.current\?\.click\(\)\} disabled=\{uploading\}/)
+    assert.ok(!/disabled=\{uploading \|\| Boolean\(paused\)\}/.test(SCREEN),
+      'a read-only company must still be able to save its own files')
+  })
+
+  test('and the Calendar now uploads in place instead of linking away', () => {
+    assert.match(PAGE, /onPick: \(\) => \{ void refresh\(\) \}/)
+    assert.match(PAGE, /label: CALENDAR_ATTACH_LABEL/)
   })
 })
 

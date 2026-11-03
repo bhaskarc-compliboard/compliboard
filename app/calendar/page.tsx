@@ -68,6 +68,7 @@ import { DateQueue } from '@/components/DateQueue'
 import {
   calendarAfterAnswer, calendarThinkingLine,
   COMPOSER_HINT, ONE_TOPIC_LINE, CALENDAR_LEDE, CALENDAR_EMPTY_CONVERSATIONS, CALENDAR_FIRST_VISIT_BUTTON,
+  CALENDAR_ATTACH_LABEL, CALENDAR_ATTACH_HREF,
 } from '@/components/CalendarAsk'
 import { AskScreen, useAskConversations } from '@/components/AskScreen'
 import { ConversationDrawer } from '@/components/ConversationDrawer'
@@ -609,10 +610,16 @@ function Calendar() {
               onChanged={refresh}
               onSummarise={conv.summarise}
               summaryBusy={conv.summaryRunning(conv.askTopicId)}
-              /* `return=` only: `add=` is Documents' hint line for what to upload, and the
-                 Calendar's chat does not know what the person is about to add. Photographed with
-                 both, it read "Add: 1". The upload itself is Part A step 3. */
-              attach={{ label: 'Add a document', href: '/documents?return=%2Fcalendar%3Ftab%3Dask' }}
+              /* *** IT UPLOADS IN PLACE SINCE PART A STEP 3 (decision 6). *** It was a LINK to
+                 Documents, which meant leaving the middle of a conversation to add a file. The
+                 href stays on the Brief for a section that still wants to link, but a section
+                 that gives `onPick` gets the uploader, and the screen prefers it.
+                 `onChanged` because a file that lands may become a date. */
+              attach={{
+                label: CALENDAR_ATTACH_LABEL,
+                href: CALENDAR_ATTACH_HREF,
+                onPick: () => { void refresh() },
+              }}
               thinkingLine={calendarThinkingLine}
               afterAnswer={calendarAfterAnswer(rows, refresh)}
             />

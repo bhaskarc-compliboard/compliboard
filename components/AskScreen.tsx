@@ -38,6 +38,8 @@ import PausedNote from '@/components/PausedNote'
 import type { TopicRow, TopicSection } from '@/lib/topicList'
 import type { ExampleQuestion } from '@/config/examples'
 import type { Offer } from '@/lib/ask/offers'
+import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+import { uploadToChat } from '@/lib/chatUpload'
 
 /**
  * THE SENTENCES EVERY CHAT SAYS THE SAME WAY. Moved here character for character from
@@ -76,7 +78,31 @@ export interface Exchange {
   failedStatus?: number
   /** Per offer: the row it became (or already was), or the sentence that says it did not. */
   added?: Record<number, { id: string | null; already: boolean; failed?: boolean }>
+  /** The file this question was sent with, so the bubble can show it (board 3). */
+  file?: { id: string; name: string }
+  /** Shown above a 402: the file is saved even though the question was refused. */
+  savedNote?: string
 }
+
+/**
+ * *** WHAT A QUESTION SAYS WHEN THERE ARE NO WORDS, ONLY A FILE. *** The Compliance Workspace's own
+ * sentence, `app/api/chat/route.ts:191`, word for word — the same thing a person means when they
+ * attach a document and press Send with an empty box, so it should not be a second wording.
+ */
+export const DEFAULT_FILE_QUESTION =
+  'Summarize what this document is, what it covers, and flag anything that looks off, expired, or missing.'
+
+/**
+ * *** THE READ-ONLY CASE, AND IT IS TWO DIFFERENT ANSWERS IN ONE MOMENT. *** The file IS saved —
+ * uploading calls no model, and no non-model write is gated (`POST /api/documents` has no
+ * `requireAccess`; the storage call has no route at all). What is refused is the READING
+ * (`/api/document-scan:53`) and the QUESTION. So the screen must not let the 402 read as "your
+ * file was lost": it says what did happen before it says what did not.
+ *
+ * The owner's sentence, pending his yes.
+ */
+export const PAUSED_FILE_SAVED =
+  'Your file is saved in Documents. It will be read, and you can ask about it, once you add a card.'
 
 /** The sentences that are a section's own. Nothing else a person reads comes from the section. */
 export interface AskScreenWords {
@@ -89,6 +115,14 @@ export interface AskScreenWords {
   /** The quiet line under the action row. */
   oneTopicLine: string
 }
+
+/** The paperclip, at 11px, the same path `components/AttachControl.tsx` draws at 13. */
+const Clip = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" className="shrink-0" aria-hidden="true">
+    <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" />
+  </svg>
+)
 
 export function AskScreen({
   section, endpoints, words, examples, companyName, paused,
@@ -110,8 +144,17 @@ export function AskScreen({
   onChanged: () => Promise<void> | void
   onSummarise: (topicId: string) => void
   summaryBusy: boolean
-  /** The attach slot. `href` only in this step; the upload is Part A step 3. */
-  attach: { label: string; href: string }
+  /**
+   * THE ATTACH SLOT. A section gives `onPick` to accept files, or `href` to send the person
+   * somewhere else. **`onPick` wins when both are given**, because a control that both uploads and
+   * navigates is a control whose behaviour depends on which handler fires first
+   * (`components/AttachControl.tsx` refuses to draw both for the same reason).
+   *
+   * `onPick` is called once the file has LANDED in Documents, with its id — so a section can
+   * refresh whatever list it keeps. The screen does the upload itself, through `lib/chatUpload.ts`,
+   * so every section's files arrive the same way.
+   */
+  attach: { label: string; href?: string; onPick?: (doc: { id: string; name: string }) => void }
   /** What the grey line says while nothing has arrived — a claim about what is being read, so the
    *  section writes it ("Reading your calendar…"). Never written here. */
   thinkingLine: (x: Exchange) => string
@@ -128,6 +171,11 @@ export function AskScreen({
   const [exchanges, setExchanges] = useState<Exchange[]>(initial)
   const [box, setBox] = useState('')
   const [busy, setBusy] = useState(false)
+  /** A file picked and not yet sent: the chip above the composer. */
+  const [picked, setPicked] = useState<{ id: string; name: string } | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inFlight = useRef<AbortController | null>(null)
@@ -145,12 +193,37 @@ export function AskScreen({
     el.style.height = `${el.scrollHeight}px`
   }, [box])
 
+  /**
+   * ONE FILE, UPLOADED THE MOMENT IT IS PICKED — not held until Send.
+   *
+   * It goes in through Documents' own path (`lib/chatUpload.ts`), so it is safe as soon as it is a
+   * row, whatever happens to the question afterwards. That is the same promise the Documents page
+   * makes: *"the files are safe the moment they are rows."*
+   */
+  async function onFilePicked(f: File | null) {
+    if (!f) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const res = await uploadToChat(f, topicId)
+      if (!res.ok) { setUploadError(res.message); return }
+      setPicked({ id: res.documentId, name: res.name })
+      attach.onPick?.({ id: res.documentId, name: res.name })
+    } finally {
+      setUploading(false)
+    }
+  }
+
   async function ask(question: string) {
-    const q = question.trim()
+    // A FILE WITH NO WORDS IS STILL A QUESTION — the Workspace's own sentence for it.
+    const q = question.trim() || (picked ? DEFAULT_FILE_QUESTION : '')
     if (!q || busy) { composerRef.current?.focus(); return }
     setBox('')
+    const sent = picked
+    setPicked(null)
     const id = `x${++seq.current}`
-    setExchanges((prev) => [...prev, { id, question: q, text: '', sources: [], offers: [], phase: 'sending', searches: 0 }])
+    setExchanges((prev) => [...prev, { id, question: q, text: '', sources: [], offers: [], phase: 'sending', searches: 0,
+      ...(sent ? { file: sent } : {}) }])
     setBusy(true)
     const controller = new AbortController()
     inFlight.current = controller
@@ -159,13 +232,19 @@ export function AskScreen({
         method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), signal: controller.signal,
         body: JSON.stringify({
           question: q, topicId,
+          ...(sent ? { documentId: sent.id } : {}),
           history: exchanges.filter((x) => x.phase === 'done' && x.text)
             .map((x) => ({ question: x.question, answer: x.text, sources: x.sources })),
         }),
       })
       if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) {
         const json = await res.json().catch(() => null)
-        patch(id, { phase: 'failed', failedStatus: res.status, error: json?.error ?? FAILED_ASK })
+        patch(id, {
+          phase: 'failed', failedStatus: res.status, error: json?.error ?? FAILED_ASK,
+          // A read-only company's file IS saved; only the reading and the question are refused.
+          // Saying so first stops the 402 reading as "your file was lost".
+          ...(res.status === 402 && sent ? { savedNote: PAUSED_FILE_SAVED } : {}),
+        })
         return
       }
       // The two events a section may add ride on the same lines the shared reader consumes —
@@ -240,10 +319,38 @@ export function AskScreen({
           </div>
         )}
       </div>
+      {/* THE PICKED FILE, board 3: a chip above the composer with a × to take it off before
+          sending. It sits above because that is where the board puts it, and because a person
+          needs to see what is going with the question while they are still typing it. */}
+      {picked && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[12px] text-gray-700">
+            <Clip />
+            <span className="truncate">{picked.name}</span>
+            <button onClick={() => setPicked(null)} aria-label={`Remove ${picked.name}`}
+              className="ml-0.5 shrink-0 text-gray-400 hover:text-gray-700">×</button>
+          </span>
+        </div>
+      )}
+      {uploadError && <p className="mt-2 text-[13px] text-amber-900">{uploadError}</p>}
+
       {/* HR's one line under the box: the attach slot left, the actions right. */}
       <div className="mt-[10px] flex flex-wrap items-center justify-between gap-4">
         <p className="min-w-0 text-[12px] text-gray-500">
-          <AttachControl label={attach.label} href={attach.href} />
+          {/* ONE FILE, NEVER A FOLDER (decision 6): no `webkitdirectory` here. A folder takes
+              minutes to read and a chat cannot honestly say "wait here"; folders are the
+              Documents tab's. The upload is NOT disabled while this company is read-only —
+              storing a file calls no model, and the note after the refusal says what happened. */}
+          {attach.onPick ? (
+            <>
+              <input ref={fileInput} type="file" className="hidden" accept={ACCEPTED_FILE_TYPES}
+                onChange={(e) => { const f = e.target.files?.[0] ?? null; void onFilePicked(f); e.target.value = '' }} />
+              <AttachControl label={uploading ? 'Adding…' : attach.label}
+                onClick={() => fileInput.current?.click()} disabled={uploading} />
+            </>
+          ) : (
+            <AttachControl label={attach.label} href={attach.href} />
+          )}
         </p>
         <div className="flex shrink-0 flex-wrap items-center gap-5">
           {docked && topicId && answered && (<>
@@ -281,6 +388,12 @@ export function AskScreen({
         <div key={x.id} className="mb-8">
           <div className="mb-5 flex justify-end">
             <div className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3 text-[16px] leading-relaxed text-gray-900">
+              {/* The file stays with the question it was asked about — board 3. */}
+              {x.file && (
+                <p className="mb-1 flex items-center gap-1.5 text-[12px] text-gray-600">
+                  <Clip /><span className="truncate">{x.file.name}</span>
+                </p>
+              )}
               <p>{x.question}</p>
             </div>
           </div>
@@ -305,6 +418,9 @@ export function AskScreen({
           )}
           {x.phase === 'failed' && (
             <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
+              {/* WHAT DID HAPPEN, BEFORE WHAT DID NOT. The file is saved even when the question
+                  is refused, and a refusal on its own would read as though it were lost. */}
+              {x.savedNote && <p className="mb-1">{x.savedNote}</p>}
               {x.error} {askAgainLine(x.failedStatus)}
               {/* The button goes with the line, for the same reason: "Try again" against a 402
                   offers the one thing that cannot work until a card is added (§220). */}

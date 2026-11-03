@@ -55,7 +55,14 @@ export interface PackedContext {
 export interface Brief {
   section: TopicSection
   words: {
-    /** The attach control's label and where it points (the Calendar has no uploader of its own). */
+    /**
+     * The attach control's label, and where it points for a section that only LINKS.
+     *
+     * *** SINCE PART A STEP 3 A SECTION USUALLY UPLOADS INSTEAD *** (decision 6): the shared
+     * screen takes an `onPick` and puts the file through Documents' own path
+     * (`lib/chatUpload.ts`), and it prefers that over the link. `attachHref` is kept because a
+     * section may still want to send somebody somewhere rather than take a file.
+     */
     attachLabel: string
     attachHref: string
     examples: string[]

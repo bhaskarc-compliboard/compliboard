@@ -45,6 +45,19 @@ export const CALENDAR_EMPTY_CONVERSATIONS =
   'Ask a question and the answer is kept here, with the dates and documents it drew on.'
 /** The button under the empty box on a first visit. */
 export const CALENDAR_FIRST_VISIT_BUTTON = 'Ask'
+/**
+ * THE ATTACH SLOT'S LABEL AND ITS FALLBACK LINK.
+ *
+ * *** THEY LIVE HERE AND NOT ON THE BRIEF, AND THAT IS NOT A CHOICE. *** `lib/ask/brief.ts` has a
+ * `words` object with exactly these two fields on it, but **no client component can read it**:
+ * `lib/ask/calendarBrief.ts` imports `lib/ask/engine.ts`, which imports `lib/ai.ts`, which imports
+ * the model SDK — and `tests/unit/clientImports.test.ts` fails the build for any component that
+ * reaches it. So every section's screen words come from a file like this one, and the Brief's
+ * `words` has had no reader since it was written. Named in the Part A step 3 report.
+ */
+export const CALENDAR_ATTACH_LABEL = 'Add a document'
+/** Only drawn if a section has no uploader. The Calendar uploads in place since step 3. */
+export const CALENDAR_ATTACH_HREF = '/documents?return=%2Fcalendar%3Ftab%3Dask'
 
 /** The grey line the screen shows while an answer is on its way. */
 export const calendarThinkingLine = (x: Exchange): string =>

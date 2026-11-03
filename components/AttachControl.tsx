@@ -6,11 +6,16 @@
  * drifts. HR's three call sites are unchanged — they pass `onClick` and `disabled` exactly as
  * before, and what the browser draws for them is the markup that was in that file.
  *
- * `href` is the one thing added, and it is added because the Calendar's slot is a LINK: until step 8
- * the Calendar has no uploader of its own, so "Add a document" goes to Company Documents, where the
- * upload control is. A link that navigates must be an `<a>` — a button with a `router.push` cannot
- * be opened in a new tab, and middle-clicking it does nothing, which is the kind of small lie the
- * report drawers' `<a href>` lines were written to avoid (`DECISIONS.md` §187).
+ * `href` is the one thing added, and it is added because a slot can be a LINK rather than a picker:
+ * a link that navigates must be an `<a>` — a button with a `router.push` cannot be opened in a new
+ * tab, and middle-clicking it does nothing, which is the kind of small lie the report drawers'
+ * `<a href>` lines were written to avoid (`DECISIONS.md` §187).
+ *
+ * *** THE CALENDAR'S SLOT IS NO LONGER A LINK. *** This said "until step 8 the Calendar has no
+ * uploader of its own, so Add a document goes to Company Documents". Since `docs/GAPS-PLAN.md`
+ * Part A step 3 every chat uploads in place through `components/AskScreen.tsx`, which calls this
+ * with `onClick`. Nothing about this component changed for that — only this comment, which had
+ * stopped being true.
  *
  * One or the other: `href` draws a link, `onClick` draws a button. Both would be a control whose
  * behaviour depends on which handler fires first.

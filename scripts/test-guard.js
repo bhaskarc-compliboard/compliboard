@@ -259,7 +259,15 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   deliberately does not price, that the turn remembers the file and the document remembers the
 //   conversation, and that the brief did not gain a sixth field for any of it.
 //   `lib/attachedDocument.ts` is NOT re-tested here: it has its own file and the engine calls it.
-const FLOOR = 2100
+// 2100 -> 2120, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 3, the upload in the chat).
+//   Twenty: seven in tests/unit/askScreen.test.ts (the picker branch, one file and never a folder,
+//   the chip and its x, the Workspace's own default question for a file with no words, the id on
+//   the request, and the read-only case where the upload still works and the screen says so), and
+//   thirteen in the new tests/unit/chatUpload.test.ts at the fetch seam — the three calls in
+//   order, the company-prefixed unfiled path, from_topic_id only with a topic, every failure a
+//   sentence and never a throw, and the one that matters most: the reading is ASKED FOR and NOT
+//   WAITED ON, proved by the upload returning before the request is even made.
+const FLOOR = 2120
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
