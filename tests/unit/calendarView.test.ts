@@ -172,6 +172,12 @@ describe('the site shows only when there is a choice to make — decision 24', (
     // The row names a site the view could not join: the site was deleted in Documents or HR.
     assert.equal(siteWords(row({ entity_id: 'gone', site_id: 'gone', site_name: null }), 2), SITE_REMOVED)
   })
+  /**
+   * RE-POINTED AT PART A STEP 4b: the Documents page's toolbar moved inside its Documents tab, so
+   * this expression is in a different place in that file. It is the same expression — the test
+   * reads the whole file, which is why it still passes, and this comment is here so the next
+   * person knows the move was deliberate and was checked rather than missed.
+   */
   test('the rule is the one HR and Documents already use', () => {
     assert.match(readFileSync('app/hr/HrWorkspace.tsx', 'utf8'), /sites\.length >= 2/)
     assert.match(readFileSync('app/documents/page.tsx', 'utf8'), /sites\.length > 1/)

@@ -154,10 +154,20 @@ describe('every screen that owns a paid control shows the same note', () => {
     }
   })
 
+  /**
+   * *** RE-POINTED AT PART A STEP 4b, DELIBERATELY, AND THE RULE IS UNCHANGED. ***
+   * The Documents page gained three tabs and the toolbar, the paused note and the upload moved
+   * INSIDE the Documents tab body. Nothing about this rule moved with them: `onFilesPicked` is
+   * byte-for-byte what it was, the sentence is the same sentence, and the button is still not
+   * disabled. The one line added here is the `{tab === 'documents'` assertion — so that if the
+   * upload is ever moved out from under the tab, or the tab is removed, this test says so instead
+   * of passing on a file that no longer draws what it is about.
+   */
   test('*** UPLOADING IS NOT GATED, AND THE PAGE SAYS WHAT WILL HAPPEN. ***', () => {
     // The owner's rule for step 18: no NON-MODEL write is gated. A read-only company must still
     // be able to put its records somewhere safe. What pauses is the reading.
     const src = readFileSync('app/documents/page.tsx', 'utf8')
+    assert.match(src, /\{tab === 'documents' && \(<>/, 'the Documents tab body is gone')
     assert.match(src, /uploaded and saved — `\s*\n?\s*\+ 'queued to be read\. Add a card to start reading them\.'/)
     // and the upload buttons themselves must NOT carry the flag
     const addFiles = src.slice(src.indexOf('fileInputRef.current?.click()'))

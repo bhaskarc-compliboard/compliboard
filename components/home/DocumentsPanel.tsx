@@ -1,4 +1,6 @@
-// GATE — chat over documents (docs/PUBLIC-PAGES-PLAN.md §5, no PENDING id yet): the typed question in the box waits on it; the report itself is live today. Walked at step 33.
+// GATE F12 — closed at `docs/GAPS-PLAN.md` Part A step 4b: the Documents page has the chat, the
+// two routes and the source cards that open a report. The box on this panel is the marketing
+// page's own and still types nothing; what it promised now exists behind the login.
 // SAMPLE TEXT — the plan, the gap wording and the address are in the product's voice and stay sample (§2 rule 2, as narrowed on 30 Oct). The three gaps are the RULE's own elements and step 12 read them again, word for word, at https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 on 30 October 2026 — 1910.38, "Emergency action plans.":
 //   · (c)(4) "Procedures to account for all employees after evacuation;"
 //   · (c)(6) "The name or job title of every employee who may be contacted by employees who need more information about the plan or an explanation of their duties under the plan."

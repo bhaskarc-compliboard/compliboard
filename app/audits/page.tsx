@@ -691,7 +691,9 @@ function Audits() {
             {idx.counts.read === 0 ? (
               <div className="mt-6">
                 <p className="text-[14px] text-gray-600">Read some documents first. Audits are built from their readings.</p>
-                <a href="/documents" className={`mt-2 inline-block ${ACTION_GREEN}`}>Go to Documents</a>
+                {/* `?tab=documents` since `docs/GAPS-PLAN.md` Part A step 4b: /documents opens the chat now,
+                    and somebody sent here by a finding wants the table and the upload control. */}
+                <a href="/documents?tab=documents" className={`mt-2 inline-block ${ACTION_GREEN}`}>Go to Documents</a>
               </div>
             ) : idx.agencies.length === 0 ? (
               <p className="mt-6 text-[14px] text-gray-600">None of your documents carries an agency yet.</p>

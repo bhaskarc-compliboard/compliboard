@@ -1648,7 +1648,9 @@ export default function CompliancePage() {
             onMove={moveDocument}
             onPickFile={(versionOf) => {
               setReportDoc(null)
-              if (versionOf) window.location.href = '/documents'
+              // `?tab=documents` since Part A step 4b: /documents opens the chat, and a person
+              // who has just filed a newer version is going there to see it in the list.
+              if (versionOf) window.location.href = '/documents?tab=documents'
               else fileInput.current?.click()
             }}
           />

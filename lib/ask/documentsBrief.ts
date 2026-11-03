@@ -31,6 +31,9 @@
 import { KIND_WORD, STATUS_WORD } from '../documentStatus.ts'
 import { DOCUMENTS_EXAMPLE_QUESTIONS } from '../../config/examples.ts'
 import { DOCUMENTS_SENTENCES } from '../../prompts/documents-answer.ts'
+import {
+  DOCUMENTS_LEDE, DOCUMENTS_EMPTY_CONVERSATIONS, DOCUMENTS_ATTACH_LABEL, DOCUMENTS_ATTACH_HREF,
+} from '../documentsWords.ts'
 import { companyBlock } from './engine.ts'
 import { contextBudgetTokens } from './calendarBrief.ts'
 import { packReadings } from './readings.ts'
@@ -373,16 +376,20 @@ export async function packDocumentsContext(db: Db, companyId: string, question: 
 /** The Documents chat's brief. Five things; `extraStep` is deliberately absent. */
 export const documentsBrief: Brief = {
   section: 'documents',
+  /**
+   * *** EVERY ONE OF THESE COMES FROM `lib/documentsWords.ts`, AND THAT IS THE POINT. ***
+   * Nothing can read these fields — a brief reaches `lib/ai.ts` and no client file may
+   * (`tests/unit/clientImports.test.ts`), so `Brief.words` has had no reader since it was written
+   * (`docs/GAPS-PLAN.md` §8). The page reads the same file this does, so the brief and the screen
+   * cannot say two different things. The Calendar keeps two copies; this keeps one.
+   */
   words: {
-    attachLabel: 'Add a document',
+    attachLabel: DOCUMENTS_ATTACH_LABEL,
     /** Kept for a section that links; the Documents page passes `onPick` and uploads in place. */
-    attachHref: '/documents?tab=documents',
+    attachHref: DOCUMENTS_ATTACH_HREF,
     examples: DOCUMENTS_EXAMPLE_QUESTIONS.map((e) => e.question),
-    emptyConversations:
-      'Ask a question and the answer is kept here, with the documents it drew on.',
-    lede:
-      'Everything you hold, read. Ask what a document says, what is missing from it, or which '
-      + 'documents cover something.',
+    emptyConversations: DOCUMENTS_EMPTY_CONVERSATIONS,
+    lede: DOCUMENTS_LEDE,
   },
   packContext: (db, companyId, question) => packDocumentsContext(db, companyId, question),
   promptSentences: DOCUMENTS_SENTENCES,

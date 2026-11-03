@@ -307,7 +307,19 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   their own list. Plus the half that can break quietly - the block the MODEL is sent is still the
 //   tagged line, byte for byte, and the plain copy must never reach the message. Two more hold the
 //   two sentences 4b measured into existence (a name is not a quote; no offer without a button).
-const FLOOR = 2177
+// 2177 -> 2212, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 4b, Documents gets the chat).
+//   Thirty-five in the new tests/unit/documentsPage.test.ts, all on source text because Node
+//   cannot import a .tsx - the Calendar's way, and exactly as strong as what it asserts: it can
+//   prove the tab row, the derivation and the relation list; it cannot prove a click, and that is
+//   checkpoint 5's walk. The ones that earn their place are the three that would fail SILENTLY:
+//   the report drawer must stay OUTSIDE the tab bodies or a ?document= link opens nothing; the two
+//   hidden file inputs must stay outside them or the chat's uploader and the toolbar's Add files
+//   both point at an unmounted ref and the picker quietly does nothing; and the tab count must be
+//   hidden while the read is in flight, not only at zero, or the page states a fact it has not
+//   checked. Plus: the page's reads are still its own two and topic_list_v only through the shared
+//   reader, no HR word reached it, and the chat's sentences are in lib/documentsWords.ts rather
+//   than typed into the page - which the brief reads too, so screen and model cannot disagree.
+const FLOOR = 2212
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

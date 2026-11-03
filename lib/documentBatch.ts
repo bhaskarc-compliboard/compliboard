@@ -190,7 +190,9 @@ export async function notifyBatch(args: {
     for (const t of s.fine) lines.push(`  ${t}`)
     lines.push('')
   }
-  lines.push(`See them all: ${appUrl}/documents`)
+  // `?tab=documents` since Part A step 4b: /documents opens the chat, and "See them all" means
+  // the list. An email cannot be fixed by a component, so the word goes in the link itself.
+  lines.push(`See them all: ${appUrl}/documents?tab=documents`)
 
   const text = lines.join('\n')
 

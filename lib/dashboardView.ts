@@ -182,7 +182,11 @@ export const MORE_HREF = '/calendar?tab=calendar'
  */
 export const UPCOMING_EMPTY = 'Deadlines from your documents will be displayed here.'
 export const UPCOMING_EMPTY_LINK = 'Add a document'
-export const UPCOMING_EMPTY_HREF = '/documents'
+/**
+ * `?tab=documents` since `docs/GAPS-PLAN.md` Part A step 4b. `/documents` now opens the chat, and
+ * "Add a document" has to land where the upload control is.
+ */
+export const UPCOMING_EMPTY_HREF = '/documents?tab=documents'
 export const AUDITS_EMPTY = 'Your recent audits will show here.'
 export const AUDITS_EMPTY_LINK = 'Run your first audit'
 export const AUDITS_EMPTY_HREF = '/audits'

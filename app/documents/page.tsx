@@ -34,13 +34,47 @@
  *
  * WHAT IS STILL NOT HERE, ON PURPOSE: pinned views — not as a disabled control either, because a
  * greyed button that never lights up is a promise the product is not keeping.
+ *
+ * ---------------------------------------------------------------------------
+ * *** AND SINCE `docs/GAPS-PLAN.md` PART A STEP 4b THERE ARE THREE TABS, AND THE TABLE IS ONE OF
+ * THEM: Ask a question · Conversations · Documents (N). ***
+ *
+ * The chat is the door (§1): a person should not have to go to another section to get an answer
+ * about their own documents. So a bare `/documents` opens the chat, and **everything that was on
+ * this page is inside the Documents tab, unchanged** — the batch banner, the toolbar, the paused
+ * note, the error line, the table and the groups, in the same markup and the same words.
+ *
+ * TWO THINGS ARE DELIBERATELY OUTSIDE THE TAB BODIES. The report drawer, so a `?document=` link
+ * can open a report from any tab (the Calendar's rule, and what makes that link work at all); and
+ * the two hidden file inputs, because the chat's own uploader and the toolbar's Add files share
+ * them.
+ *
+ * *** THE CHAT'S WORDS ARE NOT IN THIS FILE, AND NOT ON THE BRIEF EITHER. *** `lib/documentsWords.ts`
+ * holds them, and `lib/ask/documentsBrief.ts` reads the same file: a page is `'use client'` and a
+ * brief reaches `lib/ai.ts`, so no page can import its own brief
+ * (`tests/unit/clientImports.test.ts`). One copy, read from both sides.
+ * ---------------------------------------------------------------------------
  */
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import AppLayout from '@/components/AppLayout'
+import { Tabs } from '@/components/Tabs'
+import { Empty } from '@/components/Empty'
+import { ConversationList } from '@/components/ConversationList'
+import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import { AskScreen, useAskConversations } from '@/components/AskScreen'
+import { ConversationDrawer } from '@/components/ConversationDrawer'
+import { readTopicList, type TopicRow } from '@/lib/topicList'
+import { DOCUMENTS_EXAMPLE_QUESTIONS } from '@/config/examples'
+import {
+  DOCUMENTS_LEDE, DOCUMENTS_COMPOSER_HINT, DOCUMENTS_FIRST_VISIT_BUTTON, DOCUMENTS_ONE_TOPIC_LINE,
+  DOCUMENTS_EMPTY_CONVERSATIONS, DOCUMENTS_EMPTY_CONVERSATIONS_TITLE, DOCUMENTS_NOT_SUMMARISED,
+  DOCUMENTS_ATTACH_LABEL, DOCUMENTS_LINK_MISSED, documentsThinkingLine,
+  DOCUMENTS_NOTHING_YET_BEFORE, DOCUMENTS_NOTHING_YET_LINK, DOCUMENTS_NOTHING_YET_AFTER,
+} from '@/lib/documentsWords'
 import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord } from '@/lib/documentStatus'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import DocumentReport from '@/components/DocumentReport'
@@ -93,6 +127,19 @@ interface BatchRow {
 }
 
 type GroupBy = 'status' | 'agency' | 'subject' | 'kind' | 'site' | 'folder' | 'none'
+
+/**
+ * *** THE THREE TABS — `docs/GAPS-PLAN.md` Part A step 4b, decision 5. ***
+ *
+ * Ask a question is first and is where a bare `/documents` lands: the chat is the door (§1), and
+ * the table a person came to read is one click away and unchanged. The key is also the `?tab=`
+ * word, and the pattern is `app/calendar/page.tsx:85`–`:90`, copied — an unknown word falls back
+ * to `ask` rather than throwing, because a tab name arrives from links, bookmarks and typing.
+ */
+type Tab = 'ask' | 'conversations' | 'documents'
+const TAB_KEYS: readonly Tab[] = ['ask', 'conversations', 'documents'] as const
+const asTab = (v: string | null): Tab =>
+  (TAB_KEYS as readonly string[]).includes(v ?? '') ? (v as Tab) : 'ask'
 
 /**
  * THE STATUS VOCABULARY, IN THE ORDER THE PAGE SHOWS IT.
@@ -169,6 +216,7 @@ export default function DocumentsPage() {
 
 function DocumentsPageContent() {
   const supabase = createClient()
+  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
 
@@ -198,6 +246,22 @@ function DocumentsPageContent() {
     const raw = (searchParams.get('return') ?? '').trim()
     return /^\/(?!\/)[\w\-/?=&%.]*$/.test(raw) ? raw.slice(0, 200) : null
   })()
+
+  /**
+   * *** WHICH TAB, AND IT IS DERIVED BEFORE IT IS READ — decision 13. ***
+   *
+   * A link carrying `?add=`, `?return=` or `?document=` is a link about a DOCUMENT, and it must
+   * land on the table or on a report — never on a chat box the person did not ask for. Four kinds
+   * of link already send those words (an audit finding, a Calendar or Workspace report drawer,
+   * Company information's fact links, the batch email) and asking four other sections to add a
+   * `?tab=` to their links would put this page's layout into their files. So the derivation lives
+   * here, exactly as the Calendar derives its own (`app/calendar/page.tsx:169`).
+   *
+   * Then `?tab=`, and then `ask` — which is what a bare `/documents` and the sidebar both are.
+   */
+  const linkedDoc = (searchParams.get('document') ?? '').trim().slice(0, 100)
+  const tab = asTab(searchParams.get('tab')
+    ?? ((addHint || backTo || linkedDoc) ? 'documents' : null))
 
   const [rows, setRows] = useState<IndexRow[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
@@ -241,6 +305,9 @@ function DocumentsPageContent() {
 
   const [sortKey, setSortKey] = useState<'title' | 'kind' | 'site' | 'date' | 'status'>('title')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  /** The conversations of THIS section. `readTopicList` has taken the word since step 1. */
+  const [topics, setTopics] = useState<TopicRow[]>([])
 
   async function load() {
     try {
@@ -302,6 +369,65 @@ function DocumentsPageContent() {
       setBilling(c)
     })()
   }, [])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * THE CONVERSATIONS, read as the page's own read and handed to the hook — the Calendar's shape
+   * (`app/calendar/page.tsx:365`–`:372`). One reader, not two: the hook needs to re-read them
+   * while a summary is being written, and the Conversations tab needs the same list.
+   */
+  const reloadTopics = useCallback(async () => {
+    const rows = await readTopicList(supabase, 'documents')
+    setTopics(rows)
+    return rows
+  }, [supabase])
+  useEffect(() => { void reloadTopics() }, [reloadTopics])
+
+  const conv = useAskConversations({
+    topics, reloadTopics, summarisePath: (id) => `/api/documents/topics/${id}/summarise`,
+  })
+
+  /**
+   * THE TAB IS IN THE ADDRESS, so a link can open one — `app/calendar/page.tsx:316`–`:321`,
+   * copied. `replace`, not `push`: three tabs on one page are not three places a Back button
+   * should walk. The default tab DELETES the key rather than writing `?tab=ask`, so the plain
+   * `/documents` the sidebar links to stays plain.
+   */
+  const setParam = (k: string, v: string | null) => {
+    const p = new URLSearchParams(searchParams.toString())
+    if (v === null) p.delete(k); else p.set(k, v)
+    router.replace(`/documents${p.toString() ? `?${p}` : ''}`, { scroll: false })
+  }
+  const selectTab = (k: Tab) => setParam('tab', k === 'ask' ? null : k)
+
+  /**
+   * "+ NEW CONVERSATION" IS A BUTTON, not a link, and the reason is React's own lint rule: it has
+   * to CLEAR the open conversation, which is a state change, and an effect that watched the
+   * address for it is refused ("Avoid calling setState() directly within an effect") — rightly,
+   * because the reset belongs to the press. The Calendar reached the same answer at step 8a.
+   */
+  const startNewConversation = () => {
+    conv.startNewConversation()
+    selectTab('ask')
+  }
+
+  /**
+   * *** `?document=<id>` OPENS THAT REPORT — decision 13, and it closes `PENDING.md` D15. ***
+   *
+   * Until now this page read `add` and `return` and not `document`, so every source card in a
+   * Calendar answer, every fact link in Company information and every `?document=` in the product
+   * landed on a list with nothing open. The id is resolved against the rows this page has already
+   * read — no second query, and therefore no way to show a document the list does not.
+   *
+   * *** NOT FINDING IT IS AN ANSWER, NOT A SILENCE *** (decision 30). Deleted, or another
+   * company's — which is simply not in `rows`, because RLS decided that and not this page. Both
+   * say the same thing and neither says which: telling a stranger that an id EXISTS but is not
+   * theirs is the probe §3.6 answers 404 to.
+   */
+  useEffect(() => {
+    if (!linkedDoc || loading) return
+    if (rows.some((r) => r.document_id === linkedDoc)) setOpenDoc(linkedDoc)
+  }, [linkedDoc, loading, rows])
+  const linkMissed = !loading && !!linkedDoc && !rows.some((r) => r.document_id === linkedDoc)
 
   // ---------------------------------------------------------------------------
   // UPLOAD. One file at a time, and one scan at a time — never in parallel.
@@ -698,10 +824,137 @@ function DocumentsPageContent() {
       <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
         <div className="no-print pt-6">
           <h1 className="font-serif text-[28px] font-normal text-gray-900">Documents</h1>
+          {/*
+            *** THE LEDE FOLLOWS THE TAB, AND NOTHING A PERSON SEES TODAY CHANGED. ***
+
+            On the Documents tab it is the sentence that has been under this title since Run 6,
+            word for word — it describes the table, and the table is what that tab shows. On the
+            two new tabs it is the chat's own sentence, because "grouped by what it is, not by
+            where you filed it" says nothing about a question box.
+
+            One line that tells the person what they are looking at, rather than one line that is
+            true of one third of the page.
+          */}
           <p className="mt-1 text-[14px] text-gray-500">
-            Everything you hold, read and grouped by what it is — not by where you filed it.
+            {tab === 'documents'
+              ? 'Everything you hold, read and grouped by what it is — not by where you filed it.'
+              : DOCUMENTS_LEDE}
           </p>
         </div>
+
+        {/*
+          *** THE TAB ROW — decision 5. Ask a question · Conversations · Documents (N). ***
+
+          `components/Tabs.tsx`, imported and not edited; it owns its own `mb-5 mt-5` and the
+          hairline, so this page adds no margin of its own.
+
+          THE COUNT'S RULE IS THE CALENDAR'S, AND IT HAS TWO HALVES: zero is hidden, and so is a
+          count nobody has read yet (`loading`). A tab that said "Documents (0)" for half a second
+          on every load would be the product stating a fact it had not checked.
+
+          "+ New conversation" is on the two conversation tabs only. On the Documents tab the
+          thing a person wants at the right is Add files, and that is already in the toolbar.
+        */}
+        <Tabs active={tab} onSelect={selectTab}
+          tabs={[
+            { key: 'ask', label: 'Ask a question' },
+            { key: 'conversations', label: 'Conversations' },
+            { key: 'documents', label: `Documents${!loading && rows.length > 0 ? ` (${rows.length})` : ''}` },
+          ]}
+          right={tab === 'documents' ? null : (
+            <button onClick={startNewConversation}
+              className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              <span className="hidden sm:inline">New conversation</span>
+            </button>
+          )} />
+
+        {/* A link that pointed at a document this company no longer holds (decision 30). */}
+        {linkMissed && (
+          <div className="no-print mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-[13px] text-gray-600">
+            {DOCUMENTS_LINK_MISSED}
+          </div>
+        )}
+
+        {/* ================= ASK A QUESTION — boards 1, 1b, 2 and 3 ================= */}
+        {tab === 'ask' && (
+          <div>
+            {/* The key is `askKey` alone — `app/calendar/page.tsx:588`'s comment says why: keying
+                on the conversation id makes the FIRST answer of a new conversation remount the
+                view and the answer vanish. */}
+            <AskScreen
+              key={conv.askKey}
+              section="documents"
+              endpoints={{ answer: '/api/documents/answer' }}
+              words={{
+                composerHint: DOCUMENTS_COMPOSER_HINT,
+                firstVisitButton: DOCUMENTS_FIRST_VISIT_BUTTON,
+                emptyConversations: DOCUMENTS_EMPTY_CONVERSATIONS,
+                oneTopicLine: DOCUMENTS_ONE_TOPIC_LINE,
+              }}
+              examples={DOCUMENTS_EXAMPLE_QUESTIONS}
+              companyName={companyName}
+              paused={paused}
+              topicId={conv.askTopicId}
+              initial={conv.askInitial}
+              onTopicId={conv.setAskTopicId}
+              /* An attached file lands in Documents unfiled, so the list and the count move. */
+              onChanged={async () => { await load(); await reloadTopics() }}
+              onSummarise={conv.summarise}
+              summaryBusy={conv.summaryRunning(conv.askTopicId)}
+              /* *** NO `href` HERE, ON PURPOSE. *** This page IS Documents: a link that sent the
+                 person to the page they are standing on would be the control doing nothing.
+                 `onPick` is the uploader (decision 6), through `lib/chatUpload.ts`. */
+              attach={{ label: DOCUMENTS_ATTACH_LABEL, onPick: () => { void load() } }}
+              thinkingLine={documentsThinkingLine}
+              /* No offers (decision: three different writers), so nothing under an answer. */
+              afterAnswer={undefined}
+            />
+            {conv.notice && (
+              <div className="no-print mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                {conv.notice}
+                <button onClick={() => conv.setNotice(null)} className="ml-3 underline">Dismiss</button>
+              </div>
+            )}
+
+            {/*
+              *** BOARD 1b — NOTHING ON FILE YET (decision 7). ***
+
+              One line under the box, and only while the company holds nothing. It waits for
+              `loading` to finish: a line that said "nothing on file" before the read came back
+              would be a claim about an empty list nobody had looked at (`CLAUDE.md` §5.1, and
+              `CLAUDE.md` §9a — an empty state is a claim and it has to be true).
+
+              "Documents tab" switches tabs rather than linking, because the person is already on
+              the page; a link to `/documents?tab=documents` would reload the whole thing.
+            */}
+            {!loading && rows.length === 0 && (
+              <p className="no-print mt-4 text-[13px] text-gray-500">
+                {DOCUMENTS_NOTHING_YET_BEFORE}
+                <button onClick={() => selectTab('documents')} className="underline hover:text-gray-900">
+                  {DOCUMENTS_NOTHING_YET_LINK}
+                </button>
+                {DOCUMENTS_NOTHING_YET_AFTER}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ================= CONVERSATIONS — HR's board 9, its list and its drawer ================= */}
+        {tab === 'conversations' && (
+          <div className="pt-1">
+            {topics.length === 0 ? (
+              <Empty title={DOCUMENTS_EMPTY_CONVERSATIONS_TITLE} note={DOCUMENTS_EMPTY_CONVERSATIONS} />
+            ) : (
+              <ConversationList topics={topics}
+                running={(t, kind) => kind === 'summary' && conv.summaryRunning(t.id)}
+                onOpen={conv.setConvDrawer} />
+            )}
+          </div>
+        )}
+
+        {/* ================= DOCUMENTS — today's page, with nothing moved inside it ================= */}
+        {tab === 'documents' && (<>
 
         {/*
           *** WHAT THAT UPLOAD CAME TO, ANSWERED ONCE — Run 7. ***
@@ -980,6 +1233,8 @@ function DocumentsPageContent() {
             })}
           </div>
         )}
+
+        </>)}
       </div>
 
       {/* z-[45] scrim, then the drawer at z-50 — the order AppLayout's sticky header needs. */}
@@ -1000,6 +1255,26 @@ function DocumentsPageContent() {
             onPickFile={(v) => { setVersionOf(v ?? null); fileInputRef.current?.click() }}
           />
         </>
+      )}
+
+      {/* ================= THE CONVERSATION DRAWER — `components/ConversationDrawer.tsx` =================
+          The shared one, with Delete, and the workspace's report shape (`WEB_SOURCE`): a Documents
+          answer's sources are web pages and passage quotes, which is what that shape draws. HR
+          passes its own because its report has handbook headings; this section has none. */}
+      {conv.convDrawer && (
+        <ConversationDrawer
+          topic={conv.convDrawer}
+          companyName={companyName}
+          paused={paused}
+          notSummarisedLine={DOCUMENTS_NOT_SUMMARISED}
+          sourceShape={WEB_SOURCE as unknown as SourceShape<{ n: number; title: string; url: string }>}
+          factsLine={null}
+          onClose={() => conv.setConvDrawer(null)}
+          onOpen={async (t) => { if (await conv.openConversation(t)) selectTab('ask') }}
+          onSummarise={conv.summarise}
+          summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
+          onDeleted={() => { conv.setConvDrawer(null); void reloadTopics() }}
+        />
       )}
     </AppLayout>
   )
