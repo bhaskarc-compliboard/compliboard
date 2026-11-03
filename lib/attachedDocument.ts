@@ -72,6 +72,26 @@ export interface AttachedDocument {
   blocks: Array<Record<string, unknown>>
   /** Which representation was used, for the log and for the report. */
   kind: string
+  /**
+   * *** THE FILE'S TEXT, SO A QUOTE FROM IT CAN BE CHECKED — the owner, 2 November 2026
+   * (`docs/GAPS-PLAN.md` decision 22a). ***
+   *
+   * `parseDocumentToBlocks` already computes this and `lib/documentContent.ts:52`–`:68` says at
+   * length why: a PDF is parsed a SECOND time, for text only, precisely so a quote can be checked
+   * against it. This function then threw it away, so a quote the model took straight out of an
+   * attached PDF was marked *"we could not find these words in what we have on file"* — the
+   * product telling a person it cannot find words that are demonstrably there. Photographed at
+   * `shots/step3-bubble.png`.
+   *
+   * **It is never sent to the model.** The whole file already goes in a `document` block; this is
+   * the string the check compares against, and `lib/ask/engine.ts` `attachedPassages` is its only
+   * reader. So it costs no tokens.
+   *
+   * **`''` for an image, and `''` for a PDF that is a photograph of a page** — `PENDING.md` D3.
+   * That is the honest answer there: `checkQuote` skips a passage with no text, and the model is
+   * told not to quote from such a file at all (`prompts/documents-answer.ts` `DOCUMENTS_NO_TEXT`).
+   */
+  text: string
 }
 
 /**
@@ -107,7 +127,7 @@ export async function loadAttachedDocument(
       console.error(`attached document ${documentId}: ${parsed.failure.message}`)
       return null
     }
-    return { id: doc.id as string, name: doc.name as string, blocks: parsed.blocks as never, kind: parsed.kind }
+    return { id: doc.id as string, name: doc.name as string, blocks: parsed.blocks as never, kind: parsed.kind, text: parsed.text }
   } catch (e) {
     console.error('attached document: could not be loaded:', e instanceof Error ? e.message : String(e))
     return null

@@ -287,7 +287,18 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   read throws rather than looking like an empty company; what is cut is the least important
 //   status and it is SAID; extracted_text is in no block and is not even asked for; and the
 //   naming rule matches title, file name, kind, agency and subject and nothing else.
-const FLOOR = 2160
+// 2160 -> 2170, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 4a-test, the quote fix).
+//   Ten. Nine in tests/unit/askEngine.test.ts on decision 22a: an attached file's own text is now
+//   a passage, so a quote taken out of the PDF stops being marked "we could not find these words
+//   in what we have on file" (photographed at shots/step3-bubble.png). The one that earns its
+//   place most is the OPPOSITE case - a file with no text still marks the quote, which is what
+//   proves these tests can see the defect at all rather than passing on a change that did
+//   nothing. Plus: A is the engine's letter and no brief may take it, every carried file gets a
+//   named handle even with nothing in it to quote, the files with no text are named in the
+//   message, and a section that attaches nothing sends byte-for-byte what it always sent.
+//   One in tests/unit/documentsBrief.test.ts: the three honesty sentences the Calendar's real
+//   runs bought, now this section's too - eight sentences became eleven.
+const FLOOR = 2170
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

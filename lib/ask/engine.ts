@@ -47,7 +47,7 @@ import { summariseTopic } from '../summaryReport.ts'
 import { loadAttachedDocument, describeAttachments, loadTopicAttachments, MAX_CARRIED_DOCUMENTS } from '../attachedDocument.ts'
 import { askPrompt } from '../../prompts/ask.ts'
 import { checkBrief, type Brief, type ContextBlock, type Db } from './brief.ts'
-import { finishAnswer, appendSources, tokensOf, type AskSource, type Passage } from './passages.ts'
+import { finishAnswer, appendSources, tokensOf, ATTACHED_PREFIX, type AskSource, type Passage } from './passages.ts'
 import { parseOffers, offerLine, type Offer } from './offers.ts'
 
 /** The workspace's own failed line, which HR copied and this copies from HR. */
@@ -101,11 +101,22 @@ export function sectionRuns(section: TopicSection): SectionRun {
  * the two functions below can be tested without a database and without a model — which is the only
  * way to test them at all, since the runner cannot mock modules (`scripts/test-guard.js:254`).
  */
+/**
+ * One carried file, as the engine needs it: the blocks go to the model, the text does not.
+ * `text` is `lib/attachedDocument.ts`'s field and is `''` for an image or a photographed page.
+ */
+export interface CarriedFile {
+  id?: string
+  name?: string
+  blocks: Array<Record<string, unknown>>
+  text?: string
+}
+
 export interface CarriedFiles {
   /** The file attached on THIS turn, or null. The shape `loadAttachedDocument` returns. */
-  attached: { id: string; name: string; blocks: Array<Record<string, unknown>> } | null
+  attached: (CarriedFile & { id: string; name: string }) | null
   /** The files attached on EARLIER turns, newest first, already capped. */
-  documents: Array<{ blocks: Array<Record<string, unknown>> }>
+  documents: CarriedFile[]
   /** How many earlier files the cap left out. */
   omitted: number
   /** One line per earlier file — `describeAttachments`. '' when there are none. */
@@ -116,6 +127,62 @@ export interface CarriedFiles {
 
 export const NO_CARRIED_FILES: CarriedFiles = {
   attached: null, documents: [], omitted: 0, priorAttachments: '', askedForButMissing: false,
+}
+
+/** Every carried file, this turn's first — the order `lastUserMessage` puts their blocks in. */
+export const carriedList = (c: CarriedFiles): CarriedFile[] =>
+  [...(c.attached ? [c.attached] : []), ...c.documents]
+
+/**
+ * *** A QUOTE FROM AN ATTACHED FILE CAN BE CHECKED — the owner, 2 November 2026
+ * (`docs/GAPS-PLAN.md` decision 22a). ***
+ *
+ * Found at step 3 and photographed at `shots/step3-bubble.png`: the check compares a quote against
+ * the passages a section's brief packed, an attached file contributed none, so a quote the model
+ * took straight out of the PDF was marked *"we could not find these words in what we have on
+ * file"* — the product telling a person it cannot find words that are demonstrably there. Honest
+ * about what the check could see, and read as a failure.
+ *
+ * So the file's own extracted text becomes a passage. **It is never sent to the model** — the
+ * whole file is already in the message as a `document` block — so this costs nothing.
+ *
+ * *** EVERY CARRIED FILE GETS ONE, EVEN WITH NOTHING IN IT TO QUOTE. *** `lib/ask/readings.ts`'s
+ * second rule, paid for by a real run: a block with no card is a handle naming nothing, and an
+ * answer that writes "A2" at a person then gets the id instead of the file's name. `checkQuote`
+ * skips a passage whose text is empty, so an empty one can never match a quote — which is the
+ * right answer for a photograph of a page, not a failure (`PENDING.md` D3).
+ *
+ * The letter is `A` for every section, and `lib/ask/passages.ts` `ATTACHED_PREFIX` says why.
+ */
+export function attachedPassages(c: CarriedFiles): Passage[] {
+  return carriedList(c).map((f, i) => ({
+    id: `${ATTACHED_PREFIX}${i + 1}`,
+    title: `${f.name ?? 'The attached file'} — the file you attached`,
+    label: 'the file you attached',
+    text: (f.text ?? '').trim(),
+    href: f.id ? `/documents?document=${f.id}` : null,
+    shortName: f.name ?? 'the file you attached',
+  }))
+}
+
+/**
+ * *** AND THE ONES WITH NO TEXT ARE SAID OUT LOUD. *** A scanned PDF is a photograph of a page:
+ * the model reads it perfectly well and nothing downstream can check a quote against it, because
+ * there is no text to check against (`lib/documentContent.ts:52`–`:68`, `PENDING.md` D3). Rather
+ * than let the check mark a true quote as not found, the model is told which files those are.
+ * `prompts/documents-answer.ts` `DOCUMENTS_NO_TEXT` is the standing instruction; this is the
+ * per-turn fact it needs to apply it.
+ *
+ * `''` when every carried file has text, and `''` when there are none at all — so a section that
+ * never attaches sends byte-for-byte what it sent before (the step 2 and 4a proofs).
+ */
+export function noTextNote(c: CarriedFiles): string {
+  const without = carriedList(c).filter((f) => !(f.text ?? '').trim())
+  if (!without.length) return ''
+  const named = without.map((f) => f.name).filter(Boolean)
+  return `${without.length} attached file(s) carry no text we can read back`
+    + (named.length ? ` (${named.join(', ')})` : '')
+    + ': they are pictures of pages. Say what they show in your own words and do not quote from them.'
 }
 
 /**
@@ -168,9 +235,11 @@ export function lastUserMessage(c: CarriedFiles, contextText: string, question: 
     ? `\n\n${c.omitted} earlier attachment(s) are not included in this message because `
       + `only the ${MAX_CARRIED_DOCUMENTS} most recent are carried. Say so if the question depends on them.`
     : ''
+  const noText = noTextNote(c)
   const words = missing
     + (c.attached ? `The user has just attached this file: ${c.attached.name}\n\n` : '')
     + (c.priorAttachments ? `${c.priorAttachments}${omittedNote}\n\n` : '')
+    + (noText ? `${noText}\n\n` : '')
     + `${contextText}\n\nQuestion: ${question}`
   return blocks.length
     ? { role: 'user', content: [...blocks, { type: 'text', text: words }] }
@@ -257,7 +326,12 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
       + (earlier.omitted ? ` (${earlier.omitted} omitted by the cap)` : ''))
   }
   const files: CarriedFiles = {
-    attached: attached ? { id: attached.id, name: attached.name, blocks: attached.blocks } : null,
+    attached: attached
+      ? { id: attached.id, name: attached.name, blocks: attached.blocks, text: attached.text }
+      : null,
+    // The whole shape `loadTopicAttachments` returns, name and text included: the name so the
+    // no-text sentence can say WHICH file, the text so a quote from an earlier turn's file is
+    // still checkable on this turn. The blocks are the only part the model is sent.
     documents: earlier.documents,
     omitted: earlier.omitted,
     // One line per earlier file: its name and what the reading made of it. Background, never the
@@ -280,6 +354,15 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
    * exists to prevent.
    */
   const attachedBlock = attachedContextBlock(files)
+  /**
+   * *** ONE PASSAGE LIST: THE BRIEF'S, PLUS THE FILES THIS CONVERSATION CARRIES. ***
+   * The brief packs what the SECTION knows; the engine adds what the CONVERSATION carries, for
+   * every section (decision 22a). Built once here so the check, the dump and `check_record` cannot
+   * disagree about what a quote could have been checked against — the same mistake `eventBlocks`
+   * above exists to prevent.
+   */
+  const filePassages = attachedPassages(files)
+  const passages = [...packed.passages, ...filePassages]
   const eventBlocks = [
     ...packed.blocks.map(({ name, chars, tokens, leftOut }) => ({ name, chars, tokens, leftOut })),
     ...(attachedBlock ? [attachedBlock] : []),
@@ -372,7 +455,7 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
         messages,
         topicId,
         historyTurns: history.length,
-        passages: packed.passages.map((p) => ({ id: p.id, label: p.label, chars: p.text.length })),
+        passages: passages.map((p) => ({ id: p.id, label: p.label, chars: p.text.length })),
       }, null, 2))
       console.log(`ask(${brief.section}): dumped the model's input to ${dir}/${name}`)
     } catch (e) { console.error('ask: the dump failed (the answer still runs):', e) }
@@ -411,7 +494,7 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
          */
         const parsed = parseOffers(ev.answer.text, brief.offers, ev.searched)
         const checked = finishAnswer(parsed.text, ev.answer.sources as Source[], ev.searched,
-          packed.passages, ev.cited as CitedPassage[])
+          passages, ev.cited as CitedPassage[])
         let text = checked.text
         if (brief.extraStep) {
           // HR's agency check, when HR moves over. Calendar passes none.
@@ -436,7 +519,10 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
                 // The SAME list the context event carried, attached file and all.
                 context: eventBlocks.map((b) => ({ name: b.name, chars: b.chars, tokens: b.tokens, left_out: b.leftOut })),
                 context_tokens: totalTokens,
-                passages: packed.passages.length,
+                passages: passages.length,
+                // What an attached file contributed, and how many of those had nothing to quote.
+                attached_passages: filePassages.length,
+                attached_without_text: filePassages.filter((p) => !p.text).length,
                 searched: ev.searched.map((s) => s.url),
                 dropped_quotes: checked.droppedQuotes,
                 quotes_found_in_nothing: checked.notFound,

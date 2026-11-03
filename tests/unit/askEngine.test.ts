@@ -11,9 +11,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { checkBrief, BRIEF_FIELDS, type Brief } from '../../lib/ask/brief.ts'
 import { parseOffers, offerLine, OFFER_KINDS } from '../../lib/ask/offers.ts'
-import { finishAnswer, checkQuote, replacePassageIds, NOT_IN_WHAT_WE_HAVE, tokensOf, type Passage } from '../../lib/ask/passages.ts'
+import { finishAnswer, checkQuote, replacePassageIds, NOT_IN_WHAT_WE_HAVE, tokensOf, ATTACHED_PREFIX, type Passage } from '../../lib/ask/passages.ts'
 import {
   answer, sectionRuns, attachedContextBlock, lastUserMessage, NO_CARRIED_FILES,
+  attachedPassages, noTextNote, carriedList,
   type CarriedFiles,
 } from '../../lib/ask/engine.ts'
 import { MAX_CARRIED_DOCUMENTS } from '../../lib/attachedDocument.ts'
@@ -619,5 +620,137 @@ describe("the Calendar's own routes, step 10b", () => {
     assert.match(ui, /method: 'POST'[\s\S]{0,400}source: 'rule'/)
     assert.ok(!/\.from\('calendar_events'\)/.test(ui), 'the page never touches the table')
     assert.ok(!/status: 'confirmed'/.test(ui), 'it names no status — proposeDate decides that')
+  })
+})
+
+/**
+ * *** A QUOTE FROM AN ATTACHED FILE CAN BE CHECKED — `docs/GAPS-PLAN.md` decision 22a, the
+ * owner's yes of 2 November 2026. ***
+ *
+ * The defect these cover was photographed at `shots/step3-bubble.png`: a quote the model took
+ * straight out of an attached PDF came back marked *"we could not find these words in what we
+ * have on file"*, because the check compares a quote against the passages a BRIEF packed and an
+ * attachment contributed none. The fix is one additive field in `lib/attachedDocument.ts` —
+ * `parseDocumentToBlocks` already computes the text and the function threw it away — and the
+ * engine turning it into an `A` passage for every section.
+ */
+describe('the file a conversation carries is something a quote can be checked against', () => {
+  /** Comments stripped before asserting — the house pattern: my own comment must not be the hit. */
+  const source = (f: string) => readFileSync(f, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  const file = (name: string, text: string, id?: string) =>
+    ({ id, name, blocks: [{ type: 'document', id: name }], text })
+  const LINE = 'All fourteen units were serviced and tagged on 20 August 2025.'
+
+  test('lib/attachedDocument.ts returns the text it already computes', () => {
+    const src = readFileSync('lib/attachedDocument.ts', 'utf8')
+    assert.match(src, /text: parsed\.text/, 'the field the fix is')
+    assert.match(src, /^\s+text: string$/m, 'and it is on the interface')
+    // It is never sent: the whole file is already in the message as a block.
+    assert.match(src, /It is never sent to the model/)
+  })
+
+  test('A is the engine\'s letter, and no brief may take it for a kind of its own', () => {
+    assert.equal(ATTACHED_PREFIX, 'A')
+    // Every brief in the repository, read as text: none may pack its own A passages, or two
+    // different things would answer to one handle and the wrong one would be named.
+    for (const f of ['lib/ask/calendarBrief.ts', 'lib/ask/documentsBrief.ts']) {
+      const src = source(f)
+      assert.ok(!/idPrefix: 'A'/.test(src), `${f} must not use the engine's letter`)
+      assert.ok(!/`A\$\{/.test(src), `${f} must not build an A id`)
+    }
+  })
+
+  test('every carried file gets a passage, this turn\'s first, numbered from 1', () => {
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: { ...file('Certificate.pdf', LINE, 'doc-9'), id: 'doc-9', name: 'Certificate.pdf' },
+      documents: [file('Older.pdf', 'something else entirely, in words')] }
+    const ps = attachedPassages(files)
+    assert.deepEqual(ps.map((p) => p.id), ['A1', 'A2'])
+    assert.equal(ps[0].shortName, 'Certificate.pdf')
+    assert.equal(ps[0].label, 'the file you attached')
+    assert.equal(ps[0].href, '/documents?document=doc-9', 'the card opens the document')
+    assert.deepEqual(carriedList(files).length, 2)
+  })
+
+  test('AND THE QUOTE NOW MATCHES — the whole point of the change', () => {
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: { ...file('Certificate.pdf', `Service record\n${LINE}\nNext annual due 2026-08-20.`, 'd1'),
+        id: 'd1', name: 'Certificate.pdf' } }
+    const passages = attachedPassages(files)
+    const hit = checkQuote(LINE, 'A1', passages)
+    assert.equal(hit?.id, 'A1', 'a quote from the attached file is found')
+    // And end to end, through the check the answer really goes through: no marking, one source.
+    const checked = finishAnswer(`The certificate says “${LINE}”`, [], [], passages, [])
+    assert.ok(!checked.text.includes(NOT_IN_WHAT_WE_HAVE), checked.text)
+    assert.equal(checked.notFound, 0)
+    assert.equal(checked.sources.length, 1)
+    assert.equal((checked.sources[0] as { passage_id: string }).passage_id, 'A1')
+  })
+
+  /**
+   * *** AND WITH THE FIELD MISSING IT GOES BACK TO BEING MARKED. *** The test that proves these
+   * tests can see the defect at all (`CLAUDE.md` §9a: prove a presence before claiming an
+   * absence). A file with no text is the same case, and is the honest one — `PENDING.md` D3.
+   */
+  test('a file with no text to check against still marks the quote, as it always did', () => {
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: { ...file('Scan.pdf', '', 'd2'), id: 'd2', name: 'Scan.pdf' } }
+    const passages = attachedPassages(files)
+    assert.equal(passages.length, 1, 'it is still a named handle')
+    assert.equal(passages[0].text, '')
+    const checked = finishAnswer(`It says “${LINE}”`, [], [], passages, [])
+    assert.ok(checked.text.includes(NOT_IN_WHAT_WE_HAVE))
+    assert.equal(checked.notFound, 1)
+  })
+
+  test('a passage with nothing in it still gets the file\'s NAME into the sentence', () => {
+    // `replacePassageIds`' reason: an answer that writes "A1" at a person is the Calendar's
+    // "dates C6 and C7" happening in a new place.
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: { ...file('Scan.pdf', '', 'd2'), id: 'd2', name: 'Scan.pdf' } }
+    assert.equal(replacePassageIds('as A1 shows', attachedPassages(files)), 'as Scan.pdf shows')
+  })
+
+  test('the files with no text are named in the message, and counted', () => {
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: { ...file('Photo.pdf', '', 'd3'), id: 'd3', name: 'Photo.pdf' },
+      documents: [file('Scan.png', ''), file('Readable.docx', 'words we can read back, plenty of them')] }
+    const note = noTextNote(files)
+    assert.match(note, /^2 attached file\(s\) carry no text we can read back \(Photo\.pdf, Scan\.png\)/)
+    assert.match(note, /do not quote from them/)
+    // And it reaches the message the model is sent.
+    const m = lastUserMessage(files, 'THE CONTEXT', 'What does it say?')
+    const t = typeof m.content === 'string' ? m.content
+      : ((m.content as Array<{ text?: string }>).at(-1)?.text ?? '')
+    assert.ok(t.includes(note))
+    assert.ok(t.indexOf(note) < t.indexOf('THE CONTEXT'), 'before the context, with the other file lines')
+  })
+
+  /**
+   * *** NOTHING IS SAID WHEN THERE IS NOTHING TO SAY, AND THAT IS WHAT KEEPS THE CALENDAR'S
+   * BYTES WHERE THEY WERE. *** The step 2 and 4a proofs compare the whole user message byte for
+   * byte; a sentence added unconditionally would move it for every section on every turn.
+   */
+  test('a section that attaches nothing sends exactly what it always sent', () => {
+    assert.equal(noTextNote(NO_CARRIED_FILES), '')
+    assert.deepEqual(attachedPassages(NO_CARRIED_FILES), [])
+    assert.equal(lastUserMessage(NO_CARRIED_FILES, 'THE CONTEXT', 'When?').content,
+      'THE CONTEXT\n\nQuestion: When?')
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: { ...file('Readable.pdf', 'all of its words, read back', 'd4'), id: 'd4', name: 'Readable.pdf' } }
+    assert.equal(noTextNote(files), '', 'a file we CAN read says nothing either')
+  })
+
+  test('the engine checks the answer against one list: the brief\'s plus the conversation\'s', () => {
+    const engine = readFileSync('lib/ask/engine.ts', 'utf8')
+    assert.match(engine, /const filePassages = attachedPassages\(files\)/)
+    assert.match(engine, /const passages = \[\.\.\.packed\.passages, \.\.\.filePassages\]/)
+    assert.match(engine, /ev\.searched,\n\s+passages, ev\.cited as CitedPassage\[\]\)/)
+    assert.ok(!/finishAnswer\([^)]*packed\.passages/.test(engine),
+      'the check must not be given the brief\'s list alone again')
+    // And the record says what the file contributed, so a run can be read back afterwards.
+    assert.match(engine, /attached_passages: filePassages\.length/)
+    assert.match(engine, /attached_without_text: filePassages\.filter/)
   })
 })

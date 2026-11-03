@@ -31,8 +31,8 @@ export const tokensOf = (text: string): number => Math.ceil(text.length * TOKENS
  * ONE PIECE OF TEXT THE ANSWER WAS GIVEN, and what a card made from it should say.
  *
  * `id` is what the model writes in a marker — "C3", "D1", "F2" — a letter for the kind and a
- * number. The letter is the section's choice; the engine only requires that ids are unique and
- * match `PASSAGE_ID`.
+ * number. The letter is the section's choice, with ONE exception below; the engine only requires
+ * that ids are unique and match `PASSAGE_ID`.
  */
 export interface Passage {
   id: string
@@ -47,6 +47,22 @@ export interface Passage {
   /** What this passage is called in a sentence — the date's own title. Falls back to `title`. */
   shortName?: string
 }
+
+/**
+ * *** `A` IS THE ENGINE'S LETTER, NOT A SECTION'S — the owner, 2 November 2026
+ * (`docs/GAPS-PLAN.md` decision 22a). ***
+ *
+ * Every other letter belongs to the brief that packs it: C a calendar date, D a stored reading,
+ * F an audit finding, I a line in the Documents list, R a document's reading. `A` is a file the
+ * person attached to THIS conversation, and the engine adds it for every section
+ * (`lib/ask/engine.ts` `attachedPassages`) — because an attachment belongs to the conversation
+ * and not to any one section's context.
+ *
+ * So a brief must not use `A` for a kind of its own, or two different things would answer to one
+ * handle and `replacePassageIds` would name the wrong one. `tests/unit/askEngine.test.ts` holds
+ * every brief in the repository to that.
+ */
+export const ATTACHED_PREFIX = 'A'
 
 export interface AskWebSource { n: number; kind: 'web'; title: string; url: string; label: 'official' | 'other' }
 export interface AskPassageSource {

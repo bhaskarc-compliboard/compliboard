@@ -87,9 +87,15 @@ describe('the brief is a brief', () => {
     assert.deepEqual(documentsBrief.offers, [])
   })
 
-  test('its sentences are the drafted ones, and there are no more than eight', () => {
+  /**
+   * EIGHT AT 4a, ELEVEN AT 4a-TEST. The three added are the Calendar's honesty sentences, each
+   * written after a real run went wrong: an id written at a person, a rule number from memory
+   * with `searches=0`, and the one sentence the person was owed withdrawn because it was written
+   * before the first search. The failures are the ENGINE's, so the lessons are every section's.
+   */
+  test('its sentences are the drafted ones, and there are eleven', () => {
     assert.deepEqual(documentsBrief.promptSentences, DOCUMENTS_SENTENCES)
-    assert.ok(DOCUMENTS_SENTENCES.length <= 8, `${DOCUMENTS_SENTENCES.length} sentences — the brief said eight at most`)
+    assert.equal(DOCUMENTS_SENTENCES.length, 11)
     for (const s of DOCUMENTS_SENTENCES) assert.ok(s.trim().length > 0)
   })
 
@@ -334,5 +340,24 @@ describe('the words a person reads', () => {
     // there — asserting the word's absence failed on the sentence that forbids it.
     assert.match(all, /Never say "AI"/)
     assert.match(all, /never call this company or anything it holds compliant or non-compliant/)
+  })
+
+  /**
+   * THE THREE THE CALENDAR PAID FOR. Each is `prompts/calendar-answer.ts`'s sentence with this
+   * section's handles in it, and each exists because of a measured failure rather than a style
+   * preference — which is why the test names all three rather than counting them.
+   */
+  test('and the three honesty sentences the Calendar\'s real runs bought', () => {
+    const all = DOCUMENTS_SENTENCES.join(' ')
+    // The ids rule: the handles of THIS section, and the instruction to name the document.
+    assert.match(all, /\(I3, R1, A1\) are handles for citing a passage/)
+    assert.match(all, /Never write one in a sentence/)
+    // A rule number is a claim.
+    assert.match(all, /Do not give a rule number from memory/)
+    // Search first, or lib/ai.ts withdraws the sentence the person was owed.
+    assert.match(all, /search before you begin the answer/)
+    assert.match(all, /treated as thinking aloud/)
+    // A is the engine's letter for an attached file, and the prompt names it as one.
+    assert.match(all, /\bA1\b/)
   })
 })
