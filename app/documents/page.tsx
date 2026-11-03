@@ -815,8 +815,14 @@ function DocumentsPageContent() {
               // what would fix it. `CLAUDE.md` §5.1.
               <p className="mt-1 text-[12px] text-[var(--amber)]">
                 {r.could_not_read_reason || 'We could not read this clearly enough to rely on.'}{' '}
+                {/* *** "Add it again", NOT "Upload a clearer copy" — B1, decision 51. ***
+                Since B1 the sentence above this control can be a FORMAT refusal: "Save it as
+                .docx or PDF and add it again." Telling that person to upload a clearer copy of a
+                file whose sharpness was never the problem is the wrong instruction in the most
+                visible place, photographed on the walk. The sentence says what to do; this is
+                only the way to do it, and these words are true of every reason. */}
                 <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
-                  className="text-gray-600 underline hover:text-gray-900">Upload a clearer copy</button>
+                  className="text-gray-600 underline hover:text-gray-900">Add it again</button>
               </p>
             )}
           </div>

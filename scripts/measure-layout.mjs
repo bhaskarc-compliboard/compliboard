@@ -31,6 +31,27 @@
 // (Task 2b). So "one click opens the picker" is proved without choosing or uploading a file — an
 // upload would start a paid reading.
 //
+// *** AND `--attach` ACTUALLY HANDS THE PAGE A FILE — GAPS-PLAN Part B step B1, 3 Nov 2026. ***
+//
+//   npm run measure -- /documents --attach tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf
+//   npm run measure -- /documents --attach-any  "a.doc"        (as somebody who chose All Files)
+//   npm run measure -- /documents --attach-any  "2:a.doc"      (the SECOND file input — the paperclip)
+//   npm run measure -- /documents --attach-folder "a.pdf,b.doc"   (the webkitdirectory input)
+//
+// `--file-chooser` proves a button OPENS a picker and can go no further, so until this nothing in
+// the repository could walk a chosen file through a screen at all. The files are set with
+// `DOM.setFileInputFiles` — what Chrome's own picker ends in, and it fires the `change` event
+// itself — so the page's onChange runs exactly once, as it would for a person. Paths are comma-separated and relative to the repository root.
+// Each is an ordered action like `--click`, so two picks can be walked in one run.
+//
+// THE FILE COUNT IS READ BACK OUT OF THE INPUT AND PRINTED, and a count below one throws. Three
+// different silent no-ops were found behind this call on its first afternoon and every one of them
+// looked identical from outside — see the long note at the action itself.
+//
+// *** IT STILL SPENDS NOTHING BY ITSELF. *** Attaching is not a request: the upload and the
+// reading are `*.supabase.co` and `/api/document-scan`, both already blocked and both printed in
+// the BLOCKED list. A walk that wants the reading to really happen says so with `--allow`.
+//
 // On a page with a composer (a <textarea> in the column) it also prints where typed text starts,
 // each overlay line's first glyph against it, the attach line, the actions beside it, and the
 // counts line.
@@ -94,10 +115,13 @@
 // then waits. Repeat it to walk a path (a tab, a row, a button in the drawer). It is the only way
 // to open a drawer, and the block above is what makes it safe.
 import { spawn, execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
+
+/** The repository root, so `--attach` paths read the way every other path in a brief does. */
+const ROOT = process.cwd()
 
 // ---- arguments
 const argv = process.argv.slice(2)
@@ -152,6 +176,9 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--date') actions.push({ kind: 'date', value: argv[++i] })
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
+  else if (a === '--attach') actions.push({ kind: 'attach', value: argv[++i], folder: false, any: false })
+  else if (a === '--attach-any') actions.push({ kind: 'attach', value: argv[++i], folder: false, any: true })
+  else if (a === '--attach-folder') actions.push({ kind: 'attach', value: argv[++i], folder: true, any: false })
   else if (a === '--base') base = argv[++i].replace(/\/+$/, '')
   else if (a === '--allow') allows.push(argv[++i])
   else if (a === '--log') logFilter = argv[++i]
@@ -282,7 +309,137 @@ try {
   await new Promise((r) => setTimeout(r, waitMs))
 
   for (const action of actions) {
-   if (action.kind === 'type') {
+   if (action.kind === 'attach') {
+    /**
+     * *** HANDING THE PAGE A FILE, THE WAY CHROME'S OWN PICKER DOES — GAPS-PLAN Part B step B1,
+     * 3 November 2026. ***
+     *
+     *   --attach <paths>          the files input, exactly as its `accept` allows
+     *   --attach-any <paths>      the files input with `accept` lifted for the one call
+     *   --attach-folder <paths>   the folder input (`webkitdirectory`)
+     *
+     * `--file-chooser` proved a button OPENS a picker and could go no further, so until this flag
+     * nothing in the repository could walk a chosen file through a screen — which is why B1's
+     * refusal, a screen whose whole job is to answer a chosen file, had no way to be photographed.
+     *
+     * *** FOUR THINGS ABOUT `DOM.setFileInputFiles` THAT EACH COST AN HOUR. Written down so they
+     * cost nobody else one. Every one of them FAILED SILENTLY — the call returns `{}` with no
+     * error and sets nothing — which is why the file count is read back out of the input and
+     * printed, and why a count below one throws. ***
+     *
+     *   1. IT NEEDS A `nodeId` FROM THE DOM DOMAIN, and `DOM.getDocument` must have been called
+     *      first: the node map is empty until it has. An `objectId` from `Runtime.evaluate` is
+     *      accepted and ignored.
+     *   2. *** IT DISPATCHES `change` ITSELF, AND NOTHING MUST BE DISPATCHED HERE. *** This
+     *      looked like the opposite at first, because 1. was still unfixed and no event could
+     *      fire from an input holding nothing. Adding `input` and `change` by hand then made the
+     *      page's `onChange` run TWICE and uploaded the same PDF twice, 28 ms apart; dispatching
+     *      `change` alone still ran it twice, 98 ms apart. Read back out of staging rather than
+     *      reasoned about: `documents` held two identical rows both times and holds one now.
+     *      A harness that quietly doubles a write is a harness that reports a product defect
+     *      that is its own, so the count is printed and the rows were checked.
+     *   3. *** THE COUNT MUST BE TAKEN IN A `change` LISTENER, NOT READ BACK AFTERWARDS. ***
+     *      `app/documents/page.tsx` clears its input when nothing it was given can be read, so a
+     *      REFUSAL THAT WORKED and a file that never arrived both read back as zero — and the
+     *      first version of this flag called the first one a failure and stopped the walk. A
+     *      capture-phase listener is attached before the files are set and records what the event
+     *      actually carried. *** `accept` is NOT enforced by this call *** — tested on its own
+     *      against an input with `accept=".pdf,.docx"`, which took a `.doc` without complaint. So
+     *      `--attach-any` lifts `accept` only so that the page cannot be said to have been given
+     *      something its own markup refuses; it is the person who chose All Files in the dialog.
+     *   4. *** IT CANNOT DRIVE A DIRECTORY INPUT. *** Given either the files or the containing
+     *      folder, a `webkitdirectory` input stays empty (Puppeteer documents the same limit). So
+     *      `--attach-folder` takes the attribute off for the one call too, and says so in its
+     *      output. **Nothing about the walk is weakened by that:** `app/documents/page.tsx:854`
+     *      and `:861` give BOTH inputs the same `onChange={(e) => onFilesPicked(e.target.files)}`,
+     *      so a multi-file pick and a folder are the identical code path — the handler, the
+     *      filter and the skipped line are the same lines either way.
+     *
+     * `input[type=file]` is HIDDEN on every page here: a styled button calls `.click()` on it. So
+     * this does not filter by visibility, which every other action in this script does.
+     */
+    /**
+     * A LEADING `<n>:` PICKS THE nth FILE INPUT, 1-based, in document order — for a page that has
+     * more than one. `/documents` has three: the page's own files picker, its folder picker, and
+     * the paperclip inside `components/AskScreen.tsx`. Without this the paperclip could not be
+     * aimed at, and the paperclip is a different screen with different words.
+     */
+    const aimed = /^(\d+):/.exec(action.value)
+    const want = aimed ? Number(aimed[1]) : 1
+    const paths = action.value.slice(aimed ? aimed[0].length : 0)
+      .split(',').map((x) => resolve(ROOT, x.trim()))
+    for (const f of paths) if (!existsSync(f)) throw new Error(`--attach: no such file ${f}`)
+    const flag = action.folder ? '--attach-folder' : action.any ? '--attach-any' : '--attach'
+
+    // 1. FIND IT IN THE PAGE, lift what would silently swallow the files, and tag it so the DOM
+    //    domain can be pointed at the same element. The lifted attributes are remembered on the
+    //    element itself and put back in step 4, so the photograph is of the real page.
+    const lifted = await evaluate(`(() => {
+      const all = [...document.querySelectorAll('input[type=file]')]
+      const dir = (e) => e.hasAttribute('webkitdirectory') || e.hasAttribute('directory')
+      const el = all.filter((e) => ${action.folder ? 'dir(e)' : '!dir(e)'})[${want - 1}]
+      if (!el) return null
+      const off = []
+      for (const a of ${JSON.stringify(action.folder ? ['webkitdirectory', 'directory'] : action.any ? ['accept'] : [])}) {
+        if (el.hasAttribute(a)) { off.push([a, el.getAttribute(a)]); el.removeAttribute(a) }
+      }
+      el.setAttribute('data-attach-target', '1')
+      window.__attachLifted = off
+      /**
+       * *** THE COUNT IS TAKEN IN A CAPTURE LISTENER, BEFORE THE PAGE HAS HAD IT. ***
+       * Reading el.files.length after the call reads it after the page's own handler has run, and
+       * a handler that refuses everything CLEARS THE INPUT - app/documents/page.tsx sets
+       * fileInputRef.current.value to empty when nothing it was given can be read, which is right
+       * and is what lets the same file be picked again once it has been saved as something else.
+       * So a working refusal and a file that never arrived both read back as zero. Half an hour
+       * went into the wrong one of those. Capture phase, so this runs before React's root
+       * listener. No backticks in this comment: it is inside a template literal.
+       */
+      window.__attachSaw = -1
+      el.addEventListener('change', (e) => { window.__attachSaw = e.target.files.length },
+        { capture: true, once: true })
+      return off.map(([a]) => a)
+    })()`)
+    if (lifted === null) {
+      const n = await evaluate("document.querySelectorAll('input[type=file]').length")
+      throw new Error(`${flag}: this page has no ${action.folder ? 'folder' : 'file'} input `
+        + `number ${want} (it has ${n} file input(s) in all)`)
+    }
+    await cdp(ws, 'DOM.enable')
+    const { root } = await cdp(ws, 'DOM.getDocument', { depth: -1 })
+    const { nodeId } = await cdp(ws, 'DOM.querySelector', {
+      nodeId: root.nodeId, selector: 'input[data-attach-target]',
+    })
+    if (!nodeId) throw new Error(`${flag}: the input could not be found through the DOM domain`)
+    if (process.env.ATTACH_DEBUG) {
+      const d = await cdp(ws, 'DOM.describeNode', { nodeId })
+      const n = await evaluate("document.querySelectorAll('input[type=file]').length")
+      console.log('  attach-debug:', n, 'file inputs; lifted', JSON.stringify(lifted),
+        '; chosen attrs', JSON.stringify(d.node?.attributes))
+    }
+
+    // 2. HAND THEM OVER — Chrome fires `change` for us. 3. COUNT, AND PUT BACK WHAT WAS LIFTED.
+    await cdp(ws, 'DOM.setFileInputFiles', { files: paths, nodeId })
+    const held = await evaluate(`(() => {
+      const el = document.querySelector('input[data-attach-target]')
+      const n = window.__attachSaw
+      if (el) {
+        for (const [a, v] of (window.__attachLifted || [])) el.setAttribute(a, v)
+        el.removeAttribute('data-attach-target')
+      }
+      delete window.__attachLifted; delete window.__attachSaw
+      return n === undefined ? -1 : n
+    })()`)
+    if (held < 1) {
+      throw new Error(`${flag}: the page's change event carried ${held} file(s) — nothing was `
+        + 'handed to it, so the run would photograph a screen that was never given a file.')
+    }
+    await new Promise((r) => setTimeout(r, waitMs))
+    console.log(`attached${action.folder ? ' (folder)' : action.any ? ' (past accept)' : ''}: `
+      + `${paths.map((f) => f.split('/').pop()).join(', ')}   → the page was handed ${held} file(s)`
+      + (lifted.length ? `   (${lifted.join(', ')} lifted for the call and put back)` : ''))
+   }
+   else if (action.kind === 'type') {
     /**
      * *** `--type "<label>=<text>"` AIMS AT ONE FIELD — added at My Account step 6. ***
      * `--type` has always filled the FIRST visible textarea or text input, which is enough for a

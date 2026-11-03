@@ -229,7 +229,7 @@ export default function DocumentReport({
    */
   folders: Array<{ id: string; name: string }>
   onMove: (documentId: string, folderId: string | null) => Promise<void> | void
-  /** Opens the page's own file picker — used by "Upload a clearer copy" and "Add a newer version". */
+  /** Opens the page's own file picker — used by "Add it again" and "Add a newer version". */
   onPickFile: (versionOf?: string) => void
   /** A line above the title — the Audits section's way back to the audit it came from. */
   topLine?: React.ReactNode
@@ -525,8 +525,14 @@ export default function DocumentReport({
           {row.could_not_read_reason
             || 'We could not read this clearly enough to rely on.'}
         </p>
+        {/* *** "Add it again", NOT "Upload a clearer copy" — B1, decision 51. ***
+        Since B1 the sentence above this control can be a FORMAT refusal: "Save it as
+        .docx or PDF and add it again." Telling that person to upload a clearer copy of a
+        file whose sharpness was never the problem is the wrong instruction in the most
+        visible place, photographed on the walk. The sentence says what to do; this is
+        only the way to do it, and these words are true of every reason. */}
         <button onClick={() => onPickFile()}
-          className="mt-4 text-[14px] text-gray-600 underline hover:text-gray-900">Upload a clearer copy</button>
+          className="mt-4 text-[14px] text-gray-600 underline hover:text-gray-900">Add it again</button>
       </Drawer>
     )
   }

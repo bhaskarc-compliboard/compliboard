@@ -1036,7 +1036,7 @@ export default function CompliancePage() {
       {/* THE FILE PICKER, AT PAGE LEVEL, AS ON AUDITS (`app/audits/page.tsx:475–476`) — Task 2b.
           It lived inside an "Attach a file" sheet, so attaching was three clicks: open the sheet,
           press "Choose a file", pick. Now the attach line, the docked paperclip and the file card's
-          "Upload a clearer copy" each call `.click()` on this. The handler is unchanged, and it
+          "Add it again" each call `.click()` on this. The handler is unchanged, and it
           already cleared the value after a pick, as Audits' does, so the same file can be chosen
           twice. */}
       <input ref={fileInput} type="file" className="hidden"
@@ -1652,7 +1652,7 @@ export default function CompliancePage() {
           `onPickFile` is the one prop with no twin here: on /documents it opens that page's
           uploader, and "Add a newer version" files the upload as a version of this document. This
           page has no version upload, so a version request goes to Documents to be done there;
-          "Upload a clearer copy" and "Add the log" stage a file in this box instead. */}
+          "Add it again" and "Add the log" stage a file in this box instead. */}
       {reportDoc && (
         <>
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setReportDoc(null)} />
@@ -1785,8 +1785,14 @@ function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRe
             <p className="mt-1 text-[13px] leading-relaxed text-amber-900">
               {file.failure ?? 'We could not read this one well enough to rely on it. A photo taken square-on in good light would do it, or the original PDF if you have one. It is saved to Documents either way.'}
             </p>
+            {/* *** "Add it again", NOT "Upload a clearer copy" — B1, decision 51. ***
+            Since B1 the sentence above this control can be a FORMAT refusal: "Save it as
+            .docx or PDF and add it again." Telling that person to upload a clearer copy of a
+            file whose sharpness was never the problem is the wrong instruction in the most
+            visible place, photographed on the walk. The sentence says what to do; this is
+            only the way to do it, and these words are true of every reason. */}
             <button onClick={onRetry} className="mt-2 text-[12.5px] font-medium text-emerald-700 underline">
-              Upload a clearer copy
+              Add it again
             </button>
           </>
         ) : (
