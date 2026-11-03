@@ -2,6 +2,9 @@
 
 **Version:** 2 · **Written:** 29 October 2026, by Claude Code at the close of My Account part C.
 **Updated:** 2 November 2026, at `docs/GAPS-PLAN.md` Part A step 3: **S7 gains its number** — a carried attachment costs ~2,376 input tokens a turn, measured on Haiku. No row added or removed; the counts below stand at 49.
+**Updated:** 2 November 2026, at `docs/GAPS-PLAN.md` Part A step 4b: **F12 and D15 CLOSED.** The Documents page has
+the chat (three tabs, two routes, the index and the readings as its context) and it reads `?document=<id>`, so every
+reading card and every fact link opens the report it names. Open items 49 → 47; known defects 15 → 14.
 **Updated:** 2 November 2026, at `docs/GAPS-PLAN.md` Part A step 1: **D15 added** — a Calendar chat reading card's `/documents?document=<id>` link is read by nothing on the Documents page — so the count rises from 48 to 49 and the known defects from 14 to 15. **D5**'s line number corrected, `:533` → `:621`. Both from reading the code, not the docs.
 **Updated:** 2 November 2026, at the close of the public pages (`docs/PUBLIC-PAGES-PLAN.md` step 35): **F12, chat
 over documents**, added — it was the one release gate for the homepage with no id here (§5 of that plan said "add
@@ -27,7 +30,7 @@ one at step 35"). Three rows corrected where this build's own greps found them s
 **12** unfinished features (F) · **15** known defects (D) · **7** security and limits (S) · **8**
 waiting on the owner (O) · **7** deliberately not built (N) · **3** hypotheses (H).
 12 + 15 + 7 + 8 + 7 = **49**; the three H rows are claims to settle, not work to do.
-*(47 and 11 until 2 November 2026, when F12 was added; 48 and 14 until later the same day, when D15 was added.)*
+*(47 and 11 until 2 November 2026, when F12 was added; 48 and 14 until later the same day, when D15 was added; 49 and 15 until step 4b closed both.)*
 
 | | do first | why this one |
 |---|---|---|
@@ -57,7 +60,7 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | **F9** | **Conversations in the data export.** `/api/account/export` reads **no `topics` and no `turns`** | `docs/ACCOUNT-PLAN.md` open question 2; `docs/HANDOFF-FROM-ACCOUNT.md` §7.4 | Board 5's *"and conversation, as files"* overstates what the file holds. The page's wording is already honest; the export is what must catch up | a day |
 | **F10** | **A re-read button for the website read** | `DECISIONS.md` §210 (line 15145): *"A re-read button is owed and is not built"* | *"Read once"* is the route's rule, and **two of seven sites measured failed for temporary reasons**. A person who fixes their website is told *"we already tried"* | an hour |
 | **F11** | **An email before a discount ends** | `DECISIONS.md` §221 F; `docs/HANDOFF-FROM-ACCOUNT.md` §7.6 | The Billing tab names the date twice. Nothing sends it, so a customer whose discount lapses finds out from a failed charge | a day |
-| **F12** | **Chat over documents.** *"Show me all training documents"* answered from the reports; *"am I compliant on wastewater"* reads the reports first and opens the file only when needed — the research engine with a different context, the reports as the index | `docs/VISION-DOCUMENTS.md:207`, *"Later, not rev 1"*; `docs/PUBLIC-PAGES-PLAN.md` §5; marked on the page at `components/home/DocumentsPanel.tsx:1` (which says "no PENDING id yet" — this is that id) | **A release gate for the homepage:** panel 4 draws a question typed into the documents box and a conversation line under it, and neither exists. The report itself is live today, so the rest of that panel is true. Nothing is built: the Documents page has no chat surface, and `lib/ask/` has one customer (Calendar) | a week |
+| ~~**F12**~~ | ~~**Chat over documents.**~~ **CLOSED 2 November 2026** — `docs/GAPS-PLAN.md` Part A step 4b. `/documents` opens Ask a question; `lib/ask/documentsBrief.ts` packs every document's line whole and then the full reading of the ones the question names; `app/api/documents/answer` and `app/api/documents/topics/[id]/summarise` are the two routes; a quoted line becomes a card that opens that document's report. Measured before it shipped: 39 runs on Sonnet 5.5 with and without the context (step 4a-test) and three on Opus 5.5 (4a-compare). `components/home/DocumentsPanel.tsx:1` now says closed. **The homepage's own box still types nothing — that is the marketing page's, not this.** | — | — | done |
 
 ---
 
@@ -79,7 +82,7 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | **D12** | **Three site-scope questions cannot be answered Yes or No** (`air_toxics_program_applicable`, `exposure_vinyl_chloride`, `industrial_stormwater`) | `docs/HANDOFF-CODE.md` §7 | Each offers two alternatives, so Yes cannot say which half. Harmless today because site questions are asked nowhere — **owed to whoever asks a site question first**, with migration 081 §2 as the pattern | an hour |
 | **D13** | **`/upload` is broken and unreachable.** `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket | `STATUS.md`, Upload rows; `docs/TODO.md` §0.7 | Nothing links to it; `/documents` is the upload surface. `INVENTORY-2026-09.md` proposes deleting the page. **A decision, not a fix** | an hour |
 | **D14** | **Ten near-duplicate company names on production** | `docs/HANDOFF-CODE.md` §7; `docs/HANDOFF-FROM-DASHBOARD.md` §7.7 | A tidy-up, not a defect — but any per-company reading of production is hard to read and a demo would be embarrassing. Only `CB-Test-3` holds data | an hour |
-| **D15** | **A reading card in the Calendar chat lands nowhere.** When a Calendar answer cites a document's stored reading, the card's link is `/documents?document=<id>` (`lib/ask/calendarBrief.ts:181`, drawn as a real link by `components/AnswerBody.tsx:198`–`:199`) and **the Documents page reads no such word** — `grep` for `params.get` in `app/documents/page.tsx` returns `add` (`:185`) and `return` (`:198`) and nothing else | read from the code, 2 Nov; `docs/GAPS-PLAN.md` §8 | The click lands on the Documents list with no report open and no sentence saying why. **Company information's fact links have the same dead end** (`app/company-information/page.tsx:989`). A date card is unaffected — it opens the date drawer, whose second tab carries the report. The Calendar chat is live on production, so this is shipped. **Fixed in `docs/GAPS-PLAN.md` Part A step 4**, on the Documents page; Calendar needs no change | an hour |
+| ~~**D15**~~ | ~~**A reading card in the Calendar chat lands nowhere.**~~ **CLOSED 2 November 2026** — `docs/GAPS-PLAN.md` Part A step 4b. `app/documents/page.tsx` reads `?document=<id>`, resolves it against the rows it has already read, and opens that report in the drawer; an id that matches nothing shows one plain line — *"That document is not on file. It may have been deleted."* — and never says WHICH of deleted, never-existed or another company's, because telling a stranger that an id exists is the probe §3.6 answers 404 to. **Walked live on the isolated Haiku server:** a real source card in a real answer, clicked, landed on the Documents tab with that permit's report open. Company information's fact links are mended by the same change, with no edit to that file. | — | — | done |
 
 ---
 

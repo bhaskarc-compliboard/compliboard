@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 6 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 7 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame. Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -10,6 +10,7 @@
 **Updated:** 2 November 2026 — **Part A step 4a done** (§5), and step 4 split into 4a and 4b. Two commits: `7e6742b` the packer and the dump, `01feb15` the brief and the prompt. §3 records the four step-3 decisions. §7 gains what the owner reads next. §8 gains the one thing 4a could not do.
 **Updated:** 2 November 2026 — **Part A step 4a-test done** (§5). Three commits: `6a4dae1` the eleven sentences and the quote fix, `67d6b45` the six keys and the probe, and the plan's own. **The verdict in one line: the brief and the prompt earn their tokens on five of six questions and are worth the 2.4× they cost, and the one place they are not ahead is a question about an attached file.** §8 gains three things the runs found, one of which corrects step 4a's own rendered sample. §7 gains the prompt changes the runs ask for.
 **Updated:** 2 November 2026 — **Part A step 4a-compare done** (§5). One commit: `54f509c`. The owner's three prompt decisions and the index-passage decision are **YES** and are done in 4b, not in that run; the action row is struck from §7 as decided at step 2. `docs/TEST-AT-FINISH-LINE.md` gains **"Which model, per tier"** as a shared item, with this as its first data point.
+**Updated:** 2 November 2026 — **Part A step 4b done** (§5), so **Part A's Documents work is finished** and only steps 5 and 6 remain. Four commits: `7d6662e` the thirteen sentences and the quotable index line, `0319c1a` the two routes and the shared summarise body, `31162e0` the page, and the plan's own. §3 gains decisions 24–27. §7 loses four items that are now answered. §8 gains two things the walk found. `docs/PENDING.md` F12 and D15 closed; `STATUS.md`'s Documents row says the page has the chat.
 **Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
 
 ---
@@ -76,6 +77,19 @@ Each names its effect on other sections.
     and its five dates were on the calendar by the second question, and the answer said where the file name, the permittee and a
     calculated date did not match. That is the §3.1 before/after for a Calendar answer reading a file. *Effect: none; step 3
     stands.*
+24. **The three prompt changes and the index passages are built** (the owner, 2 November 2026, from 4a-test's 36 runs
+    and 4a-compare's 3): `DOCUMENTS_GIVEN` ends with the Calendar's quoting clause; `DOCUMENTS_PLAIN_NAME` stops a
+    document's title being written as a quote; and an `I` passage carries a plain-text copy of its own fields so a
+    quoted title matches and becomes a card. **The normaliser is NOT changed** — HR and the Calendar check quotes
+    through it too. *Effect: `prompts/documents-answer.ts` and `lib/ask/documentsBrief.ts` only.*
+25. **A Documents chat does not offer in prose** (the owner, 2 November 2026). It offered in 18 of 36 measured runs
+    — *"I can draft a short service request"* — and there is no button, so the person says yes to nothing.
+    `DOCUMENTS_NO_OFFERS`: *"Do not offer to do things for the person. Say what they could do next."* Thirteen
+    sentences in all. *Effect: Documents only; `offers` stays `[]`.*
+26. **No size cap on carried files stands** (the owner, 2 November 2026; `PENDING.md` S7 keeps the measured ~2,376
+    input tokens a turn). *Effect: none; struck from §7.*
+27. **The action row is Calendar's** — settled at step 2 and struck from §7 at 4a-compare. *Effect: none.*
+
 17. **Reading every file format (`.doc`, `.ppt`, HEIC, TIFF, the honest refusals) is its own part**, after the chats, as `docs/VISION-DOCUMENTS.md` "Where the converting runs" decided. The binder follows it. *Effect: later parts of this file.*
 
 ---
@@ -100,7 +114,7 @@ Each names its effect on other sections.
 | 4a | The quote fix, the packer, the brief and the prompt | `lib/ask/readings.ts` extracted from `calendarBrief.ts:151`–`:191`, Calendar calling it with its own block and letter; `lib/ask/documentsBrief.ts` (the index whole, then the reports, never `extracted_text`); `prompts/documents-answer.ts`, eight sentences; `DOCUMENTS_EXAMPLE_QUESTIONS`; `ASK_DUMP_DIR` kept and documented in `docs/HOW-WE-BUILD.md` §3c. **No route, no page, no model call.** | **done 2 Nov** — `7e6742b`, `01feb15`. The Calendar's input proved unmoved: the 8,714-character message hashes to `29c86d97cf0136d7`, the value step 2 recorded. `npm run check` 2,160 tests. Rendered against Cascade's 23 real readings: 2,028 tokens of index, 15,118 of reports, 17,513 of a 120,000 budget. **ONE THING IS BLOCKED:** decision 3a needs `loadAttachedDocument` to return the extracted text it already computes and throws away (`lib/attachedDocument.ts:110`), and that file is on this step's forbidden list. One additive line; the owner's call. |
 | 4a-test | The prompt measured, with and without | `prompts/documents-answer.ts` gains the Calendar's three honesty sentences (the ids rule, no rule number from memory, search before you begin) — eight becomes **eleven**. **Decision 22a built:** `lib/attachedDocument.ts` returns the `text` it already computes, `lib/ask/passages.ts` names `A` as the engine's letter, `lib/ask/engine.ts` turns every carried file into an `A` passage and names the files with no text. `scripts/probe-documents-answer.mjs`; `tests/golden/documents/chat/keys.md` and `runs/`. **No route, no page.** | Six keys written from the readings BEFORE any run, then 39 calls on `claude-sonnet-5-5` ($1.14 of a $3.00 budget): each question three times WITH everything and three times WITHOUT, the second being the Workspace's open answer. | **done 2 Nov** — `6a4dae1`, `67d6b45`. **A beats B on five of six**: 4/4, 6/6, 3/3, 2/2, 3/3 against 0/4, 3.7/6, 0/3, 0/3, 0/3, in every one of three runs. **Q6, a question about an attached file, is a tie on the key and a loss on the finding** — B caught the certificate's address disagreeing with the company's in 3 runs of 3, A in 1. **The strongest single result:** every rule number A wrote came out of a document it was given; B wrote one from memory with `searches=0` in 12 of 18 runs. **Decision 22a proved live:** a sentence in the file and in no reading matched `A1`, clean, as source [1]. **Three defects found** (§8), one of which corrects 4a's own sample. |
 | 4a-compare | The same question on Opus 5.5 | Question 2 only, variant A only, three runs on `claude-opus-5-5`, everything else identical to `q2-A-1..3` (same fixture, same key, same probe, `DEV_MAX_SEARCHES=2`). **No code change, no prompt change.** | The owner reads the two best answers side by side and judges. | **done 2 Nov** — `54f509c`. **The key does not separate them: 6/6 in all three runs on both models, 0 invented, 0 must-nots.** Opus writes the one paragraph letter the reading verified and marks the rest as unchecked (2 of 3 runs); Sonnet carries the blanket hedge in 3 of 3 but never distinguishes the two. **Sonnet produced the only clickable source in six runs; Opus produced none** — both quote phrases under the six-word floor, so on Opus nothing in the answer can be checked or opened. Neither searched. **$0.0950 against $0.0445 an answer — 2.13× the cost and 1.74× the wall time** ($0.285 of a $1.00 budget). `docs/TEST-AT-FINISH-LINE.md` §"Which model, per tier" holds the table. |
-| 4b | The page, the routes, the links, the walk | The tab row and `?tab=`; `?document=` read (closing `PENDING.md` D15); `app/api/documents/answer/route.ts` and the summarise route on a shared body (decision 15); the four bare links; `PAID_COUNT` 19 → 21; `check:live` probes; `components/home/DocumentsPanel.tsx`'s gate comment retired; `PENDING.md` F12 closed. | **The owner's yes on the prompt and the examples first**, then the walk: ask, open a cited report from its card, upload in the chat. | not started |
+| 4b | The page, the routes, the links, the walk | The tab row and `?tab=`; `?document=` read (closing `PENDING.md` D15); `app/api/documents/answer/route.ts` and the summarise route on a shared body (decision 15); the four bare links; `PAID_COUNT` 19 → 21; `check:live` probes; `components/home/DocumentsPanel.tsx`'s gate comment retired; `PENDING.md` F12 closed. | **The owner's yes on the prompt and the examples first**, then the walk: ask, open a cited report from its card, upload in the chat. | **done 2 Nov** — `7d6662e`, `0319c1a`, `31162e0`. Three tabs, with everything that was on the page inside the Documents tab and **proved unchanged to the pixel**: the table photographed before and after at 1280px is 0 differing pixels once the scrollbar is excluded, the whole body exactly 55px lower. **The letterbox walked live:** a real source card in a real answer, clicked, landed on the Documents tab with that permit's report open. Board 1b, board 3's paperclip and `from_topic_id`, board 4's drawer, the made-up id's one plain line, and the Audits and Dashboard links all walked on Haiku; `npm run check` 2,212 tests; every section's free checks green; all five shared-piece pages measured unmoved. **$0.0406 of Haiku.** **Two things the walk found** (§8), neither a defect in this step's code. |
 | 5 | "Turn this into a checklist" from any section | The route already works from any section (`app/api/checklists/from-topic/route.ts:100–:103` never reads the section). The shared action row shows the button; `components/ConversationList.tsx:68`'s "Checklist n of N done" becomes a link to the Workspace's Checklists tab (decision 8). | The owner clicks it from a Documents conversation and lands on the checklist. HR's and Calendar's free checks (shared file). | not started |
 | 6 | Audits gets the chat | First a board: the Audits box must keep starting audits in code (`submitAsk`, `app/audits/page.tsx:437–:465`) while the page gains a chat — one box with two behaviours or two boxes is the owner's drawing. Then F6 settled by **running** a template audit once on Haiku through the guard (`PUBLIC-PAGES-PLAN.md` step 33's question). Then: the hand-rolled two-tab row (`:574–:587`) becomes `components/Tabs` with Ask a question · Conversations · Where you stand · Past audits; `lib/ask/auditsBrief.ts` (the runs, their findings, the readings behind them, through `lib/ask/readings.ts`); `prompts/audits-answer.ts`; two routes; `AUDITS_EXAMPLE_QUESTIONS`; `PAID_COUNT` 21 → 23; the GATE F7 mark added to `components/home/AuditPanel.tsx:1`; PENDING F5 and D5 closed. | The board; the F6 run's result; the prompt; the examples; the walk. | not started |
 
@@ -125,7 +139,9 @@ Each names its effect on other sections.
 
 ## 7. Open, waiting on the owner
 
-- **⚡ THE DOCUMENTS PROMPT AND THE THREE EXAMPLES — the owner reads them before 4b starts.** **Eleven** sentences
+- ~~**THE DOCUMENTS PROMPT AND THE THREE EXAMPLES**~~ — **answered: the owner read them and said yes, and step 4b
+  built the three changes they asked for. THIRTEEN sentences now, and the examples are on the page.** Kept below as
+  the record of what was measured. **Eleven** sentences
   in `prompts/documents-answer.ts` since 4a-test (the three the Calendar's real runs paid for were added), quoted
   in full in both reports. **They have now been run**, 39 times on `claude-sonnet-5-5` against Cascade's twelve
   real readings, with and without — and three side-by-side answers are in 4a-test's report for the owner to read
@@ -144,16 +160,9 @@ Each names its effect on other sections.
   had a title marked *"we could not find these words in what we have on file"*. (3) **and the code half of the
   same defect** — make an index line quotable, or give the `I` passage a plain-text copy, because today it cannot
   match anything (§8). The wording is in step 4a-test's report.
-- **Whether a Documents chat may offer anything.** `offers` is `[]` today. The Calendar can offer a date because `proposeDate` is
-  one writer with one meaning; a Documents offer would be three different writers (make a checklist, draft a missing section,
-  confirm a fact), and which of them a chat may reach is a product decision.
 - **The paused sentence for a chat upload — the owner's yes.** Shipped as: *"Your file is saved in Documents. It will be read, and
   you can ask about it, once you add a card."* It is shown ABOVE the 402, because the file really is saved and a bare refusal would
   read as though it were lost. In `components/AskScreen.tsx`'s `PAUSED_FILE_SAVED`, one place.
-- **S7: a carried file costs ~2,376 input tokens a turn, every turn** (measured 2 November on Haiku: 8,218 against a 5,842
-  baseline, one 223 KB PDF). Whether a size cap is owed is the owner's call; `docs/PENDING.md` S7 carries the number.
-- Whether a size cap on carried attachments is owed now (PENDING S7; step 3).
-- The Documents prompt and the three examples (step 4).
 - The Audits box board (step 6).
 
 ---
@@ -168,6 +177,22 @@ Each names its effect on other sections.
 - **The Haiku guard reads `AITask` off one line** (`scripts/haiku-names.mjs:21`). If that line is wrapped, the guard silently stops seeing some tiers and a build run spends Opus money. Standing rule for this work: the union stays on one line, and every step that touches it reports the guard's row count.
 - **The homepage's Documents panel** says the plan's two contacts "have both left since"; nothing in the product can know that. For the gate walk, not this part.
 - **⚡ DECISION 3a IS BLOCKED ON ONE ADDITIVE LINE, and it is the owner's.** `parseDocumentToBlocks` computes a file's extracted text and `lib/documentContent.ts:52`–`:68` explains at length why — a PDF is parsed a second time precisely so a quote can be checked against it. **`loadAttachedDocument` then throws it away** (`lib/attachedDocument.ts:110`; `AttachedDocument` at `:68`–`:75` has no `text` field). So the passage decision 3a asks for cannot be built. The fix is additive and breaks nothing — `app/api/chat/route.ts` reads only `.id`, `.name`, `.blocks` and `.kind`: add `text: string` to the interface and `text: parsed.text` to the return. **The alternative, `document_scans.extracted_text`, needs no forbidden edit and costs no tokens (a passage is never sent to the model) but is NULL on the turn that matters most**, because the reading is fire-and-forget and the row is still Queued at the first question — and null forever for a paused company and for a scanned PDF (`PENDING.md` D3). Recommended: the one-liner.
+- **⚡ A JUST-UPLOADED FILE IS IN THE MESSAGE AND SAYS "Queued" IN THE INDEX, AND THE MODEL BELIEVES THE INDEX.**
+  Found by walking board 3 on Haiku. The person attaches a file and asks about it; the engine carries the whole PDF
+  (`check_record`: `attached_passages: 1`, `attached_without_text: 0`, and "the attached file" in the context list) —
+  but the file is also a brand-new row in the index, where its state is **Queued**, because the reading is
+  fire-and-forget and has not finished. The answer opened: *"I can see the file you've attached is not yet readable
+  in my system — it shows as 'Queued' in the document list."* **The plumbing is right and the sentence is wrong.**
+  The fix is a prompt sentence (the attached file is in this message; its line in the list may still say Queued and
+  that says nothing about whether you can read it), which is §3.1 and therefore the owner's. Not applied.
+- **A Calendar answer on Haiku would not produce a reading card in two attempts**, so that one leg of 4b's walk was
+  not clicked. It produced a **date** card instead (`C11`, "your calendar"). The mechanism was proved on the same
+  page by the Documents chat's own card, whose href `lib/ask/documentsBrief.ts` builds with the same string
+  `lib/ask/calendarBrief.ts:189` uses — `/documents?document=<id>` — clicked live and landing on the right report.
+  What is unproven is only that *Haiku chooses to quote a reading in a Calendar answer*, which is model behaviour
+  and not this step's code. **And one stream was cancelled by the walk script and wrote NO `ai_calls` row**, which is
+  the ledger behaving as `npm run cost` says it does: an aborted stream has no token counts and inventing them would
+  put a fiction in the one place meant to be fact.
 - **⚡ STEP 4a's RENDERED SAMPLE WAS FOUR COMPANIES' DOCUMENTS IN ONE LIST, AND THE OWNER WAS SHOWN IT.**
   Found at 4a-test, before any run. **Cascade holds TWELVE documents, not 23.** Twenty-three is the row count of
   `document_index_v` **across every company on staging** — 8 Test Gamma, 12 Cascade, 2 Test Alpha, 1 Step 20 Card
