@@ -1,0 +1,112 @@
+{
+  "question": "Which lines of the template audit point at a document that has been read since the audit?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 29422,
+      "tokens": 11769,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13533,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "I can't answer this yet. The template audit, 12-auditor-checklist-deq-air.docx, is still queued. We have no reading of it, so I can't see its lines or tell which documents they point to.\n\nI also don't know which audit date you mean by \"since the audit\". Every document we hold was read on 2026-10-14, so the answer depends on that date.\n\nIf you mean the blank Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist, we did read that one. Its lines that carry dates are:\n- A2: renewal application at least 120 days before expiry.\n- A3: annual report by February 15.\n- A4: semi-annual monitoring report by July 31.\n- A5: deviation notice within 24 hours and a written report within 15 days.\n\nThose lines relate to the Standard Air Contaminant Discharge Permit and the 2025 annual report. Nothing we hold shows the semi-annual report or the renewal application. The permit's renewal deadline of July 18, 2026 has passed, and the permit expires November 15, 2026.\n\nWhich do you mean: the queued auditor checklist, or the blank DEQ inspection checklist? If it's the queued one, re-attach it to this conversation so I can read its lines. Please also tell me the audit date.",
+  "answer": "I can't answer this yet. The template audit, 12-auditor-checklist-deq-air.docx, is still queued. We have no reading of it, so I can't see its lines or tell which documents they point to.\n\nI also don't know which audit date you mean by \"since the audit\". Every document we hold was read on 2026-10-14, so the answer depends on that date.\n\nIf you mean the blank Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist, we did read that one. Its lines that carry dates are:\n- A2: renewal application at least 120 days before expiry.\n- A3: annual report by February 15.\n- A4: semi-annual monitoring report by July 31.\n- A5: deviation notice within 24 hours and a written report within 15 days.\n\nThose lines relate to the Standard Air Contaminant Discharge Permit and the 2025 annual report. Nothing we hold shows the semi-annual report or the renewal application. The permit's renewal deadline of July 18, 2026 has passed, and the permit expires November 15, 2026.\n\nWhich do you mean: the queued auditor checklist, or the blank DEQ inspection checklist? If it's the queued one, re-attach it to this conversation so I can read its lines. Please also tell me the audit date.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 29422,
+        "tokens": 11769,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 23,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13533,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 16478,
+      "output": 737,
+      "searches": 0,
+      "cost_usd": 0.040326
+    }
+  ],
+  "seconds": 7.4,
+  "topic_id": "f5b26c5f-da1d-41ee-8b56-7bdcf78415c4"
+}

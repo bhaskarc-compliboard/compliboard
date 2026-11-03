@@ -1,0 +1,112 @@
+{
+  "question": "What did the last DEQ audit find, and has anything changed since?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30482,
+      "tokens": 12193,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13957,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "There is no DEQ audit report on file, so I can't say what a last audit found or whether anything has changed since.\n\nTwo documents could be mistaken for one:\n- **Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form).** It is a blank form. It has no facility, date, inspector or answers filled in. It is not a record of an inspection, and it isn't Cascade's own document.\n- **12-auditor-checklist-deq-air.docx.** It is still queued and no summary was stored for it. I can't tell you what it says.\n\nThe closest thing on file to a DEQ response is the Annual Report, Reporting Year 2025, with Oregon DEQ Receipt Confirmation. DEQ's email confirms receipt on February 12, 2026. It says it is not a finding that the report is complete or that the permit was met. So it is not an audit result either.\n\n**What you didn't ask but need to know.** The records you hold show open items that a DEQ inspector would likely ask about. They are listed in the blank inspection form's sections on submissions and records. Our readings are from October 14, 2026, so anything changed since then isn't reflected.\n\n- **Permit expiry.** Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 expires November 15, 2026. The permit set the renewal application deadline at July 18, 2026. No renewal application or DEQ acknowledgment is on file.\n- **Semi-annual report.** The report for January to June 2026 was due July 31, 2026. It is not among your documents.\n- **Carbon replacement.** The Annual Report, Reporting Year 2025, set the next C-1 carbon replacement for on or before March 14, 2026. No replacement record is on file.\n- **Scrubber log.** The Scrubber Pressure-Drop Log shows these gaps:\n  - Readings are missing for August 17–21.\n  - The S-2 reading on September 9 was 6.4, above the 6.0 limit, with no note.\n  - The weekly C-1 check for the week of September 14 is missing.\n  - No supervisor has signed it.\n- **Deviation notices.** The permit asks for notice to DEQ within 24 hours and a written report within 15 days. No notice for the September 9 reading is on file.\n\n**Next step.** Tell me whether a DEQ inspection or audit has happened. If so, add the report or letter to your documents. Separately, check whether the renewal application and the January to June 2026 report were filed, and add the proof to your documents.",
+  "answer": "There is no DEQ audit report on file, so I can't say what a last audit found or whether anything has changed since.\n\nTwo documents could be mistaken for one:\n- **Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form).** It is a blank form. It has no facility, date, inspector or answers filled in. It is not a record of an inspection, and it isn't Cascade's own document.\n- **12-auditor-checklist-deq-air.docx.** It is still queued and no summary was stored for it. I can't tell you what it says.\n\nThe closest thing on file to a DEQ response is the Annual Report, Reporting Year 2025, with Oregon DEQ Receipt Confirmation. DEQ's email confirms receipt on February 12, 2026. It says it is not a finding that the report is complete or that the permit was met. So it is not an audit result either.\n\n**What you didn't ask but need to know.** The records you hold show open items that a DEQ inspector would likely ask about. They are listed in the blank inspection form's sections on submissions and records. Our readings are from October 14, 2026, so anything changed since then isn't reflected.\n\n- **Permit expiry.** Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 expires November 15, 2026. The permit set the renewal application deadline at July 18, 2026. No renewal application or DEQ acknowledgment is on file.\n- **Semi-annual report.** The report for January to June 2026 was due July 31, 2026. It is not among your documents.\n- **Carbon replacement.** The Annual Report, Reporting Year 2025, set the next C-1 carbon replacement for on or before March 14, 2026. No replacement record is on file.\n- **Scrubber log.** The Scrubber Pressure-Drop Log shows these gaps:\n  - Readings are missing for August 17–21.\n  - The S-2 reading on September 9 was 6.4, above the 6.0 limit, with no note.\n  - The weekly C-1 check for the week of September 14 is missing.\n  - No supervisor has signed it.\n- **Deviation notices.** The permit asks for notice to DEQ within 24 hours and a written report within 15 days. No notice for the September 9 reading is on file.\n\n**Next step.** Tell me whether a DEQ inspection or audit has happened. If so, add the report or letter to your documents. Separately, check whether the renewal application and the January to June 2026 report were filed, and add the proof to your documents.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30482,
+        "tokens": 12193,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 23,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13957,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 16853,
+      "output": 838,
+      "searches": 0,
+      "cost_usd": 0.042086
+    }
+  ],
+  "seconds": 7.4,
+  "topic_id": "8ab74bed-d052-4f9b-9b72-9d65729f7c2a"
+}

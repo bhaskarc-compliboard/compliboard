@@ -1,0 +1,112 @@
+{
+  "question": "What is our status on everything DEQ?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30482,
+      "tokens": 12193,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13957,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "**Most important:** Your air permit expires **November 15, 2026**, which is 13 days from today. The Portland Standard Air Contaminant Discharge Permit shows the renewal application was due **July 18, 2026**. No renewal application or DEQ receipt is among your 13 documents. I can't tell whether it was filed. Did you file it? If you did, find the copy and DEQ's receipt. If you didn't, the permit's own condition on operating after expiry (1.2) allows operation only with a renewed permit or a timely renewal application. Contact DEQ right away.\n\n**What the documents show, DEQ only**\n\n*Permit (Standard Air Contaminant Discharge Permit, state: Expiring)*\n- This is DEQ's own document, so there is nothing in it to fix. Renewal is the issue.\n\n*Scrubber Pressure-Drop Log and Weekly C-1 Carbon Outlet Check (state: Needs work).* Its gaps are:\n- **August 17–21:** the daily S-1 and S-2 readings are missing. That is about 5 operating days each.\n- **September 9:** S-2 read 6.4 in. w.c., above the 6.0 limit in Condition 3.1. The Notes column is blank, with no cause or corrective action.\n- **Week of September 14:** the weekly C-1 check is missing (Condition 3.3).\n- **Supervisor review:** the log is unsigned.\n- **September totals:** there are no line-counter totals, so completeness can't be checked.\n- **Deviation reporting:** the permit asks for DEQ notice within 24 hours of a deviation and a written report within 15 days (Condition 5.2). Whether the September 9 reading and any missed monitoring count as deviations is something to check against the permit. I don't see a deviation notice for either in your documents.\n\n*Annual Report for 2025 with DEQ Receipt (state: Recorded)*\n- This is proof you filed on February 12, 2026. DEQ says the receipt confirms receipt only. It is not a finding that the report is complete.\n- That report set the next C-1 carbon replacement for **on or before March 14, 2026**. No carbon replacement record is on file.\n\n**Not on file, so I can't confirm them**\n- The semi-annual monitoring report for January–June 2026, due July 31, 2026.\n- The quarterly scrubber inspection entries. The third-quarter inspection was due September 30, 2026.\n- Visible-emissions records (Condition 3.4).\n- DEQ fee invoices and proof of payment.\n- The weekly C-1 check for the week of September 28, which was due October 2. The log ends September 25.\n\n**Other documents**\n- The DEQ inspector checklist and your Monthly EHS Self-Check are both blank templates. They show a routine exists, not that any check was done.\n- The auditor checklist file is still queued, and I have no reading of it.\n\n**Next step:** Start with the renewal. Find the application and DEQ's receipt, or call DEQ's Northwest Region today if there isn't one. Then collect the missing carbon replacement, semi-annual report and quarterly inspection records.",
+  "answer": "**Most important:** Your air permit expires **November 15, 2026**, which is 13 days from today. The Portland Standard Air Contaminant Discharge Permit shows the renewal application was due **July 18, 2026**. No renewal application or DEQ receipt is among your 13 documents. I can't tell whether it was filed. Did you file it? If you did, find the copy and DEQ's receipt. If you didn't, the permit's own condition on operating after expiry (1.2) allows operation only with a renewed permit or a timely renewal application. Contact DEQ right away.\n\n**What the documents show, DEQ only**\n\n*Permit (Standard Air Contaminant Discharge Permit, state: Expiring)*\n- This is DEQ's own document, so there is nothing in it to fix. Renewal is the issue.\n\n*Scrubber Pressure-Drop Log and Weekly C-1 Carbon Outlet Check (state: Needs work).* Its gaps are:\n- **August 17–21:** the daily S-1 and S-2 readings are missing. That is about 5 operating days each.\n- **September 9:** S-2 read 6.4 in. w.c., above the 6.0 limit in Condition 3.1. The Notes column is blank, with no cause or corrective action.\n- **Week of September 14:** the weekly C-1 check is missing (Condition 3.3).\n- **Supervisor review:** the log is unsigned.\n- **September totals:** there are no line-counter totals, so completeness can't be checked.\n- **Deviation reporting:** the permit asks for DEQ notice within 24 hours of a deviation and a written report within 15 days (Condition 5.2). Whether the September 9 reading and any missed monitoring count as deviations is something to check against the permit. I don't see a deviation notice for either in your documents.\n\n*Annual Report for 2025 with DEQ Receipt (state: Recorded)*\n- This is proof you filed on February 12, 2026. DEQ says the receipt confirms receipt only. It is not a finding that the report is complete.\n- That report set the next C-1 carbon replacement for **on or before March 14, 2026**. No carbon replacement record is on file.\n\n**Not on file, so I can't confirm them**\n- The semi-annual monitoring report for January–June 2026, due July 31, 2026.\n- The quarterly scrubber inspection entries. The third-quarter inspection was due September 30, 2026.\n- Visible-emissions records (Condition 3.4).\n- DEQ fee invoices and proof of payment.\n- The weekly C-1 check for the week of September 28, which was due October 2. The log ends September 25.\n\n**Other documents**\n- The DEQ inspector checklist and your Monthly EHS Self-Check are both blank templates. They show a routine exists, not that any check was done.\n- The auditor checklist file is still queued, and I have no reading of it.\n\n**Next step:** Start with the renewal. Find the application and DEQ's receipt, or call DEQ's Northwest Region today if there isn't one. Then collect the missing carbon replacement, semi-annual report and quarterly inspection records.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30482,
+        "tokens": 12193,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 23,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13957,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 16845,
+      "output": 1034,
+      "searches": 0,
+      "cost_usd": 0.04403
+    }
+  ],
+  "seconds": 9.8,
+  "topic_id": "e84c9acc-15f4-4f1e-a10e-ecc23b69c360"
+}

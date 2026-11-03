@@ -1,0 +1,190 @@
+{
+  "question": "What did the last DEQ audit find, and has anything changed since?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your audits",
+      "chars": 514,
+      "tokens": 206,
+      "left_out": null
+    },
+    {
+      "name": "the findings",
+      "chars": 22498,
+      "tokens": 9000,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30482,
+      "tokens": 12193,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 23163,
+  "passages": [
+    "U1",
+    "U2",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19",
+    "F20",
+    "F21",
+    "F22",
+    "F23",
+    "F24",
+    "F25",
+    "F26",
+    "F27",
+    "F28",
+    "F29",
+    "F30",
+    "F31",
+    "F32",
+    "F33",
+    "F34",
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "The Oregon DEQ audit ran on 2026-11-03, using document readings dated 2026-10-14. It read 5 documents. It found 3 out of date, 6 nothing on file, and 9 things similar companies usually hold that we have not been shown.\n\n**Most urgent: the permit renewal**\n- The Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 expires 2026-11-15. The audit marked the permit renewal as nothing on file.\n- The permit says the renewal application was due \"on or before July 18, 2026\". We have not been shown the application or a DEQ receipt.\n- The permit's Condition 1.2 allows operation after expiry only with a renewed permit or a timely renewal application. If the application was filed, please upload it with DEQ's receipt. If it was not, contact DEQ now.\n\n**Out of date (Scrubber Pressure-Drop Log, August–September 2026)**\n- No daily readings for S-1 and S-2 on August 17–21.\n- S-2 read 6.4 in. w.c. on September 9. The limit is 6.0, and the Notes column is blank.\n- The weekly C-1 detector-tube check for the week of September 14 is missing.\n\n**Nothing on file**\n- The supervisor signature on both months of the scrubber log.\n- The September line-counter totals in the scrubber log.\n- The vendor record for the C-1 carbon changeout. The Annual Report, Reporting Year 2025 set the date as on or before March 14, 2026.\n- The semi-annual monitoring report for January–June 2026, due July 31, 2026. The audit found no copy on file.\n- Completed Monthly EHS Self-Check records. Only the blank template is on file.\n\n**Suggestions, not findings.** These are things companies like this usually hold that we have not been shown:\n- EPCRA Tier II report\n- Hazardous waste generator records\n- Stormwater permit or no-exposure certification\n- Scrubber quarterly inspection file\n- 2025 raw logs\n- Deviation log\n- Opacity records\n- Eyewash flush log\n- HazCom program\n\n**Has anything changed since?**\n- The audit ran today, 2026-11-03, so no later audit exists.\n- The documents were read on 2026-10-14. If any have been added or changed since then, the audit did not see them.\n- Some deadlines have also moved on. The weekly C-1 check for the week of September 28 was due 2026-10-02. The September quarterly scrubber inspection date, 2026-09-30, has passed. No record of either is on file.\n- Re-running the audit would bring the lines up to date after you upload anything new.\n\n**Not asked, but worth knowing**\n- A separate checklist audit, also run 2026-11-03, covers the same ground. It marked the scrubber log lines as on file, but its notes list the same gaps.\n- The September 9 exceedance may need DEQ notification under the permit's deviation conditions, which ask for notice within 24 hours and a written report within 15 days. Nothing on file shows either.\n\nOnce you have uploaded the renewal application and receipt, I can propose a fresh DEQ audit to update these lines.\n\n```offer\n{\"kind\":\"run_audit\",\"agency\":\"Oregon DEQ\"}\n```",
+  "answer": "The Oregon DEQ audit ran on 2026-11-03, using document readings dated 2026-10-14. It read 5 documents. It found 3 out of date, 6 nothing on file, and 9 things similar companies usually hold that we have not been shown.\n\n**Most urgent: the permit renewal**\n- The Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 expires 2026-11-15. The audit marked the permit renewal as nothing on file.\n- The permit says the renewal application was due “on or before July 18, 2026”[1]. We have not been shown the application or a DEQ receipt.\n- The permit's Condition 1.2 allows operation after expiry only with a renewed permit or a timely renewal application. If the application was filed, please upload it with DEQ's receipt. If it was not, contact DEQ now.\n\n**Out of date (Scrubber Pressure-Drop Log, August–September 2026)**\n- No daily readings for S-1 and S-2 on August 17–21.\n- S-2 read 6.4 in. w.c. on September 9. The limit is 6.0, and the Notes column is blank.\n- The weekly C-1 detector-tube check for the week of September 14 is missing.\n\n**Nothing on file**\n- The supervisor signature on both months of the scrubber log.\n- The September line-counter totals in the scrubber log.\n- The vendor record for the C-1 carbon changeout. The Annual Report, Reporting Year 2025 set the date as on or before March 14, 2026.\n- The semi-annual monitoring report for January–June 2026, due July 31, 2026. The audit found no copy on file.\n- Completed Monthly EHS Self-Check records. Only the blank template is on file.\n\n**Suggestions, not findings.** These are things companies like this usually hold that we have not been shown:\n- EPCRA Tier II report\n- Hazardous waste generator records\n- Stormwater permit or no-exposure certification\n- Scrubber quarterly inspection file\n- 2025 raw logs\n- Deviation log\n- Opacity records\n- Eyewash flush log\n- HazCom program\n\n**Has anything changed since?**\n- The audit ran today, 2026-11-03, so no later audit exists.\n- The documents were read on 2026-10-14. If any have been added or changed since then, the audit did not see them.\n- Some deadlines have also moved on. The weekly C-1 check for the week of September 28 was due 2026-10-02. The September quarterly scrubber inspection date, 2026-09-30, has passed. No record of either is on file.\n- Re-running the audit would bring the lines up to date after you upload anything new.\n\n**Not asked, but worth knowing**\n- A separate checklist audit, also run 2026-11-03, covers the same ground. It marked the scrubber log lines as on file, but its notes list the same gaps.\n- The September 9 exceedance may need DEQ notification under the permit's deviation conditions, which ask for notice within 24 hours and a written report within 15 days. Nothing on file shows either.\n\nOnce you have uploaded the renewal application and receipt, I can propose a fresh DEQ audit to update these lines.",
+  "offers": [
+    {
+      "raw": "{\"kind\":\"run_audit\",\"agency\":\"Oregon DEQ\"}",
+      "ok": true,
+      "why": null,
+      "card": "Do you want me to run the Oregon DEQ audit?"
+    }
+  ],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [
+    {
+      "n": 1,
+      "kind": "passage",
+      "title": "Current ACDP permit available at the facility and not expired — the audit's own words",
+      "url": "",
+      "label": "an audit finding",
+      "passage_id": "F4",
+      "quote": "on or before July 18, 2026",
+      "href": "/audits?run=de251fbf-f838-45d8-a38a-11a8372e2ef6"
+    }
+  ],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your audits",
+        "chars": 514,
+        "tokens": 206,
+        "left_out": null
+      },
+      {
+        "name": "the findings",
+        "chars": 22498,
+        "tokens": 9000,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30482,
+        "tokens": 12193,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 59,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 23163,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 1,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 26232,
+      "output": 1074,
+      "searches": 0,
+      "cost_usd": 0.063204
+    }
+  ],
+  "seconds": 9.2,
+  "topic_id": "3f763656-fabd-42ab-9e28-8876f0651ac1"
+}

@@ -1,0 +1,114 @@
+{
+  "question": "Are we ready for an Oregon OSHA inspection?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 37108,
+      "tokens": 14844,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 16608,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R12"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "I can't call the company ready. The documents show gaps in several areas an Oregon OSHA inspector would look at. I'm reading from the documents on file, based on readings dated 2026-10-14. If anything has changed since then, this answer may be out of date.\n\n**Most important: forklifts**\n- Operator training and evaluation record: R. Patel's three-year evaluation was due 2026-05-19, and the record shows no re-evaluation. The record hasn't been updated since June 2, 2025. If she still drives FL-2, that is a gap.\n- That same record has no certificate noted for Patel, and Rivera's certificate isn't in the file. Only Michael Chen's is attached.\n- Forklift pre-shift inspection log, FL-2, September 2026 (two copies, last entries Sep 18 and Sep 17): there are no entries for Sep 3 and 4, though the hour meter suggests the truck ran. The horn was marked \"Horn not working\" on Sep 9, and nothing shows a repair or removal from service. The supervisor line is unsigned. Nothing is logged after Sep 18.\n- The two copies of this log disagree on the last entry date. One shows Sep 18 and the other Sep 17. The Sep 17 copy is a skewed photo that is cropped at the bottom. Keep one full, flat scan.\n\n**Emergency preparedness**\n- Emergency Action Plan, Portland Facility (revised 2021-02-01) has these gaps:\n  - It has no procedure for reporting an emergency.\n  - It doesn't say what happens to chemical processes before people evacuate.\n  - It names no contact for questions about the plan.\n  - It shows no annual reviews, though it promises one every January.\n  - It has no earthquake procedure.\n  - The appendices (evacuation maps and the roster) aren't in the file.\n- Fire extinguisher certificate (service date 2025-08-20): the next annual service was due 2026-08-20, so it is overdue. Units W-3 and L-1 also need six-year maintenance before November 2026. Monthly tag inspections aren't evidenced in the documents.\n\n**Injury records**\n- OSHA Form 300A, 2025: it is completed and certified. Nothing shows electronic submission to OSHA. The form lists NAICS 424690, while the company profile says chemical manufacturing. That code decides which submission rules apply.\n- The 300A reports an average of 65 employees. The company profile says 38 enterprise-wide. The Emergency Action Plan shows 42 at Portland. Please reconcile these, because headcount affects reporting rules.\n\n**Hazard communication**\n- Only one Safety Data Sheet is on file, for 50% sodium hydroxide. I can't tell from the documents whether you have a written hazard communication program, a chemical inventory, or training records. None of these is on file.\n- The Monthly EHS Self-Check is a blank template. It shows a routine exists but not that any check was done.\n\n**Not Oregon OSHA, but urgent**\n- Your DEQ air permit expires 2026-11-15. The renewal application was due 2026-07-18, and I can't see it on file. Also confirm the semi-annual report due 2026-07-31 and the C-1 carbon replacement that was due 2026-03-14. The scrubber log also has gaps, including an S-2 reading of 6.4 on Sep 9 with no note.\n\n**One question that would help:** does R. Patel still operate FL-2? If yes, take her off it until she is re-evaluated. If no, record that on the roster.\n\n**Next step:** fix the forklift items first. Then update the Emergency Action Plan and book the extinguisher service.",
+  "answer": "I can't call the company ready. The documents show gaps in several areas an Oregon OSHA inspector would look at. I'm reading from the documents on file, based on readings dated 2026-10-14. If anything has changed since then, this answer may be out of date.\n\n**Most important: forklifts**\n- Operator training and evaluation record: R. Patel's three-year evaluation was due 2026-05-19, and the record shows no re-evaluation. The record hasn't been updated since June 2, 2025. If she still drives FL-2, that is a gap.\n- That same record has no certificate noted for Patel, and Rivera's certificate isn't in the file. Only Michael Chen's is attached.\n- Forklift pre-shift inspection log, FL-2, September 2026 (two copies, last entries Sep 18 and Sep 17): there are no entries for Sep 3 and 4, though the hour meter suggests the truck ran. The horn was marked \"Horn not working\" on Sep 9, and nothing shows a repair or removal from service. The supervisor line is unsigned. Nothing is logged after Sep 18.\n- The two copies of this log disagree on the last entry date. One shows Sep 18 and the other Sep 17. The Sep 17 copy is a skewed photo that is cropped at the bottom. Keep one full, flat scan.\n\n**Emergency preparedness**\n- Emergency Action Plan, Portland Facility (revised 2021-02-01) has these gaps:\n  - It has no procedure for reporting an emergency.\n  - It doesn't say what happens to chemical processes before people evacuate.\n  - It names no contact for questions about the plan.\n  - It shows no annual reviews, though it promises one every January.\n  - It has no earthquake procedure.\n  - The appendices (evacuation maps and the roster) aren't in the file.\n- Fire extinguisher certificate (service date 2025-08-20): the next annual service was due 2026-08-20, so it is overdue. Units W-3 and L-1 also need six-year maintenance before November 2026. Monthly tag inspections aren't evidenced in the documents.\n\n**Injury records**\n- OSHA Form 300A, 2025: it is completed and certified. Nothing shows electronic submission to OSHA. The form lists NAICS 424690, while the company profile says chemical manufacturing. That code decides which submission rules apply.\n- The 300A reports an average of 65 employees. The company profile says 38 enterprise-wide. The Emergency Action Plan shows 42 at Portland. Please reconcile these, because headcount affects reporting rules.\n\n**Hazard communication**\n- Only one Safety Data Sheet is on file, for 50% sodium hydroxide. I can't tell from the documents whether you have a written hazard communication program, a chemical inventory, or training records. None of these is on file.\n- The Monthly EHS Self-Check is a blank template. It shows a routine exists but not that any check was done.\n\n**Not Oregon OSHA, but urgent**\n- Your DEQ air permit expires 2026-11-15. The renewal application was due 2026-07-18, and I can't see it on file. Also confirm the semi-annual report due 2026-07-31 and the C-1 carbon replacement that was due 2026-03-14. The scrubber log also has gaps, including an S-2 reading of 6.4 on Sep 9 with no note.\n\n**One question that would help:** does R. Patel still operate FL-2? If yes, take her off it until she is re-evaluated. If no, record that on the roster.\n\n**Next step:** fix the forklift items first. Then update the Emergency Action Plan and book the extinguisher service.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 37108,
+        "tokens": 14844,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 25,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 16608,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 19425,
+      "output": 1207,
+      "searches": 0,
+      "cost_usd": 0.05092
+    }
+  ],
+  "seconds": 10.1,
+  "topic_id": "460008ac-a9b6-4cd0-a2dd-baae3d121612"
+}

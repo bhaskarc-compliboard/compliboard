@@ -1,0 +1,191 @@
+{
+  "question": "Why is the Standard Air Contaminant Discharge Permit marked out of date?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your audits",
+      "chars": 514,
+      "tokens": 206,
+      "left_out": null
+    },
+    {
+      "name": "the findings",
+      "chars": 22498,
+      "tokens": 9000,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 33353,
+      "tokens": 13342,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 24312,
+  "passages": [
+    "U1",
+    "U2",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19",
+    "F20",
+    "F21",
+    "F22",
+    "F23",
+    "F24",
+    "F25",
+    "F26",
+    "F27",
+    "F28",
+    "F29",
+    "F30",
+    "F31",
+    "F32",
+    "F33",
+    "F34",
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "The permit is marked \"out of date\" in one audit only: the checklist audit of 12-auditor-checklist-deq-air.docx, run 2026-11-03. That audit read documents as of 2026-10-14.\n\n**Why that line says out of date.** The checklist line asks for a current air permit that has not expired. The permit's own text reads \"Expires: November 15, 2026.\" That is 12 days after the audit date. The audit uses \"out of date\" to mean the permit is close to expiring or needs follow-up. It does not mean the permit has expired. No reading gives an expiry date that has passed.\n\n**Where the permit stands in your document list.** Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 shows the state \"Expiring,\" with an expiry of 2026-11-15. That is a separate label from the audit's word.\n\n**What matters most: the renewal application.**\n- The permit's Condition 1.3 sets the renewal application deadline at July 18, 2026. It reads: \"no later than 120 days before the expiration date, that is, on or before July 18, 2026.\"\n- The checklist audit (line A2) found nothing on file for the renewal application. The Oregon DEQ audit of the same date found nothing on file for the renewal application or a DEQ acknowledgment. Nothing on file means we have not been shown one. It does not mean it was not filed.\n- Condition 1.2 says not to operate after expiry without a renewed permit or a timely renewal application. So whether a renewal was filed on time decides what happens on November 15.\n\n**One fact I don't have:** was a renewal application sent to DEQ on or before July 18, 2026?\n- If yes, the permit asks you to keep a copy and DEQ's receipt. Uploading both would bring these lines up to date.\n- If no, contact DEQ right away, before November 15. The audit's own advice is to find out the status and next steps.\n\n**What you didn't ask but should know.** Other air-permit lines are also open. They include the January–June 2026 semi-annual report, due July 31, 2026, and the March 14, 2026 carbon replacement record for C-1. All show nothing on file. The scrubber log also has gaps and an unexplained September 9 reading. Once you have the renewal paperwork, I can propose a fresh Oregon DEQ audit to update these lines.\n\n```offer\n{\"kind\":\"run_audit\",\"agency\":\"Oregon DEQ\"}\n```",
+  "answer": "The permit is marked \"out of date\" in one audit only: the checklist audit of 12-auditor-checklist-deq-air.docx, run 2026-11-03. That audit read documents as of 2026-10-14.\n\n**Why that line says out of date.** The checklist line asks for a current air permit that has not expired. The permit's own text reads \"Expires: November 15, 2026.\" That is 12 days after the audit date. The audit uses \"out of date\" to mean the permit is close to expiring or needs follow-up. It does not mean the permit has expired. No reading gives an expiry date that has passed.\n\n**Where the permit stands in your document list.** Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 shows the state \"Expiring,\" with an expiry of 2026-11-15. That is a separate label from the audit's word.\n\n**What matters most: the renewal application.**\n- The permit's Condition 1.3 sets the renewal application deadline at July 18, 2026. It reads: “no later than 120 days before the expiration date, that is, on or before July 18, 2026.”[1]\n- The checklist audit (line A2) found nothing on file for the renewal application. The Oregon DEQ audit of the same date found nothing on file for the renewal application or a DEQ acknowledgment. Nothing on file means we have not been shown one. It does not mean it was not filed.\n- Condition 1.2 says not to operate after expiry without a renewed permit or a timely renewal application. So whether a renewal was filed on time decides what happens on November 15.\n\n**One fact I don't have:** was a renewal application sent to DEQ on or before July 18, 2026?\n- If yes, the permit asks you to keep a copy and DEQ's receipt. Uploading both would bring these lines up to date.\n- If no, contact DEQ right away, before November 15. The audit's own advice is to find out the status and next steps.\n\n**What you didn't ask but should know.** Other air-permit lines are also open. They include the January–June 2026 semi-annual report, due July 31, 2026, and the March 14, 2026 carbon replacement record for C-1. All show nothing on file. The scrubber log also has gaps and an unexplained September 9 reading. Once you have the renewal paperwork, I can propose a fresh Oregon DEQ audit to update these lines.",
+  "offers": [
+    {
+      "raw": "{\"kind\":\"run_audit\",\"agency\":\"Oregon DEQ\"}",
+      "ok": true,
+      "why": null,
+      "card": "Do you want me to run the Oregon DEQ audit?"
+    }
+  ],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [
+    {
+      "n": 1,
+      "kind": "passage",
+      "title": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility — what we read in it",
+      "url": "",
+      "label": "your document",
+      "passage_id": "R2",
+      "quote": "no later than 120 days before the expiration date, that is, on or before July 18, 2026.",
+      "href": "/documents?document=7f1308f9-2ada-4222-a1bc-a3a93fe19e3e"
+    }
+  ],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your audits",
+        "chars": 514,
+        "tokens": 206,
+        "left_out": null
+      },
+      {
+        "name": "the findings",
+        "chars": 22498,
+        "tokens": 9000,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 33353,
+        "tokens": 13342,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 60,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 24312,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 1,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 27370,
+      "output": 792,
+      "searches": 0,
+      "cost_usd": 0.06266
+    }
+  ],
+  "seconds": 7,
+  "topic_id": "0e251e79-a004-4b1c-90f7-80890603fc08"
+}

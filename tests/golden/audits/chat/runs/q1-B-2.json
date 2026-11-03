@@ -1,0 +1,133 @@
+{
+  "question": "What is our status on everything DEQ?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30482,
+      "tokens": 12193,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13957,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "**Most important: your air permit expires November 15, 2026, and the permit file doesn't show a renewal application.** Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 says in Condition 1.3 that the renewal application was due \"on or before July 18, 2026.\" That date has passed. None of your 13 documents is a renewal application or a DEQ receipt for one. The permit also says (Condition 1.2) not to operate after expiry without a renewed permit or a timely renewal application. Do you have a renewal application filed on or before July 18? That answer settles whether this is a paperwork gap or a real problem.\n\n**DEQ documents on file**\n\n- **Standard Air Contaminant Discharge Permit (state: Expiring).** The permit is DEQ's own document, so there is nothing in it to fix.\n- **Annual Report, Reporting Year 2025, with DEQ Receipt Confirmation (state: Recorded).** It shows you filed on February 12, 2026. DEQ says the receipt confirms receipt only. It is not a finding that you met the permit.\n- **Scrubber Pressure-Drop Log and Weekly C-1 Check, August–September 2026 (state: Needs work).** It has five gaps:\n  - August 17–21 daily readings for S-1 and S-2 are missing.\n  - On September 9, S-2 read 6.4 in. w.c. The Condition 3.1 limit is 6.0, and the Notes column is blank.\n  - The weekly C-1 check for the week of September 14 is missing.\n  - No supervisor has signed the log.\n  - September has no line-counter totals, so it can't be cross-checked.\n- **Monthly EHS Self-Check and the DEQ Inspection Checklist (state: On file).** Both are blank forms. The self-check shows you have a routine, but not that any check was done. The DEQ checklist is an inspector's form and isn't your record. It is useful as a preview of what an inspector would ask to see.\n- **12-auditor-checklist-deq-air.docx (state: Queued).** I have no reading of it, so I can't say what it contains.\n\n**What the permit asks for that your files don't show**\n\n- **Semi-annual report for January–June 2026.** Condition 4.2 set the due date at July 31, 2026. It isn't among your documents.\n- **C-1 carbon replacement.** The Annual Report, Reporting Year 2025 says the next replacement was \"on or before March 14, 2026.\" No vendor record is on file.\n- **Quarterly scrubber inspection.** Condition 3.2 required one by September 30, 2026. The scrubber log has no quarterly entry I could see.\n- **Deviation notice for September 9.** Condition 5.2 asks for notice to DEQ within 24 hours of finding a deviation, then a written report within 15 days. The 6.4 reading may count, and nothing records a notice.\n- **Weekly C-1 check for the week of September 28.** It was due October 2, and the log ends September 25.\n- **Annual permit fee.** Condition 6.2 requires payment by the invoice due date. No invoice or proof of payment is on file.\n- **Annual report for 2026.** It is due February 15, 2027.\n\n**Next step:** Gather the items above that may exist but aren't filed: the renewal application and receipt, the July semi-annual report, the carbon replacement invoice, and the fee payment proof. Add them to the file. For the August gap and the September 9 reading, write a dated note on the log explaining what happened. Don't backfill readings.",
+  "answer": "**Most important: your air permit expires November 15, 2026, and the permit file doesn't show a renewal application.** Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 says in Condition 1.3 that the renewal application was due “on or before July 18, 2026.”[1] That date has passed. None of your 13 documents is a renewal application or a DEQ receipt for one. The permit also says (Condition 1.2) not to operate after expiry without a renewed permit or a timely renewal application. Do you have a renewal application filed on or before July 18? That answer settles whether this is a paperwork gap or a real problem.\n\n**DEQ documents on file**\n\n- **Standard Air Contaminant Discharge Permit (state: Expiring).** The permit is DEQ's own document, so there is nothing in it to fix.\n- **Annual Report, Reporting Year 2025, with DEQ Receipt Confirmation (state: Recorded).** It shows you filed on February 12, 2026. DEQ says the receipt confirms receipt only. It is not a finding that you met the permit.\n- **Scrubber Pressure-Drop Log and Weekly C-1 Check, August–September 2026 (state: Needs work).** It has five gaps:\n  - August 17–21 daily readings for S-1 and S-2 are missing.\n  - On September 9, S-2 read 6.4 in. w.c. The Condition 3.1 limit is 6.0, and the Notes column is blank.\n  - The weekly C-1 check for the week of September 14 is missing.\n  - No supervisor has signed the log.\n  - September has no line-counter totals, so it can't be cross-checked.\n- **Monthly EHS Self-Check and the DEQ Inspection Checklist (state: On file).** Both are blank forms. The self-check shows you have a routine, but not that any check was done. The DEQ checklist is an inspector's form and isn't your record. It is useful as a preview of what an inspector would ask to see.\n- **12-auditor-checklist-deq-air.docx (state: Queued).** I have no reading of it, so I can't say what it contains.\n\n**What the permit asks for that your files don't show**\n\n- **Semi-annual report for January–June 2026.** Condition 4.2 set the due date at July 31, 2026. It isn't among your documents.\n- **C-1 carbon replacement.** The Annual Report, Reporting Year 2025 says the next replacement was “on or before March 14, 2026.”[2] No vendor record is on file.\n- **Quarterly scrubber inspection.** Condition 3.2 required one by September 30, 2026. The scrubber log has no quarterly entry I could see.\n- **Deviation notice for September 9.** Condition 5.2 asks for notice to DEQ within 24 hours of finding a deviation, then a written report within 15 days. The 6.4 reading may count, and nothing records a notice.\n- **Weekly C-1 check for the week of September 28.** It was due October 2, and the log ends September 25.\n- **Annual permit fee.** Condition 6.2 requires payment by the invoice due date. No invoice or proof of payment is on file.\n- **Annual report for 2026.** It is due February 15, 2027.\n\n**Next step:** Gather the items above that may exist but aren't filed: the renewal application and receipt, the July semi-annual report, the carbon replacement invoice, and the fee payment proof. Add them to the file. For the August gap and the September 9 reading, write a dated note on the log explaining what happened. Don't backfill readings.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [
+    {
+      "n": 1,
+      "kind": "passage",
+      "title": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility — what we read in it",
+      "url": "",
+      "label": "your document",
+      "passage_id": "R2",
+      "quote": "on or before July 18, 2026.",
+      "href": "/documents?document=7f1308f9-2ada-4222-a1bc-a3a93fe19e3e"
+    },
+    {
+      "n": 2,
+      "kind": "passage",
+      "title": "Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility — what we read in it",
+      "url": "",
+      "label": "your document",
+      "passage_id": "R4",
+      "quote": "on or before March 14, 2026.",
+      "href": "/documents?document=94dd25dc-12d1-4e92-8648-710cf68ffccb"
+    }
+  ],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30482,
+        "tokens": 12193,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 23,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13957,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 16845,
+      "output": 1175,
+      "searches": 0,
+      "cost_usd": 0.045439999999999994
+    }
+  ],
+  "seconds": 10.3,
+  "topic_id": "fe92f447-4b3d-4a75-a204-0afdf5da1b1d"
+}

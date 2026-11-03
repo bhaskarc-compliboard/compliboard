@@ -1,0 +1,114 @@
+{
+  "question": "Are we ready for an Oregon OSHA inspection?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 37108,
+      "tokens": 14844,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 16608,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R12"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "I can't say you're ready. The documents show gaps in several areas an inspector would look at. They also don't cover some topics at all.\n\n**Most important: the forklift records**\n- Operator training and evaluation record: R. Patel's three-year evaluation was due 2026-05-19, and nothing shows it was done. If she still drives FL-2, that's the first thing to settle. The record also hasn't been updated since June 2025. There's no note of a certificate for Patel, and Jose Rivera's certificate isn't in the file.\n- There are two September 2026 forklift pre-shift inspection logs for FL-2, and they differ. One has entries through Sep 18. The other stops at Sep 17 and is a skewed, cropped photo. Both show no entries for Sep 3 and 4. Both show the horn marked \"Horn not working\" on Sep 9, with no record of a repair or of the truck being pulled from service. The Sep 18 version also shows the truck was operated that day by M.C. The supervisor line is unsigned.\n\n**Emergency and fire**\n- Emergency Action Plan: last revised February 2021. It has no procedure for reporting an emergency. It doesn't say how chemical processes are shut down before evacuation. It names no contact for questions, and it has no earthquake steps although earthquakes are listed as in scope. The evacuation maps and the warden roster (Appendices A and B) aren't in the file.\n- Fire extinguisher certificate: annual service was due 2026-08-20 and the certificate on file is dated 2025-08-20. Units W-3 and L-1 also need six-year maintenance before November 2026. The certificate says monthly visual checks are the company's job, and I see no record of them.\n\n**Injury records**\n- OSHA Form 300A for 2025: it was completed and certified. Nothing shows it was submitted electronically to OSHA. The form lists 65 average employees, while the company profile says 38 and the Emergency Action Plan says 42. Please reconcile those numbers. The form's industry code (wholesale chemical) also differs from the \"chemical manufacturing\" recorded for the company.\n\n**Not on file**\n- I see no Hazard Communication written program, and no chemical inventory. The only Safety Data Sheet is for sodium hydroxide 50%.\n- I see no training records for hazard communication. I also see no eyewash or shower checks, and no filled-in monthly EHS self-checks. The monthly self-check on file is a blank template, so it shows no checks done.\n\nThese are gaps in what's on file. They don't mean the work wasn't done. You may hold other records I haven't seen.\n\n**Also worth knowing (DEQ, not OSHA)**\n- Air permit No. 26-2841-ST-01 expires 2026-11-15. The renewal was due 2026-07-18, and nothing on file shows it was filed.\n- The scrubber log has a missing week in August, an S-2 reading of 6.4 on Sep 9 (above the 6.0 limit) with no note, and a missing weekly C-1 check.\n\n**Next step:** Start with Patel's evaluation and the horn repair record, because they're quick to fix and easy for an inspector to find. Then tell me whether a Hazard Communication program and eyewash checks exist elsewhere.",
+  "answer": "I can't say you're ready. The documents show gaps in several areas an inspector would look at. They also don't cover some topics at all.\n\n**Most important: the forklift records**\n- Operator training and evaluation record: R. Patel's three-year evaluation was due 2026-05-19, and nothing shows it was done. If she still drives FL-2, that's the first thing to settle. The record also hasn't been updated since June 2025. There's no note of a certificate for Patel, and Jose Rivera's certificate isn't in the file.\n- There are two September 2026 forklift pre-shift inspection logs for FL-2, and they differ. One has entries through Sep 18. The other stops at Sep 17 and is a skewed, cropped photo. Both show no entries for Sep 3 and 4. Both show the horn marked \"Horn not working\" on Sep 9, with no record of a repair or of the truck being pulled from service. The Sep 18 version also shows the truck was operated that day by M.C. The supervisor line is unsigned.\n\n**Emergency and fire**\n- Emergency Action Plan: last revised February 2021. It has no procedure for reporting an emergency. It doesn't say how chemical processes are shut down before evacuation. It names no contact for questions, and it has no earthquake steps although earthquakes are listed as in scope. The evacuation maps and the warden roster (Appendices A and B) aren't in the file.\n- Fire extinguisher certificate: annual service was due 2026-08-20 and the certificate on file is dated 2025-08-20. Units W-3 and L-1 also need six-year maintenance before November 2026. The certificate says monthly visual checks are the company's job, and I see no record of them.\n\n**Injury records**\n- OSHA Form 300A for 2025: it was completed and certified. Nothing shows it was submitted electronically to OSHA. The form lists 65 average employees, while the company profile says 38 and the Emergency Action Plan says 42. Please reconcile those numbers. The form's industry code (wholesale chemical) also differs from the \"chemical manufacturing\" recorded for the company.\n\n**Not on file**\n- I see no Hazard Communication written program, and no chemical inventory. The only Safety Data Sheet is for sodium hydroxide 50%.\n- I see no training records for hazard communication. I also see no eyewash or shower checks, and no filled-in monthly EHS self-checks. The monthly self-check on file is a blank template, so it shows no checks done.\n\nThese are gaps in what's on file. They don't mean the work wasn't done. You may hold other records I haven't seen.\n\n**Also worth knowing (DEQ, not OSHA)**\n- Air permit No. 26-2841-ST-01 expires 2026-11-15. The renewal was due 2026-07-18, and nothing on file shows it was filed.\n- The scrubber log has a missing week in August, an S-2 reading of 6.4 on Sep 9 (above the 6.0 limit) with no note, and a missing weekly C-1 check.\n\n**Next step:** Start with Patel's evaluation and the horn repair record, because they're quick to fix and easy for an inspector to find. Then tell me whether a Hazard Communication program and eyewash checks exist elsewhere.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 37108,
+        "tokens": 14844,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 25,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 16608,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 19425,
+      "output": 1073,
+      "searches": 0,
+      "cost_usd": 0.04958
+    }
+  ],
+  "seconds": 9.5,
+  "topic_id": "6924de9b-556d-4f08-84b2-689f0581c0cc"
+}

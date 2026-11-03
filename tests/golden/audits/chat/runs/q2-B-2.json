@@ -1,0 +1,112 @@
+{
+  "question": "What did the last DEQ audit find, and has anything changed since?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30482,
+      "tokens": 12193,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13957,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "There is no DEQ audit result on file, so I can't say what a last audit found.\n\nThe nearest document is the Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form). It is blank. The facility, permit number, date, inspector, answers and signatures are all empty. It is not a record of an inspection. A file called 12-auditor-checklist-deq-air.docx is also listed, but it is still queued and has no stored reading, so I can't say what it contains.\n\n**What the documents do show since the permit was issued**\n\n- **Annual Report, Reporting Year 2025:** DEQ's receipt confirmation is dated February 12, 2026. It confirms receipt only. It is not a finding on the report or on the permit. The report covers one deviation that was reported, the S-2 pump failure in August 2025.\n- **Scrubber Pressure-Drop Log, August–September 2026:** This is your own log, and it has gaps. August 17–21 readings are missing. S-2 read 6.4 on September 9, above the 6.0 limit, with no note. The week of September 14 has no C-1 check. No supervisor has signed it.\n\n**Things the permit sets that I can't confirm from your documents**\n\n- **Renewal:** The Standard Air Contaminant Discharge Permit expires November 15, 2026. The renewal application was due July 18, 2026. No copy or DEQ receipt is on file.\n- **Semi-annual report:** The January–June 2026 report was due July 31, 2026. It is not among your documents.\n- **Carbon replacement:** The 2025 annual report set the next C-1 carbon replacement for on or before March 14, 2026. No vendor record is on file.\n- **Quarterly scrubber inspection:** The inspection was due by September 30, 2026. No entry is on file.\n- **September 9 deviation:** The permit asks for DEQ notice within 24 hours and a written report within 15 days. Nothing on file shows either.\n\n**What you could do next:** If DEQ inspected you, tell me the date. I can then check it against these records. If it didn't, start by finding the renewal application and DEQ's receipt. That is the most time-sensitive item, because the permit expires in 12 days.",
+  "answer": "There is no DEQ audit result on file, so I can't say what a last audit found.\n\nThe nearest document is the Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form). It is blank. The facility, permit number, date, inspector, answers and signatures are all empty. It is not a record of an inspection. A file called 12-auditor-checklist-deq-air.docx is also listed, but it is still queued and has no stored reading, so I can't say what it contains.\n\n**What the documents do show since the permit was issued**\n\n- **Annual Report, Reporting Year 2025:** DEQ's receipt confirmation is dated February 12, 2026. It confirms receipt only. It is not a finding on the report or on the permit. The report covers one deviation that was reported, the S-2 pump failure in August 2025.\n- **Scrubber Pressure-Drop Log, August–September 2026:** This is your own log, and it has gaps. August 17–21 readings are missing. S-2 read 6.4 on September 9, above the 6.0 limit, with no note. The week of September 14 has no C-1 check. No supervisor has signed it.\n\n**Things the permit sets that I can't confirm from your documents**\n\n- **Renewal:** The Standard Air Contaminant Discharge Permit expires November 15, 2026. The renewal application was due July 18, 2026. No copy or DEQ receipt is on file.\n- **Semi-annual report:** The January–June 2026 report was due July 31, 2026. It is not among your documents.\n- **Carbon replacement:** The 2025 annual report set the next C-1 carbon replacement for on or before March 14, 2026. No vendor record is on file.\n- **Quarterly scrubber inspection:** The inspection was due by September 30, 2026. No entry is on file.\n- **September 9 deviation:** The permit asks for DEQ notice within 24 hours and a written report within 15 days. Nothing on file shows either.\n\n**What you could do next:** If DEQ inspected you, tell me the date. I can then check it against these records. If it didn't, start by finding the renewal application and DEQ's receipt. That is the most time-sensitive item, because the permit expires in 12 days.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30482,
+        "tokens": 12193,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 23,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13957,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 16853,
+      "output": 740,
+      "searches": 0,
+      "cost_usd": 0.041106000000000004
+    }
+  ],
+  "seconds": 7.7,
+  "topic_id": "c38956d7-4bb6-473a-bf31-784a0e72469f"
+}

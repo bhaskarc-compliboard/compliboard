@@ -1,0 +1,180 @@
+{
+  "question": "Which lines of the template audit point at a document that has been read since the audit?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your audits",
+      "chars": 514,
+      "tokens": 206,
+      "left_out": null
+    },
+    {
+      "name": "the findings",
+      "chars": 22498,
+      "tokens": 9000,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 31305,
+      "tokens": 12522,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 23492,
+  "passages": [
+    "U1",
+    "U2",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19",
+    "F20",
+    "F21",
+    "F22",
+    "F23",
+    "F24",
+    "F25",
+    "F26",
+    "F27",
+    "F28",
+    "F29",
+    "F30",
+    "F31",
+    "F32",
+    "F33",
+    "F34",
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "I can't answer this from what I have, and the reason is simple: no line in either audit points at a document read after it ran.\n\n- **Both audits used the same readings.** The Oregon DEQ audit and the checklist audit (12-auditor-checklist-deq-air.docx) both ran on 2026-11-03. Both used readings as of 2026-10-14.\n- **Every reading I can see is dated 2026-10-14.** That includes the scrubber log, the permit, the 2025 annual report, the Emergency Action Plan, the Monthly EHS Self-Check and the DEQ inspection form. Each one was read before the audits ran, so the audits saw them.\n\n**Two caveats:**\n- **The checklist file has no usable reading.** The list shows 12-auditor-checklist-deq-air.docx as Queued, and no summary was stored for it. I can't say whether it was read after the audit. If you meant that file when you said \"template,\" the lines in it are the audit's own lines, not a document read later.\n- **You may have meant the blank template.** That would be the Monthly EHS Self-Check, a blank internal template. It was read on 2026-10-14, before the Oregon DEQ audit, so the audit's finding on it (nothing on file, no completed monthly records) reflects that reading.\n\n**Is anything newer than the audits?**\n- **The list shows no change dates after 2026-10-14.** The last entry dates run to 2026-09-25 for the scrubber log. If you have re-filed or changed a document since 2026-10-14, my answer would rest on the older reading and could be out of date.\n- **Re-running the audit would bring the lines up to date.**\n\nWhich \"template\" did you mean: the Monthly EHS Self-Check, or the DEQ checklist file? Either way, I can propose a fresh Oregon DEQ audit.\n\n```offer\n{\"kind\":\"run_audit\",\"agency\":\"Oregon DEQ\"}\n```",
+  "answer": "I can't answer this from what I have, and the reason is simple: no line in either audit points at a document read after it ran.\n\n- **Both audits used the same readings.** The Oregon DEQ audit and the checklist audit (12-auditor-checklist-deq-air.docx) both ran on 2026-11-03. Both used readings as of 2026-10-14.\n- **Every reading I can see is dated 2026-10-14.** That includes the scrubber log, the permit, the 2025 annual report, the Emergency Action Plan, the Monthly EHS Self-Check and the DEQ inspection form. Each one was read before the audits ran, so the audits saw them.\n\n**Two caveats:**\n- **The checklist file has no usable reading.** The list shows 12-auditor-checklist-deq-air.docx as Queued, and no summary was stored for it. I can't say whether it was read after the audit. If you meant that file when you said \"template,\" the lines in it are the audit's own lines, not a document read later.\n- **You may have meant the blank template.** That would be the Monthly EHS Self-Check, a blank internal template. It was read on 2026-10-14, before the Oregon DEQ audit, so the audit's finding on it (nothing on file, no completed monthly records) reflects that reading.\n\n**Is anything newer than the audits?**\n- **The list shows no change dates after 2026-10-14.** The last entry dates run to 2026-09-25 for the scrubber log. If you have re-filed or changed a document since 2026-10-14, my answer would rest on the older reading and could be out of date.\n- **Re-running the audit would bring the lines up to date.**\n\nWhich \"template\" did you mean: the Monthly EHS Self-Check, or the DEQ checklist file? Either way, I can propose a fresh Oregon DEQ audit.",
+  "offers": [
+    {
+      "raw": "{\"kind\":\"run_audit\",\"agency\":\"Oregon DEQ\"}",
+      "ok": true,
+      "why": null,
+      "card": "Do you want me to run the Oregon DEQ audit?"
+    }
+  ],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your audits",
+        "chars": 514,
+        "tokens": 206,
+        "left_out": null
+      },
+      {
+        "name": "the findings",
+        "chars": 22498,
+        "tokens": 9000,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 31305,
+        "tokens": 12522,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 60,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 23492,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 1,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 26547,
+      "output": 627,
+      "searches": 0,
+      "cost_usd": 0.059364
+    }
+  ],
+  "seconds": 7.1,
+  "topic_id": "8fd2bfa3-fca3-41ba-b72b-049848f6a31b"
+}

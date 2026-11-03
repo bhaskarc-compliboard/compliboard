@@ -1,0 +1,181 @@
+{
+  "question": "Are we ready for an Oregon OSHA inspection?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your audits",
+      "chars": 514,
+      "tokens": 206,
+      "left_out": null
+    },
+    {
+      "name": "the findings",
+      "chars": 22498,
+      "tokens": 9000,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 37108,
+      "tokens": 14844,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 25814,
+  "passages": [
+    "U1",
+    "U2",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19",
+    "F20",
+    "F21",
+    "F22",
+    "F23",
+    "F24",
+    "F25",
+    "F26",
+    "F27",
+    "F28",
+    "F29",
+    "F30",
+    "F31",
+    "F32",
+    "F33",
+    "F34",
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R12"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "**Short answer:** No Oregon OSHA audit has been run for this company, so I can't tell you whether you're ready. The audits so far are for Oregon DEQ (air), plus a DEQ air checklist. The documents filed under Oregon OSHA do show gaps, and they are listed below. I also can't judge readiness from a filing cabinet alone.\n\n**What the Oregon OSHA documents show (read on 2026-10-14, not part of any audit):**\n\n- **Emergency Action Plan — Portland Facility** (state: Needs work, last revised 2021-02-01). The reading found these gaps:\n  - It has no procedure for reporting an emergency.\n  - It has no procedure for shutting down chemical processes before evacuation.\n  - It names no contact for questions about the plan.\n  - No annual reviews are shown, even though the plan promises one every January.\n  - It covers earthquakes in scope but gives no procedure for them.\n  - Appendices A and B (evacuation maps and warden roster) were not in the file.\n- **Forklift Pre-Shift Inspection Log, Unit FL-2, September 2026.** There are two copies on file, with last entries on 09-18 and 09-17. The reading found:\n  - No entries for Sep 3 and 4, although the hour meter suggests the truck ran.\n  - A horn defect on Sep 9 with no record of repair or removal from service.\n  - No entries after the last date.\n  - No supervisor sign-off.\n- **Powered Industrial Truck Operator Training and Evaluation Record.** R. Patel's three-year evaluation was due 2026-05-19, and nothing shows it was done. Jose Rivera's certificate is not in the file.\n- **Certificate of Annual Maintenance, Portable Fire Extinguishers.** It is listed as Current, but the reading says the next annual service was due 2026-08-20 and no newer certificate is on file. Two units (W-3 and L-1) also need six-year maintenance before November 2026.\n- **OSHA Form 300A, Calendar Year 2025.** It is Recorded. The reading found no proof of electronic submission to OSHA. It also lists a wholesale industry code, which may not match the \"chemical manufacturing\" profile.\n\n**What you didn't ask but need to know:**\n\n- **Headcount disagrees across documents.** The declared enterprise-wide count is 38. The Emergency Action Plan says 42 at Portland. The 300A shows an average of 65. Which figure is right affects which rules and reporting tables apply.\n- **Hazard communication.** The only item on file is the Safety Data Sheet for Sodium Hydroxide Solution, 50%. The DEQ audit lists a written Hazard Communication Program and an eyewash and shower flush log as things similar companies usually hold. We have not been shown them. Those are suggestions, not findings.\n- **The Monthly EHS Self-Check** is a blank template. Filled-in months would be the record.\n\n**What I need from you:** Is the forklift still used by R. Patel, and is the horn repair recorded anywhere? Those answers would change how serious the forklift items are.\n\nI can propose an Oregon OSHA audit so these lines are checked against the rules.\n\n```offer\n{\"kind\":\"run_audit\",\"agency\":\"Oregon OSHA\"}\n```",
+  "answer": "**Short answer:** No Oregon OSHA audit has been run for this company, so I can't tell you whether you're ready. The audits so far are for Oregon DEQ (air), plus a DEQ air checklist. The documents filed under Oregon OSHA do show gaps, and they are listed below. I also can't judge readiness from a filing cabinet alone.\n\n**What the Oregon OSHA documents show (read on 2026-10-14, not part of any audit):**\n\n- **Emergency Action Plan — Portland Facility** (state: Needs work, last revised 2021-02-01). The reading found these gaps:\n  - It has no procedure for reporting an emergency.\n  - It has no procedure for shutting down chemical processes before evacuation.\n  - It names no contact for questions about the plan.\n  - No annual reviews are shown, even though the plan promises one every January.\n  - It covers earthquakes in scope but gives no procedure for them.\n  - Appendices A and B (evacuation maps and warden roster) were not in the file.\n- **Forklift Pre-Shift Inspection Log, Unit FL-2, September 2026.** There are two copies on file, with last entries on 09-18 and 09-17. The reading found:\n  - No entries for Sep 3 and 4, although the hour meter suggests the truck ran.\n  - A horn defect on Sep 9 with no record of repair or removal from service.\n  - No entries after the last date.\n  - No supervisor sign-off.\n- **Powered Industrial Truck Operator Training and Evaluation Record.** R. Patel's three-year evaluation was due 2026-05-19, and nothing shows it was done. Jose Rivera's certificate is not in the file.\n- **Certificate of Annual Maintenance, Portable Fire Extinguishers.** It is listed as Current, but the reading says the next annual service was due 2026-08-20 and no newer certificate is on file. Two units (W-3 and L-1) also need six-year maintenance before November 2026.\n- **OSHA Form 300A, Calendar Year 2025.** It is Recorded. The reading found no proof of electronic submission to OSHA. It also lists a wholesale industry code, which may not match the \"chemical manufacturing\" profile.\n\n**What you didn't ask but need to know:**\n\n- **Headcount disagrees across documents.** The declared enterprise-wide count is 38. The Emergency Action Plan says 42 at Portland. The 300A shows an average of 65. Which figure is right affects which rules and reporting tables apply.\n- **Hazard communication.** The only item on file is the Safety Data Sheet for Sodium Hydroxide Solution, 50%. The DEQ audit lists a written Hazard Communication Program and an eyewash and shower flush log as things similar companies usually hold. We have not been shown them. Those are suggestions, not findings.\n- **The Monthly EHS Self-Check** is a blank template. Filled-in months would be the record.\n\n**What I need from you:** Is the forklift still used by R. Patel, and is the horn repair recorded anywhere? Those answers would change how serious the forklift items are.\n\nI can propose an Oregon OSHA audit so these lines are checked against the rules.",
+  "offers": [
+    {
+      "raw": "{\"kind\":\"run_audit\",\"agency\":\"Oregon OSHA\"}",
+      "ok": true,
+      "why": null,
+      "card": "Do you want me to run the Oregon OSHA audit?"
+    }
+  ],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your audits",
+        "chars": 514,
+        "tokens": 206,
+        "left_out": null
+      },
+      {
+        "name": "the findings",
+        "chars": 22498,
+        "tokens": 9000,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 37108,
+        "tokens": 14844,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 61,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 25814,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 1,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 28804,
+      "output": 1095,
+      "searches": 0,
+      "cost_usd": 0.06855800000000001
+    }
+  ],
+  "seconds": 9.3,
+  "topic_id": "d233230e-6c98-4c3b-abcf-eda7a4d716dd"
+}

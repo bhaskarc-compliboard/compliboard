@@ -1,0 +1,185 @@
+{
+  "question": "Here is a file. Check if we are good.",
+  "variant": "A",
+  "documentId": "bb16e9a7-c5d1-44a5-955a-ef91c5e49732",
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your audits",
+      "chars": 514,
+      "tokens": 206,
+      "left_out": null
+    },
+    {
+      "name": "the findings",
+      "chars": 22498,
+      "tokens": 9000,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30482,
+      "tokens": 12193,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 23163,
+  "passages": [
+    "U1",
+    "U2",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19",
+    "F20",
+    "F21",
+    "F22",
+    "F23",
+    "F24",
+    "F25",
+    "F26",
+    "F27",
+    "F28",
+    "F29",
+    "F30",
+    "F31",
+    "F32",
+    "F33",
+    "F34",
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "I can't tell you whether you're \"good\". I can tell you what the audit of this checklist found. It ran on 2026-11-03 against readings dated 2026-10-14. Anything added after that date is not in it. Running it again would bring the lines up to date.\n\n**What matters most: the permit renewal.**\n- The Standard Air Contaminant Discharge Permit expires November 15, 2026. The audit marked line A1 as out of date. That does not mean expired. The permit reading gives a future date.\n- Condition 1.3 of the permit set the renewal application deadline at July 18, 2026. The audit found nothing on file for line A2. We have not been shown a renewal application or a DEQ receipt.\n- Condition 1.2 allows operation after expiry only with a renewed permit or a timely renewal application. If a timely application was filed, the proof is what a DEQ inspector would ask for. Please locate it.\n\n**Section A: permit and submissions**\n- A3, annual report: on file. The Annual Report, Reporting Year 2025 has DEQ's receipt dated February 12, 2026.\n- A4, semi-annual report for January to June 2026: nothing on file. Permit Condition 4.2 set the due date at July 31, 2026.\n- A5, deviation reports: on file. The annual report records one deviation, the S-2 pump failure in August 2025. The audit did not see the 24-hour notice or the 15-day written report themselves.\n\n**Section B: records**\n- B1, pressure-drop log: marked on file, but the Scrubber Pressure-Drop Log has gaps. No readings are entered for August 17–21. On September 9, S-2 read 6.4 against a 6.0 limit, with the Notes column blank. The supervisor signature lines are blank. No September operating-day totals are recorded.\n- B2, quarterly scrubber inspections: nothing on file.\n- B3, carbon replacement: nothing on file. The annual report set replacement for on or before March 14, 2026. No vendor record is on file.\n- B4, weekly detector-tube checks: on file. The week of September 14 is missing, though the plant ran that week.\n- B5, opacity records or a method statement: nothing on file.\n- B6, five-year retention: on file. This line rests on the date the 2025 annual report was received. It does not show that your logs are being kept.\n\n**Section C: on the day**\n- C1: marked on file. The pressure-drop log only covers August and September, and the S-2 exceedance and gaps above apply.\n- C2 and C3: not a document question. The inspector checks them by observation.\n- C4, employee count: on file. The Emergency Action Plan says 42 employees, as of 2021-02-01. You declared 38 enterprise-wide. These two figures disagree, and an inspector would check the fee tier against the count on the day.\n- C5, emergency plan: on file. The plan is rated Needs work. It names no incident coordinator and no contact for questions.\n\n**Not asked, but worth knowing**\n- The September 9 exceedance may trigger the permit's 24-hour deviation notice (Condition 5.2). No notice for it is on file. Please check this soon.\n- The Oregon DEQ audit ran on the same date. It lists items that companies like this usually hold and we have not been shown. These are suggestions, not findings. They are an EPCRA Tier II report, hazardous waste generator records and an industrial stormwater permit or no-exposure certification.\n\nDo you have a renewal application and a DEQ receipt? That answer decides how serious the A1 and A2 lines are.\n\nI can run the Oregon DEQ audit again once you've added documents.\n\n```offer\n{\"kind\":\"run_audit\",\"document_id\":\"I7\"}\n```",
+  "answer": "I can't tell you whether you're \"good\". I can tell you what the audit of this checklist found. It ran on 2026-11-03 against readings dated 2026-10-14. Anything added after that date is not in it. Running it again would bring the lines up to date.\n\n**What matters most: the permit renewal.**\n- The Standard Air Contaminant Discharge Permit expires November 15, 2026. The audit marked line 12-auditor-checklist-deq-air.docx as out of date. That does not mean expired. The permit reading gives a future date.\n- Condition 1.3 of the permit set the renewal application deadline at July 18, 2026. The audit found nothing on file for line A2. We have not been shown a renewal application or a DEQ receipt.\n- Condition 1.2 allows operation after expiry only with a renewed permit or a timely renewal application. If a timely application was filed, the proof is what a DEQ inspector would ask for. Please locate it.\n\n**Section A: permit and submissions**\n- A3, annual report: on file. The Annual Report, Reporting Year 2025 has DEQ's receipt dated February 12, 2026.\n- A4, semi-annual report for January to June 2026: nothing on file. Permit Condition 4.2 set the due date at July 31, 2026.\n- A5, deviation reports: on file. The annual report records one deviation, the S-2 pump failure in August 2025. The audit did not see the 24-hour notice or the 15-day written report themselves.\n\n**Section B: records**\n- B1, pressure-drop log: marked on file, but the Scrubber Pressure-Drop Log has gaps. No readings are entered for August 17–21. On September 9, S-2 read 6.4 against a 6.0 limit, with the Notes column blank. The supervisor signature lines are blank. No September operating-day totals are recorded.\n- B2, quarterly scrubber inspections: nothing on file.\n- B3, carbon replacement: nothing on file. The annual report set replacement for on or before March 14, 2026. No vendor record is on file.\n- B4, weekly detector-tube checks: on file. The week of September 14 is missing, though the plant ran that week.\n- B5, opacity records or a method statement: nothing on file.\n- B6, five-year retention: on file. This line rests on the date the 2025 annual report was received. It does not show that your logs are being kept.\n\n**Section C: on the day**\n- C1: marked on file. The pressure-drop log only covers August and September, and the S-2 exceedance and gaps above apply.\n- C2 and C3: not a document question. The inspector checks them by observation.\n- C4, employee count: on file. The Emergency Action Plan says 42 employees, as of 2021-02-01. You declared 38 enterprise-wide. These two figures disagree, and an inspector would check the fee tier against the count on the day.\n- C5, emergency plan: on file. The plan is rated Needs work. It names no incident coordinator and no contact for questions.\n\n**Not asked, but worth knowing**\n- The September 9 exceedance may trigger the permit's 24-hour deviation notice (Condition 5.2). No notice for it is on file. Please check this soon.\n- The Oregon DEQ audit ran on the same date. It lists items that companies like this usually hold and we have not been shown. These are suggestions, not findings. They are an EPCRA Tier II report, hazardous waste generator records and an industrial stormwater permit or no-exposure certification.\n\nDo you have a renewal application and a DEQ receipt? That answer decides how serious the 12-auditor-checklist-deq-air.docx and A2 lines are.\n\nI can run the Oregon DEQ audit again once you've added documents.",
+  "offers": [
+    {
+      "raw": "{\"kind\":\"run_audit\",\"document_id\":\"I7\"}",
+      "ok": false,
+      "why": "the agency is not one this company holds, or the file is not the one attached",
+      "card": null
+    }
+  ],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your audits",
+        "chars": 514,
+        "tokens": 206,
+        "left_out": null
+      },
+      {
+        "name": "the findings",
+        "chars": 22498,
+        "tokens": 9000,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30482,
+        "tokens": 12193,
+        "left_out": null
+      },
+      {
+        "name": "the attached file",
+        "chars": 0,
+        "tokens": 0,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 60,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 23163,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 1,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 1,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 27944,
+      "output": 1219,
+      "searches": 0,
+      "cost_usd": 0.068078
+    }
+  ],
+  "seconds": 11,
+  "topic_id": "516318b6-1775-44dc-9b5d-5a6b8ead5e1a"
+}

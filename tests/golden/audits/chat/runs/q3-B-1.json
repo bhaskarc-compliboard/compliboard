@@ -1,0 +1,117 @@
+{
+  "question": "Here is a file. Check if we are good.",
+  "variant": "B",
+  "documentId": "bb16e9a7-c5d1-44a5-955a-ef91c5e49732",
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 28599,
+      "tokens": 11440,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13204,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "**Short answer:** Not yet. Going line by line through the DEQ checklist you attached, several lines can't be answered \"yes\" from the documents you hold, and one is urgent. The permit expires November 15, 2026.\n\nThe attached file is DEQ's blank inspector's field form. It isn't a record of an inspection. I used it as a preview of what an inspector would ask to see.\n\n**Most urgent: A1 and A2 (permit and renewal)**\n- The Standard Air Contaminant Discharge Permit says it expires November 15, 2026. It also says the renewal application was due on or before July 18, 2026.\n- No renewal application or DEQ receipt is among your documents. I can't tell whether it was filed. If it was, find the copy and DEQ's acknowledgment. The permit also says you can't operate after expiry without a renewed permit or a timely renewal application.\n\n**Section A: submissions**\n- **A3, annual report:** The Annual Report for 2025, with DEQ Receipt Confirmation, was last entered 2026-02-12. That is before February 15. The report for 2026 is due 2027-02-15.\n- **A4, semi-annual report:** The permit required the January–June 2026 report by July 31. It isn't among your documents, so I can't show it was sent.\n- **A5, deviations:** The permit asks for DEQ notice within 24 hours and a written report within 15 days. The Scrubber Pressure-Drop Log shows an S-2 reading of 6.4 on September 9, above the 6.0 limit. Nothing is recorded about it, and no notice or report is on file.\n\n**Section B: records**\n- **B1, pressure-drop log:** The log has gaps. Readings for August 17–21 are missing. The September 9 reading is out of range with no note. No supervisor has signed it. I only hold August–September, so I can't speak to the other ten months.\n- **B2, quarterly scrubber inspections:** No inspection records are on file. The permit's quarterly inspection was due by 2026-09-30.\n- **B3, carbon replacement:** No replacement record or invoice is on file. The permit requires replacement at least every 12 months.\n- **B4, weekly detector-tube checks:** The week of September 14 is missing. The week of September 28 was due 2026-10-02, and the log ends 2026-09-25.\n- **B5, opacity:** No visible-emissions records are on file. Nor is a statement of the monitoring method.\n- **B6, five-year retention:** I can't confirm this. The permit asks for an organized file going back five years.\n\n**Section C: on the day**\n- **C1 to C3:** I can't tell from paper. A September 9 reading above the limit is the sort of thing an inspector would ask about.\n- **C4, employee count:** Two of your documents disagree. You declared 38 employees enterprise-wide. The Emergency Action Plan, as of 2021-02-01, says 42 at Portland. Settle which is current before the inspector asks.\n- **C5, emergency plan:** The Emergency Action Plan is on file but marked needs work. It was last revised in 2021 and has no procedure for reporting an emergency. It also has no named contact.\n\n**What you didn't ask but need to know**\n- The Monthly EHS Self-Check is blank. It shows a routine but no completed checks.\n- The permit also requires an annual fee payment. No invoice or proof of payment is on file.\n\n**Next step:** Find the renewal application and DEQ's receipt first. Then write up the September 9 event and ask DEQ whether it needs a deviation report.",
+  "answer": "**Short answer:** Not yet. Going line by line through the DEQ checklist you attached, several lines can't be answered \"yes\" from the documents you hold, and one is urgent. The permit expires November 15, 2026.\n\nThe attached file is DEQ's blank inspector's field form. It isn't a record of an inspection. I used it as a preview of what an inspector would ask to see.\n\n**Most urgent: 12-auditor-checklist-deq-air.docx and A2 (permit and renewal)**\n- The Standard Air Contaminant Discharge Permit says it expires November 15, 2026. It also says the renewal application was due on or before July 18, 2026.\n- No renewal application or DEQ receipt is among your documents. I can't tell whether it was filed. If it was, find the copy and DEQ's acknowledgment. The permit also says you can't operate after expiry without a renewed permit or a timely renewal application.\n\n**Section A: submissions**\n- **A3, annual report:** The Annual Report for 2025, with DEQ Receipt Confirmation, was last entered 2026-02-12. That is before February 15. The report for 2026 is due 2027-02-15.\n- **A4, semi-annual report:** The permit required the January–June 2026 report by July 31. It isn't among your documents, so I can't show it was sent.\n- **A5, deviations:** The permit asks for DEQ notice within 24 hours and a written report within 15 days. The Scrubber Pressure-Drop Log shows an S-2 reading of 6.4 on September 9, above the 6.0 limit. Nothing is recorded about it, and no notice or report is on file.\n\n**Section B: records**\n- **B1, pressure-drop log:** The log has gaps. Readings for August 17–21 are missing. The September 9 reading is out of range with no note. No supervisor has signed it. I only hold August–September, so I can't speak to the other ten months.\n- **B2, quarterly scrubber inspections:** No inspection records are on file. The permit's quarterly inspection was due by 2026-09-30.\n- **B3, carbon replacement:** No replacement record or invoice is on file. The permit requires replacement at least every 12 months.\n- **B4, weekly detector-tube checks:** The week of September 14 is missing. The week of September 28 was due 2026-10-02, and the log ends 2026-09-25.\n- **B5, opacity:** No visible-emissions records are on file. Nor is a statement of the monitoring method.\n- **B6, five-year retention:** I can't confirm this. The permit asks for an organized file going back five years.\n\n**Section C: on the day**\n- **C1 to C3:** I can't tell from paper. A September 9 reading above the limit is the sort of thing an inspector would ask about.\n- **C4, employee count:** Two of your documents disagree. You declared 38 employees enterprise-wide. The Emergency Action Plan, as of 2021-02-01, says 42 at Portland. Settle which is current before the inspector asks.\n- **C5, emergency plan:** The Emergency Action Plan is on file but marked needs work. It was last revised in 2021 and has no procedure for reporting an emergency. It also has no named contact.\n\n**What you didn't ask but need to know**\n- The Monthly EHS Self-Check is blank. It shows a routine but no completed checks.\n- The permit also requires an annual fee payment. No invoice or proof of payment is on file.\n\n**Next step:** Find the renewal application and DEQ's receipt first. Then write up the September 9 event and ask DEQ whether it needs a deviation report.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 28599,
+        "tokens": 11440,
+        "left_out": null
+      },
+      {
+        "name": "the attached file",
+        "chars": 0,
+        "tokens": 0,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 23,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13204,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 1,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 17875,
+      "output": 1173,
+      "searches": 0,
+      "cost_usd": 0.047479999999999994
+    }
+  ],
+  "seconds": 9.9,
+  "topic_id": "18034899-aa3d-4975-9cd0-bc3117491213"
+}

@@ -1,0 +1,112 @@
+{
+  "question": "What is our status on everything DEQ?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 30482,
+      "tokens": 12193,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 13957,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "**Most important:** Your air permit expires **November 15, 2026**. The Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 set the renewal application deadline at July 18, 2026. You don't hold a copy of the renewal application or a DEQ receipt for it. Nothing in your files shows whether it was filed. Please confirm that first.\n\n**What the permit file shows (Oregon DEQ)**\n\n| Item | What the documents show |\n|---|---|\n| Permit | Expires 2026-11-15. The permit says not to operate after expiry without a renewed permit or a timely renewal application. |\n| Renewal application (due 2026-07-18) | Not among your documents. |\n| Semi-annual report, Jan–Jun 2026 (due 2026-07-31) | Not among your documents. |\n| Annual report for 2025 | On file. DEQ's receipt is dated February 12, 2026. The receipt confirms receipt only. It is not a finding that the report is complete. |\n| C-1 carbon replacement | The 2025 annual report set the next replacement for on or before March 14, 2026. No vendor record or invoice is on file. |\n| Quarterly scrubber inspection (due 2026-09-30) | No record on file. The scrubber log doesn't show one. |\n| Annual report for 2026 | Due 2027-02-15. |\n\n**Gaps in the Scrubber Pressure-Drop Log (August–September 2026)**\n- **Missing readings:** Daily readings for August 17–21 are missing for both scrubbers. Condition 3.1 asks for a reading every operating day.\n- **Out-of-range reading:** On September 9, S-2 read 6.4 in. w.c. The limit is 6.0. The Notes column is blank, so there is no cause or corrective action.\n- **Missing weekly check:** The weekly C-1 outlet check for the week of September 14 is missing. The week of September 28 check was due around October 2, and the log doesn't show it.\n- **No sign-off:** No supervisor has signed the log.\n- **No September totals:** September has no line-counter totals, so completeness can't be checked.\n\n**What you didn't ask but need to know**\n- **Deviation reporting:** The permit asks for DEQ notice within 24 hours of finding a deviation, then a written report within 15 days. The September 9 reading, and possibly the missing monitoring, may fall under this. Your files show no notice. Whether a notice is needed depends on what actually happened, so check with the people on the line.\n- **Earlier deviation:** The 2025 annual report did report one deviation, the S-2 pump failure in August 2025.\n- **Other permit conditions:** Nothing on file covers visible-emissions records, the annual fee payment, or the five-year record file.\n- **Unread file:** The auditor checklist document (12-auditor-checklist-deq-air.docx) is still queued. I have no reading of it, so it isn't part of this answer.\n- **Blank forms:** The DEQ inspection checklist and your Monthly EHS Self-Check are both blank templates. They are not records of anything done. The DEQ checklist is useful as a preview of what an inspector would ask to see.\n- **Other state:** The state \"Needs work\" on the scrubber log, and the \"Expiring\" state on the permit, come from our readings dated 2026-10-14. If anything has been re-filed since, this answer may be out of date.\n\n**What you could do next:** Look for the renewal application and DEQ's acknowledgment. If you find one, file it with the permit. If you can't find one, contact your DEQ Northwest Region permit writer today.",
+  "answer": "**Most important:** Your air permit expires **November 15, 2026**. The Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 set the renewal application deadline at July 18, 2026. You don't hold a copy of the renewal application or a DEQ receipt for it. Nothing in your files shows whether it was filed. Please confirm that first.\n\n**What the permit file shows (Oregon DEQ)**\n\n| Item | What the documents show |\n|---|---|\n| Permit | Expires 2026-11-15. The permit says not to operate after expiry without a renewed permit or a timely renewal application. |\n| Renewal application (due 2026-07-18) | Not among your documents. |\n| Semi-annual report, Jan–Jun 2026 (due 2026-07-31) | Not among your documents. |\n| Annual report for 2025 | On file. DEQ's receipt is dated February 12, 2026. The receipt confirms receipt only. It is not a finding that the report is complete. |\n| C-1 carbon replacement | The 2025 annual report set the next replacement for on or before March 14, 2026. No vendor record or invoice is on file. |\n| Quarterly scrubber inspection (due 2026-09-30) | No record on file. The scrubber log doesn't show one. |\n| Annual report for 2026 | Due 2027-02-15. |\n\n**Gaps in the Scrubber Pressure-Drop Log (August–September 2026)**\n- **Missing readings:** Daily readings for August 17–21 are missing for both scrubbers. Condition 3.1 asks for a reading every operating day.\n- **Out-of-range reading:** On September 9, S-2 read 6.4 in. w.c. The limit is 6.0. The Notes column is blank, so there is no cause or corrective action.\n- **Missing weekly check:** The weekly C-1 outlet check for the week of September 14 is missing. The week of September 28 check was due around October 2, and the log doesn't show it.\n- **No sign-off:** No supervisor has signed the log.\n- **No September totals:** September has no line-counter totals, so completeness can't be checked.\n\n**What you didn't ask but need to know**\n- **Deviation reporting:** The permit asks for DEQ notice within 24 hours of finding a deviation, then a written report within 15 days. The September 9 reading, and possibly the missing monitoring, may fall under this. Your files show no notice. Whether a notice is needed depends on what actually happened, so check with the people on the line.\n- **Earlier deviation:** The 2025 annual report did report one deviation, the S-2 pump failure in August 2025.\n- **Other permit conditions:** Nothing on file covers visible-emissions records, the annual fee payment, or the five-year record file.\n- **Unread file:** The auditor checklist document (12-auditor-checklist-deq-air.docx) is still queued. I have no reading of it, so it isn't part of this answer.\n- **Blank forms:** The DEQ inspection checklist and your Monthly EHS Self-Check are both blank templates. They are not records of anything done. The DEQ checklist is useful as a preview of what an inspector would ask to see.\n- **Other state:** The state \"Needs work\" on the scrubber log, and the \"Expiring\" state on the permit, come from our readings dated 2026-10-14. If anything has been re-filed since, this answer may be out of date.\n\n**What you could do next:** Look for the renewal application and DEQ's acknowledgment. If you find one, file it with the permit. If you can't find one, contact your DEQ Northwest Region permit writer today.",
+  "offers": [],
+  "prose_offer": false,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 30482,
+        "tokens": 12193,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 23,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 13957,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 16845,
+      "output": 1200,
+      "searches": 0,
+      "cost_usd": 0.045689999999999995
+    }
+  ],
+  "seconds": 10,
+  "topic_id": "f9777f8c-af77-4c54-9b1a-26794c1587dc"
+}

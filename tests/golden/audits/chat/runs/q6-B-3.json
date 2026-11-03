@@ -1,0 +1,124 @@
+{
+  "question": "Why is the Standard Air Contaminant Discharge Permit marked out of date?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 33353,
+      "tokens": 13342,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 15106,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "The permit is marked Expiring, not out of date. The Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 (Portland Facility) is still in force. The status is there because of its expiry date.\n\n**Why it is flagged:** In the permit, condition 1.2 says: \"This permit expires on November 15, 2026.\" That is 12 days from today, November 3, 2026.\n\n**What matters most:** Condition 1.3 required a complete renewal application on or before July 18, 2026. That date has passed. Your documents do not show that an application was filed. No renewal application and no DEQ receipt are on file. Condition 1.2 says you should not operate after expiry without a renewed permit or proof of a timely renewal application. I can't tell from your documents whether you filed. Did you submit a renewal application on or before July 18, 2026? If yes, find the copy and DEQ's acknowledgment and add them to your file. If no, contact DEQ right away about your status.\n\n**Other items tied to the permit that you didn't ask about:**\n- **Semi-annual report:** The January–June 2026 report was due July 31, 2026 (condition 4.2). It is not among your documents.\n- **Carbon replacement:** The Annual Report, Reporting Year 2025 set the next C-1 carbon replacement for on or before March 14, 2026. No replacement record is on file.\n- **Quarterly scrubber inspection:** It was due by September 30, 2026 (condition 3.2). The Scrubber Pressure-Drop Log has no entry for it.\n- **Scrubber log:** The log has gaps. August 17–21 readings are missing. The S-2 reading on September 9 was 6.4, above the 6.0 limit, with no note. The week of September 14 has no C-1 check. No supervisor has signed it.\n- **Deviation reporting:** Condition 5.2 asks for DEQ notice within 24 hours and a written report within 15 days. Your documents don't show whether either was done for September 9.\n\nAlso, the auditor checklist file (12-auditor-checklist-deq-air.docx) is still queued. I have not read it.\n\n**Next step:** Find your July 2026 renewal application and DEQ's receipt. If you can't find them, call DEQ's Northwest Region office this week.",
+  "answer": "The permit is marked Expiring, not out of date. The Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 (Portland Facility) is still in force. The status is there because of its expiry date.\n\n**Why it is flagged:** In the permit, condition 1.2 says: “This permit expires on November 15, 2026.”[1] That is 12 days from today, November 3, 2026.\n\n**What matters most:** Condition 1.3 required a complete renewal application on or before July 18, 2026. That date has passed. Your documents do not show that an application was filed. No renewal application and no DEQ receipt are on file. Condition 1.2 says you should not operate after expiry without a renewed permit or proof of a timely renewal application. I can't tell from your documents whether you filed. Did you submit a renewal application on or before July 18, 2026? If yes, find the copy and DEQ's acknowledgment and add them to your file. If no, contact DEQ right away about your status.\n\n**Other items tied to the permit that you didn't ask about:**\n- **Semi-annual report:** The January–June 2026 report was due July 31, 2026 (condition 4.2). It is not among your documents.\n- **Carbon replacement:** The Annual Report, Reporting Year 2025 set the next C-1 carbon replacement for on or before March 14, 2026. No replacement record is on file.\n- **Quarterly scrubber inspection:** It was due by September 30, 2026 (condition 3.2). The Scrubber Pressure-Drop Log has no entry for it.\n- **Scrubber log:** The log has gaps. August 17–21 readings are missing. The S-2 reading on September 9 was 6.4, above the 6.0 limit, with no note. The week of September 14 has no C-1 check. No supervisor has signed it.\n- **Deviation reporting:** Condition 5.2 asks for DEQ notice within 24 hours and a written report within 15 days. Your documents don't show whether either was done for September 9.\n\nAlso, the auditor checklist file (12-auditor-checklist-deq-air.docx) is still queued. I have not read it.\n\n**Next step:** Find your July 2026 renewal application and DEQ's receipt. If you can't find them, call DEQ's Northwest Region office this week.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [
+    {
+      "n": 1,
+      "kind": "passage",
+      "title": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility — what we read in it",
+      "url": "",
+      "label": "your document",
+      "passage_id": "R2",
+      "quote": "This permit expires on November 15, 2026.",
+      "href": "/documents?document=7f1308f9-2ada-4222-a1bc-a3a93fe19e3e"
+    }
+  ],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 33353,
+        "tokens": 13342,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 24,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 15106,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 17991,
+      "output": 753,
+      "searches": 0,
+      "cost_usd": 0.043512
+    }
+  ],
+  "seconds": 6.7,
+  "topic_id": "eb66c8c0-64a1-4f8e-85cc-878652b698bf"
+}

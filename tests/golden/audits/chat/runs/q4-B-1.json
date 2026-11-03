@@ -1,0 +1,125 @@
+{
+  "question": "Are we ready for an Oregon OSHA inspection?",
+  "variant": "B",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 37108,
+      "tokens": 14844,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 16608,
+  "passages": [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R12"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "No. The documents show several open gaps that an Oregon OSHA inspector would likely ask about. This answer is based on readings dated 2026-10-14. If any document has changed since then, the answer may be out of date.\n\n**What is in decent shape**\n- Certificate of Annual Maintenance, Portable Fire Extinguishers: all 14 units passed on August 20, 2025. Its own line says \"NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.\" That date has passed and no newer certificate is on file.\n- OSHA Form 300A Summary, Calendar Year 2025: completed and certified on February 1, 2026. It shows 3 recordable cases.\n\n**What an inspector would likely find**\n\n1. **Emergency Action Plan — Portland Facility.** It was last revised in February 2021, and no review log is on file.\n   - It has no procedure for reporting an emergency.\n   - It has no procedure for shutting down chemical processes before evacuation.\n   - It names no contact for questions about the plan.\n   - It lists earthquakes but gives no earthquake steps.\n   - The evacuation maps and the warden roster (Appendices A and B) are not in the file.\n\n2. **Forklifts (Unit FL-2 pre-shift logs, September 2026).**\n   - Sep 3 and 4 have no entries, but the hour meter shows the truck ran.\n   - The horn was marked defective on Sep 9, and M.C. operated the truck that day. Nothing records a repair or removal from service.\n   - The log has no supervisor sign-off.\n   - Entries stop on Sep 17 or 18. There are two copies of this log in your list. They disagree on the last entry date (Sep 18 in one, Sep 17 in the other). The Sep 17 copy is a skewed, cropped photo, so the cutoff may be the copy rather than the log.\n\n3. **Forklift operator training record.** R. Patel's three-year evaluation was due 2026-05-19, and nothing shows it was done. Her certificate is not noted as on file. Jose Rivera's certificate is also not in the file.\n\n4. **Monthly EHS Self-Check.** This is a blank template. Nothing shows any month was actually completed.\n\n5. **Hazard communication.** The only item on file is the supplier's Safety Data Sheet for 50% sodium hydroxide. I read no written hazard communication program, chemical inventory, or training records, and none are in your list. I can't say whether you have them. If they exist, they are not on file here.\n\n**What you didn't ask but need to know**\n- **Inspector's file.** The extinguisher certificate is overdue, and two units (W-3 and L-1) needed six-year maintenance before November 2026. Monthly extinguisher checks are on the unit tags, and I have not seen them.\n- **Headcount.** Your declared count is 38 employees. The Emergency Action Plan says 42 at Portland. The 300A shows an average of 65. Inspection scope, recordkeeping and electronic-submission duties can depend on headcount, so please settle which figure is right.\n- **Industry code.** The 300A lists NAICS 424690 (chemical wholesale). The company profile says manufacturing, and you declared yourselves a distributor. Pick one and use it consistently.\n- **Electronic submission.** No proof of electronic 300A submission is on file. The 300A reading says it depends on whether your industry is on Oregon's Table 7 under OAR 437-001-0700(24)(b). That was not confirmed.\n- **Air permit (DEQ, not OSHA).** Permit 26-2841-ST-01 expires 2026-11-15. The renewal application was due 2026-07-18, and no renewal application is on file. The scrubber log also shows an S-2 reading of 6.4 on Sep 9, above the 6.0 limit, with no note. Those are DEQ matters, but they are worth fixing first.\n\n**Next step**\nStart with the items that are quick to fix and that an inspector would ask for first. Take R. Patel off forklift duty until she is re-evaluated. Find the horn repair record. Then have the supervisor sign the forklift logs. Then update the Emergency Action Plan. Please tell me which headcount is correct (38, 42 or 65) and whether you have a written hazard communication program. Those two answers settle which rules apply and where the biggest remaining gap is.",
+  "answer": "No. The documents show several open gaps that an Oregon OSHA inspector would likely ask about. This answer is based on readings dated 2026-10-14. If any document has changed since then, the answer may be out of date.\n\n**What is in decent shape**\n- Certificate of Annual Maintenance, Portable Fire Extinguishers: all 14 units passed on August 20, 2025. Its own line says “NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.”[1] That date has passed and no newer certificate is on file.\n- OSHA Form 300A Summary, Calendar Year 2025: completed and certified on February 1, 2026. It shows 3 recordable cases.\n\n**What an inspector would likely find**\n\n1. **Emergency Action Plan — Portland Facility.** It was last revised in February 2021, and no review log is on file.\n   - It has no procedure for reporting an emergency.\n   - It has no procedure for shutting down chemical processes before evacuation.\n   - It names no contact for questions about the plan.\n   - It lists earthquakes but gives no earthquake steps.\n   - The evacuation maps and the warden roster (Appendices A and B) are not in the file.\n\n2. **Forklifts (Unit FL-2 pre-shift logs, September 2026).**\n   - Sep 3 and 4 have no entries, but the hour meter shows the truck ran.\n   - The horn was marked defective on Sep 9, and M.C. operated the truck that day. Nothing records a repair or removal from service.\n   - The log has no supervisor sign-off.\n   - Entries stop on Sep 17 or 18. There are two copies of this log in your list. They disagree on the last entry date (Sep 18 in one, Sep 17 in the other). The Sep 17 copy is a skewed, cropped photo, so the cutoff may be the copy rather than the log.\n\n3. **Forklift operator training record.** R. Patel's three-year evaluation was due 2026-05-19, and nothing shows it was done. Her certificate is not noted as on file. Jose Rivera's certificate is also not in the file.\n\n4. **Monthly EHS Self-Check.** This is a blank template. Nothing shows any month was actually completed.\n\n5. **Hazard communication.** The only item on file is the supplier's Safety Data Sheet for 50% sodium hydroxide. I read no written hazard communication program, chemical inventory, or training records, and none are in your list. I can't say whether you have them. If they exist, they are not on file here.\n\n**What you didn't ask but need to know**\n- **Inspector's file.** The extinguisher certificate is overdue, and two units (W-3 and L-1) needed six-year maintenance before November 2026. Monthly extinguisher checks are on the unit tags, and I have not seen them.\n- **Headcount.** Your declared count is 38 employees. The Emergency Action Plan says 42 at Portland. The 300A shows an average of 65. Inspection scope, recordkeeping and electronic-submission duties can depend on headcount, so please settle which figure is right.\n- **Industry code.** The 300A lists NAICS 424690 (chemical wholesale). The company profile says manufacturing, and you declared yourselves a distributor. Pick one and use it consistently.\n- **Electronic submission.** No proof of electronic 300A submission is on file. The 300A reading says it depends on whether your industry is on Oregon's Table 7 under OAR 437-001-0700(24)(b). That was not confirmed.\n- **Air permit (DEQ, not OSHA).** Permit 26-2841-ST-01 expires 2026-11-15. The renewal application was due 2026-07-18, and no renewal application is on file. The scrubber log also shows an S-2 reading of 6.4 on Sep 9, above the 6.0 limit, with no note. Those are DEQ matters, but they are worth fixing first.\n\n**Next step**\nStart with the items that are quick to fix and that an inspector would ask for first. Take R. Patel off forklift duty until she is re-evaluated. Find the horn repair record. Then have the supervisor sign the forklift logs. Then update the Emergency Action Plan. Please tell me which headcount is correct (38, 42 or 65) and whether you have a written hazard communication program. Those two answers settle which rules apply and where the biggest remaining gap is.",
+  "offers": [],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [
+    {
+      "n": 1,
+      "kind": "passage",
+      "title": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility — what we read in it",
+      "url": "",
+      "label": "your document",
+      "passage_id": "R7",
+      "quote": "NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.",
+      "href": "/documents?document=7d6a4d4f-84a5-450d-a26e-9bf47e8edd36"
+    }
+  ],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 37108,
+        "tokens": 14844,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 25,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 16608,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 0,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 19425,
+      "output": 1453,
+      "searches": 0,
+      "cost_usd": 0.053380000000000004
+    }
+  ],
+  "seconds": 11.8,
+  "topic_id": "240bd51d-1031-4d22-8f23-8bec88430a2d"
+}

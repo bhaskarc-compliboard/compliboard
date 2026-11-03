@@ -1,0 +1,180 @@
+{
+  "question": "Which lines of the template audit point at a document that has been read since the audit?",
+  "variant": "A",
+  "documentId": null,
+  "email": "testcascade@example.com",
+  "company": "Cascade Specialty Chemicals, LLC",
+  "model": "claude-sonnet-5-5",
+  "context": [
+    {
+      "name": "the company",
+      "chars": 916,
+      "tokens": 367,
+      "left_out": null
+    },
+    {
+      "name": "your audits",
+      "chars": 514,
+      "tokens": 206,
+      "left_out": null
+    },
+    {
+      "name": "the findings",
+      "chars": 22498,
+      "tokens": 9000,
+      "left_out": null
+    },
+    {
+      "name": "your documents",
+      "chars": 3492,
+      "tokens": 1397,
+      "left_out": null
+    },
+    {
+      "name": "the readings",
+      "chars": 31305,
+      "tokens": 12522,
+      "left_out": null
+    }
+  ],
+  "context_tokens": 23492,
+  "passages": [
+    "U1",
+    "U2",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19",
+    "F20",
+    "F21",
+    "F22",
+    "F23",
+    "F24",
+    "F25",
+    "F26",
+    "F27",
+    "F28",
+    "F29",
+    "F30",
+    "F31",
+    "F32",
+    "F33",
+    "F34",
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "I13",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11"
+  ],
+  "searches": [],
+  "withdrawn": null,
+  "raw": "I can't answer this precisely, because nothing in the audit records shows a document read after the audit ran.\n\n- **Oregon DEQ audit (2026-11-03):** its readings are as of 2026-10-14.\n- **Checklist audit of 12-auditor-checklist-deq-air.docx (2026-11-03):** its readings are also as of 2026-10-14.\n- **Every reading I hold:** each one is dated 2026-10-14, which is before both audits ran on 2026-11-03.\n\nSo no line in either audit points at a document read after the audit. The audits saw every reading I have.\n\nThree things to keep in mind:\n\n1. **The checklist file itself.** The list shows 12-auditor-checklist-deq-air.docx as Queued. Its reading, which I hold, says no summary was stored. The checklist audit still ran against it and read 13 documents. I can't say from here how it was read.\n2. **\"Template audit.\"** I'm assuming you mean the checklist audit. If you meant the Monthly EHS Self-Check template, the Oregon DEQ audit's line on it is the finding of nothing on file for completed monthly records. That reading is also dated 2026-10-14.\n3. **Changes after reading.** I can't see whether any document was changed or re-filed after 2026-10-14. If one was, the audit lines for it may be out of date. Running the audit again is how they get updated.\n\nDo you know of any document that was replaced or re-uploaded since 2026-10-14? If so, tell me which one. I can then say which audit lines rest on the older reading.\n\n```offer\n{\"kind\":\"run_audit\",\"document_id\":\"I7\"}\n```",
+  "answer": "I can't answer this precisely, because nothing in the audit records shows a document read after the audit ran.\n\n- **Oregon DEQ audit (2026-11-03):** its readings are as of 2026-10-14.\n- **Checklist audit of 12-auditor-checklist-deq-air.docx (2026-11-03):** its readings are also as of 2026-10-14.\n- **Every reading I hold:** each one is dated 2026-10-14, which is before both audits ran on 2026-11-03.\n\nSo no line in either audit points at a document read after the audit. The audits saw every reading I have.\n\nThree things to keep in mind:\n\n1. **The checklist file itself.** The list shows 12-auditor-checklist-deq-air.docx as Queued. Its reading, which I hold, says no summary was stored. The checklist audit still ran against it and read 13 documents. I can't say from here how it was read.\n2. **\"Template audit.\"** I'm assuming you mean the checklist audit. If you meant the Monthly EHS Self-Check template, the Oregon DEQ audit's line on it is the finding of nothing on file for completed monthly records. That reading is also dated 2026-10-14.\n3. **Changes after reading.** I can't see whether any document was changed or re-filed after 2026-10-14. If one was, the audit lines for it may be out of date. Running the audit again is how they get updated.\n\nDo you know of any document that was replaced or re-uploaded since 2026-10-14? If so, tell me which one. I can then say which audit lines rest on the older reading.",
+  "offers": [
+    {
+      "raw": "{\"kind\":\"run_audit\",\"document_id\":\"I7\"}",
+      "ok": false,
+      "why": "the agency is not one this company holds, or the file is not the one attached",
+      "card": null
+    }
+  ],
+  "prose_offer": true,
+  "claimed_to_run": false,
+  "sources": [],
+  "check_record": {
+    "offers": 0,
+    "context": [
+      {
+        "name": "the company",
+        "chars": 916,
+        "tokens": 367,
+        "left_out": null
+      },
+      {
+        "name": "your audits",
+        "chars": 514,
+        "tokens": 206,
+        "left_out": null
+      },
+      {
+        "name": "the findings",
+        "chars": 22498,
+        "tokens": 9000,
+        "left_out": null
+      },
+      {
+        "name": "your documents",
+        "chars": 3492,
+        "tokens": 1397,
+        "left_out": null
+      },
+      {
+        "name": "the readings",
+        "chars": 31305,
+        "tokens": 12522,
+        "left_out": null
+      }
+    ],
+    "section": "audits_chat",
+    "passages": 60,
+    "searched": [],
+    "dropped_links": 0,
+    "context_tokens": 23492,
+    "dropped_quotes": 0,
+    "offers_dropped": {
+      "notJson": 0,
+      "badShape": 0,
+      "unknownKind": 1,
+      "unverifiedLink": 0
+    },
+    "attached_passages": 0,
+    "attached_without_text": 0,
+    "quotes_found_in_nothing": 0
+  },
+  "ledger": [
+    {
+      "task": "audits_chat",
+      "model": "claude-sonnet-5-5",
+      "input": 26547,
+      "output": 534,
+      "searches": 0,
+      "cost_usd": 0.058434
+    }
+  ],
+  "seconds": 5.8,
+  "topic_id": "b15f8211-c569-4b39-a2d1-8783a6e6279f"
+}
