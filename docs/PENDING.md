@@ -1,6 +1,7 @@
 # PENDING — everything this product still owes
 
 **Version:** 2 · **Written:** 29 October 2026, by Claude Code at the close of My Account part C.
+**Updated:** 2 November 2026, at `docs/GAPS-PLAN.md` Part A step 3: **S7 gains its number** — a carried attachment costs ~2,376 input tokens a turn, measured on Haiku. No row added or removed; the counts below stand at 49.
 **Updated:** 2 November 2026, at `docs/GAPS-PLAN.md` Part A step 1: **D15 added** — a Calendar chat reading card's `/documents?document=<id>` link is read by nothing on the Documents page — so the count rises from 48 to 49 and the known defects from 14 to 15. **D5**'s line number corrected, `:533` → `:621`. Both from reading the code, not the docs.
 **Updated:** 2 November 2026, at the close of the public pages (`docs/PUBLIC-PAGES-PLAN.md` step 35): **F12, chat
 over documents**, added — it was the one release gate for the homepage with no id here (§5 of that plan said "add
@@ -92,7 +93,7 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | **S4** | **`service_role` holds all eight privileges on `stripe_events`**, not the three 087 grants | `DECISIONS.md` §223 C; `docs/HANDOFF-CODE.md` §7 | `postgres`'s default ACL (068) grants everything on creation. **Staging is byte-identical**, `anon` and `authenticated` hold nothing, and the webhook and reconcile are its only holders. Narrowing needs an explicit REVOKE | an hour |
 | **S5** | **`GET /api/obligations` writes ~200 obligation rows on a first visit**, behind a page linked from nowhere | `docs/HANDOFF-CODE.md` §7, the parked items | Guarding the page alone leaves a writable endpoint behind it | a day |
 | **S6** | **`expires_at` is set by nothing** on `company_switches` | `docs/HANDOFF-CODE.md` §7 | An expired fact must read `unknown`; **a stale `false` is a false green**, which is §3.2's territory | a day |
-| **S7** | **Re-sending an attachment on every turn is unbounded in cost** | `docs/HANDOFF-CODE.md` §7; `lib/attachedDocument.ts`, `MAX_CARRIED_DOCUMENTS = 3` | Correct but expensive on long PDFs. A size threshold was deliberately **not** invented; the measurement to justify one is in `ai_calls` | a day |
+| **S7** | **Re-sending an attachment on every turn is unbounded in cost** | `docs/HANDOFF-CODE.md` §7; `lib/attachedDocument.ts`, `MAX_CARRIED_DOCUMENTS = 3`. **Measured 2 November 2026** at `docs/GAPS-PLAN.md` Part A step 3 | Correct but expensive on long PDFs. A size threshold was deliberately **not** invented; the measurement to justify one is in `ai_calls`. **⚡ THE NUMBER, AT LAST: ~2,376 INPUT TOKENS A TURN, EVERY TURN, for one 223 KB eight-page PDF** — 8,218 input tokens on a Calendar answer carrying it against 5,842 on the same question without it, both on Haiku, both read from `ai_calls`. At the cap of three files that is roughly 7,000 a turn before a word of context. **And it is now three sections' problem, not one:** the Compliance Workspace, the Calendar, and every section the shared chat reaches next. Whether a size cap is owed is the owner's call | a day |
 
 ---
 
