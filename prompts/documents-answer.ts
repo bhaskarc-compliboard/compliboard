@@ -89,6 +89,21 @@ export const DOCUMENTS_NO_TEXT =
   'Some attached files are pictures of pages, with no words we can read back. For those, say what '
   + 'the file shows in your own words and do not quote from it.'
 
+/**
+ * *** THE INDEX SAYS "Queued" ABOUT A FILE THAT IS IN THE MESSAGE — found by walking step 4b on
+ * Haiku, and the owner's yes. ***
+ *
+ * A person attaches a file and asks about it. The engine carries the whole PDF (`check_record`:
+ * `attached_passages: 1`), AND the file is a brand-new row in the index, where its state reads
+ * **Queued** — the reading is fire-and-forget and has not finished. The answer opened: *"I can see
+ * the file you've attached is not yet readable in my system — it shows as 'Queued' in the document
+ * list."* The plumbing was right and the sentence was wrong, and the person was told we could not
+ * read a file we were reading.
+ */
+export const DOCUMENTS_QUEUED =
+  'A file attached to this conversation is in the message and you can read it. Its line in the '
+  + 'list may still say Queued; that says nothing about whether you can read it.'
+
 /** The product's words. The standing ban on "AI" and on calling anybody compliant. */
 export const DOCUMENTS_WORDS =
   'Never say "AI", and never call this company or anything it holds compliant or non-compliant: '
@@ -157,14 +172,15 @@ export const DOCUMENTS_UNSURE =
   + 'that would settle it. Never present a guess as something we read.'
 
 /**
- * The sentences, in the order they are added after the shared prompt. **Thirteen**, and no more.
+ * The sentences, in the order they are added after the shared prompt. **Fourteen**, and no more.
  * The order is the Calendar's: what it is given, how to name a document, what to say when the
  * thing asked about is not there, then the words, then the three honesty rules, then the shape,
  * then what not to promise, then the unsure line.
  *
- * Eight at step 4a, eleven at 4a-test (the Calendar's three honesty sentences), thirteen at 4b —
- * and the last two were bought by measurement rather than written from taste: a title marked as
- * an unfindable quote, and an offer with no button behind it.
+ * Eight at step 4a, eleven at 4a-test (the Calendar's three honesty sentences), thirteen at 4b,
+ * fourteen at step 5 — and the last three were bought by measurement rather than written from
+ * taste: a title marked as an unfindable quote, an offer with no button behind it, and a file we
+ * were reading that the answer said we could not read.
  */
 export const DOCUMENTS_SENTENCES: string[] = [
   DOCUMENTS_GIVEN,
@@ -173,6 +189,7 @@ export const DOCUMENTS_SENTENCES: string[] = [
   DOCUMENTS_NOT_ON_FILE,
   DOCUMENTS_OLD_READING,
   DOCUMENTS_NO_TEXT,
+  DOCUMENTS_QUEUED,
   DOCUMENTS_WORDS,
   DOCUMENTS_IDS,
   DOCUMENTS_RULE_NUMBERS,

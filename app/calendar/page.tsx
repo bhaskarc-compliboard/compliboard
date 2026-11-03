@@ -620,6 +620,12 @@ function Calendar() {
                 href: CALENDAR_ATTACH_HREF,
                 onPick: () => { void refresh() },
               }}
+              /* DECISION 8, wired at Part A step 5: a checklist made from this chat lives in the
+                 Compliance Workspace's Checklists tab, and the ready line links straight to it. */
+              canMakeChecklist
+              onMakeChecklist={conv.makeChecklist}
+              checklistBusy={conv.checklistRunning(conv.askTopicId)}
+              checklistReadyId={conv.checklistReady?.topicId === conv.askTopicId ? conv.checklistReady.id : null}
               thinkingLine={calendarThinkingLine}
               afterAnswer={calendarAfterAnswer(rows, refresh)}
             />

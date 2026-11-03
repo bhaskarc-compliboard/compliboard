@@ -178,8 +178,16 @@ export default function CompliancePage() {
     const params = new URLSearchParams(window.location.search)
     const ask = params.get('ask')
     const documentId = params.get('document')
-    if (!ask && !documentId) return
+    /**
+     * *** `?checklist=<id>` — decision 8, Part A step 5 (the owner's yes, 2 November 2026). ***
+     * A checklist made from ANY section's chat lives here, so any section's chat has to be able to
+     * link to it. Six lines, and this file took no other edit in that step. The address is built in
+     * one place, `lib/checklistView.ts` `checklistHref`, so the two callers cannot drift.
+     */
+    const checklistId = params.get('checklist')
+    if (!ask && !documentId && !checklistId) return
     if (ask) setBox(ask)
+    if (checklistId) { setTab('checklists'); void openChecklist(checklistId) }
     if (documentId) {
       (async () => {
         const res = await fetch('/api/documents/index', { headers: await authHeaders() })

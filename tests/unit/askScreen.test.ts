@@ -12,6 +12,8 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { CLAIM_WORDS } from '../../lib/topicClaim.ts'
+import { checklistHref } from '../../lib/checklistView.ts'
 /**
  * *** THE FILES ARE READ, NOT IMPORTED, and that is the house pattern rather than a shortcut. ***
  * `node --test` strips types from `.ts` and refuses `.tsx` outright
@@ -112,14 +114,102 @@ describe('the action row is the owner\'s three, in the owner\'s order (decision 
   })
 
   /**
-   * *** THE FIRST ACTION IS OFF UNTIL PART A STEP 5, AND THAT IS WHY IT IS A PROP. ***
+   * *** THE FIRST ACTION IS STILL A PROP, AND AT PART A STEP 5 TWO SECTIONS PASS IT. ***
    * A control that does nothing is a promise the product is not keeping (`CLAUDE.md` §5.1), so it
-   * renders only where a section says it can act on it. Calendar passes nothing, which is false.
+   * renders only where a section has somewhere for the result to go — which, by decision 8, is the
+   * Compliance Workspace's Checklists tab. The default stays `false` so a section added later opts
+   * in deliberately rather than inheriting a button.
    */
-  test('the checklist action is gated, and the Calendar does not pass the gate', () => {
+  test('the checklist action is gated, and the default is still off', () => {
     assert.match(SCREEN, /canMakeChecklist = false/, 'it must default to off')
     assert.match(SCREEN, /\{canMakeChecklist && \(/, 'and be rendered behind the gate')
-    assert.ok(!/canMakeChecklist/.test(code(PAGE)), 'the Calendar page must not turn it on in this step')
+  })
+
+  test('the Calendar page turns it on, and hands over the hook\'s three pieces', () => {
+    const page = code(PAGE)
+    assert.match(page, /canMakeChecklist\n/, 'the Calendar page does not pass the gate')
+    assert.match(page, /onMakeChecklist=\{conv\.makeChecklist\}/)
+    assert.match(page, /checklistBusy=\{conv\.checklistRunning\(conv\.askTopicId\)\}/)
+    assert.match(page, /checklistReadyId=\{conv\.checklistReady\?\.topicId === conv\.askTopicId \? conv\.checklistReady\.id : null\}/)
+  })
+})
+
+/**
+ * *** "TURN THIS INTO A CHECKLIST" FROM ANY CHAT — `docs/GAPS-PLAN.md` decision 8, Part A step 5. ***
+ *
+ * The machinery is the Workspace's, READ AND COPIED rather than written again, so these tests name
+ * the thing each rule came from. The one that matters most is the last: a build that clears its
+ * claim with nothing new must SAY so, or the claim word sits on screen for ever.
+ */
+describe('turn this into a checklist', () => {
+  const HOOK = SCREEN.slice(SCREEN.indexOf('export function useAskConversations'))
+
+  test('the button presses the hook, and says the claim word while it runs', () => {
+    assert.match(SCREEN, /onClick=\{\(\) => \{ if \(topicId\) onMakeChecklist\?\.\(topicId\) \}\}/)
+    assert.match(SCREEN, /\{checklistBusy \? ACTION_CHECKLISTING : ACTION_CHECKLIST\}/)
+    // The claim word is the shared one, not a second copy of it.
+    assert.match(SCREEN, /export const ACTION_CHECKLISTING = CLAIM_WORDS\.checklist/)
+    assert.equal(CLAIM_WORDS.checklist, 'Checklist being built…')
+  })
+
+  test('…and it is disabled with no answer, while busy, and for a paused company', () => {
+    assert.match(SCREEN, /disabled=\{busy \|\| checklistBusy \|\| !answered \|\| Boolean\(paused\)\}/)
+  })
+
+  test('ONE PRESS, ONE CALL: the Workspace\'s 202-or-409-building rule', () => {
+    assert.match(HOOK, /scope: 'discussed'/)
+    assert.match(HOOK, /res\.status === 202 \|\| \(res\.status === 409 && j\?\.status === 'building'\)/)
+    assert.match(HOOK, /if \(checklistRunning\(id\)\) return/, 'a second press must not pay twice')
+    // Anything else is a refusal with its own sentence, shown as it came.
+    assert.match(HOOK, /setNotice\(j\?\.error \?\? CHECKLIST_FAILED\)/)
+  })
+
+  test('the route it posts to is the Workspace\'s own, and is section-blind', () => {
+    assert.match(HOOK, /fetch\('\/api\/checklists\/from-topic'/)
+    const route = readFileSync('app/api/checklists/from-topic/route.ts', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    assert.ok(!/\.section/.test(route), 'the route reads a section — decision 8 would not hold')
+  })
+
+  test('the new checklist is told apart from one the conversation already had', () => {
+    assert.match(HOOK, /const before = topics\.find\(\(t\) => t\.id === id\)\?\.checklistId \?\? null/)
+    assert.match(HOOK, /row\.checklistId && row\.checklistId !== w\.before/)
+  })
+
+  test('ONE poll watches both the summary and the checklist, not two intervals', () => {
+    assert.match(HOOK, /if \(!summaryWatching && !checklistWatching\) return/)
+    assert.equal((HOOK.match(/setInterval\(/g) ?? []).length, 1, 'a second interval was added')
+  })
+
+  /** §5.1, and the failure this test exists for: a claim that clears with nothing new. */
+  test('a build that produced nothing SAYS so rather than stopping quietly', () => {
+    const half = HOOK.slice(HOOK.indexOf('setChecklistWait((w) => {'))
+    assert.match(half, /if \(!row \|\| row\.checklistInProgress\) return w/)
+    assert.match(half, /else setNotice\(CHECKLIST_FAILED\)/)
+    assert.match(SCREEN, /Nothing was changed\. Please try again\./)
+  })
+
+  test('the ready line names where it went, and links to THAT checklist', () => {
+    assert.equal(named(SCREEN, 'CHECKLIST_READY_BEFORE', 'AskScreen'), 'Your checklist is ready — ')
+    assert.equal(named(SCREEN, 'CHECKLIST_READY_LINK', 'AskScreen'), 'open it in the Compliance Workspace')
+    assert.match(SCREEN, /href=\{checklistHref\(checklistReadyId\)\}/)
+    assert.equal(checklistHref('abc-123'), '/compliance?checklist=abc-123')
+    // The address is built in ONE place, so the two callers cannot point at different ones.
+    assert.match(readFileSync('components/ConversationList.tsx', 'utf8'), /checklistHref\(t\.checklistId\)/)
+  })
+
+  test('and the Workspace reads it — six lines, the only edit that file took', () => {
+    const page = readFileSync('app/compliance/page.tsx', 'utf8')
+    assert.match(page, /const checklistId = params\.get\('checklist'\)/)
+    assert.match(page, /if \(checklistId\) \{ setTab\('checklists'\); void openChecklist\(checklistId\) \}/)
+    assert.match(page, /if \(!ask && !documentId && !checklistId\) return/)
+    // And it is still consumed, so a reload does not reopen a drawer somebody closed.
+    assert.match(page, /window\.history\.replaceState\(\{\}, '', window\.location\.pathname\)/)
+  })
+
+  test('a new conversation clears the ready line', () => {
+    const start = HOOK.slice(HOOK.indexOf('const startNewConversation'))
+    assert.match(start, /setChecklistReady\(null\)/)
   })
 })
 

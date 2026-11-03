@@ -96,9 +96,9 @@ describe('the brief is a brief', () => {
    * with `searches=0`, and the one sentence the person was owed withdrawn because it was written
    * before the first search. The failures are the ENGINE's, so the lessons are every section's.
    */
-  test('its sentences are the drafted ones, and there are thirteen', () => {
+  test('its sentences are the drafted ones, and there are fourteen', () => {
     assert.deepEqual(documentsBrief.promptSentences, DOCUMENTS_SENTENCES)
-    assert.equal(DOCUMENTS_SENTENCES.length, 13)
+    assert.equal(DOCUMENTS_SENTENCES.length, 14)
     for (const s of DOCUMENTS_SENTENCES) assert.ok(s.trim().length > 0)
   })
 
@@ -363,6 +363,17 @@ describe('the words a person reads', () => {
     assert.match(all, /quote the line you read something from when the exact words matter/)
     // And no promise the product cannot keep — it offered in prose in 18 of 36 runs.
     assert.match(all, /Say what they could do next/)
+  })
+
+  /**
+   * *** THE QUEUED SENTENCE, bought by walking step 4b on Haiku. *** The file WAS in the message
+   * (`attached_passages: 1`) and was also a new index row reading Queued, and the answer told the
+   * person we could not read a file we were reading.
+   */
+  test('and the sentence step 4b\'s walk measured into existence', () => {
+    const all = DOCUMENTS_SENTENCES.join(' ')
+    assert.match(all, /A file attached to this conversation is in the message and you can read it/)
+    assert.match(all, /Its line in the list may still say Queued; that says nothing about whether you can read it/)
   })
 
   test('and the three honesty sentences the Calendar\'s real runs bought', () => {

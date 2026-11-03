@@ -161,10 +161,13 @@ describe('THE ASK TAB — boards 1, 1b, 2 and 3', () => {
     assert.ok(!/href:/.test(attach), 'a link to the page the person is standing on does nothing')
   })
 
-  test('no offers under an answer, and the checklist button stays off (step 5)', () => {
+  /** RE-POINTED AT PART A STEP 5: 4b said the button was step 5's; this is step 5. */
+  test('no offers under an answer, and the checklist button is ON since step 5', () => {
     assert.match(CODE, /afterAnswer=\{undefined\}/)
     assert.deepEqual(documentsBrief.offers, [])
-    assert.ok(!/canMakeChecklist/.test(CODE), 'the checklist button is step 5\'s, not 4b\'s')
+    assert.match(CODE, /canMakeChecklist\n/, 'decision 8 is wired here')
+    assert.match(CODE, /onMakeChecklist=\{conv\.makeChecklist\}/)
+    assert.match(CODE, /checklistBusy=\{conv\.checklistRunning\(conv\.askTopicId\)\}/)
   })
 
   /** BOARD 1b. An empty state is a message, and "nothing on file" is a claim that has to be true. */

@@ -8,6 +8,7 @@
 
 import React from 'react'
 import { CLAIM_WORDS, type ClaimKind } from '@/lib/topicClaim'
+import { checklistHref } from '@/lib/checklistView'
 import { groupByDay, listGroup, listWhen, summaryWords, displayTitle } from '@/lib/listWords'
 import type { TopicRow } from '@/lib/topicList'
 
@@ -65,10 +66,43 @@ export function ConversationRow({ t, running, onOpen }: { t: TopicRow; running: 
   // A RUN GOING SAYS SO, IN THE ROW'S OWN LINE — Workspace Stage 4.
   parts.push(running(t, 'summary') ? CLAIM_WORDS.summary : summaryWords(t))
   if (running(t, 'checklist')) parts.push(CLAIM_WORDS.checklist)
-  else if (t.checklistId) parts.push(`Checklist ${t.checklistDone} of ${t.checklistTotal} done`)
+  else if (t.checklistId) parts.push(
+    /*
+      *** THE CHECKLIST PART IS A LINK — `docs/GAPS-PLAN.md` decision 8, Part A step 5. ***
+
+      A checklist made from ANY section's conversation lives in the Compliance Workspace's
+      Checklists tab. Four pages render this row — the Workspace, HR, the Calendar and Documents —
+      and the link is right for all four: from the Workspace it opens the checklist directly
+      instead of making the person find it in another tab, and from the other three it is the only
+      way to reach it at all.
+
+      `stopPropagation` because the row around it opens the CONVERSATION. Without it a click on
+      this link would do both, and whichever won would be a surprise.
+    */
+    <a key="checklist" href={checklistHref(t.checklistId)} onClick={(e) => e.stopPropagation()}
+      className="underline underline-offset-2 hover:text-gray-900">
+      Checklist {t.checklistDone} of {t.checklistTotal} done
+    </a>)
   return (
     <div key={t.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
-      <button onClick={() => onOpen(t)} className="min-w-0 flex-1 text-left">
+      {/*
+        *** THIS WAS A `<button>` UNTIL PART A STEP 5, AND IT HAD TO STOP BEING ONE. ***
+
+        An `<a>` inside a `<button>` is invalid HTML and the browser swallows the link's click, so
+        the checklist link above could not work while the row was a button. A `<div>` is not
+        interactive content, so a link may legally sit inside it.
+
+        Everything a button gave is kept by hand and nothing is lost: `role="button"` so it is
+        announced as one, `tabIndex={0}` so it is reachable by keyboard, and Enter and Space both
+        open it — Space is `preventDefault`ed because on a div it scrolls the page instead.
+
+        The owner's yes, 2 November 2026, as the one structural consequence of the link.
+      */}
+      <div role="button" tabIndex={0} onClick={() => onOpen(t)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(t) }
+        }}
+        className="min-w-0 flex-1 text-left">
         <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{displayTitle(t.title) ?? 'Untitled conversation'}</p>
         {/* NO COLOUR HERE. Amber is reserved for a real attention state and
             "not summarised yet" is the normal condition of anything asked
@@ -78,7 +112,7 @@ export function ConversationRow({ t, running, onOpen }: { t: TopicRow; running: 
             <React.Fragment key={i}>{i > 0 && <span aria-hidden="true">·</span>}{part}</React.Fragment>
           ))}
         </p>
-      </button>
+      </div>
     </div>
   )
 }

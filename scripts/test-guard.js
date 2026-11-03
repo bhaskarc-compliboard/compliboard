@@ -319,7 +319,21 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   checked. Plus: the page's reads are still its own two and topic_list_v only through the shared
 //   reader, no HR word reached it, and the chat's sentences are in lib/documentsWords.ts rather
 //   than typed into the page - which the brief reads too, so screen and model cannot disagree.
-const FLOOR = 2212
+// 2212 -> 2234, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 5, the checklist from any chat).
+//   Twenty-two. Twelve in tests/unit/askScreen.test.ts on decision 8: the press, the claim word
+//   (the SHARED one, not a second copy), the Workspace's own 202-or-409-building rule read and
+//   copied rather than written again, a new checklist told apart from one the conversation already
+//   had, and ONE poll watching both the summary and the checklist rather than a second interval.
+//   The one that earns its place is the quiet failure: a build whose claim clears with nothing new
+//   must SAY so, or "Checklist being built…" sits on the screen for ever (5.1, never silent).
+//   One more holds the route section-blind, because decision 8 rests on that and nothing else.
+//   Ten in the new tests/unit/conversationList.test.ts, the one shared piece this step changed.
+//   FOUR pages render that row and three are on the forbidden list, so each rule there is a rule
+//   about three sections at once: the link goes through the one shared address, a build still
+//   shows the claim word and is NOT a link, the click does not also open the conversation, and the
+//   wrapper that had to stop being a <button> kept everything a button gave - role, tabIndex,
+//   Enter and Space with Space preventDefaulted so it does not scroll instead.
+const FLOOR = 2234
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

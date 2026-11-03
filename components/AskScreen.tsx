@@ -34,6 +34,8 @@ import { PRIMARY } from '@/components/buttonStyles'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { printWithFrame } from '@/lib/printFrame'
 import { askAgainLine, type Banner } from '@/lib/billing'
+import { checklistHref } from '@/lib/checklistView'
+import { CLAIM_WORDS } from '@/lib/topicClaim'
 import PausedNote from '@/components/PausedNote'
 import type { TopicRow, TopicSection } from '@/lib/topicList'
 import type { ExampleQuestion } from '@/config/examples'
@@ -55,9 +57,24 @@ export const STOPPED_LINE = (hasText: boolean) =>
   `Stopped. ${hasText ? 'What arrived is above — ' : ''}Ask again, or change the question.`
 /** The three actions, in the owner's order (decision 8). */
 export const ACTION_CHECKLIST = 'Turn this into a checklist'
+export const ACTION_CHECKLISTING = CLAIM_WORDS.checklist
 export const ACTION_SUMMARISE = 'Summarise this conversation'
 export const ACTION_SUMMARISING = 'Writing the summary…'
 export const ACTION_DOWNLOAD = 'Download'
+/**
+ * *** WHAT THE PERSON IS TOLD WHEN THE CHECKLIST LANDS — Part A step 5, decision 8. ***
+ *
+ * A checklist made from any section's conversation lives in the Compliance Workspace's Checklists
+ * tab, and the sentence says so rather than leaving the person to go and look. "open it in the
+ * Compliance Workspace" is the link, and it opens THAT checklist, not the tab
+ * (`lib/checklistView.ts` `checklistHref`, read by `app/compliance/page.tsx`).
+ */
+export const CHECKLIST_READY_BEFORE = 'Your checklist is ready — '
+export const CHECKLIST_READY_LINK = 'open it in the Compliance Workspace'
+export const CHECKLIST_READY = `${CHECKLIST_READY_BEFORE}${CHECKLIST_READY_LINK}`
+/** §5.1: a failure says so, says nothing was changed, and says what to do. */
+export const CHECKLIST_FAILED =
+  'That conversation could not be turned into a checklist. Nothing was changed. Please try again.'
 /** What the page says when a conversation could not be opened or summarised. */
 export const OPEN_FAILED = 'That conversation could not be opened. Please try again.'
 export const SUMMARY_FAILED = 'That conversation could not be summarised just now. Nothing was changed. Please try again.'
@@ -127,7 +144,8 @@ const Clip = () => (
 export function AskScreen({
   section, endpoints, words, examples, companyName, paused,
   topicId, initial, onTopicId, onChanged, onSummarise, summaryBusy,
-  attach, thinkingLine, afterAnswer, canMakeChecklist = false,
+  attach, thinkingLine, afterAnswer,
+  canMakeChecklist = false, onMakeChecklist, checklistBusy = false, checklistReadyId = null,
 }: {
   section: TopicSection
   endpoints: { answer: string }
@@ -161,12 +179,21 @@ export function AskScreen({
   /** The one part of an answer that is not prose: a section's own offers, under the answer. */
   afterAnswer?: (x: Exchange, patch: (p: Partial<Exchange>) => void) => React.ReactNode
   /**
-   * DECISION 8's FIRST ACTION, OFF UNTIL PART A STEP 5 WIRES IT. The button is written here, in
-   * its place in the row, so the order is settled once; nothing renders it yet because nothing
-   * can act on it, and a control that does nothing is a promise the product is not keeping
-   * (`CLAUDE.md` §5.1). Calendar passes nothing, so it is false.
+   * *** DECISION 8's FIRST ACTION, WIRED AT PART A STEP 5. ***
+   *
+   * It stays a prop rather than becoming unconditional, for the reason it was a prop before: a
+   * control that does nothing is a promise the product is not keeping (`CLAUDE.md` §5.1). A
+   * section turns it on only when it has somewhere for the result to go — which, by decision 8,
+   * is the Compliance Workspace's Checklists tab, for every section. Calendar and Documents pass
+   * `true`; the default stays `false` so a section added later opts in deliberately.
    */
   canMakeChecklist?: boolean
+  /** `useAskConversations().makeChecklist`, which owns the claim, the 202/409 rule and the poll. */
+  onMakeChecklist?: (topicId: string) => void
+  /** A build going on this conversation — this tab's claim or anyone's. */
+  checklistBusy?: boolean
+  /** The checklist that just landed for this conversation, so the ready line can link to it. */
+  checklistReadyId?: string | null
 }) {
   const [exchanges, setExchanges] = useState<Exchange[]>(initial)
   const [box, setBox] = useState('')
@@ -356,9 +383,14 @@ export function AskScreen({
           {docked && topicId && answered && (<>
             {/* THE THREE ACTIONS, IN THE OWNER'S ORDER (decision 8). The first waits for step 5. */}
             {canMakeChecklist && (
-              <button disabled={busy || Boolean(paused)}
+              /* `!answered` is already true wherever this row renders (the row itself is gated on
+                 it), and the condition is written anyway: the rule — a conversation with no answer
+                 has nothing to turn into anything — belongs where it is read, not three lines up
+                 in a different condition. */
+              <button onClick={() => { if (topicId) onMakeChecklist?.(topicId) }}
+                disabled={busy || checklistBusy || !answered || Boolean(paused)}
                 className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
-                {ACTION_CHECKLIST}
+                {checklistBusy ? ACTION_CHECKLISTING : ACTION_CHECKLIST}
               </button>
             )}
             <button onClick={() => onSummarise(topicId)} disabled={busy || summaryBusy || Boolean(paused)}
@@ -378,6 +410,22 @@ export function AskScreen({
         </div>
       </div>
       <PausedNote banner={paused} />
+      {/*
+        *** THE CHECKLIST LANDED, AND IT SAYS WHERE IT WENT. ***
+        A checklist made from any section's conversation lives in the Compliance Workspace
+        (decision 8), so a person who pressed the button here would otherwise have no idea where
+        the result is. The link opens THAT checklist, not the tab — `lib/checklistView.ts`
+        `checklistHref`, read by `app/compliance/page.tsx`.
+      */}
+      {checklistReadyId && (
+        <p className="no-print mt-2 text-[13px] text-gray-700">
+          {CHECKLIST_READY_BEFORE}
+          <a href={checklistHref(checklistReadyId)}
+            className="font-medium text-[var(--green-ink)] underline underline-offset-2">
+            {CHECKLIST_READY_LINK}
+          </a>
+        </p>
+      )}
       {docked && <p className="mt-2 text-[12px] text-gray-500">{words.oneTopicLine}</p>}
     </div>
   )
@@ -468,6 +516,17 @@ export function useAskConversations({ topics, reloadTopics, summarisePath }: {
   const [askKey, setAskKey] = useState(0)
   const [convDrawer, setConvDrawer] = useState<TopicRow | null>(null)
   const [summaryWait, setSummaryWait] = useState<{ topicId: string; before: string | null } | null>(null)
+  /**
+   * *** "TURN THIS INTO A CHECKLIST" — Part A step 5, decision 8. ***
+   *
+   * The same two pieces `summarise` has, and deliberately so: `checklistWait` is this tab's own
+   * claim while the build runs, and `checklistReady` is the id once it lands, so the screen can
+   * show one line with a link to it. `before` is the checklist this conversation ALREADY had, so a
+   * second checklist is told apart from the first — `app/compliance/page.tsx:743` does the same
+   * (`row.checklistId !== w.before`).
+   */
+  const [checklistWait, setChecklistWait] = useState<{ topicId: string; before: string | null } | null>(null)
+  const [checklistReady, setChecklistReady] = useState<{ topicId: string; id: string } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
   /**
@@ -498,13 +557,60 @@ export function useAskConversations({ topics, reloadTopics, summarisePath }: {
   }, [summaryRunning, topics, summarisePath, reloadTopics])
 
   /**
+   * *** ONE PRESS, ONE CALL, AND THE CLAIM DECIDES — the Workspace's rule, read and copied, not
+   * written again. *** `app/compliance/page.tsx:672`'s shape:
+   *
+   *   · **202** — the claim is ours and the build has started.
+   *   · **409 with `status: 'building'`** — another tab or another device is already building this
+   *     one. That is not a failure; wait for the same result.
+   *   · **anything else** — a refusal with its own sentence, shown as it came.
+   *
+   * *** THE ROUTE IS SECTION-BLIND, WHICH IS WHY THIS WORKS AT ALL. ***
+   * `app/api/checklists/from-topic/route.ts` never reads `topics.section`; it was written for the
+   * Workspace and has always been able to take any conversation. Decision 8 is therefore a screen
+   * change and not a route change, and no section gets a checklist route of its own.
+   *
+   * `scope: 'discussed'` and not `'complete'`: `complete` searches the web and researches past the
+   * conversation, which is the Workspace's own second button and a different promise. A chat's
+   * "turn THIS into a checklist" means this conversation.
+   */
+  const checklistRunning = useCallback((id: string | null) =>
+    !!id && (checklistWait?.topicId === id || !!topics.find((t) => t.id === id)?.checklistInProgress),
+  [checklistWait, topics])
+
+  const makeChecklist = useCallback(async (id: string) => {
+    if (checklistRunning(id)) return
+    setNotice(null)
+    setChecklistReady(null)
+    const before = topics.find((t) => t.id === id)?.checklistId ?? null
+    setChecklistWait({ topicId: id, before })
+    let res: Response | null = null
+    try {
+      res = await fetch('/api/checklists/from-topic', {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ topicId: id, scope: 'discussed' }),
+      })
+    } catch { res = null }
+    const j = res ? await res.json().catch(() => null) : null
+    if (res && (res.status === 202 || (res.status === 409 && j?.status === 'building'))) {
+      await reloadTopics()
+      return
+    }
+    setNotice(j?.error ?? CHECKLIST_FAILED)
+    setChecklistWait(null)
+  }, [checklistRunning, topics, reloadTopics])
+
+  /**
    * THE POLL, every 5 seconds while a summary is being written here or anywhere. When this tab's
    * own claim clears, the summary opens in the drawer; if it cleared with nothing new, the
    * failure is said plainly rather than left as a spinner that stops (§5.1).
    */
   const summaryWatching = !!summaryWait || topics.some((t) => t.summaryInProgress)
+  /** The checklist is watched by the SAME poll — one interval, not two (Part A step 5). */
+  const checklistWatching = !!checklistWait || topics.some((t) => t.checklistInProgress)
   useEffect(() => {
-    if (!summaryWatching) return
+    if (!summaryWatching && !checklistWatching) return
     const t = setInterval(async () => {
       const list = await reloadTopics()
       setConvDrawer((d) => (d ? list.find((r) => r.id === d.id) ?? d : d))
@@ -516,9 +622,22 @@ export function useAskConversations({ topics, reloadTopics, summarisePath }: {
         else setNotice(SUMMARY_FAILED)
         return null
       })
+      /**
+       * The checklist half. When this tab's claim clears WITH a new id, the ready line shows and
+       * links to it; when it clears with nothing new, the failure is said plainly rather than left
+       * as a claim word that quietly stops (§5.1 — never silent).
+       */
+      setChecklistWait((w) => {
+        if (!w) return w
+        const row = list.find((r) => r.id === w.topicId)
+        if (!row || row.checklistInProgress) return w
+        if (row.checklistId && row.checklistId !== w.before) setChecklistReady({ topicId: w.topicId, id: row.checklistId })
+        else setNotice(CHECKLIST_FAILED)
+        return null
+      })
     }, 5000)
     return () => clearInterval(t)
-  }, [summaryWatching, reloadTopics])
+  }, [summaryWatching, checklistWatching, reloadTopics])
 
   /**
    * A CONVERSATION REOPENED ON THE ASK TAB, the workspace's way: `/api/topics/[id]`, which is
@@ -569,6 +688,7 @@ export function useAskConversations({ topics, reloadTopics, summarisePath }: {
     setAskKey((n) => n + 1)
     setNotice(null)
     setConvDrawer(null)
+    setChecklistReady(null)
   }, [])
 
   return {
@@ -576,5 +696,6 @@ export function useAskConversations({ topics, reloadTopics, summarisePath }: {
     convDrawer, setConvDrawer,
     notice, setNotice,
     summaryRunning, summarise, openConversation, startNewConversation,
+    checklistRunning, makeChecklist, checklistReady,
   }
 }

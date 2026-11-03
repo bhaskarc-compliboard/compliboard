@@ -906,6 +906,12 @@ function DocumentsPageContent() {
                  person to the page they are standing on would be the control doing nothing.
                  `onPick` is the uploader (decision 6), through `lib/chatUpload.ts`. */
               attach={{ label: DOCUMENTS_ATTACH_LABEL, onPick: () => { void load() } }}
+              /* DECISION 8, wired at Part A step 5: a checklist made from this chat lives in the
+                 Compliance Workspace's Checklists tab, and the ready line links straight to it. */
+              canMakeChecklist
+              onMakeChecklist={conv.makeChecklist}
+              checklistBusy={conv.checklistRunning(conv.askTopicId)}
+              checklistReadyId={conv.checklistReady?.topicId === conv.askTopicId ? conv.checklistReady.id : null}
               thinkingLine={documentsThinkingLine}
               /* No offers (decision: three different writers), so nothing under an answer. */
               afterAnswer={undefined}

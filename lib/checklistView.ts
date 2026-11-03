@@ -10,6 +10,25 @@
 import { displaySource } from './sourceTitle.ts'
 import { NO_SOURCE } from './summaryWords.ts'
 
+/**
+ * *** WHERE A CHECKLIST LIVES, AND IT IS ONE STRING IN ONE PLACE — `docs/GAPS-PLAN.md` decision 8,
+ * built at Part A step 5. ***
+ *
+ * A checklist made from ANY section's conversation lives in the Compliance Workspace's Checklists
+ * tab. Two places link to it — the ready line in `components/AskScreen.tsx` and the row in
+ * `components/ConversationList.tsx` — and they must not be able to point at different addresses.
+ *
+ * `app/compliance/page.tsx` reads `?checklist=` at mount: it switches to the Checklists tab, opens
+ * that checklist in the drawer, and then wipes the parameter, so a reload does not reopen a drawer
+ * somebody has closed. Six additive lines, the owner's yes of 2 November 2026 — the only edit that
+ * file took in this step.
+ *
+ * It is here, in a file that imports only two pure modules, because both callers are client
+ * components and the Workspace's page cannot be imported by either.
+ */
+export const checklistHref = (checklistId: string): string =>
+  `/compliance?checklist=${encodeURIComponent(checklistId)}`
+
 export interface ViewGroup {
   key: string
   title: string
