@@ -201,34 +201,6 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
   }
   messages.push({ role: 'user', content: `${contextText}\n\nQuestion: ${question}` })
 
-  /**
-   * *** TEMPORARY, AND REMOVED AT THE END OF THIS STEP. *** `docs/GAPS-PLAN.md` Part A step 2.
-   *
-   * The step lifts the chat SCREEN out of the Calendar. The screen is the thing that decides what
-   * the engine is handed — the question, the topic and the history it rebuilds from the exchanges
-   * on screen — so the only honest proof that the Calendar did not change is that the bytes going
-   * to the model are the same before and after. This writes them to a file so they can be diffed.
-   *
-   * It is OFF unless `ASK_DUMP_DIR` is set, it writes nothing on production, and it is deleted at
-   * checkpoint 5. The import is dynamic so nothing is pulled in when the variable is unset.
-   */
-  if (process.env.ASK_DUMP_DIR && process.env.NODE_ENV !== 'production') {
-    try {
-      const { writeFileSync, mkdirSync } = await import('node:fs')
-      const dir = process.env.ASK_DUMP_DIR
-      mkdirSync(dir, { recursive: true })
-      const name = `${brief.section}-${new Date().toISOString().replace(/[:.]/g, '-')}-${Math.random().toString(36).slice(2, 8)}.json`
-      writeFileSync(`${dir}/${name}`, JSON.stringify({
-        section: brief.section,
-        system: askPrompt(brief.promptSentences),
-        messages,
-        topicId,
-        historyTurns: history.length,
-      }, null, 2))
-      console.log(`ask(${brief.section}): dumped the model's input to ${dir}/${name}`)
-    } catch (e) { console.error('ask: the dump failed (the answer still runs):', e) }
-  }
-
   // ---- THE CALL ----
   // The section's own tier, its own ledger word and its own search cap — one lookup, used three
   // times, so the three can never disagree. Unset cap means no cap, which is what every chat does
