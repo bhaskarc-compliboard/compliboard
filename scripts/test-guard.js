@@ -273,7 +273,13 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   packed.blocks, which an attachment is not one of. An answer that read a document its own
 //   record does not mention is the single failure that record exists to prevent, and it was found
 //   by reading the stored row rather than the code.
-const FLOOR = 2121
+// 2121 -> 2135, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 4a, the shared reading packer).
+//   Fourteen in tests/unit/readings.test.ts, on the three rules the packer carries and each of
+//   which a real run paid for: what is left out is NAMED, every item SHOWN gets a passage even
+//   when there is nothing in it to quote, and the cap is asked BEFORE an item is added. Plus the
+//   two that hold the Calendar to what it always did - it calls the shared packer, and a document
+//   deleted since its date was filed no longer leaves a hole in the ids.
+const FLOOR = 2135
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

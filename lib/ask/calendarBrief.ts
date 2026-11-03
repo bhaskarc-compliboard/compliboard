@@ -26,6 +26,7 @@ import { CALENDAR_EXAMPLE_QUESTIONS } from '../../config/examples.ts'
 import { CALENDAR_SENTENCES } from '../../prompts/calendar-answer.ts'
 import { companyBlock } from './engine.ts'
 import { tokensOf, type Passage } from './passages.ts'
+import { packReadings } from './readings.ts'
 import type { Brief, ContextBlock, Db, PackedContext } from './brief.ts'
 
 /**
@@ -167,19 +168,30 @@ export async function packCalendarContext(db: Db, companyId: string): Promise<Pa
     ])
     const docById = new Map(((docs ?? []) as DocRow[]).map((d) => [d.document_id, d]))
     const condsFor = (id: string) => ((conds ?? []) as ConditionRow[]).filter((c) => c.document_id === id)
-    const cap = Math.floor(budget * READINGS_SHARE)
-    let spent = 0
-    docIds.forEach((docId, i) => {
-      const d = docById.get(docId)
-      if (!d) return                        // deleted since the date was filed (decision 14)
-      const id = `D${i + 1}`
-      const block = readingBlock(d, condsFor(docId), id)
-      if (spent + tokensOf(block) > cap) { readingsLeftOut++; return }
-      spent += tokensOf(block)
-      readingLines.push(block)
-      passages.push({ id, title: `${d.title ?? 'A document'} — what we read in it`, label: 'a reading of your document',
-        text: block, href: `/documents?document=${docId}`, shortName: d.title ?? 'that document' })
+    /**
+     * *** THE LOOP IS `lib/ask/readings.ts` SINCE PART A STEP 4a, and this call is the same loop
+     * with the same block, the same letter and the same card. *** Nothing about what the Calendar
+     * sends moved: the step's own proof is the same question asked before and after, with the
+     * model's input dumped and diffed byte for byte.
+     *
+     * The documents deleted since their date was filed are dropped BEFORE the pack, not inside
+     * it, so the ids stay dense — `D1, D2, D3` and never `D1, D3`. That was `if (!d) return`
+     * inside the loop, which could leave a gap in the numbering (decision 14).
+     */
+    const shown = docIds.map((docId) => ({ docId, d: docById.get(docId) }))
+      .filter((x): x is { docId: string; d: DocRow } => Boolean(x.d))
+    const packed = packReadings(shown, {
+      cap: Math.floor(budget * READINGS_SHARE),
+      idPrefix: 'D',
+      blockFor: ({ docId, d }, id) => readingBlock(d, condsFor(docId), id),
+      passageFor: ({ docId, d }, id, block) => ({
+        id, title: `${d.title ?? 'A document'} — what we read in it`, label: 'a reading of your document',
+        text: block, href: `/documents?document=${docId}`, shortName: d.title ?? 'that document',
+      }),
     })
+    readingLines.push(...packed.texts)
+    passages.push(...packed.passages)
+    readingsLeftOut = packed.leftOut
   }
   if (readingLines.length || readingsLeftOut) {
     const note = readingsLeftOut

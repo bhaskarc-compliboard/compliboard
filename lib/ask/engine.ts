@@ -348,6 +348,36 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
   }
   messages.push(lastUserMessage(files, contextText, question))
 
+  /**
+   * *** THE DUMP: HOW A CHAT PROVES ITS INPUT DID NOT MOVE. *** `docs/HOW-WE-BUILD.md` §3c.
+   *
+   * Off unless `ASK_DUMP_DIR` is set, and never on production. With it set, every call writes the
+   * system prompt and the assembled messages to a file, so the same question asked before and
+   * after a change can be diffed byte for byte.
+   *
+   * It was written for Part A step 2 — lifting the chat screen out of the Calendar — and removed
+   * at the end of it. Step 3 wanted it again, and step 4a wants it again, which is three times in
+   * three steps: it is a tool, not scaffolding, so it stays. The import is dynamic, so nothing is
+   * pulled in when the variable is unset.
+   */
+  if (process.env.ASK_DUMP_DIR && process.env.NODE_ENV !== 'production') {
+    try {
+      const { writeFileSync, mkdirSync } = await import('node:fs')
+      const dir = process.env.ASK_DUMP_DIR
+      mkdirSync(dir, { recursive: true })
+      const name = `${brief.section}-${new Date().toISOString().replace(/[:.]/g, '-')}-${Math.random().toString(36).slice(2, 8)}.json`
+      writeFileSync(`${dir}/${name}`, JSON.stringify({
+        section: brief.section,
+        system: askPrompt(brief.promptSentences),
+        messages,
+        topicId,
+        historyTurns: history.length,
+        passages: packed.passages.map((p) => ({ id: p.id, label: p.label, chars: p.text.length })),
+      }, null, 2))
+      console.log(`ask(${brief.section}): dumped the model's input to ${dir}/${name}`)
+    } catch (e) { console.error('ask: the dump failed (the answer still runs):', e) }
+  }
+
   // ---- THE CALL ----
   // The section's own tier, its own ledger word and its own search cap — one lookup, used three
   // times, so the three can never disagree. Unset cap means no cap, which is what every chat does

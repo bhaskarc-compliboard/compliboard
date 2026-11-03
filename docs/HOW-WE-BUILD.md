@@ -392,6 +392,32 @@ cd <scratch>/app3998 && AI_MODEL_HOWTO=… npx next dev -p 3998
 It cost nothing by itself; the cost was the time to find out. Changing `distDir` in `next.config.ts`
 instead would restart the owner's running server, which reads the same config.
 
+**3. `ASK_DUMP_DIR` — how a chat proves its input did not move.** Added 2 November 2026
+(`docs/GAPS-PLAN.md` Part A steps 2 to 4a).
+
+Every section's chat goes through one engine (`lib/ask/engine.ts`), and most changes to a chat are
+changes to the SCREEN or the PACKER around it, not to the words. The question *"did this refactor
+change what the model is shown?"* then has an exact answer, and it is the only honest one:
+
+```
+ASK_DUMP_DIR=<a scratch dir> npm run haiku -- <the isolated server>
+```
+
+With that variable set, every answer writes the system prompt and the assembled `messages` to a
+file just before the model is called. Ask the same question before and after a change and `diff`
+the two. **Unset, it writes nothing and imports nothing** — the `node:fs` import is dynamic — and
+it never runs on production.
+
+**What a clean diff looks like, and what it does not.** On a second turn the history carries the
+first answer, which is the model's own prose and differs run to run; everything else must be
+byte-identical. Three steps have now been proved this way, and all three produced the same shape:
+the system prompt's hash, the roles, and every user message identical, with only the length of the
+earlier answer moving. **The context block the packer built sits inside that user message**, so an
+identical hash there is the proof that the same documents were packed in the same order.
+
+Ask the question TWICE in one conversation. A single new conversation sends an empty history, which
+is the one case that cannot catch a change in how history is built.
+
 ---
 
 ## 3d. THREE MORE WORKING RULES FROM THE WORKSPACE — 4 October 2026
