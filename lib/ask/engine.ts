@@ -44,6 +44,7 @@ import {
   titleFromQuestion, bumpCounter,
 } from '../conversation.ts'
 import { summariseTopic } from '../summaryReport.ts'
+import { loadAttachedDocument, describeAttachments, loadTopicAttachments, MAX_CARRIED_DOCUMENTS } from '../attachedDocument.ts'
 import { askPrompt } from '../../prompts/ask.ts'
 import { checkBrief, type Brief, type ContextBlock, type Db } from './brief.ts'
 import { finishAnswer, appendSources, tokensOf, type AskSource, type Passage } from './passages.ts'
@@ -95,6 +96,87 @@ export function sectionRuns(section: TopicSection): SectionRun {
   return run
 }
 
+/**
+ * WHAT A CONVERSATION IS CARRYING, once `lib/attachedDocument.ts` has been asked. Pure data, so
+ * the two functions below can be tested without a database and without a model — which is the only
+ * way to test them at all, since the runner cannot mock modules (`scripts/test-guard.js:254`).
+ */
+export interface CarriedFiles {
+  /** The file attached on THIS turn, or null. The shape `loadAttachedDocument` returns. */
+  attached: { id: string; name: string; blocks: Array<Record<string, unknown>> } | null
+  /** The files attached on EARLIER turns, newest first, already capped. */
+  documents: Array<{ blocks: Array<Record<string, unknown>> }>
+  /** How many earlier files the cap left out. */
+  omitted: number
+  /** One line per earlier file — `describeAttachments`. '' when there are none. */
+  priorAttachments: string
+  /** An id was given and the file could not be loaded. */
+  askedForButMissing: boolean
+}
+
+export const NO_CARRIED_FILES: CarriedFiles = {
+  attached: null, documents: [], omitted: 0, priorAttachments: '', askedForButMissing: false,
+}
+
+/**
+ * *** THE ATTACHED FILE IS NAMED IN THE CONTEXT EVENT AND IS NOT PRICED. ***
+ *
+ * Every other block is measured by `tokensOf` — characters times `TOKENS_PER_CHAR`. A document
+ * block is base64 of the file itself: its character count means nothing, and what it really costs
+ * is set by the page count and the provider's own document tokenizer, which this codebase cannot
+ * compute. So it is reported at 0 and 0, with this comment, rather than given a wrong number.
+ *
+ * It is reported AT ALL because `check_record` is the record of what an answer was given. A
+ * document the model read that the record does not mention is an incomplete record, which is the
+ * one thing that record exists to prevent.
+ */
+export function attachedContextBlock(c: CarriedFiles): Omit<ContextBlock, 'text'> | null {
+  if (!c.attached && !c.documents.length) return null
+  return {
+    name: 'the attached file',
+    chars: 0,
+    tokens: 0,
+    leftOut: c.omitted
+      ? `${c.omitted} earlier attachment(s) are not carried: only the ${MAX_CARRIED_DOCUMENTS} most recent are.`
+      : null,
+  }
+}
+
+/**
+ * THE LAST MESSAGE, IN THE WORKSPACE'S ORDER (`app/api/chat/route.ts:257`–`:268`): the file just
+ * attached, then the files attached earlier in this conversation, then the words.
+ *
+ * The blocks go IN FRONT of the words because a model reads what it is given in the order it is
+ * given it, and the document is the thing the question is about.
+ *
+ * *** WITH NO ATTACHMENT THIS IS THE SINGLE STRING IT HAS ALWAYS BEEN. *** A section that never
+ * attaches sends byte-for-byte what it sent before this step, which is what the step 2 proof
+ * compared and what the step 3 proof has to keep true.
+ */
+export function lastUserMessage(c: CarriedFiles, contextText: string, question: string): OpenMessage {
+  const blocks = [...(c.attached?.blocks ?? []), ...c.documents.flatMap((d) => d.blocks)]
+  /**
+   * *** A NAMED FILE THAT COULD NOT BE RE-READ IS SAID OUT LOUD, NEVER DROPPED. *** §5.1 forbids
+   * asserting anything about a document nobody read, and silence here would let the model answer
+   * as though no file had been attached — the exact defect §129 closed, arriving one turn later.
+   */
+  const missing = c.askedForButMissing
+    ? 'The user attached a file to this conversation, but it could not be read back just now. '
+      + 'Say so rather than answering as though nothing was attached.\n\n'
+    : ''
+  const omittedNote = c.omitted
+    ? `\n\n${c.omitted} earlier attachment(s) are not included in this message because `
+      + `only the ${MAX_CARRIED_DOCUMENTS} most recent are carried. Say so if the question depends on them.`
+    : ''
+  const words = missing
+    + (c.attached ? `The user has just attached this file: ${c.attached.name}\n\n` : '')
+    + (c.priorAttachments ? `${c.priorAttachments}${omittedNote}\n\n` : '')
+    + `${contextText}\n\nQuestion: ${question}`
+  return blocks.length
+    ? { role: 'user', content: [...blocks, { type: 'text', text: words }] }
+    : { role: 'user', content: words }
+}
+
 export interface AskContext {
   /** The CALLER'S own client: RLS applies, and no function here ever names a company (§3.6). */
   db: Db
@@ -105,6 +187,18 @@ export interface AskContext {
   /** A conversation being continued, or nothing for a new one. */
   topicId?: string | null
   history?: Array<{ question?: string; answer?: string; sources?: AskSource[] }>
+  /**
+   * A FILE THE PERSON JUST ATTACHED, by id — `docs/GAPS-PLAN.md` decision 12.
+   *
+   * *** IT IS HANDED IN WITH THE REQUEST AND IS NOT A FIELD OF THE BRIEF. *** A brief says what a
+   * section KNOWS and what it can OFFER, and those are constants. An attachment is neither: it
+   * comes off the body, it changes every turn, and it belongs to the conversation. Putting it on
+   * the brief would be `checkBrief`'s sixth kind of difference AND a lie about what a brief is.
+   *
+   * The id, never the bytes: the screen does not hold the File after a reload, and "reopen a
+   * conversation and carry on" has to keep working (`lib/attachedDocument.ts`, §129).
+   */
+  documentId?: string | null
   signal?: AbortSignal
 }
 
@@ -142,13 +236,47 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
     }
   }
 
+  // ---- THE FILE THIS TURN ATTACHED, AND THE ONES EARLIER TURNS DID ----
+  //
+  // `app/api/chat/route.ts:205`–`:290` does exactly this for the Compliance Workspace, and this
+  // calls the SAME functions rather than a second version of them (`lib/attachedDocument.ts`).
+  // The Workspace is not touched: it keeps its own copy of the plumbing around them.
+  //
+  // *** WHY THE DOCUMENT TRAVELS ON EVERY TURN AND NOT JUST THE FIRST. *** Measured, and written up
+  // in `lib/attachedDocument.ts:33`–`:50`: with only the review summary on later turns, a second
+  // question made the model RETRACT a true finding, because it read the injected list as the
+  // definitive one. A conversation that contradicts its own correct earlier answer is worse than
+  // an expensive one. The cost is real and bounded by `MAX_CARRIED_DOCUMENTS`, not hidden.
+  const attached = ctx.documentId ? await loadAttachedDocument(db, companyId, ctx.documentId) : null
+  if (attached) console.log(`ask(${brief.section}): carrying attached document ${attached.name} as ${attached.kind} blocks`)
+  const earlier = ctx.topicId
+    ? await loadTopicAttachments(db, companyId, ctx.topicId, attached?.id)
+    : { documents: [], omitted: 0 }
+  if (earlier.documents.length) {
+    console.log(`ask(${brief.section}): carrying ${earlier.documents.length} earlier attachment(s) from topic ${ctx.topicId}`
+      + (earlier.omitted ? ` (${earlier.omitted} omitted by the cap)` : ''))
+  }
+  const files: CarriedFiles = {
+    attached: attached ? { id: attached.id, name: attached.name, blocks: attached.blocks } : null,
+    documents: earlier.documents,
+    omitted: earlier.omitted,
+    // One line per earlier file: its name and what the reading made of it. Background, never the
+    // list of what is wrong — that wording is `lib/attachedDocument.ts`'s and its reason is there.
+    priorAttachments: ctx.topicId ? await describeAttachments(db, ctx.topicId) : '',
+    askedForButMissing: Boolean(ctx.documentId && !attached),
+  }
+
   // ---- WHAT THE QUESTION IS ANSWERED FROM ----
   const packed = await brief.packContext(db, companyId, question)
   const contextText = packed.blocks.map((b) => b.text).filter(Boolean).join('\n\n')
   const totalTokens = packed.blocks.reduce((n, b) => n + b.tokens, 0)
+  const attachedBlock = attachedContextBlock(files)
   yield {
     type: 'context',
-    blocks: packed.blocks.map(({ name, chars, tokens, leftOut }) => ({ name, chars, tokens, leftOut })),
+    blocks: [
+      ...packed.blocks.map(({ name, chars, tokens, leftOut }) => ({ name, chars, tokens, leftOut })),
+      ...(attachedBlock ? [attachedBlock] : []),
+    ],
     tokens: totalTokens,
   }
 
@@ -165,7 +293,20 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
       topicId = created.id as string
     }
     const pos = await nextPosition(db, topicId)
-    userTurnId = await saveUserTurn(db, { topicId, companyId, text: question, position: pos })
+    // THE LINK, PERSISTED (§129). `document_name` is a COPY, so the transcript still reads
+    // correctly after the document is deleted — migration 039's whole reason, and the FK is
+    // ON DELETE SET NULL for it.
+    userTurnId = await saveUserTurn(db, {
+      topicId, companyId, text: question, position: pos,
+      documentId: attached?.id ?? null, documentName: attached?.name ?? null,
+    })
+    // The attach usually happens BEFORE the first question, so the `documents` row was written
+    // with no topic. Backfill it now that the topic exists, so Documents can say which
+    // conversation a file came from. Only where it is null: a file's first conversation keeps it.
+    if (attached) {
+      await db.from('documents').update({ from_topic_id: topicId })
+        .eq('id', attached.id).is('from_topic_id', null)
+    }
     answerPosition = pos + 1
     await setTitleIfFirst(db, topicId, question)
   } catch (e) {
@@ -199,7 +340,7 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
     if (!q || !a) continue
     messages.push({ role: 'user', content: q }, { role: 'assistant', content: a })
   }
-  messages.push({ role: 'user', content: `${contextText}\n\nQuestion: ${question}` })
+  messages.push(lastUserMessage(files, contextText, question))
 
   // ---- THE CALL ----
   // The section's own tier, its own ledger word and its own search cap — one lookup, used three

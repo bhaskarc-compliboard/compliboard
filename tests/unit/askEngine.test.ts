@@ -12,7 +12,11 @@ import { readFileSync } from 'node:fs'
 import { checkBrief, BRIEF_FIELDS, type Brief } from '../../lib/ask/brief.ts'
 import { parseOffers, offerLine, OFFER_KINDS } from '../../lib/ask/offers.ts'
 import { finishAnswer, checkQuote, replacePassageIds, NOT_IN_WHAT_WE_HAVE, tokensOf, type Passage } from '../../lib/ask/passages.ts'
-import { answer, sectionRuns } from '../../lib/ask/engine.ts'
+import {
+  answer, sectionRuns, attachedContextBlock, lastUserMessage, NO_CARRIED_FILES,
+  type CarriedFiles,
+} from '../../lib/ask/engine.ts'
+import { MAX_CARRIED_DOCUMENTS } from '../../lib/attachedDocument.ts'
 import { calendarBrief, dateLine, readingBlock, contextBudgetTokens, DATES_SHARE, READINGS_SHARE } from '../../lib/ask/calendarBrief.ts'
 import { CALENDAR_SENTENCES } from '../../prompts/calendar-answer.ts'
 import { askPrompt, OFFER_FORMAT_SENTENCE } from '../../prompts/ask.ts'
@@ -335,6 +339,117 @@ describe('each section runs on its own tier, ledger word and search cap', () => 
     // HR's cap is a VALUE in the map, which is right. What must not come back is the engine asking
     // for it by name, which is what made it every section's cap.
     assert.ok(!/searchLimit\('AI_SEARCH_MAX_HR'/.test(code), 'the engine reads HR\'s search cap for every section again')
+  })
+})
+
+/**
+ * *** A CONVERSATION CARRIES THE FILE THAT WAS ATTACHED TO IT — `docs/GAPS-PLAN.md` Part A step 3,
+ * decision 12. ***
+ *
+ * *** WHAT IS TESTED HERE, AND WHY IT IS THESE TWO FUNCTIONS. *** `lib/attachedDocument.ts` is NOT
+ * re-implemented and not re-tested — it has its own file, and the engine calls it. What this tests
+ * is the part the engine owns: the ORDER the pieces go into the message, the sentences it adds
+ * around them, and what the context event says. Both are pure functions taking the shapes
+ * `loadAttachedDocument` and `loadTopicAttachments` return, so the seam is stubbed with data
+ * rather than mocked — which is also the only way, since the runner cannot mock modules.
+ */
+describe('a conversation carries its attached file', () => {
+  const doc = (id: string, name: string) => ({ id, name, blocks: [{ type: 'document', id }] })
+  const text = (m: ReturnType<typeof lastUserMessage>) => {
+    const c = m.content as Array<{ type: string; text?: string }>
+    return typeof m.content === 'string' ? m.content : (c[c.length - 1].text ?? '')
+  }
+  const blocksOf = (m: ReturnType<typeof lastUserMessage>) =>
+    (typeof m.content === 'string' ? [] : (m.content as Array<{ type: string; id?: string }>))
+      .filter((b) => b.type === 'document').map((b) => b.id)
+
+  test('with no file at all the message is the single string it always was', () => {
+    const m = lastUserMessage(NO_CARRIED_FILES, 'THE CONTEXT', 'When?')
+    assert.equal(typeof m.content, 'string')
+    assert.equal(m.content, 'THE CONTEXT\n\nQuestion: When?')
+  })
+
+  test('a documentId reaches the message as blocks, in the Workspace\'s order', () => {
+    // This turn's file first, then the earlier ones, then the words — `app/api/chat/route.ts:257`.
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      attached: doc('new', 'Certificate.pdf'),
+      documents: [doc('older', 'A.pdf'), doc('oldest', 'B.pdf')],
+      priorAttachments: 'Documents attached to this conversation:\n- A.pdf\n- B.pdf' }
+    const m = lastUserMessage(files, 'THE CONTEXT', 'What dates?')
+    assert.deepEqual(blocksOf(m), ['new', 'older', 'oldest'], 'the just-attached file comes first')
+    const t = text(m)
+    assert.match(t, /^The user has just attached this file: Certificate\.pdf/)
+    assert.ok(t.indexOf('Certificate.pdf') < t.indexOf('A.pdf'), 'this turn\'s file is named before the earlier ones')
+    assert.ok(t.indexOf('A.pdf') < t.indexOf('THE CONTEXT'), 'the earlier files come before the context')
+    assert.ok(t.endsWith('Question: What dates?'), 'the question is last')
+  })
+
+  test('a second turn with no new file still carries the first turn\'s', () => {
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      documents: [doc('first', 'Certificate.pdf')],
+      priorAttachments: '- Certificate.pdf (read as: certificate)' }
+    const m = lastUserMessage(files, 'THE CONTEXT', 'Is it on the calendar?')
+    assert.deepEqual(blocksOf(m), ['first'], 'the document itself travels, not only a note about it')
+    assert.match(text(m), /Certificate\.pdf/)
+    assert.ok(!/has just attached/.test(text(m)), 'nothing was attached on this turn')
+  })
+
+  test('the cap says what it left out, rather than quietly answering from part of the evidence', () => {
+    const files: CarriedFiles = { ...NO_CARRIED_FILES,
+      documents: [doc('a', 'A'), doc('b', 'B'), doc('c', 'C')],
+      omitted: 1,
+      priorAttachments: '- A\n- B\n- C' }
+    const m = lastUserMessage(files, 'THE CONTEXT', 'What do they say?')
+    assert.match(text(m), /1 earlier attachment\(s\) are not included in this message/)
+    assert.match(text(m), new RegExp(`only the ${MAX_CARRIED_DOCUMENTS} most recent are carried`))
+    assert.match(text(m), /Say so if the question depends on them/)
+  })
+
+  test('a file that could not be read back is SAID, and the answer still runs (§5.1)', () => {
+    const m = lastUserMessage({ ...NO_CARRIED_FILES, askedForButMissing: true }, 'THE CONTEXT', 'What is in it?')
+    assert.match(text(m), /^The user attached a file to this conversation, but it could not be read back just now\./)
+    assert.match(text(m), /Say so rather than answering as though nothing was attached/)
+    // And the question is still there: a file we could not read does not cancel the question.
+    assert.ok(text(m).endsWith('Question: What is in it?'))
+  })
+
+  test('the context event names the file, and does not pretend to price it', () => {
+    assert.equal(attachedContextBlock(NO_CARRIED_FILES), null, 'no file, no block')
+    const b = attachedContextBlock({ ...NO_CARRIED_FILES, attached: doc('x', 'X.pdf') })
+    assert.deepEqual(b, { name: 'the attached file', chars: 0, tokens: 0, leftOut: null })
+    // A base64 document block has no meaningful character count, so 0 is honest and a number
+    // from TOKENS_PER_CHAR would not be. The comment saying so is in the engine.
+    assert.match(readFileSync('lib/ask/engine.ts', 'utf8'), /IS NOT PRICED/)
+  })
+
+  test('and when the cap bit, the event says so too — so check_record records it', () => {
+    const b = attachedContextBlock({ ...NO_CARRIED_FILES, documents: [doc('a', 'A')], omitted: 2 })
+    assert.match(String(b?.leftOut), /2 earlier attachment\(s\) are not carried/)
+  })
+
+  test('the engine uses these two functions, so there is one implementation and not two', () => {
+    const engine = readFileSync('lib/ask/engine.ts', 'utf8')
+    assert.match(engine, /messages\.push\(lastUserMessage\(files, contextText, question\)\)/)
+    assert.match(engine, /const attachedBlock = attachedContextBlock\(files\)/)
+    // It calls lib/attachedDocument.ts rather than carrying its own copy of any of it.
+    for (const fn of ['loadAttachedDocument', 'describeAttachments', 'loadTopicAttachments']) {
+      assert.match(engine, new RegExp(`${fn}\\(`), `the engine must call ${fn}`)
+    }
+    assert.match(engine, /from '\.\.\/attachedDocument\.ts'/)
+  })
+
+  test('the turn remembers the file, and the document remembers the conversation', () => {
+    const engine = readFileSync('lib/ask/engine.ts', 'utf8')
+    // migration 039: the id AND a copy of the name, so the transcript survives a deletion.
+    assert.match(engine, /documentId: attached\?\.id \?\? null, documentName: attached\?\.name \?\? null/)
+    // and the backfill, only where it is null — a file's first conversation keeps it.
+    assert.match(engine, /\.update\(\{ from_topic_id: topicId \}\)[\s\S]{0,80}\.is\('from_topic_id', null\)/)
+  })
+
+  test('the brief did not gain a sixth field for this (decision 12)', () => {
+    const brief = readFileSync('lib/ask/brief.ts', 'utf8')
+    assert.ok(!/document/i.test(brief.replace(/\/\*[\s\S]*?\*\//g, '')), 'a file is not a thing a section KNOWS')
+    assert.match(readFileSync('lib/ask/engine.ts', 'utf8'), /documentId\?: string \| null/)
   })
 })
 

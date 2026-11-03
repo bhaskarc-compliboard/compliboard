@@ -252,7 +252,14 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   already existed and says true things about what survives a delete (checked against migration
 //   062, not against a comment), and the two rules the lift is only safe because of — types only
 //   from lib/ask, and the shared screen knowing nothing about dates.
-const FLOOR = 2090
+// 2090 -> 2100, 2 November 2026 (`docs/GAPS-PLAN.md` Part A step 3, the attached file).
+//   Ten in tests/unit/askEngine.test.ts, all on the two pure pieces the engine owns: the ORDER the
+//   blocks go into the message (this turn's file, then the earlier ones, then the words), the cap
+//   sentence, the "could not be read back" sentence, what the context event says about a block it
+//   deliberately does not price, that the turn remembers the file and the document remembers the
+//   conversation, and that the brief did not gain a sixth field for any of it.
+//   `lib/attachedDocument.ts` is NOT re-tested here: it has its own file and the engine calls it.
+const FLOOR = 2100
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

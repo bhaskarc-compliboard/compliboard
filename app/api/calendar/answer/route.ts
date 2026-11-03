@@ -37,6 +37,9 @@ export async function POST(request: NextRequest) {
     const question = String(body?.question ?? '').trim()
     const topicId = typeof body?.topicId === 'string' ? body.topicId : null
     const history = Array.isArray(body?.history) ? body.history : []
+    // The file the person attached in the chat, by id. The engine loads it as the caller
+    // (); nothing about a document is decided here.
+    const documentId = typeof body?.documentId === 'string' ? body.documentId : null
     if (!question) return NextResponse.json({ error: 'No question provided' }, { status: 400 })
 
     const encoder = new TextEncoder()
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
         const send = (o: unknown) => controller.enqueue(encoder.encode(JSON.stringify(o) + '\n'))
         try {
           for await (const ev of answer(calendarBrief, {
-            db, admin: supabaseAdmin, companyId, question, topicId,
+            db, admin: supabaseAdmin, companyId, question, topicId, documentId,
             history: history as Array<{ question?: string; answer?: string; sources?: AskSource[] }>,
             signal: request.signal,
           })) {
