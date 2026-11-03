@@ -267,7 +267,13 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   order, the company-prefixed unfiled path, from_topic_id only with a topic, every failure a
 //   sentence and never a throw, and the one that matters most: the reading is ASKED FOR and NOT
 //   WAITED ON, proved by the upload returning before the request is even made.
-const FLOOR = 2120
+// 2120 -> 2121, 2 November 2026 (step 3's own defect, found on staging).
+//   One: check_record must carry the SAME block list the context event carried. The event named
+//   the attached file and the record did not, because the record re-derived its list from
+//   packed.blocks, which an attachment is not one of. An answer that read a document its own
+//   record does not mention is the single failure that record exists to prevent, and it was found
+//   by reading the stored row rather than the code.
+const FLOOR = 2121
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -529,13 +529,26 @@ export function useAskConversations({ topics, reloadTopics, summarisePath }: {
     const res = await fetch(`/api/topics/${t.id}`, { headers: await authHeaders() })
     const j = await res.json().catch(() => null)
     if (!res.ok) { setNotice(j?.error ?? OPEN_FAILED); return false }
-    const turns = (j.turns ?? []) as Array<{ role: string; text: string; sources: AnswerSource[] | null }>
+    const turns = (j.turns ?? []) as Array<{
+      role: string; text: string; sources: AnswerSource[] | null
+      document_id: string | null; document_name: string | null
+    }>
     const rebuilt: Exchange[] = []
     for (let i = 0; i < turns.length; i++) {
       if (turns[i].role !== 'user') continue
       const a = turns[i + 1]?.role === 'assistant' ? turns[i + 1] : null
       rebuilt.push({ id: `r${i}`, question: turns[i].text, text: a?.text ?? '', sources: a?.sources ?? [],
         offers: [], phase: a ? 'done' : 'failed', searches: 0,
+        /**
+         * *** THE PAPERCLIP COMES BACK WITH THE QUESTION. *** `turns.document_name` is a COPY
+         * kept for exactly this (migration 039), so a reopened conversation shows which question
+         * had a file on it — and goes on showing it after the document is deleted, when
+         * `document_id` is null and the name is all that is left. A bubble that loses its
+         * paperclip on reload would be the transcript quietly rewriting itself.
+         */
+        ...(turns[i].document_name
+          ? { file: { id: turns[i].document_id ?? '', name: turns[i].document_name as string } }
+          : {}),
         ...(a ? {} : { error: 'That question was not answered.' }) })
     }
     setAskInitial(rebuilt)

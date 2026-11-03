@@ -270,15 +270,21 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
   const packed = await brief.packContext(db, companyId, question)
   const contextText = packed.blocks.map((b) => b.text).filter(Boolean).join('\n\n')
   const totalTokens = packed.blocks.reduce((n, b) => n + b.tokens, 0)
+  /**
+   * *** ONE LIST, BUILT ONCE, FOR BOTH THE EVENT AND THE RECORD. ***
+   *
+   * It was built twice for one run on 2 November and they disagreed: the event named the attached
+   * file and `check_record` did not, because the record mapped `packed.blocks` and the attachment
+   * is not one of those. Caught by reading the stored row rather than the code — the answer had
+   * read a document that its own record did not mention, which is the one thing that record
+   * exists to prevent.
+   */
   const attachedBlock = attachedContextBlock(files)
-  yield {
-    type: 'context',
-    blocks: [
-      ...packed.blocks.map(({ name, chars, tokens, leftOut }) => ({ name, chars, tokens, leftOut })),
-      ...(attachedBlock ? [attachedBlock] : []),
-    ],
-    tokens: totalTokens,
-  }
+  const eventBlocks = [
+    ...packed.blocks.map(({ name, chars, tokens, leftOut }) => ({ name, chars, tokens, leftOut })),
+    ...(attachedBlock ? [attachedBlock] : []),
+  ]
+  yield { type: 'context', blocks: eventBlocks, tokens: totalTokens }
 
   // ---- THE TOPIC AND THE QUESTION, saved before the answer is known ----
   let topicId: string | null = ctx.topicId || null
@@ -397,7 +403,8 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
               // `check_record` (migration 069), with the blocks in place of the handbooks.
               checkRecord: {
                 section: brief.section,
-                context: packed.blocks.map((b) => ({ name: b.name, chars: b.chars, tokens: b.tokens, left_out: b.leftOut })),
+                // The SAME list the context event carried, attached file and all.
+                context: eventBlocks.map((b) => ({ name: b.name, chars: b.chars, tokens: b.tokens, left_out: b.leftOut })),
                 context_tokens: totalTokens,
                 passages: packed.passages.length,
                 searched: ev.searched.map((s) => s.url),

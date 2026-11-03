@@ -427,6 +427,22 @@ describe('a conversation carries its attached file', () => {
     assert.match(String(b?.leftOut), /2 earlier attachment\(s\) are not carried/)
   })
 
+  /**
+   * *** THE EVENT AND THE RECORD ARE THE SAME LIST, AND THEY WERE NOT. ***
+   * On the first real run of step 3 the context EVENT named the attached file and `check_record`
+   * did not — the record mapped `packed.blocks`, which an attachment is not one of. Found by
+   * reading the stored row on staging, not the code. An answer that read a document its own
+   * record does not mention is the one failure that record exists to prevent.
+   */
+  test('check_record carries the same blocks the event did, attached file and all', () => {
+    const engine = readFileSync('lib/ask/engine.ts', 'utf8')
+    assert.match(engine, /const eventBlocks = \[/)
+    assert.match(engine, /yield \{ type: 'context', blocks: eventBlocks, tokens: totalTokens \}/)
+    assert.match(engine, /context: eventBlocks\.map\(/)
+    assert.ok(!/context: packed\.blocks\.map\(/.test(engine),
+      'the record must not build its own list again')
+  })
+
   test('the engine uses these two functions, so there is one implementation and not two', () => {
     const engine = readFileSync('lib/ask/engine.ts', 'utf8')
     assert.match(engine, /messages\.push\(lastUserMessage\(files, contextText, question\)\)/)
