@@ -377,7 +377,14 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   12-auditor-checklist-deq-air.docx" - measured in three runs of three, in the Documents brief
 //   as well as the Audits one. auditDrawer: three tabs, with the 20 October hotfix's five rules
 //   kept word for word and a sixth added for the derived tab. documentsBrief: the same handle.
-const FLOOR = 2318
+//   AND TEN MORE, 3 November 2026, after the walk: a QUESTION about an audit was starting one.
+//   "What did the last Oregon DEQ audit find about the scrubber log?" has the audit word AND an
+//   agency label, and the looker read it as a command - the harness refused the paid route and
+//   that is the only reason it was seen. Decision 38's rule is necessary and not sufficient, so
+//   a command is now an imperative: a question mark or a leading question word makes it a
+//   question. Seven sentences are held to going to the model, four imperatives to still starting
+//   a run, and the two signals are tested on their own.
+const FLOOR = 2328
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

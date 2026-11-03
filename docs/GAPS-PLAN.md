@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 10 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 11 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -14,6 +14,7 @@
 **Updated:** 2 November 2026 — **Part A step 5 done** (§5). Two commits: `7849018` the checklist from any chat, and the plan's own. §3 gains decisions 28–30 (the ?checklist= address, the row's wrapper, the Queued sentence). **The owner's own walk of 4b passed on Opus** — recorded on 4b's row. §8 gains the one thing this walk found, which was in the harness and not the product. **Only step 6 is left in Part A**, and it begins with the owner's board of the Audits box.
 **Updated:** 3 November 2026 — **Part A step 6 MAPPED** (§5), read-only, and **F6 is settled by running it**: one template audit against `tests/golden/audits/fixtures/12-auditor-checklist-deq-air.docx` on the isolated Haiku server finished in 43 seconds — 3 sections, 16 lines, 16 findings, 0 could-not-complete, $0.0829 — and the rows were read back from staging with the CLI. `docs/PENDING.md` F6's "returns 400, not ready" is **wrong and has been wrong for a while**. §3 gains the owner's six decisions of 3 November (31–36). §5's step 6 row is rewritten to the three-tab design and split into 6a and 6b. §7 gains the HR line and four open questions. §8 gains what the map found — including **the one thing that cannot be built without editing a shared component**. One commit: the boards and this file.
 **Updated:** 3 November 2026 — **Part A step 6a done** (§5). Two commits: `fdc83c3` the brief, the prompt, the words, the examples and the six keys written first, and the plan's own. §3 gains the owner's decisions **37–42**. **The verdict in one line: the Audits chat scores 57 of 64 against keys written before any run; the Documents chat on the same six questions scores 12, and on four of them it cannot score at all because it cannot see that the company has been audited.** It costs 1.44× and scores 4.75×. §7 loses the four answered questions and gains **two stops**: `lib/ask/offers.ts` must learn `run_audit`, and the engine's `A` handle collides with a checklist's own A1–A5 line labels. §8 gains five things the runs found.
+**Updated:** 3 November 2026 — **Part A step 6b done, and PART A IS COMPLETE** (§5). Two commits: `cca74dc` the page, the looker, the merged tab, the two routes and the three shared edits, and the plan's own. §3 gains decisions **43–45**. The Audits page has three tabs; the box left the audits tab and the Ask box took its job. **The agency rows did not move: 0 differing pixels** over the whole group at −192px, with 14 on the bottom edge of two native dropdowns. §7's two stops are closed. §8 gains **two defects the walk found**, one of them in the rule the owner wrote: a QUESTION about an audit was starting one. Walked on Haiku for **$0.7136**.
 **Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
 
 ---
@@ -164,6 +165,23 @@ Each names its effect on other sections.
     too. *Effect: Cascade holds 13 documents, not 12, and two audits where it had none. The Documents chat's index
     baseline moves 12 → 13; 4a-test's figures predate it.*
 
+43. **`lib/ask/offers.ts` learns `run_audit`** (the owner, 3 November 2026), with the `source_url` check
+    deliberately NOT applied to this kind: a run over the company's own documents has no page to verify, and
+    demanding a link would drop every valid offer — which is what it did to three of step 6a's eighteen.
+    `auditsBrief.offers` names it in the same commit, and the test that failed until both moved is the one that
+    made them move together. *Effect: `lib/ask/offers.ts` is shared — the Calendar's `components/CalendarAsk.tsx`
+    now filters to `add_date` before drawing, because `Offer` became a union; Calendar's free checks re-run.*
+44. **`ATTACHED_PREFIX` becomes `'AF'`** (the owner, 3 November 2026), in `lib/ask/passages.ts`. One character,
+    and it closes a collision for every section at once: an auditor's checklist numbers its own lines A1…A5, so
+    `replacePassageIds` was rewriting *"line A1"* into the attached file's name. *Effect: the engine, and both
+    prompts that name the handle by example (`prompts/documents-answer.ts` and `prompts/audits-answer.ts` now say
+    `AF1`). Documents', the Calendar's and HR's free checks re-run; a test holds that a bare `A1` survives an
+    answer and `AF1` is still replaced.*
+45. **`prompts/audits-answer.ts` is approved as written, all nineteen sentences** (the owner, 3 November 2026),
+    with one fix inside it: sentence 18 stops asking for a `document_id` the model is never shown. The block
+    carries `attached: true` and no id, and `checkRunAuditOffer` resolves the file from what the page already
+    holds for this turn. *Effect: `prompts/audits-answer.ts` and `lib/auditsOffer.ts` only.*
+
 17. **Reading every file format (`.doc`, `.ppt`, HEIC, TIFF, the honest refusals) is its own part**, after the chats, as `docs/VISION-DOCUMENTS.md` "Where the converting runs" decided. The binder follows it. *Effect: later parts of this file.*
 
 ---
@@ -207,7 +225,9 @@ order, and is the source for 6a's brief.
 | 6-F6 | F6 settled by running it | One template audit, the way the page runs one — storage, `POST /api/documents`, `POST /api/audit-runs { kind: 'template' }` — as `testcascade@example.com` against the isolated Haiku server on 3998, with `tests/golden/audits/fixtures/12-auditor-checklist-deq-air.docx`. No code change. | The rows, read back from staging with the CLI, read-only. | **done 3 Nov.** Run `de251fbf-f838-45d8-a38a-11a8372e2ef6`: **status done, 3 of 3 sections, 16 lines, 16 findings, 0 could-not-complete, 43 seconds**, every section `json_parsed = true` on `claude-haiku-4-5` with 13 documents read and 0 held unread. Summary: 8 on file, 5 nothing on file, 1 out of date, 2 not a document question, 8 needing a person. **Every finding carries its checklist line** (A1–A5, B1–B6, C1–C5). **Four ledger rows, $0.0829** — one `audit` call for the extraction ($0.0054) and one per section. The drawer opens at `/audits?run=<id>` and is titled *"Against 12-auditor-checklist-deq-air.docx"*; Past audits shows *"8 to look at · 3 of 3 sections"*. **So `PENDING.md` F6's "returns 400 with a sentence saying it is not ready" is wrong**, and the attach control is not inert: one click fires `Page.fileChooserOpened`. |
 | 6a | The brief, the prompt, the examples and the offer, measured | `lib/ask/auditsBrief.ts` (the five blocks in the owner's order, importing Documents' own packers rather than copying them); `prompts/audits-answer.ts` (nineteen sentences — eleven of Documents' fourteen kept whole, three rewritten, five new); `lib/auditsWords.ts`; `AUDITS_EXAMPLE_QUESTIONS`; the `run_audit` offer and `checkRunAuditOffer`; `scripts/probe-audits-answer.mjs`; `tests/golden/audits/chat/`. **No route, no page, no shared piece edited.** | One Oregon DEQ agency audit on Haiku to give the fixture an agency run, then the keys written from the rows and **committed before the first model call**, then 36 runs on `claude-sonnet-5-5`. | **done 3 Nov** — `fdc83c3`. **A scores 57 of 64; the Documents chat on the same six questions scores 12, and on four of them it cannot score at all.** B opens three runs with *"There is no DEQ audit report on file"* about an audit run that morning; it answers *"No."* to "are we ready"; it goes through an attached checklist line by line itself once; and it is 34 days out on the permit clock in two runs of three, because with no audit to anchor on it counts from the reading date. **A broke no must-not in 18 runs and claimed to have run an audit in none.** The offer: **18 blocks in 18 runs, 15 the code would accept, 0 naming an agency the company does not hold.** **0 quotes found in nothing in 36 runs**, which `runPlain` and `indexPlain` are the reason for. **$1.9810** — A $1.1680, B $0.8131; A costs 1.44× and scores 4.75×. The one measure A loses: 6 source cards to B's 8, though 3 of A's are the first audit-finding cards this product has made. **Two stops** (§7) and five findings (§8). |
 | 6-DEQ | The agency run 6a's fixture needed | One Oregon DEQ agency audit through `POST /api/audit-runs { kind: 'agency' }` — the call the Audit button makes — on the isolated Haiku server. No code change. | The rows, read back from staging with the CLI. | **done 3 Nov.** Run `4a6d2fa8-abdf-4a6a-84a7-b82a846987af`: **done, 1 of 1 section, 25 findings, 39 seconds**, `json_parsed = true` on `claude-haiku-4-5`, 5 documents read and 8 held unread. 9 real findings (3 out of date, 6 nothing on file), 7 dates, **9 suggestions**. One ledger row, **$0.0291**. |
-| 6b | The page, the recogniser, the merged tab, the routes, the walk | Three tabs through `components/Tabs` (decision 31); the merged Audits tab with its two groups; the box moves to the Ask tab and the command recogniser runs in code before any model call and **requires the word "audit" first** (decisions 32 and 38), writing decision 39's line under the question and creating no conversation row; **the offer's press** (decision 41) with the three lines `lib/ask/offers.ts` needs for it; `components/AskScreen.tsx`'s one `beforeAsk` prop (decision 37); **the two 6a stops in §7 closed first**; `app/api/audits/answer/route.ts` and `app/api/audits/topics/[id]/summarise/route.ts` on the shared body (`lib/ask/summariseRoute.ts`); `?tab=` and the derived-tab rule that keeps every `?run=` link landing where it did; `app/audits/page.tsx:621`'s link removed (decision 35); `PAID_COUNT` 21 → 23; `check:live` probes; the `GATE F7` mark on `components/home/AuditPanel.tsx:1`, which carries only `GATE F4` today; `PENDING.md` F5 and D5 closed. | **The owner's yes on the prompt and the examples first** (6a), **and his answer to the AskScreen question in §7** — the recogniser cannot be built without it. Then the walk: an agency command, a question, a template command with a file, a source card clicked, and the Audits tab photographed against today's two tabs at the same width. | not started |
+| 6b | The page, the looker, the merged tab, the routes, the offer, the walk | Three tabs through `components/Tabs`; the box deleted and the Ask box given its job through `lib/auditsCommand.ts` `readCommand` (decisions 32, 38); the merged Audits tab with **By agency** — every row unmoved, plus *Earlier audits* under an open row — and **By template**; `app/api/audits/answer/route.ts` and `app/api/audits/topics/[id]/summarise/route.ts`; the offer's press; `app/audits/page.tsx:621`'s link removed (decision 35); `PAID_COUNT` 21 → 23; two `check:live` probes; the `GATE F7` mark on `components/home/AuditPanel.tsx`; `PENDING.md` F5, F6 and D5 closed and F7 narrowed; `STATUS.md`'s Audits row rewritten. **Three shared files edited** (decisions 37, 43, 44), each with every section it touches re-checked. | The pixel proof, the free checks of all five sections, and the walk. | **done 3 Nov** — `cca74dc`. **The agency rows did not move: 0 differing pixels** across the whole group (counts line through the four rows and the note) at an offset of −192px, columns 225–1264; the counts line and its two dropdowns moved −233px with **14 differing pixels**, all on the bottom edge of two OS-drawn `<select>`s. The 41px between the two offsets is the new BY AGENCY heading. `npm run check` **2,318 tests**; all five sections' free checks green. **Walked on Haiku, $0.7136, 17 calls:** a typed command started a run with **no `audits_chat` row in the ledger and no topic written**; a question was answered; the offer card appeared and its press started the OSHA run and could not be pressed twice; the attached template started a run AND fired its reading; a finding's source card opened the audit drawer; a checklist made from an Audits conversation landed in the Workspace; every old address landed where it did; a conversation was deleted and the row was gone from the database. **The walk found two defects** (§8), one of them in decision 38's own rule. |
+
+**⚡ PART A IS COMPLETE — 3 November 2026.** Every section's chat is one engine and one screen: HR (its own engine, decision 36), the Compliance Workspace (its own, decision 2), the Calendar, Documents and Audits. A person never has to go to another section to get an answer, which is what §1 set out to do.
 
 **Part B — reading every file format**, **Part C — the binder**, **Part D — Resend, Stripe, the gate walk**: written here when Part A is done.
 
@@ -264,40 +284,18 @@ order, and is the source for 6a's brief.
 recorded as decisions 37, 39, 40 and 41.** The hook is a yes; the command's words are his; the extra reading is
 paid for; and the chat gets ONE offer rather than none.
 
-### ⚡ TWO STOPS 6b CANNOT START WITHOUT — found by step 6a's own runs
+### ~~⚡ TWO STOPS 6b CANNOT START WITHOUT~~ — **both answered and both built, 3 November 2026**
 
-**1. `lib/ask/offers.ts` has to learn `run_audit`, and 6a was not allowed to teach it.**
-Decision 41 gives this chat one offer. 6a defined the whole of it — the shape, the card's words
-(`lib/auditsWords.ts` `runAuditCardWords`) and the code-side check against the company's own agency labels
-(`lib/ask/auditsBrief.ts` `checkRunAuditOffer`) — and **measured that the model writes the block: 18 of 18 runs,
-15 of them in a shape the code would accept, none naming an agency the company does not hold.** What is missing is
-three lines in the shared file, which 6a's own brief put on the stop list:
+**1. ~~`lib/ask/offers.ts` has to learn `run_audit`~~** — **decision 43, built in `cca74dc`.** The three lines
+went in with the `source_url` check deliberately not applied to the kind, and `auditsBrief.offers` named it in
+the same commit. The test that said *"offers is empty until `lib/ask/offers.ts` learns run_audit"* failed the
+moment the shared file changed, which is what made the two move together; it now holds the finished state.
+**`Offer` became a union**, which `components/CalendarAsk.tsx` had to narrow — the one consequence nobody
+predicted, and it is three characters and a comment.
 
-```ts
-export const OFFER_KINDS = ['add_date', 'run_audit'] as const
-export interface RunAuditOffer { kind: 'run_audit'; agency: string | null; document_id: string | null }
-export type Offer = AddDateOffer | RunAuditOffer
-// and, inside parseOffers, a branch that does NOT call findReturned:
-if (kind === 'run_audit') {
-  const agency = str(o.agency); const document_id = str(o.document_id)
-  if (!agency && !document_id) { dropped.badShape++; return '' }
-  offers.push({ kind: 'run_audit', agency: agency || null, document_id: document_id || null })
-  return ''
-}
-```
-**The `source_url` check must NOT apply to it.** `add_date` carries a date out of a regulation into a customer's
-calendar, so "where did this come from" has to be answerable. This offer starts a run over the company's own
-documents and there is no web page to verify; demanding a link would drop every valid offer. *Recommended: yes, in
-6b, with `auditsBrief.offers` set in the same commit — `tests/unit/auditsBrief.test.ts` fails until both move.*
-
-**2. ⚡ THE ENGINE'S `A` HANDLE COLLIDES WITH A CHECKLIST'S OWN A1–A5 LINE LABELS, AND IT IS SHOWING.**
-An auditor's checklist numbers its lines A1…A5, B1…B6, C1…C5. `lib/ask/passages.ts` `ATTACHED_PREFIX` is `'A'`, so
-a file attached to the conversation is passage **A1** — and `replacePassageIds` rewrites any bare `A1` in the
-answer into that file's name. Measured on question 3, **3 of 3 runs in BOTH variants**: the model wrote *"line
-A1"* and the person was shown *"line 12-auditor-checklist-deq-air.docx"*. It is the engine's, not this section's
-— Documents has the same exposure the day somebody attaches a lettered checklist. *Recommended: `ATTACHED_PREFIX`
-becomes `'AF'`, which `PASSAGE_ID` (`[A-Z]{1,2}\d{1,3}`) already allows and which no checklist labels a line with.
-One character, in a shared file, so it is the owner's.*
+**2. ~~`ATTACHED_PREFIX` collides with a checklist's A1~~** — **decision 44, built in `cca74dc`.** `'A'` → `'AF'`,
+and both prompts that named the handle by example say `AF1` now. A test holds that a bare `A1` in an answer
+survives and `AF1` is still replaced.
 
 ### Smaller, and 6b's to fix in its own files
 
@@ -318,6 +316,46 @@ One character, in a shared file, so it is the owner's.*
 ## 8. Known defects and document drift recorded by the map (2 November)
 
 ### What step 6's map found (3 November)
+
+
+### What step 6b's walk found (3 November)
+
+- **⚡ A QUESTION ABOUT AN AUDIT WAS STARTING ONE, AND IT IS DECISION 38's OWN RULE THAT LET IT.** The walk typed
+  *"What did the last Oregon DEQ audit find about the scrubber log?"* and the harness refused a paid route:
+  `BLOCKED (1): paid route: POST /api/audit-runs`. The sentence has the audit word AND an agency label, so the
+  looker read it as a command — a plain question about an audit that had already happened would have started
+  another, spending a call and writing rows nobody asked for. **It is the same failure decision 38 exists to
+  prevent, pointing the other way.** Decision 38's rule is necessary and is not sufficient, so the looker gained a
+  second: **a command is an imperative** — a sentence ending in a question mark, or opening with a question word,
+  is a question. *The one sentence it gives away is "Can you audit us for DEQ?", which now reaches the model —
+  and that is exactly what decision 41's offer card was built for, so the person presses once instead of typing
+  twice.* Nine tests hold it, and **this is a change to a rule the owner wrote**, reported rather than buried.
+- **The harness is what caught it, and only because it blocks paid routes by default.** A walk that let
+  `/api/audit-runs` through would have shown an audit starting and read as a pass. `BLOCKED (1)` on a page that
+  should have called nothing is the single most useful line `scripts/measure-layout.mjs` prints.
+- **`Offer` becoming a union broke the Calendar's card, and the type checker said so immediately.** Adding
+  `run_audit` to `lib/ask/offers.ts` (decision 43) made `offer.title` an error in
+  `components/CalendarAsk.tsx`. The fix is a `.filter((o) => o.kind === 'add_date')` before the map, which
+  changes no behaviour — `calendarBrief.offers` is `['add_date']` and `parseOffers` already drops the rest — and
+  makes a fact about another file into a type guarantee. Recorded because a shared union is the kind of edit that
+  looks additive and is not.
+- **A template run's row is named by its READING's title the moment one exists, which is decision 40 paying for
+  itself.** The F6 run's row said `12-auditor-checklist-deq-air.docx`, because `attachChecklist` asked for no
+  reading. The walk's row says *"Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist
+  (Inspector's Field Form)"* — the scan landed 45 seconds after the upload and `titleOfTemplate` picked it up.
+  §8's note from step 6 is closed by this.
+- **Two free checks report failures that are not there unless they are run the way the guard runs them.**
+  `scripts/test-guard.js` passes `--import ./tests/unit/resolveNextServer.mjs`, which teaches plain Node to
+  resolve `next/server`; without it `accessGate.test.ts` reports three failures and `chatUpload.test.ts` five,
+  none of them real. Both predate this step. **A free check run by hand is `node --import
+  ./tests/unit/resolveNextServer.mjs --test <files>`**, and this file says so now because this programme runs
+  free checks by hand at every step.
+- **A pixel comparison through `sips -s format tiff` is wrong, quietly.** The first pass reported 20,036
+  differing pixels in the fixed sidebar — a stripe every third row, which is a misaligned read and not a changed
+  pixel. `length - w*h*4` is not where a TIFF's pixels begin. **BMP says where they begin in its own header**
+  (bytes 10–13) and gives the padded row stride, so nothing is guessed; through BMP the same comparison is 0.
+  *And a band compared at an OFFSET must exclude the fixed sidebar, or 142 columns of nav labels are reported as
+  a difference in the rows.*
 
 ### What step 6a's 36 runs found (3 November)
 

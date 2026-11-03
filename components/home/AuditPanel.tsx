@@ -1,4 +1,10 @@
 // GATE F4 — docs/PUBLIC-PAGES-PLAN.md §5. "Download the binder" waits on the binder being built. Walked at step 33.
+// GATE F7 — closed for this panel at `docs/GAPS-PLAN.md` Part A step 6b: the Audits page has the
+// chat, its two routes and its one offer, so the question typed into the box below and the
+// conversation it starts both exist behind the login now. §5 assigned F7 to this panel and
+// `docs/HANDOFF-FROM-PUBLIC-PAGES.md` recorded that the mark was missing. F7 itself stays open for
+// HR and the Compliance Workspace (decision 36). The box here is still the marketing page's own
+// and still types nothing.
 // SAMPLE TEXT — the document names and fix sentences below are in the product's voice and are replaced at step 12 (the words check) by words from a real Cascade run. Keep them in WORDS so the swap is one place.
 /**
  * PANEL 2a — THE AUDIT. Public pages step 16 (`docs/PUBLIC-PAGES-PLAN.md` §4 panel 2a,

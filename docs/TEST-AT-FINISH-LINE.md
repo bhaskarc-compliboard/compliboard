@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 7 · **Updated:** 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 8 · **Updated:** 3 November 2026: **the Audits chat's part added** (A, D, E), by Part A step 6b. Its six keys were written from Cascade's own rows and committed before the first model call, and measured on `claude-sonnet-5-5` against the Documents brief on the same six questions. Version 7: 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -859,3 +859,63 @@ quotation marks**, not on the quote (see E).
    button. The owner's open question in `docs/GAPS-PLAN.md` §7 is now a measured one.
 7. **Cost.** A costs about **2.4×** B for the same question ($0.039 against $0.016 on Sonnet), and that is the
    price of every key above.
+
+---
+
+# The Audits chat
+
+*Added 3 November 2026 by Part A step 6b (`docs/GAPS-PLAN.md`). A, D and E, like the Documents chat's part —
+the page, the routes and the one offer ARE built, and the walk is recorded in the plan's own §5 row rather than
+repeated here. What this part is for is the finish line: the six keys, on Opus, at production settings.*
+
+### A. Where the Audits chat stands (3 November 2026)
+
+- **Built and walked on Haiku**: three tabs, the Ask box that takes commands and questions and decides which in
+  code, `app/api/audits/answer` and `app/api/audits/topics/[id]/summarise`, and the one `run_audit` offer whose
+  press starts the run against the company's own agency labels.
+- **Measured on `claude-sonnet-5-5`, 3 November 2026**, 36 calls, $1.98, against Cascade's two real audits and
+  thirteen documents: `tests/golden/audits/chat/keys.md`, `.../runs/` and `.../RESULTS.md`.
+  **A scored 57 of 64 against keys written before any run; the Documents brief on the same six questions scored
+  12.**
+- **Held for the finish line:** the same six keys on **Opus 5.5 at production settings**, the two switches below,
+  and the prompt as the owner leaves it.
+
+### D. The yardstick: the six scenarios, each with a key written before the run
+
+**Where they live:** `tests/golden/audits/chat/keys.md` — written from `packAuditsContext`'s own output with
+`--pack-only`, which calls no model, and committed (`fdc83c3`) before the first call. The fixture is **Cascade
+on staging**: two audits (one Oregon DEQ agency run, one against an auditor's checklist), thirteen documents,
+four agency labels of which only Oregon DEQ has ever been audited. Reproduce the context with:
+
+```
+npm run haiku -- node --env-file=.env.local scripts/probe-audits-answer.mjs \
+  --as testcascade@example.com --ask "<the question>" --pack-only --show
+```
+
+The six: (1) status on everything DEQ · (2) what the last DEQ audit found, and anything since · (3) an
+auditor's checklist attached, *"check if we are good"* · (4) ready for an Oregon OSHA inspection, which has
+never been audited · (5) which lines point at a document read since the audit, whose true answer is **none** ·
+(6) why the permit is marked out of date, where the audit's word and the document's state are different things.
+
+### E. The yardstick: what to judge
+
+1. **Does it give the audit's DATE every time it uses what the audit found?** An audit is a record of one day,
+   and the figures are only true about that day.
+2. **Are the four words left as the audit said them?** "Nothing on file" is not "missing"; "out of date" is not
+   "expired" unless a reading gives a date that has passed. And an `expected` row is a **suggestion**, said as
+   one every time.
+3. **Does it refuse the verdict?** Questions 3 and 4 invite "yes" or "no" and the product does not give one.
+   *On Sonnet, A declined in 6 of 6; the Documents brief answered "No." once and "Not yet" once.*
+4. **Does it invent a line that does not exist?** Question 5's true answer is none, and any list at all is
+   invented. *On Sonnet, A said "none" with the reason in 3 of 3.*
+5. **The offer.** Does the model write the block where decision 41 says it should, and would
+   `checkRunAuditOffer` accept it? *On Sonnet: 18 blocks in 18 runs, 15 accepted, 0 naming an agency the company
+   does not hold.* **And never a claim to have run one**: 0 of 18.
+6. **Cards.** Six in 18 runs on Sonnet, three of them `F` — an audit finding, opening `/audits?run=`. This is
+   the measure the Audits brief loses on against the Documents brief (eight, all `R`), and the quoting clause
+   inherited from Documents has not fixed it in either section.
+7. **Dates computed from the right anchor.** With no audit to anchor on, the Documents brief said the permit
+   expires *"46 days from today"* — 46 days from the READING date — in 2 of 3 runs. A said 12 days, which is
+   right. **Watch this one on Opus: a Haiku walk answer said 46 too**, so the anchor is not reliably used.
+8. **Cost.** A costs about **1.44×** the Documents brief for the same question ($0.065 against $0.045 on
+   Sonnet), and scores 4.75× against the keys.

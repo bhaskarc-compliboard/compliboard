@@ -14,7 +14,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { readCommand, AUDIT_WORD } from '../../lib/auditsCommand.ts'
+import { readCommand, AUDIT_WORD, looksLikeAQuestion } from '../../lib/auditsCommand.ts'
 import {
   auditsCommandAgencyLine, auditsCommandTemplateLine, WHICH_AGENCY, NO_AGENCIES,
   ATTACH_THE_FILE, COULD_NOT_AUDIT, AUDITS_COMMAND_TAB_LINK,
@@ -53,6 +53,54 @@ describe('the looker: the audit word comes first — decision 38', () => {
     }
     // "auditor" is not a command — "our auditor sent this" is a sentence about a person.
     assert.ok(!AUDIT_WORD.test('our auditor sent this list'), 'auditor is not audit')
+  })
+})
+
+/**
+ * *** AND A QUESTION IS NOT A COMMAND, EVEN WHEN IT SAYS "AUDIT" — found by walking step 6b. ***
+ *
+ * The walk typed *"What did the last Oregon DEQ audit find about the scrubber log?"* and the
+ * harness refused a paid route: `BLOCKED (1): paid route: POST /api/audit-runs`. The sentence
+ * has the audit word AND an agency label, and decision 38's rule let it through — so a plain
+ * question about an audit that had already happened started another one. These are the tests
+ * that would have caught it, written after it was caught by something else.
+ */
+describe('the looker: a question about an audit is still a question', () => {
+  for (const q of [
+    'What did the last Oregon DEQ audit find about the scrubber log?',
+    'When was our last DEQ audit?',
+    'Why did the Oregon OSHA audit say nothing on file?',
+    'How many things did the audit find?',
+    'Did the audit cover the Portland plant?',
+    'Has anything changed since the Oregon DEQ audit?',
+    'Is the template audit finished?',
+  ]) {
+    test(`"${q}" goes to the model`, () => {
+      assert.equal(readCommand(q, AGENCIES, false), null)
+    })
+  }
+
+  /**
+   * The one it gives away, and it is given away on purpose: this is a real request to be
+   * audited, and it now reaches the model — which is exactly the case decision 41's offer card
+   * was built for. The person presses once instead of typing twice. A looker that guesses wrong
+   * this way costs a click; the other way it costs a model call and an audit run.
+   */
+  test('"Can you audit us for DEQ?" reaches the model, and the offer is what answers it', () => {
+    assert.equal(readCommand('Can you audit us for DEQ?', AGENCIES, false), null)
+  })
+
+  test('an imperative with the word is still a command', () => {
+    for (const q of ['Audit us for Oregon DEQ', 'Please audit us against Oregon OSHA',
+      'Audit everything', 'Audit us against the attached template']) {
+      assert.notEqual(readCommand(q, AGENCIES, false), null, `"${q}" must still start a run`)
+    }
+  })
+
+  test('the two signals, each on its own', () => {
+    assert.equal(looksLikeAQuestion('Audit us for Oregon DEQ?'), true, 'a question mark is enough')
+    assert.equal(looksLikeAQuestion('What a mess'), true, 'a question word is enough')
+    assert.equal(looksLikeAQuestion('Audit us for Oregon DEQ'), false)
   })
 })
 
