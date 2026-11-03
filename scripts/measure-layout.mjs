@@ -435,8 +435,20 @@ try {
         for (let i = 0; i < 6 && n; i++, n = n.parentElement) {
           if ((n.textContent || '').trim().startsWith(scope)) return true }
         return false }
+      // *** THE SECOND SELECTOR IS button, [role=button] — AND IT WAS button ALONE. ***
+      // Found by walking Part A step 5. A keyed row whose handler sits on a div with
+      // role=button fell back to the OUTER row element, which has no handler: the click landed,
+      // the harness printed a hit, and nothing happened. components/ConversationList.tsx became
+      // exactly that when its row had to stop being a button, because an anchor may not live
+      // inside one. The product was never affected — a person clicks the inner element — and the
+      // text path above was never affected either, since role=button is already in cands.
+      // A silent no-op in a walk is the worst kind of harness failure, so it is fixed here.
+      //
+      // AND NO BACKTICKS IN THIS COMMENT EITHER, for the reason the note above gives: it is
+      // inside the browser template literal, and one backtick ends the string. Writing this very
+      // comment with them broke the script on the first try.
       const matches = want.startsWith('key=')
-        ? order.filter((e) => keyOf(e) === want.slice(4)).flatMap((e) => [e, ...e.querySelectorAll('button')].slice(0, 2)).slice(-1)
+        ? order.filter((e) => keyOf(e) === want.slice(4)).flatMap((e) => [e, ...e.querySelectorAll('button, [role=button]')].slice(0, 2)).slice(-1)
         : order.filter((e) => (exact ? name(e) === exact : name(e).startsWith(label)) && (!scope || inRow(e)))
       const el = matches.find((e) => !matches.some((o) => o !== e && e.contains(o)))
       if (!el) return null
