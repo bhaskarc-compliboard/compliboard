@@ -656,9 +656,19 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
   if (!parsed.ok) {
     // We never reached the model, so there is no cost row and no reading. Said out loud, with
     // the way forward, rather than answered around.
+    //
+    // *** `way_forward` IS NULL NOW, AND THAT IS NOT A LOSS — B1, decision 51. ***
+    // It said `'A PDF or a Word file we can read.'` for every format alike. Since B1 the
+    // failure's own message names the type and says what to do with it ("Save it as .docx or PDF
+    // and add it again"), so a second generic line would only repeat it — and
+    // `app/compliance/page.tsx:477`, the one screen that joins the two, appends `way_forward`
+    // only when it is set. **It was never stored in any case:** `saveScan` below writes
+    // `could_not_read_reason` and the live staging schema has no column for a way forward, so the
+    // sentence a row keeps, the Documents list shows and `lib/ask/documentsBrief.ts:191` reads has
+    // always been `reason` alone. Which is why the whole sentence belongs there.
     return {
       ...normaliseScan({ status: 'could_not_read', could_not_read: {
-        reason: parsed.failure.message, way_forward: 'A PDF or a Word file we can read.' } }, ''),
+        reason: parsed.failure.message, way_forward: null } }, ''),
       raw_text: '', json_parsed: false, model: '(not called)', searches: 0, cited_sources: 0,
       structured: scanStructuredOutput(),
       prompt_sha256: '', quotes_checked: 0, quotes_verified: 0, extracted_text: '',

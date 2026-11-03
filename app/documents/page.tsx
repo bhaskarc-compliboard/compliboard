@@ -76,7 +76,7 @@ import {
   DOCUMENTS_NOTHING_YET_BEFORE, DOCUMENTS_NOTHING_YET_LINK, DOCUMENTS_NOTHING_YET_AFTER,
 } from '@/lib/documentsWords'
 import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord } from '@/lib/documentStatus'
-import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+import { ACCEPTED_FILE_TYPES, refusalFor, skippedLine, skippedSentences } from '@/lib/acceptedFiles'
 import DocumentReport from '@/components/DocumentReport'
 import { LIVE_SCAN_MAX } from '@/lib/documentBatch'
 
@@ -300,6 +300,13 @@ function DocumentsPageContent() {
 
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState('')
+  /**
+   * WHAT THE LAST PICK SKIPPED, AND WHY — B1, decision 51. Its own state and not `progress`,
+   * because `progress` is cleared in the upload's `finally` and this has to stay on the screen
+   * after the upload has finished: it is the answer to "where are my other three files". Cleared
+   * at the start of the next pick.
+   */
+  const [skipped, setSkipped] = useState<{ line: string; sentences: string[] } | null>(null)
   /** Documents this browser is scanning right now, so the row says Reading… rather than Queued. */
   const [readingIds, setReadingIds] = useState<Set<string>>(new Set())
 
@@ -451,7 +458,39 @@ function DocumentsPageContent() {
    */
   async function onFilesPicked(picked: FileList | null) {
     if (!picked || picked.length === 0) return
-    const files = Array.from(picked)
+
+    /**
+     * *** THE FILES WE CANNOT READ ARE DROPPED HERE, BEFORE ANYTHING IS UPLOADED — B1,
+     * decision 51. ***
+     *
+     * THIS FUNCTION SERVES BOTH PICKERS, AND THE FOLDER ONE HAS NO `accept` AT ALL
+     * (`:820`–`:821`: `webkitdirectory` with no `accept`, because a directory picker cannot
+     * filter). So before B1 a folder of thirty files containing four `.doc`s uploaded all
+     * thirty, wrote thirty rows, and the sweep read twenty-six and told the customer that
+     * **"something went wrong at our end"** about the other four. Not silently dropped —
+     * uploaded, charged a row, and then blamed on us. That is what this closes.
+     *
+     * The `accept` on the FILES picker is a hint the dialog may let somebody past (All Files, a
+     * typed name, a drag), so this runs for both paths and not only the folder.
+     *
+     * WHAT THE PERSON IS TOLD: the count by type on one line, then each type's own sentence
+     * underneath — the same sentences the chat, HR, the Workspace and the reader use. Never a
+     * bare count: "3 files skipped" with nothing after it is the silence §5.1 forbids.
+     */
+    const all = Array.from(picked)
+    const files = all.filter((f) => !refusalFor(f.name, f.type))
+    const refused = all.filter((f) => refusalFor(f.name, f.type))
+    setSkipped(refused.length
+      ? { line: skippedLine(refused.map((f) => f.name)), sentences: skippedSentences(refused.map((f) => f.name)) }
+      : null)
+    if (!files.length) {
+      // Everything in the folder was a type we cannot read. The line above says which and what to
+      // do; there is nothing to upload and no batch to open.
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      if (folderInputRef.current) folderInputRef.current.value = ''
+      return
+    }
+
     const live = files.length <= LIVE_SCAN_MAX
     setUploading(true)
     setError('')
@@ -1125,6 +1164,24 @@ function DocumentsPageContent() {
         <PausedNote banner={paused} />
 
         {error && <p className="mt-4 text-[13px] text-[var(--amber)]">{error}</p>}
+
+        {/* WHAT WAS SKIPPED, AND WHAT TO DO ABOUT IT (B1). A line and then the sentences — not a
+            tooltip: a sentence somebody has to hover to find is a sentence they will not read.
+            Dismissable, because once they have saved the file as .docx the notice is in the way. */}
+        {skipped && (
+          <div className="mt-4 rounded-md border border-[var(--amber)]/40 bg-amber-50/50 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-gray-900">{skipped.line}</p>
+                {skipped.sentences.map((t) => (
+                  <p key={t} className="mt-1 text-[13px] text-gray-700">{t}</p>
+                ))}
+              </div>
+              <button onClick={() => setSkipped(null)} aria-label="Dismiss"
+                className="shrink-0 text-[13px] text-gray-400 hover:text-gray-700">Dismiss</button>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <p className="mt-8 text-[14px] text-gray-400">Loading…</p>

@@ -1,7 +1,9 @@
 import * as XLSX from 'xlsx'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
-import { ACCEPTED_FILE_TYPES_PROSE } from './acceptedFiles.ts'
+import {
+  ACCEPTED_FILE_TYPES_PROSE, COULD_NOT_OPEN_WORDS, READABLE_EXTENSIONS, extensionOf, refusalFor,
+} from './acceptedFiles.ts'
 
 /**
  * TURNS AN UPLOADED FILE INTO CONTENT BLOCKS THE MODEL CAN ACTUALLY READ.
@@ -37,7 +39,20 @@ export type ContentBlock = Record<string, unknown>
 
 export type DocumentParseFailure = {
   name: string
-  reason: 'unsupported_format'
+  /**
+   * *** TWO DIFFERENT FAILURES, BECAUSE THEY ARE TWO DIFFERENT SENTENCES — B1, decision 51. ***
+   *
+   * `unsupported_format` is a type we do not read: `.doc`, a HEIC, something unrecognised. We
+   * refuse it before opening it, it costs nothing, and the way out is to save it as something
+   * else.
+   *
+   * `could_not_open` is a type we DO read that would not open — a truncated `.docx`, an empty
+   * file. Telling that person to "save it as .docx" is useless, so it has its own words. Before
+   * B1 this case was not a failure at all: mammoth or officeparser threw, the throw left
+   * `runDocumentScan` entirely, and the sweep's last-resort catch wrote *"Something went wrong at
+   * our end"* — true of nothing, and the sentence decision 51 exists to delete.
+   */
+  reason: 'unsupported_format' | 'could_not_open'
   extension: string
   /** Plain language, addressed to the person who uploaded it. CLAUDE.md §5. */
   message: string
@@ -77,21 +92,51 @@ const IMAGE_TYPES: Record<string, string> = {
   gif: 'image/gif', webp: 'image/webp',
 }
 
-export function extensionOf(name: string): string {
-  const base = (name || '').split('?')[0]
-  const dot = base.lastIndexOf('.')
-  return dot === -1 ? '' : base.slice(dot + 1).toLowerCase()
-}
+/**
+ * The five media types the model API takes, as a set — for a photo stored with the right MIME
+ * type and no extension. **It replaced `type.startsWith('image/')`**, which is the line that let
+ * HEIC, TIFF and BMP through to be refused by the API (`docs/VISION-DOCUMENTS.md` §"File types",
+ * B1 of `docs/GAPS-PLAN.md` Part B). Derived from the map above so the two cannot part company.
+ */
+const IMAGE_MEDIA = new Set(Object.values(IMAGE_TYPES))
 
+/**
+ * *** `extensionOf` LIVES IN `lib/acceptedFiles.ts` NOW AND IS RE-EXPORTED HERE. ***
+ * It is re-exported rather than moved because `lib/handbookRead.ts:23` imports it from this file,
+ * and because the alternative — a second copy — is the drift B1 is about. The refusal rule needs
+ * it in the import-free module (a picker is a client component; this file carries three parsers).
+ */
+export { extensionOf } from './acceptedFiles.ts'
+
+/**
+ * A TYPE WE DO NOT READ. The sentence is the type's own, from `lib/acceptedFiles.ts`
+ * `REFUSAL_WORDS` — the same string the picker shows, so a file refused in the browser and the
+ * same file refused on the server say one thing and not two.
+ *
+ * *** THE OLD SENTENCE IS GONE AND IT WAS THE WRONG SHAPE. *** It read `"x.doc" is a .doc format,
+ * which cannot be read here. PDFs, images, Excel… can be. Re-upload it as a PDF to include it.` —
+ * which recites the catalogue at somebody holding one file and tells them to convert it to PDF
+ * when saving it as `.docx` is easier and keeps the text. `ACCEPTED_FILE_TYPES_PROSE` is still
+ * used, for the one case where there is nothing specific to say.
+ */
 export function describeUnsupported(name: string, ext: string): DocumentParseFailure {
   return {
     name,
     reason: 'unsupported_format',
     extension: ext,
-    message:
-      `"${name}" is a ${ext ? '.' + ext : 'file of unknown'} format, which cannot be read here. ` +
-      `${ACCEPTED_FILE_TYPES_PROSE} can be. Re-upload it as a PDF to include it.`,
+    message: refusalFor(name) ?? `We cannot read this file. ${ACCEPTED_FILE_TYPES_PROSE} can be read.`,
   }
+}
+
+/**
+ * AN ACCEPTED TYPE THAT WOULD NOT OPEN. The throw itself goes to the log, never to the customer
+ * (`CLAUDE.md` §5: two messages, two audiences) — `Corrupted zip: can't find end of central
+ * directory` is not a sentence anybody can act on.
+ */
+export function describeCouldNotOpen(name: string, ext: string, e: unknown): DocumentParseFailure {
+  console.warn(`document parse: ${ext ? '.' + ext : 'a file'} named ${JSON.stringify(name)} is an `
+    + 'accepted type and could not be opened:', e instanceof Error ? e.message : e)
+  return { name, reason: 'could_not_open', extension: ext, message: COULD_NOT_OPEN_WORDS }
 }
 
 /**
@@ -137,17 +182,42 @@ export async function parseDocumentToBlocks(
 ): Promise<DocumentParseResult> {
   const type = fileType || ''
   const ext = extensionOf(fileName)
+
+  /**
+   * *** THE REFUSAL COMES FIRST, BEFORE A SINGLE BYTE IS OPENED — B1, decision 51. ***
+   *
+   * One call, one list (`lib/acceptedFiles.ts`), and it is the same call every picker makes. A
+   * type we do not read costs nothing: no buffer copy, no parser, and — because this function is
+   * the first thing `runDocumentScan` does — no model call and no cost row.
+   *
+   * It also closes the hole that `image/*` was. The branches below used to begin
+   * `type.startsWith('image/') ? type : IMAGE_TYPES[ext]`, which sent a HEIC, a TIFF and a BMP
+   * straight to the model API with their own media type on them, and the API refused each one.
+   * Now `imageMedia` can only ever be one of the five `IMAGE_TYPES` names.
+   */
+  const refusal = refusalFor(fileName, fileType)
+  if (refusal) return { ok: false, failure: describeUnsupported(fileName, ext) }
+
   const nodeBuffer = Buffer.from(buffer)
 
+  /**
+   * *** EACH BRANCH CLAIMS ONLY WHAT IT READS. ***
+   * `isWord` claimed `.doc` and `type.includes('msword')`, and `isPowerPoint` claimed `.ppt` and
+   * `powerpoint`; both then handed the file to a parser that reads the modern format only, which
+   * is why `describeUnsupported` below was unreachable and a customer was told the product had
+   * broken. The gate above would catch a `.doc` by extension in any case — these are narrowed as
+   * well so that **a `.doc` mislabelled `application/msword` with no extension at all** cannot
+   * reach mammoth either. Two doors on one room, and the inner one is cheap.
+   */
   const isPDF = type === 'application/pdf' || ext === 'pdf'
-  const imageMedia = type.startsWith('image/') ? type : IMAGE_TYPES[ext]
+  const imageMedia = IMAGE_TYPES[ext] ?? (IMAGE_MEDIA.has(type) ? type : undefined)
   const isExcel = type.includes('spreadsheet') || type.includes('excel') || ext === 'xlsx' || ext === 'xls'
   const isCSV = type === 'text/csv' || ext === 'csv'
   // text/plain is NEW — it existed in no copy of this branching before 11 Sep, which is
   // why a .txt reached the model as a filename and nothing else.
   const isText = type === 'text/plain' || ext === 'txt'
-  const isWord = type.includes('wordprocessingml') || type.includes('msword') || ext === 'docx' || ext === 'doc'
-  const isPowerPoint = type.includes('presentationml') || type.includes('powerpoint') || ext === 'pptx' || ext === 'ppt'
+  const isWord = type.includes('wordprocessingml') || ext === 'docx'
+  const isPowerPoint = type.includes('presentationml') || ext === 'pptx'
 
   // PDF and image go to the model as native blocks — it reads them better than any text
   // extraction would, including layout and scanned pages.
@@ -172,10 +242,17 @@ export async function parseDocumentToBlocks(
   }
 
   if (isExcel) {
-    const workbook = XLSX.read(nodeBuffer, { type: 'buffer', cellDates: true })
+    // A SPREADSHEET THAT WILL NOT OPEN IS A SENTENCE, NOT A THROW (B1). `XLSX.read` throws on a
+    // truncated or password-protected workbook, and the throw used to leave `runDocumentScan`
+    // altogether and land on the route's "something went wrong at our end".
     let text = ''
-    for (const sheetName of workbook.SheetNames) {
-      text += `Sheet: ${sheetName}\n${XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName])}\n\n`
+    try {
+      const workbook = XLSX.read(nodeBuffer, { type: 'buffer', cellDates: true })
+      for (const sheetName of workbook.SheetNames) {
+        text += `Sheet: ${sheetName}\n${XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName])}\n\n`
+      }
+    } catch (e) {
+      return { ok: false, failure: describeCouldNotOpen(fileName, ext, e) }
     }
     return { ok: true, kind: 'excel', blocks: [{ type: 'text', text }], text }
   }
@@ -186,20 +263,51 @@ export async function parseDocumentToBlocks(
   if (isWord) {
     // HTML rather than raw text: it preserves table structure, and a handbook's or an
     // SDS's meaning often lives in its tables.
-    const result = await mammoth.convertToHtml({ buffer: nodeBuffer })
-    return { ok: true, kind: 'word', blocks: [{ type: 'text', text: result.value }], text: result.value }
+    //
+    // THE `try` IS B1's, AND THE THROW IT CATCHES IS REAL. Run on `tests/fixtures/file-types`,
+    // mammoth answers a truncated `.docx` with `Corrupted zip: can't find end of central
+    // directory`. A `.docx` is accepted, so this is not a refusal: it is a file we said we would
+    // read and could not, and it gets `COULD_NOT_OPEN_WORDS`.
+    let html: string
+    try {
+      const result = await mammoth.convertToHtml({ buffer: nodeBuffer })
+      html = result.value
+    } catch (e) {
+      return { ok: false, failure: describeCouldNotOpen(fileName, ext, e) }
+    }
+    return { ok: true, kind: 'word', blocks: [{ type: 'text', text: html }], text: html }
   }
   if (isPowerPoint) {
     // The same hint as `pdfText` above, and for the same reason: auto-detection from a buffer
-    // does not survive the server build. `.ppt` is the old binary format, which officeparser
-    // does not list as supported at all — it is left to fail as it always has rather than be
-    // given a hint that claims it is something it is not.
-    const ast = ext === 'pptx'
-      ? await (officeParser as any).parseOffice(nodeBuffer, { fileType: 'pptx' })
-      : await (officeParser as any).parseOffice(nodeBuffer)
-    const text = ast.toText()
+    // does not survive the server build.
+    //
+    // *** THE `.ppt` FORK IS GONE, AND WITH IT THE COMMENT THAT EXCUSED IT. *** It read: `.ppt`
+    // "is left to fail as it always has rather than be given a hint that claims it is something
+    // it is not" — honest about the library and wrong about the product, because "left to fail"
+    // meant a customer read "Something went wrong at our end". A `.ppt` is now refused above, by
+    // name, with what to do. officeparser's own words settle that it never could be read:
+    // *"Sorry, OfficeParser currently supports docx, pptx, xlsx, odt, odp, ods, pdf, rtf, md,
+    // html, csv files only"* — run on `tests/fixtures/file-types/safety-induction-2004.ppt`.
+    let text: string
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ast = await (officeParser as any).parseOffice(nodeBuffer, { fileType: 'pptx' })
+      text = typeof ast === 'string' ? ast : String(ast?.toText?.() ?? '')
+    } catch (e) {
+      return { ok: false, failure: describeCouldNotOpen(fileName, ext, e) }
+    }
     return { ok: true, kind: 'powerpoint', blocks: [{ type: 'text', text }], text }
   }
 
+  /**
+   * *** THE GATE ABOVE SHOULD HAVE CAUGHT ANYTHING THAT GETS HERE, AND THIS STAYS ANYWAY. ***
+   * `refusalFor` and the branches are two readings of one list, and the day they disagree — a
+   * twelfth extension added to `READABLE_EXTENSIONS` with no branch written for it — this is what
+   * the customer gets instead of an empty result. `tests/unit/fileTypes.test.ts` is what makes
+   * that day not happen; this is what makes it survivable. `READABLE_EXTENSIONS` is imported for
+   * the warning so the two are named in one place.
+   */
+  console.warn(`document parse: .${ext} passed the accepted list (${READABLE_EXTENSIONS.join(', ')}) `
+    + 'and matched no branch — the list and the branches have drifted.')
   return { ok: false, failure: describeUnsupported(fileName, ext) }
 }

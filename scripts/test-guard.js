@@ -394,7 +394,20 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   Three on components/AskScreen.tsx: the screen is busy from the moment a section is asked to
 //   look at the sentence, because it was not, and the owner pressed Ask twice during the six
 //   seconds POST /api/audit-runs spends extracting a checklist and bought two identical audits.
-const FLOOR = 2336
+//
+// 2336 -> 2365, 3 November 2026 (GAPS-PLAN Part B step B1, decision 51). TWENTY-NINE MORE, all in
+//   tests/unit/fileTypes.test.ts, and the first four are the ones that matter in six months: the
+//   accepted list in lib/acceptedFiles.ts and the branches in lib/documentContent.ts are read out
+//   of BOTH FILES and compared, so neither can grow or lose a type without the other. That exact
+//   drift is what B1 closed - the picker offered .doc, .ppt and (through image/*) HEIC, TIFF and
+//   BMP; the reader CLAIMED .doc and .ppt and handed them to parsers that read the modern formats
+//   only; so the polite sentence written for an unreadable file was unreachable and a customer who
+//   uploaded a 1998 Word file was told "Something went wrong at our end". The rest hold the
+//   sentences themselves (one per refused type, on a real fixture, through runDocumentScan), the
+//   different sentence an ACCEPTED type gets when it will not open, the folder path's skipped line
+//   by type, and that all four pickers plus the chat's own chokepoint read the one constant. The
+//   drift guard is shown to fail on a doctored copy of the reader.
+const FLOOR = 2365
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

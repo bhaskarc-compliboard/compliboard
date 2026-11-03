@@ -30,7 +30,7 @@ import { ConversationList } from '@/components/ConversationList'
 import { AttachControl } from '@/components/AttachControl'
 import { PRIMARY, TEXT_ACTION, OUTLINE } from '@/components/buttonStyles'
 import { HR_EXAMPLE_QUESTIONS } from '@/config/examples'
-import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+import { ACCEPTED_FILE_TYPES, refusalFor } from '@/lib/acceptedFiles'
 import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
 import { LIST_CAP, countOf, countWord, fmtDate, displayTitle } from '@/lib/listWords'
 import { friendlyDate, conversationStatus } from '@/lib/conversationStatus'
@@ -527,6 +527,17 @@ export default function HrWorkspace() {
   }
 
   const onFileChosen = (file: File) => {
+    /**
+     * A TYPE WE CANNOT READ NEVER BECOMES A HANDBOOK — B1, decision 51. `addFailed` is the
+     * channel this page already uses for an add that did not work: the Ask tab shows it under the
+     * row, the Handbooks tab in the banner. The sentence is the type's own, from
+     * `lib/acceptedFiles.ts`, and it is the same one Documents and the chat say.
+     *
+     * Before the site sheet, deliberately: asking somebody which of their two plants a file
+     * covers and then refusing the file is two questions where one would do.
+     */
+    const refusal = refusalFor(file.name, file.type)
+    if (refusal) { addFailed(refusal); return }
     // A newer version keeps the older one's site: no sheet.
     if (versionOf.current) { save(file, 'company', null); return }
     // Two or more sites: the person says which site it covers BEFORE anything is uploaded.

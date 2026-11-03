@@ -36,6 +36,7 @@
  */
 import { createClient, authHeaders } from './supabase.ts'
 import { DOCUMENTS_BUCKET } from './storage.ts'
+import { refusalFor } from './acceptedFiles.ts'
 
 /** What the screen gets back: the file landed, or one sentence saying why not. */
 export type ChatUploadResult =
@@ -69,6 +70,23 @@ export async function uploadToChat(
   supabase: UploadClient = createClient(),
 ): Promise<ChatUploadResult> {
   try {
+    /**
+     * *** 0. A TYPE WE CANNOT READ IS REFUSED HERE, BEFORE IT IS STORED — B1, decision 51. ***
+     *
+     * It goes in this function and not in `components/AskScreen.tsx` on purpose: the screen's
+     * `accept` attribute is a hint the file dialog may offer to ignore, and a drag-and-drop or a
+     * typed filename gets past it. This is the chat path's one chokepoint — storage, then
+     * `POST /api/documents`, then the reading — so a refusal here cannot be routed around by a
+     * caller, and every section that lends the paperclip (the Calendar, Documents, Audits) is
+     * covered by the one check.
+     *
+     * NOT STORED, unlike the §5.1 rule's usual direction. A `.doc` saved to the bucket is a row
+     * in the list for ever that nothing will ever read, and the one thing we know about it is
+     * that it needs saving again in another format. The sentence says so.
+     */
+    const refusal = refusalFor(file.name, file.type)
+    if (refusal) return { ok: false, message: refusal }
+
     // 1. WHICH COMPANY. From the signed-in person, never from anything the screen holds.
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile } = await supabase.from('profiles')

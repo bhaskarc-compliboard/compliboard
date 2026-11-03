@@ -30,7 +30,7 @@ import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBo
 import { EXAMPLE_QUESTIONS } from '@/config/examples'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
-import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+import { ACCEPTED_FILE_TYPES, refusalFor } from '@/lib/acceptedFiles'
 // TYPES ONLY. `lib/summaryReport.ts` imports the model client and must not reach the browser; a type
 // import is erased at build. Its display words are in `lib/summaryWords.ts` (tests/unit/clientImports.test.ts).
 import type { SummaryReport } from '@/lib/summaryReport'
@@ -652,6 +652,16 @@ export default function CompliancePage() {
    * `onFilePicked` uploaded and scanned at the moment of picking (`docs/WORKSPACE-MACHINERY.md` 4b).
    */
   function stageFile(file: File) {
+    /**
+     * A TYPE WE CANNOT READ IS REFUSED BEFORE IT IS STAGED — B1, decision 51. The notice is the
+     * type's own sentence from `lib/acceptedFiles.ts`, the same words the sweep would write on
+     * the row, so a person told "no" here and a person told "no" an hour later read one sentence
+     * and not two. Nothing is uploaded and nothing is staged: `ask()` would store it and ask for
+     * a reading that cannot happen.
+     */
+    const refusal = refusalFor(file.name, file.type)
+    if (refusal) { setNotice(refusal); return }
+    setNotice(null)
     setStaged({ kind: 'new', file, name: file.name })
     composerRef.current?.focus()
   }
