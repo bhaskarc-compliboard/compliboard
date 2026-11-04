@@ -1,6 +1,6 @@
 # One file per type the product refuses, and one per type it converts
 
-GAPS-PLAN Part B steps **B1** (decisions 51) and **B2** (decisions 52 and 53), 3 November 2026
+GAPS-PLAN Part B steps **B1** (decision 51), **B2** (decisions 52 and 53) and **B4** (decision 54), 3 November 2026
 
 These exist so the refusal can be tested on a real file rather than on a name. Every one was made
 on the owner's laptop on 3 November 2026 with tools macOS already has; the command is beside each.
@@ -61,3 +61,35 @@ measured: `heic-decode` allocates `width * height * 4` and has no scaled decode,
 
 The drum label is also `tests/golden/documents/fixtures/07-drum-label-photo.heic` — the golden
 set's first photograph, and the container label for the chemical in case 05.
+
+
+---
+
+## What B4 added, 3 November 2026 — the six that were already free, and the one nobody can open
+
+`officeparser` has been a dependency since the PowerPoint branch was written, and **its own
+refusal sentence names everything it reads**: *"OfficeParser currently supports docx, pptx, xlsx,
+odt, odp, ods, pdf, rtf, md, html, csv files only"*. B2 read that sentence while proving `.ppt`
+could never be read. B4 collects the six nobody was using — no dependency, no converter, no
+service, a branch and a fixture each.
+
+| File | What it is | How it was made |
+|---|---|---|
+| `spill-response.odt` | a real OpenDocument Text — a caustic soda spill procedure | `textutil -convert odt src.txt -output spill-response.odt` |
+| `shift-memo.rtf` | Rich Text Format, version 1 | `textutil -convert rtf` |
+| `permit-lookup.html` | an HTML document, as a page saved from a browser | `textutil -convert html`. **1,432 characters of markup; the reading is 612 characters of words with no tag in them** |
+| `inspection-notes.md` | Markdown — which is to say, text | the same source file, copied |
+| `fit-test-register.ods` | a real OpenDocument **Spreadsheet**: a respirator fit-test register, four rows | built by hand with `zip`. `textutil` writes `odt` and nothing else of the family, and there is no LibreOffice here. An ODF file is a zip whose FIRST member must be `mimetype`, **stored, not deflated** — `zip -X -0` writes exactly that, then `zip -X -r` adds `META-INF/manifest.xml` and `content.xml`. `file` reads both back correctly |
+| `hazcom-refresher.odp` | a real OpenDocument **Presentation**, two slides | the same way, with a presentation body |
+| `truncated-procedure.odt` | a zip header with nothing behind it | `node`. officeparser answers `invalid zip data`, so this lands `could_not_open` |
+| `empty-notes.md` | **nothing at all, zero bytes** | `Buffer.alloc(0)`. **This is the one worth having**: a corrupt ODF *throws* and is caught, but an empty `.md` or `.html` and a truncated `.rtf` come back with no text and NO ERROR. Sending the model an empty text block is asking it to read a document nobody gave it |
+| **`deq-permit-locked.pdf`** | **a genuinely password-protected PDF** — `/Filter /Standard /V 1 /R 2`, RC4 40-bit, user password `drums2026` | **`make-encrypted-pdf.mjs`, committed beside it.** Nothing on this laptop makes one: no `qpdf`, no `pdftk`, no LibreOffice, and `textutil` does not write PDF at all. So it is built from the specification — Algorithm 2 for the file key, 3 for `/O`, 4 for `/U`, RC4 implemented in fifteen lines because OpenSSL 3 no longer offers it. **It is the only fixture here that cannot be remade with one command, which is why its recipe is in the repository rather than in this table** |
+
+**How the password is detected, and it is not by reading the bytes.** officeparser parses PDFs
+with pdfjs, which raises **`No password given`** for a file whose trailer carries an `/Encrypt`
+dictionary. `lib/documentContent.ts` already ran that parse for every PDF — to get the text the
+quote check compares against — and threw the answer away into a `console.warn`. B4 reads the
+verdict instead. Proved by running it before changing anything: the parser returned `ok: true`,
+one `document` block of **1,420 base64 bytes** and `text: ''`, while the log said
+*"pdf text extraction failed … No password given"*. **The money was spent on a document nobody
+could open.**

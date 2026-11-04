@@ -73,6 +73,13 @@ export const READABLE_EXTENSIONS = [
   // (one image block per page), `bmp` through `bmp-ts` — because sharp's prebuilt libvips
   // can decode neither HEIC nor BMP, which was settled by running it and not by reading.
   'heic', 'heif', 'tif', 'tiff', 'bmp',
+  // *** B4 ADDED THESE SIX AND THEY COST NOTHING — 3 November 2026. ***
+  // `officeparser` was already a dependency, already imported by `lib/documentContent.ts`, and
+  // its own refusal sentence names them: *"OfficeParser currently supports docx, pptx, xlsx,
+  // odt, odp, ods, pdf, rtf, md, html, csv files only"*. B2 read that sentence while proving
+  // `.ppt` could never be read and recorded the six as free; this is collecting them. No new
+  // dependency, no converter, no service — a branch and a fixture each.
+  'odt', 'ods', 'odp', 'rtf', 'md', 'html',
 ] as const
 
 /**
@@ -94,6 +101,11 @@ export const READABLE_MEDIA_TYPES = [
   'text/csv', 'text/plain',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // The six B4 added. `text/markdown` and `text/html` are the two a browser actually sends.
+  'application/vnd.oasis.opendocument.text',
+  'application/vnd.oasis.opendocument.spreadsheet',
+  'application/vnd.oasis.opendocument.presentation',
+  'application/rtf', 'text/rtf', 'text/markdown', 'text/html',
 ] as const
 
 /** What a file picker's `accept` attribute gets. Built from the list so it cannot fall behind it. */
@@ -102,8 +114,8 @@ export const ACCEPTED_FILE_TYPES = READABLE_EXTENSIONS.map((e) => `.${e}`).join(
 /** Prose version, for telling a user what they may upload. Kept next to the list so the
  *  two cannot drift. Named formats rather than "images", because "images" is what promised HEIC. */
 export const ACCEPTED_FILE_TYPES_PROSE =
-  'PDFs, photos (including iPhone HEIC), scans (TIFF, BMP), Excel, CSV, text, Word (.docx) and '
-  + 'PowerPoint (.pptx) files'
+  'PDFs, photos (including iPhone HEIC), scans (TIFF, BMP), Excel, CSV, text, Markdown, web '
+  + 'pages, Word (.docx), PowerPoint (.pptx), RTF and OpenDocument (.odt, .ods, .odp) files'
 
 /**
  * *** THE SENTENCES. The owner reads these; they are the words a customer sees. ***
@@ -142,6 +154,23 @@ export const REFUSAL_WORDS: Record<string, string> = {
  * and the decoder has no scaled mode. A 48-megapixel phone passes; a stitched panorama is told
  * why, which is better than a function that dies without a word.
  */
+/**
+ * *** A PASSWORD-PROTECTED PDF — B4, 3 November 2026. ***
+ *
+ * Before B4 this file went to the model **whole and base64'd**, and the money was spent on a
+ * document nobody could open. Proved by running it: `parseDocumentToBlocks` returned
+ * `ok: true`, one `document` block of 1,420 base64 bytes and `text: ''`, while the server log
+ * said `pdf text extraction failed … [OfficeParser]: No password given`. **The library already
+ * knew**, and `pdfText`'s catch threw the answer away into a warning.
+ *
+ * The sentence says what to do in the two applications somebody actually has. It does NOT say
+ * "send us the password": we do not want it, and a product that asks for one is teaching a habit
+ * that will cost somebody their records one day.
+ */
+export const PDF_LOCKED_WORDS =
+  'This PDF is password-protected, so we cannot open it. Remove the password — in Preview or '
+  + 'Acrobat, save a copy without it — and add it again.'
+
 export const IMAGE_FALLBACK_WORDS = {
   couldNotOpen: 'This photo could not be opened. Share it as JPEG and add it again.',
   tooBig: (megapixels: number): string =>

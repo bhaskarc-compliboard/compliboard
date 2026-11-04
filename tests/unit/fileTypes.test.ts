@@ -61,14 +61,26 @@ function imageKeys(src: string): string[] {
   return [...m![1].matchAll(/(\w+):\s*'image\//g)].map((x) => x[1])
 }
 
+/** The `OFFICE_TEXT` map's keys — B4's six, which are keyed by a map rather than by an `if`. */
+function officeKeys(src: string): string[] {
+  const m = src.match(/const OFFICE_TEXT: Record<string, \{[^}]*\}> = \{([\s\S]*?)\n\}/)
+  assert.ok(m, 'OFFICE_TEXT is still a literal map in the reader')
+  return [...m![1].matchAll(/^\s{2}(\w+):\s*\{\s*hint:/gm)].map((x) => x[1])
+}
+
 /**
- * Which extensions the reader will actually claim, read off its own source: the ones named in a
- * branch condition, plus every key of `IMAGE_TYPES` (the image branch is keyed by the map).
+ * *** WHICH EXTENSIONS THE READER WILL ACTUALLY CLAIM, read off its own source. ***
+ *
+ * THREE mechanisms, and that is the thing this function exists to keep honest: an `ext === '…'`
+ * in a branch condition, a key of `IMAGE_TYPES` (the image branch is keyed by the map), and —
+ * since B4 — a key of `OFFICE_TEXT`. **A fourth mechanism added without teaching this function
+ * about it makes the guard pass while the drift it watches for happens**, so adding one means
+ * editing here, which is the point of reading the source rather than a list.
  */
 function extensionsTheReaderClaims(src: string): Set<string> {
   const block = branchBlock(src)
   const named = [...block.matchAll(/ext === '([a-z0-9]+)'/g)].map((m) => m[1])
-  return new Set([...named, ...imageKeys(src)])
+  return new Set([...named, ...imageKeys(src), ...officeKeys(src)])
 }
 
 describe('the accepted list IS the reader’s branches (B1)', () => {
@@ -104,7 +116,8 @@ describe('the accepted list IS the reader’s branches (B1)', () => {
     // Edited by B2: the five image types it converts are now offered. `image/*` stays gone — it is
     // a wildcard that promises every format there will ever be, and the list is twelve plus five.
     assert.equal(ACCEPTED_FILE_TYPES,
-      '.pdf,.jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.txt,.docx,.pptx,.heic,.heif,.tif,.tiff,.bmp')
+      '.pdf,.jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.txt,.docx,.pptx,.heic,.heif,.tif,.tiff,'
+      + '.bmp,.odt,.ods,.odp,.rtf,.md,.html')
     assert.ok(!ACCEPTED_FILE_TYPES.includes('image/*'))
     assert.ok(!ACCEPTED_FILE_TYPES.includes('.doc,') && !ACCEPTED_FILE_TYPES.endsWith('.doc'))
     assert.ok(!ACCEPTED_FILE_TYPES.includes('.ppt,') && !ACCEPTED_FILE_TYPES.endsWith('.ppt'))
@@ -112,7 +125,10 @@ describe('the accepted list IS the reader’s branches (B1)', () => {
     // B2 changed it: it may say "photos" again now, because the product reads the photo formats
     // the word covers. HEIC and the scans are named, because a person with an iPhone photo or a
     // scanner's TIFF should be able to see that it is welcome without trying it.
-    for (const word of ['PDF', 'HEIC', 'TIFF', 'BMP', 'Excel', 'CSV', '.docx', '.pptx']) {
+    for (const word of ['PDF', 'HEIC', 'TIFF', 'BMP', 'Excel', 'CSV', '.docx', '.pptx',
+      // B4's six: the prose names them because somebody holding an .odt should be able to see it
+      // is welcome without trying it and finding out.
+      'Markdown', 'web pages', 'RTF', '.odt', '.ods', '.odp']) {
       assert.ok(ACCEPTED_FILE_TYPES_PROSE.includes(word), `the prose names ${word}`)
     }
   })

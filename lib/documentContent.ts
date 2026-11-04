@@ -2,8 +2,8 @@ import * as XLSX from 'xlsx'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
 import {
-  ACCEPTED_FILE_TYPES_PROSE, COULD_NOT_OPEN_WORDS, IMAGE_FALLBACK_WORDS, READABLE_EXTENSIONS,
-  extensionOf, refusalFor,
+  ACCEPTED_FILE_TYPES_PROSE, COULD_NOT_OPEN_WORDS, IMAGE_FALLBACK_WORDS, PDF_LOCKED_WORDS,
+  READABLE_EXTENSIONS, extensionOf, refusalFor,
 } from './acceptedFiles.ts'
 import { ImageTooLargeError, convertImage } from './imageConvert.ts'
 
@@ -134,6 +134,43 @@ const IMAGE_TYPES: Record<string, string> = {
 const IMAGE_MEDIA = new Set(Object.values(IMAGE_TYPES))
 
 /**
+ * *** THE SIX FORMATS THAT WERE ALREADY FREE — B4, 3 November 2026. ***
+ *
+ * `officeparser` has been a dependency since the PowerPoint branch was written, and its own
+ * refusal sentence names everything it reads: *"OfficeParser currently supports docx, pptx,
+ * xlsx, odt, odp, ods, pdf, rtf, md, html, csv files only"*. B2 read that sentence while proving
+ * `.ppt` could never be read, and recorded the six nobody was using. This is collecting them —
+ * no dependency, no converter, no service.
+ *
+ * *** THE HINT IS PASSED FOR ALL SIX, AND FOR TWO OF THEM IT IS NOT OPTIONAL. ***
+ * officeparser's own documentation: *"Formats like `md`, `html`, and `csv` have no magic bytes,
+ * so the parser cannot auto-detect them from a buffer. You MUST provide `fileType`."* Measured on
+ * 3 November: `.odt`, `.ods`, `.odp` and `.rtf` auto-detect, `.md` and `.html` throw
+ * *"Auto-detection of file type from buffer failed"*. The hint is passed for all six anyway,
+ * because `pdfText`'s own comment records that auto-detection **does not survive the server
+ * build** — a call that works in a plain `node` script throws inside a route.
+ *
+ * **`.html` becomes its TEXT, not its tags.** `parseOffice` builds an AST of the document and
+ * `toText()` walks the nodes; measured on a page saved from a browser, 1,432 characters of
+ * markup came back as 612 characters of words with no tag left in them.
+ */
+const OFFICE_TEXT: Record<string, { hint: string; media: readonly string[] }> = {
+  odt: { hint: 'odt', media: ['application/vnd.oasis.opendocument.text'] },
+  ods: { hint: 'ods', media: ['application/vnd.oasis.opendocument.spreadsheet'] },
+  odp: { hint: 'odp', media: ['application/vnd.oasis.opendocument.presentation'] },
+  rtf: { hint: 'rtf', media: ['application/rtf', 'text/rtf'] },
+  md: { hint: 'md', media: ['text/markdown'] },
+  html: { hint: 'html', media: ['text/html'] },
+}
+
+/** Which of the six a file is, by extension or by media type. `null` for everything else. */
+function officeTextKind(ext: string, type: string): string | null {
+  if (OFFICE_TEXT[ext]) return ext
+  for (const [k, v] of Object.entries(OFFICE_TEXT)) if (v.media.includes(type)) return k
+  return null
+}
+
+/**
  * *** `extensionOf` LIVES IN `lib/acceptedFiles.ts` NOW AND IS RE-EXPORTED HERE. ***
  * It is re-exported rather than moved because `lib/handbookRead.ts:23` imports it from this file,
  * and because the alternative — a second copy — is the drift B1 is about. The refusal rule needs
@@ -180,7 +217,7 @@ export function describeCouldNotOpen(name: string, ext: string, e: unknown): Doc
  * that writes glyphs with no text layer. In every one of those the document still goes to the
  * model whole and is read; only the quote check goes quiet, which is what it did before.
  */
-async function pdfText(nodeBuffer: Buffer): Promise<string> {
+async function pdfText(nodeBuffer: Buffer): Promise<{ text: string; locked: boolean }> {
   try {
     // *** THE `fileType` HINT IS NOT OPTIONAL HERE, AND LEAVING IT OUT FAILS ONLY IN NEXT. ***
     // officeparser sniffs the format from the buffer's magic bytes using a detection library the
@@ -200,11 +237,32 @@ async function pdfText(nodeBuffer: Buffer): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out = await (officeParser as any).parseOffice(nodeBuffer, { fileType: 'pdf' })
     const text = typeof out === 'string' ? out : String(out?.toText?.() ?? '')
-    return text.trim() ? text : ''
+    return { text: text.trim() ? text : '', locked: false }
   } catch (e) {
-    console.warn('pdf text extraction failed; quotes on this document cannot be checked:',
-      e instanceof Error ? e.message : e)
-    return ''
+    /**
+     * *** ONE OF THESE FAILURES IS NOT LIKE THE OTHERS — B4, 3 November 2026. ***
+     *
+     * The comment above lists three cases that legitimately yield no text and are not failures.
+     * A PASSWORD is a fourth and it IS one: the file cannot be opened by anybody without the
+     * password, including the model, and until B4 this catch turned that into `''` and the PDF
+     * went to the model base64'd and whole. **The money was spent on a document nobody could
+     * open**, and the only trace was this warning.
+     *
+     * The verdict is the library's own words and not a guess at the file's bytes: pdfjs, which
+     * officeparser parses PDFs with, raises `No password given` for a file whose trailer carries
+     * an `/Encrypt` dictionary. Matched on the message because officeparser wraps the error and
+     * exposes no code — written down because it is a string match on somebody else's library,
+     * which is a thing to re-check when officeparser is upgraded. A wrong NEGATIVE here is the
+     * old behaviour and costs a call; a wrong POSITIVE would refuse a readable file, so the
+     * match is narrow on purpose.
+     */
+    const message = e instanceof Error ? e.message : String(e)
+    if (/password/i.test(message)) {
+      console.warn('pdf is password-protected; it will not be sent to the model:', message)
+      return { text: '', locked: true }
+    }
+    console.warn('pdf text extraction failed; quotes on this document cannot be checked:', message)
+    return { text: '', locked: false }
   }
 }
 
@@ -244,7 +302,12 @@ export async function parseDocumentToBlocks(
    */
   const isPDF = type === 'application/pdf' || ext === 'pdf'
   const imageMedia = IMAGE_TYPES[ext] ?? (IMAGE_MEDIA.has(type) ? type : undefined)
-  const isExcel = type.includes('spreadsheet') || type.includes('excel') || ext === 'xlsx' || ext === 'xls'
+  // *** `spreadsheetml`, NOT `spreadsheet` — narrowed by B4. *** An ODS's media type is
+  // `application/vnd.oasis.opendocument.spreadsheet`, which CONTAINS the word "spreadsheet", so
+  // the old test claimed every `.ods` and handed it to `XLSX.read`. Same shape as the `.doc` and
+  // `.ppt` claims B1 removed: a branch that claims a file it does not read is how the sentence
+  // written for that file becomes unreachable.
+  const isExcel = type.includes('spreadsheetml') || type.includes('excel') || ext === 'xlsx' || ext === 'xls'
   const isCSV = type === 'text/csv' || ext === 'csv'
   // text/plain is NEW — it existed in no copy of this branching before 11 Sep, which is
   // why a .txt reached the model as a filename and nothing else.
@@ -255,14 +318,24 @@ export async function parseDocumentToBlocks(
   // PDF and image go to the model as native blocks — it reads them better than any text
   // extraction would, including layout and scanned pages.
   if (isPDF) {
+    // *** THE TEXT PASS NOW RUNS FIRST AND CAN STOP THE READING — B4. ***
+    // It already ran for every PDF; the only change is that its verdict is read. A locked file
+    // is the one case where "no text" means "nobody can open this", and sending it to the model
+    // anyway costs a full call on a document that will come back as nothing.
+    const pdf = await pdfText(nodeBuffer)
+    if (pdf.locked) {
+      return { ok: false, failure: {
+        name: fileName, reason: 'could_not_open', extension: ext, message: PDF_LOCKED_WORDS,
+      } }
+    }
     return {
       ok: true, kind: 'pdf',
       blocks: [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: nodeBuffer.toString('base64') } }],
-      // Extraction NEVER decides whether the file can be read. A PDF we cannot pull text out of
-      // is still a PDF the model reads perfectly well, so a throw here returns '' and the file
-      // goes on exactly as before — the only thing lost is the quote check, which is what was
-      // being lost anyway. `officeparser` is already a dependency of this module.
-      text: await pdfText(nodeBuffer),
+      // Extraction NEVER decides whether the file can be read — EXCEPT for a password, above.
+      // A PDF we cannot pull text out of is still a PDF the model reads perfectly well, so a
+      // throw here returns '' and the file goes on exactly as before; the only thing lost is the
+      // quote check, which is what was being lost anyway. `officeparser` is already a dependency.
+      text: pdf.text,
     }
   }
   if (imageMedia) {
@@ -372,6 +445,37 @@ export async function parseDocumentToBlocks(
       return { ok: false, failure: describeCouldNotOpen(fileName, ext, e) }
     }
     return { ok: true, kind: 'powerpoint', blocks: [{ type: 'text', text }], text }
+  }
+
+  /**
+   * *** THE SIX OFFICEPARSER ALREADY READ — B4. ***
+   * One branch, one call, one shape: the words of the document as a text block, exactly as the
+   * Word and PowerPoint branches above return theirs. The `kind` is `text` because that is what
+   * reaches the model — an `.ods` is a spreadsheet to a person and a page of words to a reading.
+   */
+  const officeKind = officeTextKind(ext, type)
+  if (officeKind) {
+    let text: string
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ast = await (officeParser as any).parseOffice(nodeBuffer, { fileType: OFFICE_TEXT[officeKind].hint })
+      text = typeof ast === 'string' ? ast : String(ast?.toText?.() ?? '')
+    } catch (e) {
+      return { ok: false, failure: describeCouldNotOpen(fileName, ext, e) }
+    }
+    /**
+     * *** AN EMPTY PARSE IS A FAILURE HERE, AND IT IS NOT ELSEWHERE. ***
+     * Measured on 3 November: a corrupt `.odt`, `.ods` or `.odp` THROWS (`invalid zip data`) and
+     * is caught above, but an empty `.md` or `.html` and a truncated `.rtf` come back with no
+     * text and no error at all. Sending an empty text block to the model is asking it to read a
+     * document nobody gave it, and whatever it answers will be about nothing — §3.3's failure
+     * exactly. The other branches are left alone: changing what a `.docx` with no words does is
+     * not B4's to do, and is recorded rather than taken.
+     */
+    if (!text.trim()) {
+      return { ok: false, failure: describeCouldNotOpen(fileName, ext, 'the file holds no text') }
+    }
+    return { ok: true, kind: 'text', blocks: [{ type: 'text', text }], text }
   }
 
   /**

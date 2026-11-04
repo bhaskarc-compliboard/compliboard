@@ -433,7 +433,21 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   API refused the request, because the conversion happened either way; saveScan stores it after
 //   the status so a slow upload cannot leave a row saying "Reading…"; and "Open the file" hands
 //   over the copy when there is one, because a HEIC downloads and shows nothing on Windows.
-const FLOOR = 2395
+//
+// 2395 -> 2414, 3 November 2026 (GAPS-PLAN Part B step B4, decision 54). NINETEEN in
+//   tests/unit/officeFormats.test.ts, and NOT ONE of them needed a new dependency. officeparser
+//   has been installed since the PowerPoint branch was written and its own refusal sentence names
+//   everything it reads - docx, pptx, xlsx, odt, odp, ods, pdf, rtf, md, html, csv - so six
+//   formats were sitting there unused while VISION-DOCUMENTS.md planned converters for them. B2
+//   found that sentence while proving .ppt could never be read; B4 collects what it named.
+//
+//   The two that matter in a year: an EMPTY .md or .html throws nothing at all and is still a
+//   failure, because sending the model an empty text block is asking it to read a document
+//   nobody gave it; and a PASSWORD-PROTECTED PDF is refused before the model call. That second
+//   one was costing a full call on a file nobody could open - proved by running it, the parser
+//   returned ok:true with 1,420 base64 bytes and text:'' while the log said "No password given".
+//   The library already knew and the catch threw the answer away.
+const FLOOR = 2414
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
