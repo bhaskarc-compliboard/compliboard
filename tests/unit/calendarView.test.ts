@@ -574,7 +574,15 @@ describe('the drawer\'s second tab', () => {
   })
   test('the date\'s drawer is hidden under it, as Audits hides the audit under a document', () => {
     assert.match(PAGE, /className=\{report \|\| openDocId \? 'hidden' : ''\}/)
-    assert.match(readFileSync('app/audits/page.tsx', 'utf8'), /className=\{openDoc \? 'hidden' : ''\}/)
+    /**
+     * *** THE SPELLING MOVED ON 4 NOVEMBER AND THE CLAIM DID NOT — E1, decision 55. ***
+     * The audit report is a PAGE on `/audits` now, so its wrapper carries the page's own layout
+     * classes as well as the hide: `` `${openDoc ? 'hidden' : ''} mx-auto …` ``. The rule this
+     * test is about is unchanged and is still the point — a document's reading is the ONE drawer
+     * over the report, and the report is HIDDEN under it rather than unmounted, so going back
+     * returns to it at the same scroll position.
+     */
+    assert.match(readFileSync('app/audits/page.tsx', 'utf8'), /\$\{openDoc \? 'hidden' : ''\}/)
   })
   test('the tab row travels with the report, so "The date" is still one click', () => {
     assert.match(PAGE, /topLine=\{<ReportTabs onBack=\{\(\) => setReport\(null\)\} second=/)
@@ -589,8 +597,22 @@ describe('the drawer\'s second tab', () => {
   test('AuditReport gained topLine additively, and Audits passes none', () => {
     const audit = readFileSync('components/AuditReport.tsx', 'utf8')
     assert.match(audit, /topLine\?: React\.ReactNode/)
-    assert.equal((audit.match(/topLine=\{topLine\}/g) ?? []).length, 2,
-      "both of the report's own drawers take it")
+    /**
+     * *** ONE SHELL SINCE E1, SO ONE `topLine=` — 4 November 2026, decision 55. ***
+     *
+     * This counted TWO because the report had two `<Drawer>` elements, one per branch. It has one
+     * `<Shell>` now, which renders either a `<Drawer>` or a page depending on `chrome`, and both
+     * branches pass through it — so the slot reaches the Calendar exactly as before, from one
+     * place instead of two. That is strictly better for what this test is protecting: a slot
+     * written once cannot be added to one branch and forgotten on the other.
+     */
+    // Five: the two reports, the error and the loading states — all through the one Shell — and
+    // the Shell handing it on to the Drawer. A slot written once cannot be forgotten on a branch.
+    assert.equal((audit.match(/topLine=\{topLine\}/g) ?? []).length, 5,
+      'every return passes the slot to the one Shell, and the Shell hands it to the Drawer')
+    assert.match(audit, /chrome\?: 'page' \| 'drawer'/)
+    // And the Calendar still gets a DRAWER: the default, so that page needs no change at all.
+    assert.ok(!PAGE.includes('chrome='), 'the Calendar must take the drawer by default')
     // Scoped to the element itself: a looser search matched `topLine` further down the file,
     // on the DocumentReport that Audits DOES pass one to — a false positive of my own making.
     const audits = readFileSync('app/audits/page.tsx', 'utf8')

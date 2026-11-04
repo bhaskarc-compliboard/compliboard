@@ -32,11 +32,9 @@
   ],
   "functions": {
     "app/api/jobs/scan-documents/route.ts": {
-      "memory": 2048,
       "maxDuration": 800
     },
     "app/api/document-scan/route.ts": {
-      "memory": 2048,
       "maxDuration": 800
     }
   }

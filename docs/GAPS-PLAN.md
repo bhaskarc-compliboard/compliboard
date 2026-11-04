@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 20 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 21 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -20,6 +20,7 @@
 **Updated:** 4 November 2026 — **PART E STEP E0 DONE: the audit's words (decisions 47–49, 55–60 and W5).** **The audit has five words.** `on_file_gaps` — *"On file, gaps found"* — means a document answers the line AND what the document itself shows does not meet it in full; the four old words keep their meanings exactly. **The defect was never a wrong answer:** `prompts/audit-agency.ts` told the model *"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART"*, so four greens over four lists of gaps were the only honest thing it could say. **Measured, the owner's own checklist run on two trees on Haiku: 5 of 10 lines moved from `on_file` to `on_file_gaps` — A3, B2, B3 and B4 are exactly the four W4 named — and the run's sentence went from "4 things that need you" to "9 things that need you".** `documents_read` **12 → 11** (decision 49: a template run no longer reads its own template, excluded from BOTH lists); **handles at the person 1 → 0** (W5: `nameDocumentHandles` at save time, on `title`, `locator` and `what_to_do` and **never on `quote`**, tested on the six real leaking lines). **Decision 48 lives in the VIEW** — migration **093**, because *"the status the document would otherwise have"* is the six CASE arms underneath and only SQL can compute them — with `inferred_gap_count` appended last, since `calendar_v` depends on that view; migration **094** restates `audit_findings_word_check` whole. Both applied to staging and read back from the catalog. **It moves exactly one row on all of staging** (17 of 18 `gaps_found` scans have a gap read from the page) and nothing at all on the Clackamas company. `npm run check` exit 0, **2,460 tests**, floor 2414 → 2460; **46 new**. **Three things found and NOT fixed, because each needs one prompt sentence and that is the owner's (§3.1):** a permit expiring in 2028 now reads *"out of date"* (stable over two runs), the same pull puts the fifth word on a practice question, and one golden key is now out of date rather than wrong. §8 has all nine findings with their evidence. **E0 spent $0.9710 over 30 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0a DONE: the three sentences E0 found and did not make.** All three in, and the measurement says **two of three worked.** ⚡ **E0's own diagnosis was wrong, and that is the finding worth keeping:** `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]` and **never includes `SHAPE`**, so E0 named a sentence the model had never been shown as the cause of its own defect. Every rule about the five words has to be written **twice**; both shapes now carry both sentences, the file says so at `prompts/audit-agency.ts:303`–`:317`, and the test counts the copies. **The "out of date" regression is closed** — A1 is no longer `stale` in either run — but it lands on **`on_file`** with `what_to_do: null`, not `on_file_gaps`: whether *"with the renewal application due date noted"* is being under-read is a question about the line, not the word. **`cascade-template-12` 12/17 → 14/17 must**: the widened A5 key passes and C2 and C3 moved, **C1 — the line sentence (2) names — did not**. ⚡ **And the run found something neither of us was looking for: 3 of 6 sections were lost to broken JSON**, every one the same shape on the same line — two quotes joined with `and` inside one `"quote"` field, on B2, which is the fifth word's own two-shortfall case. The product says so honestly and throws a paid section away. Not fixed: a repair in `extractJsonText` or a prompt line about one quote per line are both §3.1. **E0a spent $0.2846 over 12 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0c DONE: one quote per finding** (the owner's brief called it E0b; `E0b` was already the boards row, so it is **E0c** in §5a). One sentence, in **both** shapes, counted by the test — *"One quote per finding. If two things in the document fall short, quote the one the word rests on and put the other in what_to_do, in your own words — never two quotes joined inside the quote field."* **It answers E0a's finding 4: 0 of 3 sections lost, from 3 of 6**, with `status = 'done'` and **`json_parsed = true`** read back from `audit_sections` on all three, and the regular expression that found every earlier failure matching nothing. **B2 — the line every failure happened on — now carries ONE quote**, the one the word rests on, and names the second operator in `what_to_do` in its own words; nothing was lost by quoting once. One run is not a proof and the finish line still counts it on Opus. **E0c spent $0.0824 over 4 Haiku calls.**
+**Updated:** 4 November 2026 — **PART E STEP E1 DONE: the audit report is a PAGE** (decisions 50 and 55–60). Full width at **`/audits?run=<id>`** — the same address the email, the Dashboard, the report's own links and every bookmark already send, so **nothing was redirected and the 20 October hotfix is untouched**. `AuditReport` is **one body with two wrappers** (`chrome: 'page' | 'drawer'`), so the **Calendar is unchanged** and keeps its drawer by default. **Four tabs** (Ask a question · Conversations · Agency audits · Auditor checklists), with `audits` keeping its key so every old link lands where it did; **By template left the agency tab** and is board 3's card — one card per checklist, a table of its runs in fixed columns, *"since last run"* from `closed_count`, and **"Audit again against this checklist"**, which step 6b left off until the row could say whether the file still exists. It can. **The auditor's line is whole** (decision 58, W9 closed) — it was stored whole all along and the ellipsis was a `truncate` class — in three fixed, left-aligned columns, with a **ten-cell strip** on template runs only. **Three things would have failed silently:** the report inside `.print-page` prints a BLANK SHEET; `visibleDrawer()` read `aside.print-drawer` and the page is a `<section>`, so a print would have carried no company and no type; and **`template_lines` has been declared and never selected since step 6b**, so the line count has been missing from that row since the day it was written. **The agency rows: 0 differing pixels.** `npm run check` exit 0, **2,487 tests**, floor 2461 → 2487. **$0.0046.** Also in this step: `vercel.json`'s `functions.memory` **removed** — Fluid compute is on and Vercel was ignoring it — and `docs/RELEASE.md` now carries the truth, read from the dashboard: **Fluid compute on, Function CPU Standard, 1 vCPU and 2 GB for every function**, with the line that says the photo reading breaks first if that dial is ever lowered.
 **Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
 
 ---
@@ -424,7 +425,7 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 | E0a | **THE THREE SENTENCES E0 FOUND AND DID NOT MAKE** (the owner, 4 November) — the stale tie-break, the practice-question clause, and `cascade-template-12` A5's key | `prompts/audit-agency.ts` **in BOTH shapes**: `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]` and never sees `SHAPE`, so every rule about the five words has to be written twice — **E0 did not know that and named a sentence the model had never been shown as the cause of its own defect** · `tests/golden/audits/cases/cascade-template-12.json` A5 · `tests/unit/auditWords.test.ts` counts both copies | `prompts/audit-agency.ts`, one golden case, one test | **done 4 Nov** — **the "out of date" regression is closed** (A1 no longer stale, two runs), `cascade-template-12` **12/17 → 14/17 must**; but A1 lands on `on_file`, not `on_file_gaps`, C1 did not move, and **3 of 6 sections were lost to broken JSON**. §8 has all three |
 | E0c | **ONE QUOTE PER FINDING** (the owner, 4 November) — the sentence that answers E0a's broken JSON. **The owner's brief called this E0b; that id was already taken by the boards row below, so it is E0c here and nowhere else.** | `prompts/audit-agency.ts` **in both shapes**, counted by `tests/unit/auditWords.test.ts` | `prompts/audit-agency.ts`, one test | **done 4 Nov** — **0 of 3 sections lost**, from 3 of 6; `json_parsed = true` on all three, read back from `audit_sections`. B2 now carries **one** quote and puts the second operator in `what_to_do` in its own words |
 | E0b | The boards for E1 | `docs/audit-report-boards.html`, four boards in the Calendar boards' frame | — | **done 4 Nov** — the owner's, drawn on his own run; committed with E0. §4 records what each board is for |
-| E1 | **The audit report's display and print** — the row body, the drawer sub-item, the print (W9), **in the auditor's own order and numbering** (decision 50: one row per checklist line, never regrouped, an unanswered line still a row) | `components/AuditReport.tsx` (1,000+ lines: the pills at `:103`–`:111`, `AMBER_WORD` `:109`, `WORD_ORDER` `:111`, the filter chips `:702`–`:704`, the footer `:673`), `components/Drawer.tsx`, `app/audits/page.tsx`'s own rows (`:107`–`:131`, `:147`) | **`app/audits/page.tsx` and `app/calendar/page.tsx`** both render `AuditReport`; `Drawer` is also rendered by `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/DocumentReport.tsx`, `components/ConversationDrawer.tsx` and `components/CalendarDateDrawer.tsx` | not started |
+| E1 | **THE AUDIT REPORT IS A PAGE** (decisions 50, 55–60) — the report full width at `/audits?run=<id>`, the four tabs, the Auditor checklists tab, the print | `components/AuditReport.tsx` — **one body, two wrappers** (`Shell`, `chrome: 'page' \| 'drawer'`); the strip (template runs only); the auditor's line **whole**, in three fixed columns; the open row's **two** labelled parts and **Also noted** · `app/audits/page.tsx` — four tabs, the report in the body **outside `.print-page`**, `ChecklistCards` · `components/Drawer.tsx` — `visibleDrawer()` reads `.print-drawer`, not `aside.print-drawer` · `app/api/audits/index/route.ts` — `template_lines`, declared since 6b and **never selected** | **`app/audits/page.tsx` and `app/calendar/page.tsx`** both render `AuditReport`; the Calendar is **unchanged** and takes the drawer by default | **done 4 Nov** — the agency rows **0 differing pixels**; `npm run check` exit 0, **2,487 tests**, floor 2461 → 2487; walked on Haiku for **$0.0046** |
 
 ### Part C — the binder (`PENDING.md` F4, a release gate) — AFTER E0 and E1
 
@@ -536,6 +537,34 @@ PART"*). *(b)* It does not name `AUDIT_TEMPLATE_JSON_SCHEMA`, which carried the 
 - **W6, as written on 3 November —** Proved: all three sections of run `8707eea9` list **both** copies of the checklist in `documents_read` (`511e8bcd`, the paperclip's, and `40145b5e`, the one that came in with the folder), and two of the ten findings say *"D9 and D10 are blank checklist templates: they list these records as expected but contain no records themselves."* **What the code does today, by line:** `lib/auditRun.ts:407` builds a template run with `buildAuditInput(db, companyId, '*')`; `lib/audit.ts:148`–`:150` makes `carries()` return `true` for every row when the label is `'*'`, so every document in `document_index_v` is packed. **`buildAuditInput`'s signature (`lib/audit.ts:122`–`:124`) is never told the `template_document_id`**, so the exclusion cannot be written without a new argument. Two questions, both the owner's: *(a)* should a template run exclude its own `template_document_id` from `documents_read`? *(b)* should an attached checklist be filed as a kind that audits skip — the scan already gives it `status = 'not_judged'` and the title *"…, blank template"*, so the signal exists?
 - **W7 — the profile name against the legal name.** **`companies` has no legal-name column.** Read from the live schema: `name`, `about`, `what_you_do`, `naics_code`, `industry`, `state`, `county`, `city` and twenty billing columns — and nothing else that could hold *"Clackamas Blending & Supply LLC"*. The audit gets the name through `buildCompanyContext(db, companyId, { parts: ['company', …] })` at `lib/audit.ts:131`–`:133`. **It is smaller than it looked**: 2 of 10 lines on the first template run, 3 of 10 on the second, 1 of 19 on the agency run — not every line — and the two that do say it are doing the right thing (*"D5 is issued to 'Clackamas Blending & Supply LLC'… while the company profile says Step 20 Card Walk, so confirm how the two are related"*). The question is whether a `legal_name` is owed, or whether this is the test fixture being a test fixture.
 
+### ⚡ TWO LATER PROMPT JOBS, RECORDED AT E1 (the owner, 4 November 2026)
+
+**Both are §3.1 changes to what a prompt asks for, both are small, and both are the difference
+between the boards and what the stored fields can give.** E1 built everything else the boards draw;
+these two are what it could not, and it says so on the page rather than drawing a heading with
+nothing under it.
+
+- **A `what_we_found` field, so the row can carry THREE parts.** Board 1's open row is *What we
+  found · The line we read · What to do*. There is no such column: `what_to_do` carries both, and
+  the live rows prove it — B2's reads *"The roster is dated 1 October 2026 and lists four
+  operators. It shows only two of them… **Have a qualified person evaluate him now.**"* E1 draws
+  **two** labelled parts, because two is what the fields are. The job is one more key in both
+  shapes of `prompts/audit-agency.ts`, one column on `audit_findings`, and `shapeFindings` /
+  `shapeTemplateFindings` writing it. *Effect: `prompts/audit-agency.ts`, one migration,
+  `lib/auditRun.ts`, `components/AuditReport.tsx`.*
+
+- **Split the template's title from its issuer line.** Board 1 draws the checklist's title with the
+  issuer beneath it — *"Northwest Supplier Assurance Program, revision 2026-03"*. The scan writes
+  **one string**: *"Pre-Inspection Audit Checklist for Oregon chemical blending and distribution
+  facilities (Northwest Supplier Assurance Program, revision 2026-03), blank template"*. E1 prints
+  it whole, which is true. The job is a second field on the document scan — the issuer of a
+  checklist, which `document_scans.issuer` already is for other kinds and which the scan prompt
+  does not ask for on a blank template. *Effect: `prompts/document-scan.ts`, `lib/documentScan.ts`,
+  `components/AuditReport.tsx`.*
+
+**Neither blocks Part C.** The binder packages the report in the auditor's order; a third labelled
+part and a split title change what a row prints, not what order the rows are in.
+
 ### Rev 2 — not rev 1, recorded so they are not lost
 
 - **HR and the Compliance Workspace onto the shared engine** (`PENDING.md` F7, decision 36).
@@ -608,6 +637,81 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### ⚡ What Part E step E1 found (4 November 2026) — THE REPORT IS A PAGE
+
+**The owner's words for what E1 is: *the audit is a killer feature and the report is lost in a
+jungle of words*.** It changed how a finished audit is SHOWN and nothing about how it is made — no
+prompt, no stored word, and one model call in the whole step, the extraction the walk's *"Audit
+again against this checklist"* paid for. **$0.0046.**
+
+**1. ⚡ THE REPORT WOULD HAVE PRINTED A BLANK SHEET, AND NOTHING ON SCREEN WOULD HAVE SHOWN IT.**
+`app/globals.css:138` is `body.printing-drawer .print-page { display: none !important }`, and
+`display: none` on an ancestor cannot be undone by a descendant. The report is a page now, and the
+obvious place to render it is inside the page's own container — which is inside `.print-page`. It
+is a **sibling** of that container instead, and `tests/unit/auditPage.test.ts` asserts both the
+sibling relationship **and the CSS rule itself**, so the day somebody tidies it back inside, the
+suite says why they cannot.
+
+**2. A print from the page would have carried no company and no document type.** `visibleDrawer()`
+(`components/Drawer.tsx:37`) read **`aside.print-drawer`**, and the page renders as a `<section>`.
+The running header of a printed compliance page would have been empty on both sides. One selector;
+the ordering rule is unchanged and still right.
+
+**3. ⚡ `template_lines` HAS BEEN DECLARED AND NEVER SELECTED SINCE STEP 6b.**
+`app/audits/page.tsx:83` has carried it with the comment *"the checklist's own sections and lines,
+for the By template row's '16 lines in 3 sections'"* — and
+`app/api/audits/index/route.ts`'s select never named the column. **That row has always said just
+"3 sections".** A select list is a string, which is the whole reason
+`scripts/check-schema-contracts.js` exists; what it cannot catch is a column a caller WANTS and the
+query never asks for. Board 3's card needed it and found it missing: the card now reads
+**"10 lines in 3 sections"**, photographed.
+
+**4. The auditor's line was being truncated by us alone.** Decision 58 says it is carried whole, and
+it is **stored** whole — `template_text` and `title` are identical on all 148 template findings,
+longest **235** characters against caps of 1000 and 2000, none at the cap. The ellipsis was a
+`truncate` class. W9 is closed. The row underneath it, *"the full title, because the line above is
+truncated"*, printed **the same string a second time** and is gone with it.
+
+**5. A wrapped requirement started 37px to the LEFT of its own first line.** The reference was an
+`inline-block` inside the requirement, so the second line wrapped to the REFERENCE's left edge.
+Photographed, then made three cells — word · reference · requirement — all fixed and left-aligned
+(decision 59). A `<button>` is `text-align: center` by default, which centred the second line of a
+long document title **on the print**; that is one `text-left`, also photographed before and after.
+
+**6. The pixel method: the agency rows did not move. 0 differing pixels**, x 300–1200 and y 300–600
+at 1280 wide, with the scrollbar present in both shots. The first comparison said 22,821, and the
+cause is worth writing down: the Agency audits tab is **shorter** now that By template has left it,
+so the page stopped scrolling and the centred container moved 7px right — every glyph re-rasterised
+at a half-pixel offset. **A pixel diff between a page that scrolls and one that does not is not a
+layout comparison.** Re-shot with both scrolling, it is zero.
+
+**7. What the boards ask for that the data cannot give, said on the page rather than drawn.** Board
+1's open row has three labelled parts; `what_to_do` carries two of them, so E1 draws **two**. Board
+1's title has an issuer line; the scan writes **one string**, so E1 prints it whole. Both are
+recorded in §7 as later prompt jobs, with what each would cost. And **Also noted** carries only the
+four things that ARE columns — `basis = 'inferred'`, an unverified quote, a handle that matched no
+document, and a date that is not a finding — because the *"proposed, not confirmed"* asides board 1
+shows are **prose inside `what_to_do`**, measured on the live rows.
+
+**8. No binder control anywhere, hidden rather than greyed** (the owner's call). The precedent is
+the Calendar's own rule, pinned in `tests/unit/calendarView.test.ts`: *"a date with no report HIDES
+the tab rather than disabling it… a greyed tab promises something."* A test asserts the words
+*"Build the binder"* appear nowhere until Part C writes them.
+
+**9. The 6b leftover is answered: "Audit again against this checklist" is on the card.** Step 6b
+left it off and said why — *"a button that fails with 'That file was not found' is worse than no
+button. It waits for the row to say whether the file is still there."* **The row can say**:
+`/api/audits/index` returns `documents` as the whole unfiltered `document_index_v`, so a
+`template_document_id` missing from it is a file that is gone, and the card says so in words
+instead of drawing a control. **No row on staging exercises that branch** — every template run's
+file is still on file — so it is held by a test that reads the source and not by the walk, and that
+is said here rather than implied.
+
+**10. One thing the walk left behind.** *"Audit again against this checklist"* created run
+`b8d09885-3a1a-4199-8fc3-600cdbd6e32d`, which is **queued and will stay queued**: its sections are
+run by the five-minute cron, and nothing picks them up on an isolated server. The card shows it as
+*"Running…"*, which is true. Every audit is kept, so it is not deleted.
 
 ### ⚡ What Part E step E0c found (4 November 2026) — ONE QUOTE PER FINDING, AND THE JSON HOLDS
 
@@ -1138,7 +1242,8 @@ Company *"Step 20 Card Walk"*, `61b26cc0-0d28-411b-b2e4-943189363b08`, on **stag
 
 - **`PENDING.md` S1 says "all four senders". There are six.** Read 3 November: `app/api/feedback/route.ts:11`, `lib/auditNotify.ts:186`, `lib/documentBatch.ts:217` and `lib/handbookCheckNotify.ts:103` each hold a **literal** `'CompliBoard <onboarding@resend.dev>'` and send on production; only `app/api/jobs/calendar-month/route.ts:203` and `app/api/invitations/route.ts:149` refuse there, through `sandboxSenderRefusal` (`lib/email.ts:183`). **So `SANDBOX_FROM` at `lib/email.ts:176` is not "one line to change" — four of the six do not use it.** The row is corrected in Part D above rather than in `PENDING.md`, because the count is the work.
 
-- **W9 — the display findings, recorded as the owner gave them, for Part E.** The agency row's body mixes documents, dates, the findings sentence and the suggestions paragraph in one grey column · the audit drawer's sub-item repeats the requirement text twice and centres the document title · the printed report truncates line titles with an ellipsis · the *"documents this audit read"* list has duplicates — **and W6 explains at least one of them: the checklist is in that list twice, once from the folder and once from the paperclip** · the Documents page needs the same pass · and the summary-report fold from 2 November. **The shape the owner wants** is in §5a Part E's header; the boards come before any code.
+- ~~**W9 — the display findings, recorded as the owner gave them, for Part E.**~~ **CLOSED 4 November 2026 at E1**, item by item: the **ellipsis** is gone (the auditor's line is whole, and it was stored whole all along); the **requirement is no longer printed twice** — on a template finding `template_text` and `title` are the same string, so the "full title" line under the row was a second copy of it; the **centred document title** was a `<button>`'s default `text-align: center` and is one `text-left`, photographed on the print; the agency row's body is the same body but the report it opens is a page; and the *"documents this audit read"* duplicate is **W6's** — the checklist was in the list twice, and decision 49 took the run's own template out of it (12 → 11, E0). **What is NOT closed** is the Documents page's own pass (E4) and the summary-report fold (E2). *The original note follows.*
+- **W9, as written on 3 November —** The agency row's body mixes documents, dates, the findings sentence and the suggestions paragraph in one grey column · the audit drawer's sub-item repeats the requirement text twice and centres the document title · the printed report truncates line titles with an ellipsis · the *"documents this audit read"* list has duplicates — **and W6 explains at least one of them: the checklist is in that list twice, once from the folder and once from the paperclip** · the Documents page needs the same pass · and the summary-report fold from 2 November. **The shape the owner wants** is in §5a Part E's header; the boards come before any code.
 
 ### What step 6's map found (3 November)
 

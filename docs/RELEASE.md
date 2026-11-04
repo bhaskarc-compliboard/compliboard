@@ -1376,35 +1376,44 @@ build time and must exist **before** the push that builds — it does.
 **Nothing fails at build or deploy time in any of these cases** — `getStripe()` is lazy by design.
 
 
-## Function memory — added 3 November 2026 (GAPS-PLAN Part B step B2, decision 53)
+## Function memory — ANSWERED 4 November 2026, by reading the dashboard (GAPS-PLAN Part E step E1)
 
-**`vercel.json` now carries a `functions` block, and it is the first one this project has had.**
-
-```
-"app/api/jobs/scan-documents/route.ts": { "memory": 2048, "maxDuration": 800 }
-"app/api/document-scan/route.ts":       { "memory": 2048, "maxDuration": 800 }
-```
-
-**Why 2048, and why only these two.** B2 reads an iPhone HEIC by decoding it in the function.
-`heic-decode` allocates `width * height * 4` and has no scaled decode, so the memory is the source
-photograph's: a **48-megapixel HEIC measured a peak of 1,036 MB** on 3 November. `lib/imageConvert.ts`
-refuses above **50 megapixels**, so 48 is a size the product deliberately accepts — and a 1 GB
-function would be killed by the very photograph the ceiling lets through. 2048 is the next step up
-and leaves room for the model call's own JSON. **Only the two routes that read documents**, because
-memory is billed per GB-second and the other thirty-odd functions decode nothing.
-
-> ### ⚡ THE OWNER MUST CHECK ONE THING ON THE DASHBOARD, AND THE REPOSITORY CANNOT ANSWER IT.
+> ### ⚡ FLUID COMPUTE IS **ON**. EVERY FUNCTION GETS **1 vCPU AND 2 GB**, SET IN THE DASHBOARD.
 >
-> Vercel's own reference says: *"Memory cannot be set in `vercel.json` with **Fluid compute**
-> enabled. Instead set it in the **Functions** section in your project dashboard sidebar."* Fluid
-> compute is on by default for projects created recently. **So if Fluid is on, the `memory` above is
-> ignored and the real value is whatever the dashboard says** — `maxDuration` is honoured either
-> way.
+> Read from the Vercel project's **Functions** section on **4 November 2026**: **Fluid compute: on ·
+> Function CPU: Standard — 1 vCPU, 2 GB.** It applies to **every** function in the project, not to a
+> named few, and it is a dashboard setting with no representation in this repository.
+
+**So `vercel.json`'s `memory` line is gone, because Vercel was ignoring it.** Vercel's own reference:
+*"Memory cannot be set in `vercel.json` with Fluid compute enabled. Instead set it in the Functions
+section in your project dashboard sidebar."* B2 wrote `"memory": 2048` on the two reading routes on
+3 November and could not confirm it; the answer is that it never did anything. **`maxDuration: 800`
+on those two routes stays and is honoured either way** — that is the half of B2's block that was
+always real.
+
+```
+"app/api/jobs/scan-documents/route.ts": { "maxDuration": 800 }
+"app/api/document-scan/route.ts":       { "maxDuration": 800 }
+```
+
+**The number B2 needed is the number the dashboard already gives.** `heic-decode` allocates
+`width * height * 4` and has no scaled decode, so a photograph's memory is the source photograph's:
+a **48-megapixel HEIC measured a peak of 1,036 MB** on 3 November, and `lib/imageConvert.ts` refuses
+above **50 megapixels** — a size the product deliberately accepts. 2 GB clears it with room for the
+model call's own JSON. B2 asked for 2048 MB and, by a different route, has it.
+
+> ### ⚠ IF THAT DIAL IS EVER LOWERED, THE PHOTO READING IS WHAT BREAKS FIRST.
+>
+> Nothing else in the product allocates anything like a gigabyte. Drop Function CPU below Standard
+> and `/api/document-scan` and the five-minute sweep are killed **by the largest photograph a
+> customer sends**, not by the smallest — so it fails for the person with the best camera, after
+> the upload, and looks like a product that cannot read photographs. `lib/imageConvert.ts`'s
+> `MAX_MEGAPIXELS = 50` is the ceiling that assumes 2 GB; **lower the dial and that constant has to
+> come down with it, in the same change.**
 >
 > This is the same shape as the model variables (`CLAUDE.md` §3.4a): *what a function is allowed to
 > use is a fact about a dashboard, not a fact this codebase contains.* **This file is the
-> authoritative record of what Vercel holds**, so when the owner has read it, the number goes here.
-> Until then the honest statement is: the repository asks for 2048 MB and cannot confirm it got it.
+> authoritative record of what Vercel holds.**
 
 ## D. The checks that wait for live mode
 

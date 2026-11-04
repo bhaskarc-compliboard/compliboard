@@ -106,11 +106,23 @@ describe('the drawer is state, seeded from the address', () => {
       'setParam is reading the router\'s params again, which goes stale')
   })
 
-  test('opening from the Past audits list is unchanged — the same one call', () => {
-    assert.match(CODE, /onClick=\{\(\) => setParam\('run', r\.id\)\}/)
+  test('opening and closing a run is unchanged — the same one call', () => {
+    assert.match(CODE, /onOpen=\{\(id\) => setParam\('run', id\)\}/)
     assert.match(CODE, /onClose=\{\(\) => \{ setParam\('run', null\); setDrawerWord\(null\) \}\}/)
-    // The scrim closes it too, with the same call.
-    assert.equal((CODE.match(/setParam\('run', null\); setDrawerWord\(null\)/g) ?? []).length, 2)
+    /**
+     * *** ONE CALL NOW, NOT TWO — E1, 4 November 2026, decision 55. ***
+     *
+     * The report is a PAGE on `/audits?run=<id>` rather than a drawer, so **there is no scrim to
+     * close it with**: the second copy of this call was the scrim's `onClick`, and a page has no
+     * scrim. `← All audits` in the report's own header is the one way out, and it is the same
+     * call it always was.
+     *
+     * What this test is about has not moved an inch: closing moves the STATE first, so it works
+     * whether or not the router agrees to navigate — the 20 October hotfix, which this change
+     * leaves completely untouched because the address is the same address.
+     */
+    assert.equal((CODE.match(/setParam\('run', null\); setDrawerWord\(null\)/g) ?? []).length, 1)
+    assert.ok(!CODE.includes('bg-gray-900/20'), 'the audit report has no scrim: it is a page')
   })
 })
 

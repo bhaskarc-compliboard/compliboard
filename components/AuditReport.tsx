@@ -19,7 +19,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { Drawer, printDrawer } from '@/components/Drawer'
+import { Drawer, printDrawer, printDate } from '@/components/Drawer'
 import { authHeaders } from '@/lib/supabase'
 
 import type { Banner } from '@/lib/billing'
@@ -148,6 +148,70 @@ const fmt = (iso: string | null | undefined) => {
     : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+/**
+ * *** ONE BODY, TWO WRAPPERS — decision 55, 4 November 2026. ***
+ *
+ * The audit report is a PAGE on `/audits?run=<id>`, full width, with a document's reading as the
+ * ONE drawer over it. The Calendar still opens it as a drawer, because there it is the second tab
+ * of a date's drawer — a drawer SWAPPED for a drawer, not a drawer inside one — and
+ * `tests/unit/calendarView.test.ts` pins that shape deliberately (step 8b).
+ *
+ * So the chrome is a prop and the body is one component. Two renderings of the same report is how
+ * the two would drift into saying different things, which is the mistake `components/Drawer.tsx`'s
+ * own header records about copying a drawer.
+ *
+ * **What differs, and only this:** the page has no scrim, no X and no fixed column; its footer is
+ * a row at the end of the content rather than a sticky bar; and its header is an `<h1>` rather
+ * than the drawer's `<h2>`. The print block, the print type and `printDrawer()` are the drawer's
+ * and the page's alike — `aside.print-drawer` is what `visibleDrawer()` looks for, so the page
+ * carries the same class and the same two data attributes, and Print works from either.
+ */
+function Shell({ chrome, title, sub, children, footer, onClose, company, topLine, printType, printDates }: {
+  chrome: 'page' | 'drawer'
+  title: string; sub?: string; children: React.ReactNode; footer?: React.ReactNode
+  onClose: () => void; company?: string | null
+  printType?: string; printDates?: string; topLine?: React.ReactNode
+}) {
+  if (chrome === 'drawer') {
+    return (
+      <Drawer title={title} sub={sub} onClose={onClose} footer={footer} topLine={topLine}
+        company={company} printType={printType} printDates={printDates}>
+        {children}
+      </Drawer>
+    )
+  }
+  return (
+    /* `print-drawer` and the two data attributes are what `printDrawer()` reads (Drawer.tsx:37).
+       A page that printed without them would print with no company and no type in the frame. */
+    <section className="print-drawer mx-auto w-full max-w-[1000px]"
+      data-print-company={company ?? ''} data-print-type={printType ?? ''}>
+      <div className="hidden print:block mb-5">
+        <p className="font-serif text-[22px] font-semibold leading-tight text-gray-900">{title}</p>
+        <p className="mt-1.5 text-[11px] text-gray-500">
+          {printDates ? `${printDates} · ` : ''}Printed {printDate(new Date())}
+        </p>
+      </div>
+      <div className="no-print">
+        {topLine && <div className="mb-2">{topLine}</div>}
+        {/* ← Back to the list, because a page has no X and the browser's Back is not a control
+            the product offers. It is a text action above the title, the same slot `topLine` is. */}
+        <button onClick={onClose}
+          className="text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
+          ← All audits
+        </button>
+        <h1 className="mt-2 font-serif text-[24px] font-semibold leading-tight text-gray-900">{title}</h1>
+        {sub && <p className="mt-1 text-[12.5px] text-gray-500">{sub}</p>}
+      </div>
+      <div className="mt-4">{children}</div>
+      {footer && (
+        <footer className="no-print mt-8 flex items-center gap-4 border-t border-gray-200 pt-4">
+          {footer}
+        </footer>
+      )}
+    </section>
+  )
+}
+
 function Section_({ title, count, children, open, onToggle }: {
   title: string; count?: number; children: React.ReactNode; open: boolean; onToggle: () => void
 }) {
@@ -200,8 +264,22 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
   const word = f.word
     ? <span className={AMBER_WORD.has(f.word) ? 'text-[var(--amber)]' : 'text-gray-600'}>{WORD[f.word] ?? f.word}</span>
     : <span className="text-[var(--amber)]">no answer</span>
+  /** The asides that are columns, not prose. Everything else stays where the model wrote it. */
+  const noted = [
+    f.basis === 'inferred' ? 'worked out from the document, not stated in it' : '',
+    f.quote === null || f.quote === undefined ? '' :
+      f.quote_verified === false ? 'we could not find that quote in the reading word for word' : '',
+    f.handle_error ? 'the reading named a document we could not match' : '',
+    // NOT `alsoUnder`: it is already on the row itself, where a person sees it without opening
+    // anything. Twice is noise, and the fold is for what has nowhere else to be.
+    f.kind === 'date' && f.due_on
+      ? `a date, not a finding: due ${f.due_on}${f.recurs ? ', and it repeats' : ''}${f.passed ? ' — passed' : ''}`
+      : '',
+  ].filter(Boolean)
   return (
-    <div className={`border-b border-gray-100 last:border-b-0 ${highlight ? 'bg-amber-50/40' : ''} ${
+    /* `id` is what the strip's cell scrolls to — a picture nobody can get to the inside of is a
+       picture they have to take on trust. */
+    <div id={`f-${f.id}`} className={`border-b border-gray-100 last:border-b-0 ${highlight ? 'bg-amber-50/40' : ''} ${
       off ? 'hidden print:block' : ''}`}>
       {/* The whole line is the control. A title that is clickable only on its first few words is a
           control nothing announces (the same note the Audits page carries about its agency rows). */}
@@ -217,8 +295,23 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
             not guessed, and no truncation, because a clipped status word is a worse failure than a
             wide column. */}
         <span className="w-[150px] shrink-0 text-[12px]">{word}</span>
-        <span className="min-w-0 flex-1 truncate text-[14px] text-gray-900" title={f.title}>
-          {f.template_line ? <span className="mr-2 font-medium text-gray-500">{f.template_line}</span> : null}
+        {/* *** THE AUDITOR'S LINE, WHOLE — decision 58, 4 November 2026, and W9. ***
+            This was `truncate`, so a 235-character checklist line ended in an ellipsis and the
+            person had to open the row — or hover — to read the question they had been asked. The
+            line is stored whole (`template_text`, longest 235 against a 1000 cap, measured on
+            staging), so the truncation was ours alone. It wraps now, on screen and on paper.
+            `w-[36px]` on the reference keeps the requirements' left edges in one column down the
+            page, which is decision 59 applied to the one place a list of rows has a prefix. */}
+        {/* *** THE REFERENCE IS ITS OWN CELL, NOT A PREFIX — decision 59, measured. ***
+            It was an `inline-block` inside the requirement, and a wrapped line then started at
+            the REFERENCE's left edge instead of the requirement's: "A1  Current Oregon DEQ Air
+            Contaminant Discharge Permit on site, not expired, with the renewal application due
+            date / noted." — the second line 37px to the left of the first. Photographed before
+            this was changed. Two cells, so a requirement of any length is one block. */}
+        {f.template_line
+          ? <span className="w-[36px] shrink-0 text-[14px] font-medium leading-snug text-gray-500">{f.template_line}</span>
+          : null}
+        <span className="min-w-0 flex-1 text-[14px] leading-snug text-gray-900">
           {f.template_text ?? f.title}
         </span>
         {alsoUnder && (
@@ -234,21 +327,49 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
       </div>
 
       <div className={open ? 'pb-3 pl-5' : 'hidden pb-3 pl-5 print:block'}>
-        {/* The full title, because the line above it is truncated. */}
-        <p className="text-[13px] text-gray-800">{f.template_text ? f.title : null}</p>
-        <p className="text-[12px] text-gray-500">
-          {f.document && (
-            <button onClick={(e) => { e.stopPropagation(); f.document_id && onOpenDoc(f.document_id) }}
-              title={f.document.title}
-              className="cursor-pointer text-gray-600 hover:underline hover:text-gray-900">
-              {f.document.title}
-            </button>
-          )}
-          {f.locator ? <span>{f.document ? ' · ' : ''}{f.locator}</span> : null}
-          {f.basis === 'inferred' && <span className="text-gray-400"> · worked out, not stated</span>}
-        </p>
-        {f.quote && <p className="mt-1 text-[13px] italic text-gray-600">&ldquo;{f.quote}&rdquo;</p>}
-        {f.what_to_do && <p className="mt-1 text-[13px] text-gray-700">{f.what_to_do}</p>}
+        {/*
+          *** TWO LABELLED PARTS, NOT THREE — board 1 asks for three and the data holds two. ***
+          Board 1's open row is *What we found · The line we read · What to do*. There is no
+          `what_we_found` column: `what_to_do` carries BOTH, and the live rows prove it — B2's
+          reads "The roster is dated 1 October 2026 and lists four operators. It shows only two of
+          them… Have a qualified person evaluate him now." Splitting that is a prompt change and a
+          §3.1 decision, recorded in `docs/GAPS-PLAN.md` §7 as a later prompt job. Until then the
+          honest shape is the two parts the fields actually are, and the label says which.
+        */}
+        {(f.document || f.locator || f.quote) && (<>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">The line we read</p>
+          {f.quote && <p className="mt-0.5 font-serif text-[14px] italic leading-relaxed text-gray-700">&ldquo;{f.quote}&rdquo;</p>}
+          <p className="mt-0.5 text-[12px] text-gray-500">
+            {f.document && (
+              /* `text-left` is not decoration: a <button> is `text-align: center` by default, and
+                 a long document title wrapping inside this line printed its SECOND line centred.
+                 Photographed on the print of the Clackamas report before this was fixed. */
+              <button onClick={(e) => { e.stopPropagation(); f.document_id && onOpenDoc(f.document_id) }}
+                title={f.document.title}
+                className="cursor-pointer text-left text-gray-600 hover:underline hover:text-gray-900">
+                {f.document.title}
+              </button>
+            )}
+            {f.locator ? <span>{f.document ? ' · ' : ''}{f.locator}</span> : null}
+          </p>
+        </>)}
+        {f.what_to_do && (<>
+          <p className="mt-2.5 text-[11px] font-medium uppercase tracking-wide text-gray-400">What to do</p>
+          <p className="mt-0.5 text-[13px] leading-relaxed text-gray-700">{f.what_to_do}</p>
+        </>)}
+        {/*
+          *** ALSO NOTED CARRIES ONLY WHAT IS A FIELD. ***
+          Board 1's fold holds the caveats and the "proposed, not confirmed" asides. Measured on
+          the live rows, those are PROSE INSIDE `what_to_do` — "All of these names and addresses
+          were only proposed by the readings; none has been confirmed" is one sentence of A1's
+          what_to_do, not a column. So this fold holds the four things that ARE separable, and
+          nothing is moved out of the prose, where it stays visible above.
+        */}
+        {noted.length > 0 && (
+          <p className="mt-2 text-[12px] text-gray-400">
+            <span className="font-medium uppercase tracking-wide">Also noted</span> — {noted.join(' · ')}
+          </p>
+        )}
         <div className="no-print mt-1.5 flex items-center gap-4">
           {f.word === 'nothing_on_file' && (
             <a href={`/documents?add=${encodeURIComponent(f.title)}`} onClick={(e) => e.stopPropagation()}
@@ -308,6 +429,49 @@ function DocGroup({ doc, docId, children, onOpenDoc, off }: {
  * so the control always says which state it is in rather than leaving a person to infer it from
  * nothing being highlighted.
  */
+/**
+ * *** THE STRIP — board 1, and TEMPLATE RUNS ONLY (the owner, 4 November 2026). ***
+ *
+ * One cell per checklist line, in the auditor's own order (decision 50), coloured by its word. It
+ * is the picture: ten cells tell somebody at a glance what a page of prose takes a minute to say.
+ *
+ * **An agency run has no strip and that is the decision, not an omission.** A checklist has a
+ * fixed list of questions in a fixed order; an agency run's findings are however many the reading
+ * produced, grouped by document in citation order. Forty-three cells in that order is decoration —
+ * it looks like a picture and is not one. Agency runs keep the counts row, which is true.
+ *
+ * The cell is a BUTTON: it scrolls to its row and opens it, because a picture nobody can get to
+ * the inside of is a picture they have to take on trust (the same reason the counts are a filter).
+ */
+const STRIP_COLOUR: Record<string, string> = {
+  on_file: 'bg-[var(--green)]',
+  on_file_gaps: 'bg-[var(--amber)]',
+  stale: 'bg-[var(--amber)]',
+  nothing_on_file: 'bg-[var(--danger,#B42318)]',
+  not_a_document_question: 'bg-gray-400',
+}
+function Strip({ cells, onPick }: {
+  cells: Array<{ id: string; ref: string | null; word: string | null }>
+  onPick: (id: string) => void
+}) {
+  if (!cells.length) return null
+  return (
+    <div className="mt-3 flex flex-wrap gap-1">
+      {cells.map((c) => (
+        <button key={c.id} onClick={() => onPick(c.id)}
+          title={`${c.ref ?? ''} — ${c.word ? (WORD[c.word] ?? c.word) : 'we did not get an answer'}`}
+          className={`flex h-7 min-w-[34px] items-center justify-center rounded px-1.5 text-[10px] font-medium text-white ${
+            /* A line with no answer is not a sixth colour: it is the absence of one, drawn as an
+               outline so it reads as a hole in the row rather than as a verdict. */
+            c.word ? (STRIP_COLOUR[c.word] ?? 'bg-gray-400')
+                   : 'border border-dashed border-[var(--amber)] bg-white text-[var(--amber)]'}`}>
+          {c.ref ?? '·'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function WordFilter({ counts, value, onChange, extra }: {
   counts: Array<{ word: string; label: string; n: number }>
   value: string | null
@@ -356,8 +520,15 @@ function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: str
   )
 }
 
-export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName, topLine, paused = null }: {
+export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName, topLine, paused = null, chrome = 'drawer' }: {
   runId: string; focusWord?: string | null; onClose: () => void; onChanged: () => void
+  /**
+   * *** A PAGE ON /audits, A DRAWER ON THE CALENDAR — decision 55, 4 November 2026. ***
+   * One body, two wrappers (`Shell`). It defaults to `drawer` so the Calendar — which opens this
+   * as the second tab of a date's drawer, and whose shape `tests/unit/calendarView.test.ts` pins
+   * — needs no change at all. `/audits` passes `page`.
+   */
+  chrome?: 'page' | 'drawer'
   /** Step 18, decision 11 — a prop from the page, which already holds the verdict. */
   paused?: Banner | null
   /** On paper, top left of every page (board 10). The page reads it; this component has no session. */
@@ -505,13 +676,23 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     })
   }, [runId, rep])
 
+  /**
+   * The two states before the report exists go through the Shell as well, or a failed read on
+   * `/audits?run=<id>` would open a DRAWER over the page a person is already looking at — the
+   * chrome changing under them because something went wrong, which is the opposite of §5.1's
+   * "say plainly whose problem it is".
+   */
   if (error) {
-    return <Drawer title="Audit" onClose={onClose}>
+    return <Shell chrome={chrome} title="Audit" onClose={onClose} topLine={topLine} company={companyName}>
       <p className="text-[14px] text-[var(--amber)]">{error}</p>
       <button onClick={load} className="mt-2 text-[13px] text-[var(--green)] underline">Try again</button>
-    </Drawer>
+    </Shell>
   }
-  if (!rep) return <Drawer title="Reading…" onClose={onClose}><p className="text-[14px] text-gray-400">Opening…</p></Drawer>
+  if (!rep) {
+    return <Shell chrome={chrome} title="Reading…" onClose={onClose} topLine={topLine} company={companyName}>
+      <p className="text-[14px] text-gray-400">Opening…</p>
+    </Shell>
+  }
 
   const { run, sections, findings } = rep
   /**
@@ -688,6 +869,24 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   // THE ONE META LINE. Audited date, sections, what it read and what it only listed, and how fresh
   // the evidence was. No cost: what a reading cost us is our business, not a line on the report
   // somebody takes to an inspector.
+  /**
+   * *** THE TITLE, ONE STRING, WHOLE — board 1 and the owner's call of 4 November. ***
+   *
+   * A template run is named by the checklist's own reading title. Board 1 draws that title with
+   * the issuer on a second line — *"Northwest Supplier Assurance Program, revision 2026-03"* —
+   * and **it is not two fields**: the scan writes one string, *"Pre-Inspection Audit Checklist for
+   * Oregon chemical blending and distribution facilities (Northwest Supplier Assurance Program,
+   * revision 2026-03), blank template"*. Splitting it is a prompt change, recorded in
+   * `docs/GAPS-PLAN.md` §7 as a later prompt job. It prints whole, which is true.
+   *
+   * An agency run is "<agency> audit, <date>" — the date in the title because a page can be
+   * bookmarked and two audits of the same agency are told apart by when they ran.
+   */
+  const auditedOn = fmt(run.finished_at ?? run.created_at)
+  const titleText = run.kind === 'template'
+    ? (rep.documents?.[run.template_document_id ?? '']?.title ?? 'Against your checklist')
+    : `${everything ? 'Audit of everything' : agency}${auditedOn ? `, ${auditedOn}` : ''}`
+
   const sub = `audited ${fmt(run.finished_at ?? run.created_at)} · `
     + `${run.section_count} section${run.section_count === 1 ? '' : 's'} · `
     + `${docsRead.length} document${docsRead.length === 1 ? '' : 's'} read`
@@ -770,7 +969,6 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
 
   /* ── BOARD G: THE REPORT AGAINST A CHECKLIST ─────────────────────────────── */
   if (run.kind === 'template') {
-    const name = rep.documents?.[run.template_document_id ?? '']?.title ?? 'the checklist'
     // Counts by word, and no score. *** A CHECKLIST IS NOT A TEST AND HAS NO MARK. *** "11 of 15"
     // invites the reader to treat four lines as a fail and eleven as a pass, when one of the four
     // may be a record kept on a clipboard and never uploaded. The words carry what is true.
@@ -793,9 +991,25 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       ? list.filter((f) => !f.word)
       : wordFilter ? list.filter((f) => f.word === wordFilter) : list)
 
+    /**
+     * *** THE STRIP, IN THE AUDITOR'S OWN ORDER — board 1, decisions 50 and 55. ***
+     * One cell per checklist line, section by section, each section's lines in their own ordinal
+     * order. It is built from the ROWS and not from `run.template_lines`, because the rows are
+     * what the report shows and a strip that disagreed with the rows under it would be worse than
+     * no strip (decision 50: a line nobody answered is still a row, and still a cell).
+     */
+    const stripCells = sections
+      .flatMap((sec) => openF.filter((f) => f.section_id === sec.id && f.kind !== 'expected')
+        .sort((a, b) => a.ordinal - b.ordinal))
+      .map((f) => ({ id: f.id, ref: f.template_line, word: f.word }))
+
     return (
-      <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer} topLine={topLine}
+      <Shell chrome={chrome} title={titleText} sub={sub} onClose={onClose} footer={footer} topLine={topLine}
         company={companyName} printType="Audit report" printDates={printDates}>
+        <Strip cells={stripCells} onPick={(id) => {
+          setOpenFinding((o) => ({ ...o, [id]: true }))
+          document.getElementById(`f-${id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }} />
         <WordFilter counts={tCounts} value={wordFilter} onChange={setWordFilter} />
         <WordCountsPrint counts={tCounts} />
         {/* The sentence about the form itself, under the header: what we noticed before answering
@@ -826,11 +1040,17 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
           const mine = tKeep(allT)
           const key = `t-${sec.id}`
           return (
-            // A one-section checklist opens; a three-section one starts closed with its counts,
-            // which is the form's own table of contents.
+            /**
+             * *** THE SECTIONS OPEN — board 1, 4 November 2026. ***
+             * They started closed on a multi-section checklist, as "the form's own table of
+             * contents". The strip above is that table of contents now, and it is better at it:
+             * it shows every line's word at a glance, which a row of closed headings does not.
+             * A page a person has navigated to in order to read is not a page to open three
+             * times before anything is on it.
+             */
             <Section_ key={sec.id} title={sec.title} count={mine.length}
-              open={open[key] ?? sections.length <= 1}
-              onToggle={() => setOpen((o) => ({ ...o, [key]: !(o[key] ?? sections.length <= 1) }))}>
+              open={open[key] ?? true}
+              onToggle={() => setOpen((o) => ({ ...o, [key]: !(o[key] ?? true) }))}>
               {sec.status === 'could_not_complete' ? (
                 <div>
                   <p className="text-[13px] text-gray-600">{sec.could_not_complete_reason}</p>
@@ -864,6 +1084,27 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             </Section_>
           )
         })}
+
+        {/* *** THE SUGGESTIONS, ONE FOLDED GREY LINE, NEVER COUNTED — decision 60, board 1. ***
+            They are not findings and they are not one of the five words. `tCounts` already
+            excludes them (E0); this is where board 1 puts them on the checklist report, which is
+            the last thing on the page and folded even when it is the only thing there. */}
+        {expected.length > 0 && (
+          <Section_ title="Usually held — not seen · documents companies like this usually hold that we have not been shown"
+            count={expected.length} open={!!open.expected}
+            onToggle={() => setOpen((o) => ({ ...o, expected: !o.expected }))}>
+            <p className="mb-2 text-[12px] text-gray-500">
+              These are suggestions, based on what similar companies hold. They are not findings,
+              nobody has checked them against a requirement, and they are not in the counts above.
+            </p>
+            {expected.map((f) => (
+              <div key={f.id} className="border-b border-gray-100 py-2 last:border-b-0">
+                <p className="text-[14px] text-gray-800">{f.title}</p>
+                {f.what_to_do && <p className="mt-0.5 text-[12px] text-gray-500">{f.what_to_do}</p>}
+              </div>
+            ))}
+          </Section_>
+        )}
 
         {/* *** EARLIER AUDITS AGAINST THIS CHECKLIST, AND WHAT MOVED. *** The whole reason to keep
             the lines on the run: the same questions in the same order, so a line's word can be
@@ -909,12 +1150,12 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             ))}
           </ol>
         </div>
-      </Drawer>
+      </Shell>
     )
   }
 
   return (
-    <Drawer title={everything ? `Audit of everything · ${run.section_count} sections` : `${agency} audit`}
+    <Shell chrome={chrome} title={titleText}
       sub={sub} onClose={onClose} footer={footer} topLine={topLine}
       company={companyName} printType="Audit report" printDates={printDates}>
       {/*
@@ -1255,7 +1496,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
           })}
         </ol>
       </div>
-    </Drawer>
+    </Shell>
   )
 }
 

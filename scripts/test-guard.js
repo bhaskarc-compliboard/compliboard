@@ -480,7 +480,27 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   the model producing that line had never been shown. So the new assertions count occurrences
 //   (2 of the stale sentence, 2 of the practice sentence) instead of matching one, and a rule that
 //   lands in one shape fails here rather than in a measurement three weeks later.
-const FLOOR = 2461
+//
+// 2461 -> 2487, 4 November 2026 (GAPS-PLAN Part E step E1, decisions 50 and 55-60). TWENTY-SIX,
+//   twenty-two of them in tests/unit/auditPage.test.ts, and three of those are about failures that
+//   would have been invisible until a customer hit them:
+//
+//   THE PRINT. app/globals.css:138 is `body.printing-drawer .print-page { display: none }`, and
+//   display:none on an ancestor cannot be undone by a descendant. The audit report is a PAGE now,
+//   and rendered inside the page container it would have printed A BLANK SHEET - the one failure
+//   a printed compliance page must not have. The test asserts the report is a SIBLING of that
+//   container, and asserts the CSS rule itself, so the day somebody tidies the report back inside
+//   it the suite says why they cannot.
+//
+//   THE PRINT FRAME. visibleDrawer() read `aside.print-drawer` and the page is a <section>, so a
+//   print from the report would have carried no company and no document type in its running
+//   header. One selector, and nothing on screen would ever have shown it.
+//
+//   THE ELLIPSIS (W9, decision 58). The auditor's line is stored WHOLE - longest 235 characters
+//   against a 1000 cap, measured on staging - so the ellipsis was ours alone, a `truncate` class.
+//   The test reads the row's own markup rather than a rendered string, because there is no
+//   renderer here and the class is the whole of the defect.
+const FLOOR = 2487
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

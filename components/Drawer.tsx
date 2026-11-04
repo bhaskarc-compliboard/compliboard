@@ -32,10 +32,21 @@ function printDrawer() {
   printWithFrame(visibleDrawer(), 'printing-drawer')
 }
 
-/** The drawer being printed: the last one on the page that is actually shown. On `/audits` a
- *  document's report opens over the audit, which stays in the page under `hidden`. */
+/**
+ * The thing being printed: the last one on the page that is actually shown. On `/audits` a
+ * document's report opens over the audit, which stays in the page under `hidden`.
+ *
+ * *** `.print-drawer`, NOT `aside.print-drawer` — E1, 4 November 2026. ***
+ * The audit report is a PAGE now (decision 55) and renders as a `<section>`. It carries the same
+ * class and the same two data attributes so Print works from it, and this selector had the tag
+ * name in it — so a print from the report page would have come out with no company and no type in
+ * the running header, which is the one thing a printed compliance page must not be missing. The
+ * ordering rule is unchanged and still right: the document's drawer is rendered after the report,
+ * so when both exist the drawer is last, and when it is open the report is `hidden` and filtered
+ * out by its own client rects anyway.
+ */
 function visibleDrawer(): { company: string; type: string } {
-  const all = [...document.querySelectorAll<HTMLElement>('aside.print-drawer')].filter((a) => a.getClientRects().length > 0)
+  const all = [...document.querySelectorAll<HTMLElement>('.print-drawer')].filter((a) => a.getClientRects().length > 0)
   const d = all[all.length - 1]
   return { company: d?.dataset.printCompany ?? '', type: d?.dataset.printType ?? '' }
 }

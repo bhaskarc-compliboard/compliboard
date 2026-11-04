@@ -35,9 +35,22 @@ export async function GET(request: NextRequest) {
               + 'scan_status, could_not_read_reason, open_gap_count, scanned_at')
         .eq('company_id', companyId).order('title'),
       db.from('audit_runs')
+        /**
+         * *** `template_lines` WAS DECLARED AND NEVER SENT — found at E1, 4 November 2026. ***
+         *
+         * `app/audits/page.tsx`'s `Run` interface has carried it since step 6b, with the comment
+         * *"the checklist's own sections and lines, for the By template row's '16 lines in 3
+         * sections'"* — and this select never named the column, so that row has always said just
+         * "3 sections" and the line count has been silently missing since the day it was written.
+         * A `select` list is a string: `tsc` cannot see into it, which is the whole reason
+         * `scripts/check-schema-contracts.js` exists, and the thing it cannot catch is a column a
+         * caller WANTS and the query never asked for.
+         *
+         * Board 3's card says "10 lines in 3 sections", so E1 needed it and found it missing.
+         */
         .select('id, kind, scope, agency_label, status, section_count, done_count, readings_as_of, '
               + 'created_at, started_at, finished_at, summary, notified_at, dismissed_at, '
-            + 'previous_run_id, template_document_id')
+            + 'previous_run_id, template_document_id, template_lines')
         .eq('company_id', companyId).order('created_at', { ascending: false }).limit(100),
       db.from('entities').select('id, name').eq('company_id', companyId).order('name'),
       // *** THE FOLDER LIST, BECAUSE THE DOCUMENT REPORT OPENS HERE NOW — Run 3b, item 1. ***

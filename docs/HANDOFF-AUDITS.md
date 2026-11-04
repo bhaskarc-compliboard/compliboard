@@ -14,6 +14,29 @@ not been judged.
 What it is **not**: the method. `HOW-WE-BUILD.md` holds that, unchanged, and it worked —
 `DECISIONS.md` §144 to §149 are this section's decisions in the order they were made.
 
+> ### ⚡ TWO THINGS IN HERE WERE OVERTAKEN ON 4 NOVEMBER 2026, AND THE FILE IS NOT REWRITTEN FOR THEM.
+>
+> `docs/GAPS-PLAN.md` Part E steps **E0** and **E1** changed the section's vocabulary and the shape of
+> its report. Both are recorded there with their measurements; this box names what in this file is now
+> history, so nobody reads a state that has moved.
+>
+> **§6's "THE FOUR WORDS" is five.** `on_file_gaps` — shown as *"On file, gaps found"*, amber, read
+> second — means a document answers the line AND what the document itself shows does not meet it in
+> full (the owner's decision 47). The four old words keep their meanings exactly, and `on_file` is
+> narrowed to say that nothing falls short. `audit_findings_word_check` is migration **094**.
+>
+> **§5a's "THE DRAWER — THE REPORT" is a PAGE.** The report renders full width at
+> **`/audits?run=<id>`** — the same address this file already names, so every link in §3, §4 and the
+> email is unchanged — and a document's reading is the ONE drawer over it (decision 55). The
+> component is one body with two wrappers (`chrome: 'page' | 'drawer'`); the **Calendar still opens it
+> as a drawer**, which is why `chrome` defaults to one. The section has **four** tabs, not three
+> (decision 56): *Ask a question · Conversations · Agency audits · Auditor checklists*, with the
+> `audits` key kept so every address in this file still lands where it did.
+>
+> Everything else in §5a — the 720 drawer for a DOCUMENT's reading, the footer vocabulary, the
+> section headings, the rule that a section appears only when it has content — is unchanged and is
+> still the template §5 says it is.
+
 ---
 
 ## 1. What Audits is, and what it reads

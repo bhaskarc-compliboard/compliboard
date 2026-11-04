@@ -220,19 +220,59 @@ describe('the box is gone, and nothing calls what it called', () => {
 })
 
 describe('the merged Audits tab — decision 31', () => {
-  test('three tabs, through the shared row', () => {
+  test('FOUR tabs since decision 56, and `audits` keeps its key', () => {
     assert.match(CODE, /<Tabs active=\{tab\} onSelect=\{selectTab\}/)
     assert.match(CODE, /key: 'ask', label: 'Ask a question'/)
     assert.match(CODE, /key: 'conversations', label: 'Conversations'/)
-    assert.match(CODE, /key: 'audits', label: `Audits\$\{runCount \? ` \(\$\{runCount\}\)` : ''\}`/)
-    // And the two old tab bodies are one.
+    // *** THE KEY IS STILL `audits`, AND THAT IS THE POINT. *** Only the LABEL changed, so every
+    // bookmark, every `?tab=audits` and the `?run=` rule all land exactly where they did.
+    assert.match(CODE, /key: 'audits', label: `Agency audits\$\{agencyRunCount/)
+    assert.match(CODE, /key: 'checklists', label: `Auditor checklists\$\{checklistCount/)
+    assert.match(CODE, /type Tab = 'ask' \| 'conversations' \| 'audits' \| 'checklists'/)
+    // And the two old tab bodies are still one.
     assert.ok(!CODE.includes("tab === 'past'"), 'the Past audits tab is still a tab')
     assert.ok(!CODE.includes("tab === 'stand'"), 'Where you stand is still a tab')
   })
 
-  test('two groups, with the headings board 4 draws', () => {
+  test('By template LEFT the agency tab, and is the checklists tab — decision 56', () => {
     assert.match(CODE, /<p className=\{GROUP_LABEL\}>By agency<\/p>/)
-    assert.match(CODE, /<p className=\{GROUP_LABEL\}>By template<\/p>/)
+    assert.ok(!CODE.includes('>By template<'), 'By template is still on the agency tab')
+    assert.match(CODE, /\{tab === 'checklists' && \(/)
+    assert.match(CODE, /<ChecklistCards cards=\{checklistCards\}/)
+  })
+
+  /**
+   * *** ONE CARD PER CHECKLIST, NOT ONE PER RUN — board 3. *** The group this replaces listed
+   * RUNS, so a checklist audited four times was four rows with nothing saying they were the same
+   * questions. Every number on the card is already in `/api/audits/index`.
+   */
+  test('the checklist card is grouped by the template document and carries its runs', () => {
+    assert.match(CODE, /const k = r\.template_document_id \?\? `scope:/)
+    const at = CODE.indexOf('function ChecklistCards(')
+    assert.ok(at > 0, 'the cards component must exist')
+    const body = CODE.slice(at, at + 6000)
+    assert.match(body, /Checklists your auditors gave you, and every audit run against them\./)
+    assert.match(body, /s\?\.on_file_gaps \?\? 0/, 'the fifth word is one of the four counts')
+    assert.match(body, /r\.closed_count > 0/, '"since last run" is the run\'s own closed_count')
+    assert.match(body, /Open the report/)
+    assert.match(body, /Audit again against this checklist/)
+    assert.match(body, /Open the auditor&rsquo;s file/)
+  })
+
+  test('NO BINDER CONTROL until Part C — hidden, not greyed (the owner, 4 November)', () => {
+    // The Calendar's own rule, pinned in calendarView.test.ts: "a date with no report HIDES the
+    // tab rather than disabling it… a greyed tab promises something".
+    assert.ok(!CODE.includes('Build the binder'), 'a binder control exists before Part C built one')
+  })
+
+  test('a checklist whose file is gone says so instead of offering a button that fails', () => {
+    // The 6b leftover, answered: `idx.documents` is the whole unfiltered list, so a
+    // template_document_id missing from it is a file that is gone.
+    const at = CODE.indexOf('function ChecklistCards(')
+    const body = CODE.slice(at, at + 6000)
+    assert.match(body, /idx\.documents\.find\(\(d\) => d\.document_id === docId\)/)
+    assert.match(body, /The auditor&rsquo;s file is no longer on file/)
+    assert.match(body, /\{doc && docId \? \(/, 'the controls are behind the file still existing')
   })
 
   /**
@@ -260,15 +300,16 @@ describe('the merged Audits tab — decision 31', () => {
     assert.match(body, /onOpen\(r\.id\)/, 'and it opens the report')
   })
 
-  test('a template run has a row of its own, with its lines, its sections and its state', () => {
-    const at = CODE.indexOf('By template')
-    const body = CODE.slice(at, CODE.indexOf('Every audit is kept', at))
-    assert.match(body, /templateRuns\.map/)
-    assert.match(body, /Audit running · \$\{r\.estimate \?\? idx\.estimate\}/)
+  test('a template run is still reachable, now as a row of its checklist\'s card', () => {
+    // What the By template group gave a template run — its lines, its sections, its date — the
+    // card gives too, with the four counts the group never had.
+    const at = CODE.indexOf('function ChecklistCards(')
+    const body = CODE.slice(at, at + 6000)
     assert.match(body, /line\$\{lines === 1 \? '' : 's'\} in/)
-    assert.match(body, /needsOf\(r\.summary\)\} to look at/)
-    assert.match(body, /did not finish/)
-    assert.match(body, /setParam\('run', r\.id\)/)
+    assert.match(body, /newest\.section_count === 1 \? '' : 's'/)
+    assert.match(body, /r\.status === 'done' \? fmt\(r\.finished_at \?\? r\.created_at\) : 'Running…'/)
+    assert.match(body, /onOpen\(r\.id\)/)
+    assert.match(CODE, /onOpen=\{\(id\) => setParam\('run', id\)\}/)
   })
 
   test('the closing sentence is at the tab\'s foot, and the unplaced list is still there', () => {
@@ -276,9 +317,33 @@ describe('the merged Audits tab — decision 31', () => {
     assert.match(CODE, /Documents we read but could not place under an agency/)
   })
 
-  test('the run drawer and ?run= are untouched', () => {
-    assert.match(CODE, /<AuditReport runId=\{openRun\}/)
-    assert.match(CODE, /className=\{openDoc \? 'hidden' : ''\}/)
+  test('the report is a PAGE at the same address, and ?run= is untouched — decision 55', () => {
+    assert.match(CODE, /<AuditReport runId=\{openRun\} focusWord=\{drawerWord\} paused=\{paused\} chrome="page"/)
+    assert.match(CODE, /const runParam = params\.get\('run'\)/)
+    /**
+     * *** OUTSIDE `.print-page`, AND THAT IS WHY IT PRINTS AT ALL. ***
+     * `app/globals.css:138` is `body.printing-drawer .print-page { display: none !important }`.
+     * `display: none` on an ancestor cannot be undone by a descendant, so a report rendered
+     * inside the page container would print a blank sheet.
+     */
+    const container = CODE.indexOf('className="print-page')
+    const report = CODE.indexOf('<AuditReport runId={openRun}')
+    const closes = CODE.indexOf('\n      </div>\n', container)
+    assert.ok(closes > 0 && report > closes,
+      'the report must be a SIBLING of .print-page, or it prints nothing')
+    // The tabs and the heading go while it is open; they are hidden, not unmounted, so a typed
+    // composer and a scroll position survive a click.
+    assert.match(CODE, /<div className=\{openRun \? 'hidden' : ''\}>/)
+    // And a document's reading is still the one drawer over it.
+    assert.match(CODE, /className=\{\`\$\{openDoc \? 'hidden' : ''\}/)
+  })
+
+  test('a template run\'s page sits behind the Auditor checklists tab — decision 56', () => {
+    // It cannot be decided from the address: the run's kind is in the index, which arrives after
+    // the first render. `movedForRun` corrects it once and never fights a click.
+    assert.match(CODE, /const movedForRun = useRef<string \| null>\(null\)/)
+    assert.match(CODE, /if \(r\.kind === 'template'\) setTab\('checklists'\)/)
+    assert.match(CODE, /movedForRun\.current === openRun/)
   })
 })
 

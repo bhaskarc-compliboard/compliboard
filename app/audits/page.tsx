@@ -27,7 +27,7 @@ import { runName, checklistTitle as sharedChecklistTitle } from '@/lib/auditView
 import DocumentReport from '@/components/DocumentReport'
 import { authHeaders, createClient } from '@/lib/supabase'
 
-import { pausedFromRow, type BillingRow } from '@/lib/billing'
+import { pausedFromRow, type BillingRow, type Banner } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
 import { Tabs } from '@/components/Tabs'
 import { Empty } from '@/components/Empty'
@@ -237,8 +237,14 @@ const fmt = (iso: string | null | undefined) => {
  * taken out of it (decision 32). The key is also the `?tab=` word, and the pattern is
  * `app/documents/page.tsx:139`–`:141`, copied.
  */
-type Tab = 'ask' | 'conversations' | 'audits'
-const TAB_KEYS: readonly Tab[] = ['ask', 'conversations', 'audits'] as const
+/**
+ * *** FOUR TABS SINCE DECISION 56, 4 November 2026. ***
+ * Ask a question · Conversations · Agency audits · Auditor checklists. `audits` keeps its key so
+ * every bookmark and every `?tab=audits` lands where it did — it is only the LABEL that becomes
+ * "Agency audits" — and `checklists` is the new one, which board 3 draws.
+ */
+type Tab = 'ask' | 'conversations' | 'audits' | 'checklists'
+const TAB_KEYS: readonly Tab[] = ['ask', 'conversations', 'audits', 'checklists'] as const
 
 const daysUntil = (iso: string, today: string) =>
   Math.round((Date.parse(`${iso}T00:00:00`) - Date.parse(`${today}T00:00:00`)) / 86400_000)
@@ -313,6 +319,18 @@ function Audits() {
   const [tab, setTab] = useState<Tab>(tabParam)
   useEffect(() => { setOpenRun(runParam) }, [runParam])
   useEffect(() => { setTab(tabParam) }, [tabParam])
+  /**
+   * *** AND THE TAB BEHIND A TEMPLATE RUN'S PAGE IS THE CHECKLISTS TAB — decision 56. ***
+   *
+   * `?run=` lands on `audits` above, because that rule was written when there was one audits tab
+   * and it must go on holding for every link that exists. A TEMPLATE run belongs behind the
+   * Auditor checklists tab, so that closing the report returns to the card it was opened from.
+   *
+   * It cannot be decided from the address: the run's kind is in the index, which arrives after
+   * the first render. So this corrects the tab once the index lands, and only when the person has
+   * not chosen a tab themselves since — `movedForRun` is what keeps it from fighting a click.
+   */
+  const movedForRun = useRef<string | null>(null)
 
   /**
    * The address as it stands, including a change this page made that the router did not take.
@@ -371,6 +389,15 @@ function Audits() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  /** Decision 56's correction, once per run id, once the index can answer what kind it is. */
+  useEffect(() => {
+    if (!openRun || !idx || movedForRun.current === openRun) return
+    const r = idx.runs.find((x) => x.id === openRun)
+    if (!r) return
+    movedForRun.current = openRun
+    if (r.kind === 'template') setTab('checklists')
+  }, [openRun, idx])
 
   /**
    * THE CONVERSATIONS, read as the page's own read and handed to the hook — Documents' shape
@@ -487,6 +514,28 @@ function Audits() {
         runId: json.id as string | null,
       }
     } finally { setBusy(false) }
+  }
+
+  /**
+   * *** "AUDIT AGAIN AGAINST THIS CHECKLIST" — board 3, and the 6b leftover answered. ***
+   *
+   * Step 6b left this button off the By template row on purpose, and wrote down why:
+   * *"`template_document_id` can point at a document that has since been deleted, and a button
+   * that fails with 'That file was not found' is worse than no button. It waits for the row to
+   * say whether the file is still there."*
+   *
+   * **The row CAN say.** `/api/audits/index` returns `documents` as the whole unfiltered
+   * `document_index_v` for the company (`route.ts:31`–`:36`), so a `template_document_id` that is
+   * not in that list is a file that is gone. The card checks before it draws the control, and
+   * when the file is gone it says so in words instead of offering a button that cannot work.
+   *
+   * It opens the new run's report the moment the run exists, because that is where the person
+   * was going.
+   */
+  async function auditAgainstTemplate(documentId: string, fileName: string) {
+    const r = await startTemplateRun(documentId, fileName, 'Audit us against the attached template.')
+    setNotice(r.line)
+    if (r.ok && r.runId) setParam('run', r.runId)
   }
 
   /** The same, for an agency — `startRun` with its words rather than its notice. */
@@ -747,11 +796,33 @@ function Audits() {
    * home (decision 31), so the stand-in is deleted rather than moved.
    */
   const templateRuns = idx.runs.filter((r) => r.kind === 'template')
+  /**
+   * *** ONE CARD PER CHECKLIST, NOT ONE PER RUN — board 3, decision 56. ***
+   *
+   * Grouped by `template_document_id`, newest run first inside each card, cards ordered by their
+   * newest run. A checklist audited four times is one card with four rows, which is the whole
+   * point of the tab: *"Checklists your auditors gave you, and every audit run against them."*
+   *
+   * A run whose `template_document_id` is null cannot be grouped and is not dropped — it goes
+   * under its own card named from `scope`, because a run nobody can find is worse than an odd
+   * card. (No such row exists on staging: `audit_runs_kind_has_its_subject` forbids it.)
+   */
+  const checklistCards = (() => {
+    const by = new Map<string, Run[]>()
+    for (const r of templateRuns) {
+      const k = r.template_document_id ?? `scope:${r.scope ?? r.id}`
+      if (!by.has(k)) by.set(k, [])
+      by.get(k)!.push(r)
+    }
+    return [...by.entries()].map(([key, runs]) => ({ key, runs, newest: runs[0] }))
+  })()
+  const agencyRunCount = idx.runs.filter((r) => r.kind !== 'template').length
+  const checklistCount = checklistCards.length
 
   return (
     <AppLayout>
       <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
-        <div className="no-print pt-6">
+        <div className={`no-print pt-6 ${openRun ? 'hidden' : ''}`}>
           <h1 className="font-serif text-[28px] font-normal text-gray-900">Audits</h1>
           {/* The lede moved into `lib/auditsWords.ts` at step 6a, unchanged, so the brief and the
               page read one copy of it. The words are the ones this page has always shown. */}
@@ -770,13 +841,21 @@ function Audits() {
           "+ New conversation" is on the two conversation tabs only; on the Audits tab the thing a
           person wants at the right is an Audit button, and every row carries one.
         */}
+        {/* *** THE REPORT IS A PAGE, SO THE TABS GO WHILE IT IS OPEN — decision 55. ***
+            Not unmounted: the tab bodies hold a composer with typed text, a conversation and a
+            scroll position, and `openRun` changes on a click. `hidden` keeps all of it and gives
+            the report the full width the owner asked for. */}
+        <div className={openRun ? 'hidden' : ''}>
         <Tabs active={tab} onSelect={selectTab}
           tabs={[
             { key: 'ask', label: 'Ask a question' },
             { key: 'conversations', label: 'Conversations' },
-            { key: 'audits', label: `Audits${runCount ? ` (${runCount})` : ''}` },
+            /* Decision 56: the key stays `audits` so every bookmark and every `?tab=audits` lands
+               where it did; only the word changes, because there is a second audits tab now. */
+            { key: 'audits', label: `Agency audits${agencyRunCount ? ` (${agencyRunCount})` : ''}` },
+            { key: 'checklists', label: `Auditor checklists${checklistCount ? ` (${checklistCount})` : ''}` },
           ]}
-          right={tab === 'audits' ? null : (
+          right={tab === 'audits' || tab === 'checklists' ? null : (
             <button onClick={startNewConversation}
               className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
@@ -1043,63 +1122,10 @@ function Audits() {
               </div>
             )}
 
-            {/*
-              *** BY TEMPLATE — the second group, decision 31. ***
-
-              One row per audit against a checklist, newest first. It is the home the two grey
-              lines under the old box were standing in for: a template run has no agency line to
-              live on, because its questions come from a form and not from a regulator.
-            */}
-            {templateRuns.length > 0 && (<>
-              <p className={GROUP_LABEL}>By template</p>
-              <div className="mt-1">
-                {templateRuns.map((r) => {
-                  const failed = idx.sections.filter((x) => x.run_id === r.id && x.status === 'could_not_complete')
-                  const lines = Array.isArray(r.template_lines)
-                    ? (r.template_lines as Array<{ lines?: unknown[] }>)
-                      .reduce((n, sec) => n + (Array.isArray(sec?.lines) ? sec.lines.length : 0), 0)
-                    : 0
-                  return (
-                    <div key={r.id} className="flex items-start gap-3 border-b border-gray-100 py-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] text-gray-900" title={runTitle(r, idx)}>
-                          {checklistTitle(r, idx)}
-                        </p>
-                        <p className="mt-0.5 text-[12px] text-gray-500">
-                          {r.status !== 'done'
-                            ? `Audit running · ${r.estimate ?? idx.estimate}`
-                            : <>
-                                {lines ? `${lines} line${lines === 1 ? '' : 's'} in ` : ''}
-                                {r.section_count} section{r.section_count === 1 ? '' : 's'}
-                                {' · '}audited {fmt(r.finished_at ?? r.created_at)}
-                                {' · '}{needsOf(r.summary)} to look at
-                              </>}
-                        </p>
-                        {failed.length > 0 && r.status === 'done' && (
-                          <p className="mt-0.5 text-[12px] text-[var(--amber)]">
-                            {failed.map((f) => f.title).join(', ')} did not finish.
-                          </p>
-                        )}
-                        {r.scope && <p className="mt-0.5 text-[12px] text-gray-400">&ldquo;{r.scope}&rdquo;</p>}
-                      </div>
-                      {/* Decision 59, the same column for the same reason. */}
-                      <div className="w-[104px] shrink-0 space-x-3 text-left">
-                        <button onClick={() => setParam('run', r.id)} className={ACTION_GREEN}>Open</button>
-                        {/* *** NO "Audit again" HERE, AND IT IS NOT AN OVERSIGHT. ***
-                            `POST /api/audit-runs { kind: 'template' }` reads the file out of
-                            storage every time, so "again" is the same file and the same lines —
-                            which is exactly what the person wants, and it is one line of code.
-                            But `template_document_id` can point at a document that has since
-                            been deleted, and a button that fails with "That file was not found"
-                            is worse than no button. It waits for the row to say whether the file
-                            is still there. §7. */}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </>)}
-
+            {/* *** BY TEMPLATE LEFT THIS TAB — decision 56, 4 November 2026. ***
+                The group that stood here is the **Auditor checklists** tab now, as one card per
+                checklist with a table of its runs (board 3). This tab is the agency rows, which
+                decision 56 says are untouched — and the pixel method says so too. */}
             {idx.runs.length > 0 && (
               <p className="mt-4 text-[12px] text-gray-500">
                 Every audit is kept. Open one and its report is exactly what it said on the day,
@@ -1109,15 +1135,34 @@ function Audits() {
           </>
         )}
 
+        {/* ============ AUDITOR CHECKLISTS — board 3, decision 56 ============ */}
+        {tab === 'checklists' && (
+          <ChecklistCards cards={checklistCards} idx={idx} paused={paused} busy={busy}
+            onOpen={(id) => setParam('run', id)}
+            onOpenDoc={(id) => { setFromAudit(null); setOpenDoc(id) }}
+            onAuditAgain={auditAgainstTemplate} />
+        )}
+        </div>
+
       </div>
 
-      {/* The audit report. Hidden, not unmounted, while a document's report is on top of it, so
-          Back returns to it at the same scroll position rather than re-rendering from the top. */}
+      {/* *** THE AUDIT REPORT, AS A PAGE — decision 55, 4 November 2026. ***
+          Same address (`/audits?run=<id>`), so the email, the Dashboard, this page's own links and
+          every bookmark land here unchanged, and the 20 October hotfix is untouched: the parameter
+          still seeds state and `setParam('run', null)` still closes it. What changed is that the
+          report renders in the body instead of in an `<aside>`.
+
+          *** IT IS A SIBLING OF `.print-page`, NOT A CHILD, AND THAT IS NOT TIDINESS. ***
+          `app/globals.css:138` is `body.printing-drawer .print-page { display: none !important }`,
+          and `display: none` on an ancestor cannot be undone by a descendant. Rendered inside the
+          container, this report would print a blank sheet — the one failure a printed compliance
+          page must not have. Outside it, the page's own chrome is hidden for the print and the
+          report prints as the document, exactly as a drawer does.
+
+          Hidden under a document's reading, which is the ONE drawer over it (decision 55). */}
       {openRun && (
-        <div className={openDoc ? 'hidden' : ''}>
-          <div className="no-print fixed inset-0 z-[45] bg-gray-900/20"
-            onClick={() => { setParam('run', null); setDrawerWord(null) }} />
-          <AuditReport runId={openRun} focusWord={drawerWord} paused={paused}
+        <div className={`${openDoc ? 'hidden' : ''} mx-auto w-full max-w-[1000px] px-4 pb-16 pt-6 sm:px-6`}>
+          <AuditReport runId={openRun} focusWord={drawerWord} paused={paused} chrome="page"
             onClose={() => { setParam('run', null); setDrawerWord(null) }}
             onChanged={load}
             onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }}
@@ -1195,6 +1240,150 @@ function Audits() {
  * job is 'where do I stand' should answer that in one screen"*) — six earlier runs under an open
  * agency would be most of a screen of history above the documents the person came to read.
  */
+/**
+ * *** THE AUDITOR CHECKLISTS TAB — board 3, decision 56, 4 November 2026. ***
+ *
+ * One white card per checklist, and inside it a TABLE of its runs, newest first: the date, the
+ * four counts as coloured cells, what closed since the run before, and the links. The card is the
+ * checklist; the rows are what has been run against it. That is the shape the owner drew, and it
+ * is the one thing the By template group could not be: it listed RUNS, so a checklist audited
+ * four times was four rows with no sense that they were the same questions.
+ *
+ * *** EVERY NUMBER HERE IS ALREADY IN `/api/audits/index`. *** The counts are `run.summary`'s own
+ * five words; "since last run" is `run.closed_count`, which that route computes at `:167`; the
+ * lines and sections are `template_lines` and `section_count`; and whether the auditor's file is
+ * still on file is a lookup in `idx.documents`, which is the whole unfiltered list. No new query,
+ * no new column.
+ *
+ * *** NO BINDER CONTROL UNTIL PART C — HIDDEN, NOT GREYED (the owner, 4 November). ***
+ * Board 3 draws "Build the binder" on the latest run. It is not drawn at all until Part C builds
+ * it, and the reason is the Calendar's own rule, pinned in `tests/unit/calendarView.test.ts`:
+ * *"a date with no report HIDES the tab rather than disabling it… a greyed tab promises
+ * something"*. A disabled button is a promise with no date on it.
+ *
+ * ALIGNMENT (decision 59): the counts are five fixed cells and the links a fixed column, so they
+ * line up down a card and between cards whatever the dates beside them are.
+ */
+const CELL = 'w-[86px] shrink-0 text-left text-[12px]'
+function ChecklistCards({ cards, idx, paused, busy, onOpen, onOpenDoc, onAuditAgain }: {
+  cards: Array<{ key: string; runs: Run[]; newest: Run }>
+  idx: Index
+  paused: Banner | null
+  busy: boolean
+  onOpen: (runId: string) => void
+  onOpenDoc: (documentId: string) => void
+  onAuditAgain: (documentId: string, fileName: string) => void
+}) {
+  if (!cards.length) {
+    /* AN EMPTY STATE IS A MESSAGE, AND IT SAYS WHAT TO DO (§5.1). Never "no checklists". */
+    return (
+      <div className="mt-2">
+        <p className="text-[14px] text-gray-600">
+          No auditor has given you a checklist yet — or none has been audited against.
+        </p>
+        <p className="mt-2 text-[13px] text-gray-500">
+          Have one? Attach it with the paperclip on the <b>Ask a question</b> tab and type
+          {' '}<i>Audit us against the attached template</i>.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div className="mt-2">
+      <p className="text-[13px] text-gray-600">
+        Checklists your auditors gave you, and every audit run against them.
+      </p>
+      {cards.map(({ key, runs, newest }) => {
+        const docId = newest.template_document_id
+        /* The auditor's own file, if it is still on file. `idx.documents` is every document the
+           company holds, so `undefined` here means deleted — and the card says so. */
+        const doc = docId ? idx.documents.find((d) => d.document_id === docId) : undefined
+        const title = doc?.title ?? checklistTitle(newest, idx)
+        const lines = Array.isArray(newest.template_lines)
+          ? (newest.template_lines as Array<{ lines?: unknown[] }>)
+            .reduce((n, sec) => n + (Array.isArray(sec?.lines) ? sec.lines.length : 0), 0)
+          : 0
+        return (
+          <div key={key} className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-[15px] text-gray-900">{title}</p>
+            <p className="mt-0.5 text-[12px] text-gray-500">
+              {lines ? `${lines} line${lines === 1 ? '' : 's'} in ` : ''}
+              {newest.section_count} section{newest.section_count === 1 ? '' : 's'}
+              {' · '}last run {fmt(newest.finished_at ?? newest.created_at)}
+            </p>
+
+            <div className="mt-3 border-t border-gray-100">
+              {/* The header row of the table, in the same fixed columns as the rows below it. */}
+              <div className="flex items-center gap-3 border-b border-gray-100 py-1.5 text-[11px] uppercase tracking-wide text-gray-400">
+                <span className="w-[150px] shrink-0">Run</span>
+                <span className={CELL}>On file</span>
+                <span className={CELL}>Gaps found</span>
+                <span className={CELL}>Out of date</span>
+                <span className={CELL}>Not on file</span>
+                <span className="min-w-0 flex-1">Since last run</span>
+                <span className="w-[120px] shrink-0 text-left">&nbsp;</span>
+              </div>
+              {runs.map((r, i) => {
+                const s = r.summary
+                const prev = runs[i + 1] ?? null
+                return (
+                  <div key={r.id} className="flex items-center gap-3 border-b border-gray-100 py-2 last:border-b-0">
+                    <span className="w-[150px] shrink-0 text-[13px] text-gray-900">
+                      {r.status === 'done' ? fmt(r.finished_at ?? r.created_at) : 'Running…'}
+                    </span>
+                    <span className={`${CELL} text-gray-600`}>{s?.on_file ?? 0}</span>
+                    <span className={`${CELL} text-[var(--amber)]`}>{s?.on_file_gaps ?? 0}</span>
+                    <span className={`${CELL} text-[var(--amber)]`}>{s?.stale ?? 0}</span>
+                    <span className={`${CELL} text-[var(--amber)]`}>{s?.nothing_on_file ?? 0}</span>
+                    <span className="min-w-0 flex-1 text-[12px] text-gray-500">
+                      {prev && r.closed_count > 0
+                        ? `${r.closed_count} line${r.closed_count === 1 ? '' : 's'} closed since ${fmt(prev.finished_at ?? prev.created_at)}`
+                        : '—'}
+                    </span>
+                    {/* Decision 59: a fixed, left-aligned column, so Open the report starts at
+                        the same place on every row of every card. No binder control until C. */}
+                    <span className="w-[120px] shrink-0 text-left">
+                      <button onClick={() => onOpen(r.id)} className={ACTION_GREEN}>Open the report</button>
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              {doc && docId ? (
+                <>
+                  <button disabled={busy || Boolean(paused)}
+                    onClick={() => onAuditAgain(docId, doc.file_name ?? doc.title)}
+                    className={`${ACTION_GREEN} disabled:text-gray-300`}>
+                    Audit again against this checklist
+                  </button>
+                  <button onClick={() => onOpenDoc(docId)}
+                    className="text-[13px] text-gray-600 underline hover:text-gray-900">
+                    Open the auditor&rsquo;s file
+                  </button>
+                </>
+              ) : (
+                /* §5.1 — say plainly what we cannot do and why, and never offer a control that
+                   would fail. The file is gone; the reports made from it are all still here. */
+                <p className="text-[12px] text-gray-500">
+                  The auditor&rsquo;s file is no longer on file, so this one cannot be run again.
+                  Add it from the <b>Ask a question</b> tab and audit against it there. Every
+                  report above is kept.
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      })}
+      <p className="mt-5 text-[12px] text-gray-500">
+        Have another auditor&rsquo;s checklist? Attach it with the paperclip on the
+        {' '}<b>Ask a question</b> tab and type <i>Audit us against the attached template</i>.
+      </p>
+    </div>
+  )
+}
+
 function EarlierRuns({ runs, idx, open, onToggle, onOpen }: {
   runs: Run[]; idx: Index; open: boolean; onToggle: () => void; onOpen: (id: string) => void
 }) {
