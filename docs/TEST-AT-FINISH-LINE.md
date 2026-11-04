@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 10 · **Updated:** 4 November 2026: **the audit's words updated at E0a** — two of its three questions changed because the owner's three sentences changed the defects, and a third was added about broken JSON, which is not about a word at all. Version 9: 4 November 2026: **the audit's words added** (Part E step E0) — the fifth word and the narrowing of `on_file` are measured on Haiku and carry two things only Opus can settle, both of them one prompt sentence. Version 8: 3 November 2026: **the Audits chat's part added** (A, D, E), by Part A step 6b. Its six keys were written from Cascade's own rows and committed before the first model call, and measured on `claude-sonnet-5-5` against the Documents brief on the same six questions. Version 7: 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 11 · **Updated:** 4 November 2026: **question 2b answered on Haiku at E0c** — one quote per finding took the lost sections from 3 of 6 to 0 of 3 — and still counted on Opus, with what the sentence costs added to it. Version 10: 4 November 2026: **the audit's words updated at E0a** — two of its three questions changed because the owner's three sentences changed the defects, and a third was added about broken JSON, which is not about a word at all. Version 9: 4 November 2026: **the audit's words added** (Part E step E0) — the fifth word and the narrowing of `on_file` are measured on Haiku and carry two things only Opus can settle, both of them one prompt sentence. Version 8: 3 November 2026: **the Audits chat's part added** (A, D, E), by Part A step 6b. Its six keys were written from Cascade's own rows and committed before the first model call, and measured on `claude-sonnet-5-5` against the Documents brief on the same six questions. Version 7: 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -961,14 +961,18 @@ stronger model to the wrong neighbour**, and two runs say it sends Haiku there t
    watch on Opus**, and if it fails there too the next thing to try is the shape of the rule rather than more of
    it: the practice test may need to be a question the model answers first (*can a document settle this at
    all?*) rather than a clause it weighs against the others.
-2b. ⚡ **NEW AT E0a, AND IT IS NOT ABOUT A WORD: does Opus break its own JSON on a two-shortfall line?** Three of
-   six Clackamas sections were lost on Haiku, every one the same shape, read out of `audit_sections.raw_text`:
-   `"quote": "Rohan Patel's last evaluation was 2 February 2023" and "Marcus Reed was certified…"` — two quotes
-   joined with `and` inside one string field, always on **B2**, which is the fifth word's own two-shortfall case.
-   The section is written `could_not_complete`, honestly, and a paid section is thrown away. **Count it on Opus
-   over the three runs.** If Opus does it at all, the fix is one of two §3.1 changes and the owner picks: a
-   repair inside `extractJsonText`, or one line in both shapes saying one quote per line and the rest in
-   `what_to_do`.
+2b. ⚡ **ADDED AT E0a, ANSWERED AT E0c, AND STILL COUNTED HERE: does Opus break its own JSON on a two-shortfall
+   line?** Three of six Clackamas sections were lost on Haiku, every one the same shape, read out of
+   `audit_sections.raw_text`: `"quote": "Rohan Patel's last evaluation was 2 February 2023" and "Marcus Reed was
+   certified…"` — two quotes joined with `and` inside one string field, always on **B2**, which is the fifth
+   word's own two-shortfall case. **The owner's sentence of 4 November took it to 0 of 3** — *"One quote per
+   finding. If two things in the document fall short, quote the one the word rests on and put the other in
+   what_to_do, in your own words — never two quotes joined inside the quote field"* — in both shapes, with
+   `json_parsed = true` read back on all three sections. **One run is not a proof, so count it on Opus over the
+   three runs anyway**, and read `json_parsed` and `status` off `audit_sections` rather than the script's
+   output. If Opus still does it, the remaining fix is a repair inside `extractJsonText`, which is §3.1.
+   **And check what the sentence costs**: B2 must still name BOTH operators, one in the quote and the other in
+   `what_to_do`. On Haiku it did, and the action came out more specific than either earlier run's.
 3. **Does the fifth word land on the lines it is for?** A3, B2, B3 and B4 on the Clackamas checklist are the four
    W4 named from the owner's own Opus run of 3 November. They should carry it.
 4. **Is `on_file` ever written beside a shortfall again?** That is the defect the whole word exists for. Read every

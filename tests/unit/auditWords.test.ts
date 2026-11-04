@@ -221,6 +221,23 @@ describe('every file that says the words says all five', () => {
       'the TEMPLATE shape carries it in capitals, where its own stale clause is')
     assert.equal((src.match(/an inspector will see on the day/g) ?? []).length, 2,
       'the practice-question sentence must be in both shapes, not one')
+    /**
+     * *** ONE QUOTE PER FINDING — E0b, 4 November 2026, and it is not a style rule. ***
+     *
+     * Three of six Clackamas sections were lost to this, every one the same shape on the same
+     * line, read out of `audit_sections.raw_text`:
+     *
+     *   "quote": "Rohan Patel's last evaluation was 2 February 2023" and "Marcus Reed was
+     *   certified and last evaluated on 19 September 2023",
+     *
+     * Two quotes joined with `and` inside one JSON string field. The string ends early, the object
+     * breaks, `extractJsonText` cannot recover it, and a paid section is written
+     * `could_not_complete`. Always on B2 — the fifth word's own two-shortfall case, which is
+     * exactly what invites a second quote.
+     */
+    assert.equal((src.match(/ONE QUOTE PER FINDING/g) ?? []).length, 2,
+      'the one-quote rule must be in both shapes, not one')
+    assert.match(src, /never two quotes joined inside the\s+quote field/)
     // *** AND THE PARAGRAPH THAT CAUSED W4 IS GONE. ***
     // It read "ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART", which is why the model was
     // right to call four lines with gaps `on_file`.

@@ -147,6 +147,10 @@ needs them. WHEN BOTH FIT, OUT OF DATE WINS: if the whole document is too old, t
 however many things are also missing inside it. A document still inside its own dates is never
 stale, whatever is missing from it: that is on_file_gaps.
 
+ONE QUOTE PER FINDING. If two things in the document fall short, quote the one the word rests
+on and put the other in what_to_do, in your own words — never two quotes joined inside the
+quote field.
+
 NAME A DOCUMENT BY ITS HANDLE. Each document you are shown carries one — D1, D2, D3 — printed
 beside its title. Write that handle and nothing else wherever a document is asked for. Do not write a
 title, a file name, or an identifier of any other shape: a handle is checked against the list you were
@@ -367,6 +371,10 @@ nothing_on_file still means NO document on file answers the line at all. Calling
 nothing on file tells somebody they have nothing when they have most of it, and they stop trusting
 the report — which costs more than the line was worth. And calling it on_file tells them a line is
 settled when it is not, which is worse: they will find out from the inspector.
+
+ONE QUOTE PER FINDING. If two things in the document fall short, quote the one the word rests
+on and put the other in what_to_do, in your own words — never two quotes joined inside the
+quote field.
 
 A line a document the company holds answers in full is on_file, with the handle, and a quote if the
 reading carries one. A line a document answers with something still falling short is on_file_gaps,
