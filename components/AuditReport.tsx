@@ -21,6 +21,10 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Drawer, printDrawer, printDate } from '@/components/Drawer'
 import { authHeaders } from '@/lib/supabase'
+import {
+  WORD_LABEL, WORD_ORDER, WORD_TINT, WORD_INK, TINT_GREY, INK_GREY, TINT_NO_ANSWER,
+  citationOrder, orderedRows,
+} from '@/lib/auditRows'
 
 import type { Banner } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
@@ -101,13 +105,12 @@ interface Report { run: Run; sections: Section[]; findings: Finding[]
   /** id -> title, for every document the run read or held. */
   documents?: Record<string, DocRef> }
 
-const WORD: Record<string, string> = {
-  nothing_on_file: 'nothing on file',
-  on_file_gaps: 'on file, gaps found',
-  stale: 'out of date',
-  on_file: 'on file',
-  not_a_document_question: 'not a document question',
-}
+/**
+ * *** THE FIVE WORDS AND THEIR ORDER LIVE IN `lib/auditRows.ts` SINCE PART C. ***
+ * The binder prints the same rows as this page, so the labels and the order are shared rather
+ * than copied — see that file's header. `WORD` is the local name this file has always used.
+ */
+const WORD = WORD_LABEL
 /**
  * Amber is attention. On file is not attention, and must not borrow the colour.
  *
@@ -116,72 +119,13 @@ const WORD: Record<string, string> = {
  * sentence underneath each listed what was missing.
  */
 const AMBER_WORD = new Set(['nothing_on_file', 'on_file_gaps', 'stale'])
-/**
- * The order findings are read in: what is missing, then what is there with something falling
- * short, then what is old, then what is there.
- *
- * The fifth word sits SECOND, before "out of date" (the owner, 4 November): a gap read off the
- * page names a specific thing to fix, where a stale date only says an inspector will ask.
- */
-const WORD_ORDER = ['nothing_on_file', 'on_file_gaps', 'stale', 'on_file', 'not_a_document_question']
 
 /**
- * *** THE PALETTE — ONE NAMED SET OF TINTS, READ OFF BOARD 1 — E1a, 4 November 2026. ***
- *
- * A word is drawn THREE times on this page: in the strip, in the counts under it, and as the row's
- * own pill. Three copies of a colour is three copies that drift, and the one that drifts is always
- * the one nobody is looking at — `components/Drawer.tsx`'s own header says the same thing about
- * copying a drawer. So the tints are defined once, here, and all three read them.
- *
- * The values are `docs/audit-report-boards.html:149` — `.c-green`, `.c-amber`, `.c-red`, `.c-grey`
- * — copied out of the file rather than matched by eye. They are SOFT grounds with DARK text, which
- * is the change: the strip was five saturated blocks with white text, and the row's word was
- * coloured text that made "on file" and "not a document question" look like the same thing to
- * anybody skimming the left edge.
- *
- * *** AND NOTHING ON FILE IS A PINK, NOT A RED — the owner, 4 November. *** `#F8D7D3` behind
- * `#7A1F17`. It is the strongest of the five words and it is still not an alarm: a report somebody
- * has to act on is not improved by a stop sign.
- *
- * `print-tint` (`app/globals.css`) is not decoration either: a browser drops background colours on
- * paper by default, so without it the five words print as five identical white capsules.
+ * *** THE PALETTE MOVED TO `lib/auditRows.ts` AT PART C — 4 November 2026. ***
+ * The binder draws the same word pills as this page (`components/AuditBinder.tsx`), and E1a's
+ * whole point was that one word must not be coloured in two places. The tints, their reasoning
+ * and the board's own values are in that file beside the labels and the order.
  */
-const INK_GREEN = 'text-[#1F5A3A]'
-const INK_AMBER = 'text-[#7A4F0F]'
-const INK_PINK = 'text-[#7A1F17]'
-const INK_GREY = 'text-[#4B5563]'
-const TINT_GREEN = `bg-[#DCEFE3] ${INK_GREEN}`
-const TINT_AMBER = `bg-[#FCEBC6] ${INK_AMBER}`
-const TINT_PINK = `bg-[#F8D7D3] ${INK_PINK}`
-const TINT_GREY = `bg-[#E9EBEF] ${INK_GREY}`
-/** The ground and the ink together: the strip's cells and the row's pill. */
-const WORD_TINT: Record<string, string> = {
-  on_file: TINT_GREEN,
-  on_file_gaps: TINT_AMBER,
-  stale: TINT_AMBER,
-  nothing_on_file: TINT_PINK,
-  not_a_document_question: TINT_GREY,
-}
-/**
- * *** THE INK ALONE, FOR THE COUNTS — and this is where the brief and board 1 differ. ***
- * Board 1 draws the counts in plain dark text: `.counts b { color: var(--ink) }`. The brief says
- * the palette is used by "the strip, the counts and the row pills", and the brief wins where the
- * two disagree. So the COUNT takes the word's ink and the words after it stay muted, which is how
- * board 3 draws the same five numbers on a checklist card. The filled pill is kept for the one
- * that is SELECTED, so a filter that is on still looks different from four that are off.
- */
-const WORD_INK: Record<string, string> = {
-  on_file: INK_GREEN,
-  on_file_gaps: INK_AMBER,
-  stale: INK_AMBER,
-  nothing_on_file: INK_PINK,
-  not_a_document_question: INK_GREY,
-}
-/**
- * A line nobody answered is not a sixth word: it is the absence of one, so it is an outline and
- * not a tint — a hole in the row rather than a verdict. The strip has drawn it this way since E1.
- */
-const TINT_NO_ANSWER = 'border border-dashed border-[var(--amber)] bg-white text-[var(--amber)]'
 
 /**
  * *** A STORED SUMMARY GOES STALE THE FIRST TIME YOU LEARN SOMETHING. ***
@@ -654,7 +598,7 @@ function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: str
   )
 }
 
-export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName, topLine, paused = null, chrome = 'drawer' }: {
+export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName, topLine, paused = null, chrome = 'drawer', onPrintBinder }: {
   runId: string; focusWord?: string | null; onClose: () => void; onChanged: () => void
   /**
    * *** A PAGE ON /audits, A DRAWER ON THE CALENDAR — decision 55, 4 November 2026. ***
@@ -663,6 +607,13 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
    * — needs no change at all. `/audits` passes `page`.
    */
   chrome?: 'page' | 'drawer'
+  /**
+   * *** SWITCH THIS REPORT INTO BINDER MODE — Part C, decision 61. ***
+   * Only `app/audits/page.tsx` passes it, because only a page can change its own address. Without
+   * it (the Calendar's drawer) the footer's button navigates to `/audits?run=<id>&binder=1`
+   * instead, which is the same destination by the same route a bookmark would take.
+   */
+  onPrintBinder?: () => void
   /** Step 18, decision 11 — a prop from the page, which already holds the verdict. */
   paused?: Banner | null
   /** On paper, top left of every page (board 10). The page reads it; this component has no session. */
@@ -939,66 +890,22 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   }
 
   /**
-   * *** THE ZIP, FETCHED WITH THE SIGN-IN HEADER — Audits Run 9, item 1. ***
+   * *** THE ZIP IS GONE, AND WITH IT THE BUTTON THAT FETCHED IT — Part C, decision 61. ***
    *
-   * It was a plain `<a href="/api/audit-runs/<id>/documents">`. On production that returned
-   * `{"error":"Unauthorized"}`, and the cause is three lines:
+   * `downloadDocuments` lived here: it fetched `GET /api/audit-runs/[id]/documents` with
+   * `authHeaders()` and saved the blob, written that way because a plain `<a href>` sends no
+   * `Authorization` header and returned `{"error":"Unauthorized"}` on production (Run 9, item 1).
+   * Both it and the route are deleted. Two reasons, and the second is the one that matters:
    *
-   *   · the link was a browser NAVIGATION, which sends cookies and no `Authorization` header;
-   *   · `lib/auth.ts:71` reads the token only from `request.headers.get('authorization')`;
-   *   · `lib/auth.ts:80` returns `{ error: 'Unauthorized' }` when there is no valid token, and the
-   *     zip route calls `requireCompany` at `app/api/audit-runs/[id]/documents/route.ts:95`.
-   *
-   * Print was unaffected because it never makes a request: it is `window.print()` on the open
-   * drawer.
-   *
-   * So the button now does what every other call on this screen does — `fetch` with
-   * `authHeaders()` — and saves the response. The filename comes from the route's own
-   * `content-disposition`, so the name a person gets is still the route's decision and not a second
-   * copy of that logic here.
-   *
-   * *** AND IT MUST BE PRESSED IN A BROWSER TO BE PROVEN. *** A script that fetches the route with a
-   * header proves the ROUTE. It cannot prove the button: the defect was entirely in how the browser
-   * made the request, so only a real press exercises it. `docs/TESTING.md` says so in the audit set.
+   *   · **§143, the owner's decision of 1 October:** when the binder lands it REPLACES the
+   *     download. A person wants the folder they can hand over, not a choice between two kinds of
+   *     archive.
+   *   · **The zip could not be handed over anyway at the size that mattered.** It built the whole
+   *     archive in memory and returned it as one response body, with no size check, against
+   *     Vercel's 4.5 MB limit (`docs/GAPS-PLAN.md`): an audit over a dozen scanned PDFs failed as
+   *     a 500 that read "We could not build that download just now". The binder is drawn in the
+   *     browser and never crosses that wall.
    */
-  async function downloadDocuments() {
-    setBusy(true)
-    try {
-      const res = await fetch(`/api/audit-runs/${run.id}/documents`, { headers: await authHeaders() })
-      if (!res.ok) {
-        // §5.1: when the failure is ours, say so, and never imply the person did something wrong.
-        const json = await res.json().catch(() => null)
-        setNotice(json?.error === 'Unauthorized'
-          ? 'Your sign-in has expired. Reload the page and try again.'
-          : 'We could not build that download just now. Nothing was changed; try again in a moment.')
-        return
-      }
-      /**
-       * The route's own filename, read off the header it already sets. The starred form first: an
-       * HTTP header is latin-1, so the plain `filename=` is the ASCII fallback and `filename*` is
-       * the real name (RFC 6266). Reading the fallback is what saved the file as
-       * "Oregon DEQ Â· Oregon OSHA … .zip".
-       */
-      const disp = res.headers.get('content-disposition') ?? ''
-      const starred = /filename\*=UTF-8''([^;]+)/i.exec(disp)
-      const plain = /filename="([^"]+)"/.exec(disp)
-      const name = starred ? decodeURIComponent(starred[1])
-        : plain ? plain[1] : 'audit documents.zip'
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = name
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      // Revoked on the next tick, not immediately: Safari cancels a download whose blob URL is
-      // revoked in the same frame as the click.
-      setTimeout(() => URL.revokeObjectURL(url), 0)
-    } catch {
-      setNotice('We could not build that download just now. Nothing was changed; try again in a moment.')
-    } finally { setBusy(false) }
-  }
 
   // THE ONE META LINE. Audited date, sections, what it read and what it only listed, and how fresh
   // the evidence was. No cost: what a reading cost us is our business, not a line on the report
@@ -1078,9 +985,15 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
         className="whitespace-nowrap text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
         Make a checklist
       </button>
-      <button disabled={busy} onClick={downloadDocuments}
-        className="whitespace-nowrap text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
-        Download the files
+      {/* *** "Print the binder" — Part C, decision 61, in the slot the zip's button had. ***
+          On the page it switches this report into binder mode (the page owns the address). In the
+          Calendar's drawer there is no page to switch, so it opens `/audits?run=<id>&binder=1` —
+          the binder is a page, and a drawer inside a drawer is the one shape decision 55 forbids. */}
+      <button onClick={() => (onPrintBinder
+        ? onPrintBinder()
+        : (window.location.href = `/audits?run=${run.id}&binder=1`))}
+        className="whitespace-nowrap text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
+        Print the binder
       </button>
       <button onClick={() => setReasonFor('run')} className="whitespace-nowrap text-[12px] text-gray-400 hover:text-gray-700 hover:underline">
         Not right
@@ -1183,9 +1096,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
      * what the report shows and a strip that disagreed with the rows under it would be worse than
      * no strip (decision 50: a line nobody answered is still a row, and still a cell).
      */
-    const stripCells = sections
-      .flatMap((sec) => openF.filter((f) => f.section_id === sec.id && f.kind !== 'expected')
-        .sort((a, b) => a.ordinal - b.ordinal))
+    const stripCells = orderedRows(sections, openF)
       .map((f) => ({ id: f.id, ref: f.template_line, word: f.word }))
     /** Board 1's right-hand end: "10 lines · 3 sections · 11 documents read". The lines are the
      *  cells, so the number beside the strip and the strip itself can never disagree. */
@@ -1721,24 +1632,4 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       </div>
     </Shell>
   )
-}
-
-/**
- * CITATION ORDER, AND IT IS THE ORDER THE FINDINGS ARE IN.
- *
- * The print's last page and the zip's index both number the documents the same way, so a printed
- * report and a downloaded folder can be read side by side. Documents a finding cites come first, in
- * the order they are first cited; documents the run read and never cited come after, so the list is
- * still complete.
- */
-export function citationOrder(findings: Array<{ document_id: string | null; document_b_id: string | null }>,
-                              read: string[]): string[] {
-  const seen: string[] = []
-  for (const f of findings) {
-    for (const id of [f.document_id, f.document_b_id]) {
-      if (id && !seen.includes(id)) seen.push(id)
-    }
-  }
-  for (const id of read) if (!seen.includes(id)) seen.push(id)
-  return seen
 }

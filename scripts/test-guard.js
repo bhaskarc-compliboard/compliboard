@@ -519,7 +519,24 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   read-only note was rendered TWICE on the checklist report and NOT AT ALL on the agency report
 //   (commit 10786ee put both copies in one branch); "Not right" on the run had nowhere to put the
 //   answer on the checklist report; and "Download the documents" called the raw files the report.
-const FLOOR = 2513
+//
+// 2513 -> 2540, 4 November 2026 (GAPS-PLAN Part C - THE BINDER, decision 61). TWENTY-SEVEN, and
+//   the new ones are a different KIND of test from most of this file: `lib/auditRows.ts` is pure,
+//   so the numbering a binder's tabs depend on is checked by NUMBERING SOME FINDINGS rather than
+//   by matching a regular expression against the source. "Document 3, page 1" on a row and the
+//   third tab behind the report are the same rule, run.
+//
+//   `pageFromLocator` is tested against the column's own shapes, read off staging: "page 1,
+//   header table", "Pages 1-2, August and September 2026 tables", "Section 1, page 2",
+//   "next six-year maintenance due dates shown on page 1". A locator naming no page gives the
+//   document alone - inventing "page 1" would send an inspector to the wrong sheet.
+//
+//   AND ONE THE WALK FOUND, WHICH NO SHAPE TEST WOULD HAVE: a Word document's stored text is
+//   mammoth's HTML (`lib/documentContent.ts:421`), so the binder printed "</p><h1>7. Non-routine
+//   tasks</h1><p>" to an inspector. `plainTextOf` converts it - never renders it, because that
+//   would put a customer's own markup into the page - and `&amp;` is decoded LAST, or an entity
+//   that spells a tag would become one.
+const FLOOR = 2540
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

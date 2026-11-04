@@ -146,6 +146,20 @@ body {
    */
   .print-tint { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
+  /*
+   * THE BINDER'S SHEETS — `docs/GAPS-PLAN.md` Part C, decision 61.
+   *
+   * The binder is the report page printed with its documents behind it, so the browser does the
+   * pagination and these two rules are all it needs: a sheet (the cover, the report, a document's
+   * header) must not be split across a page break in the middle of its own heading, and a page of
+   * a document — a rendered PDF page or a photograph — is one printed page, never two halves.
+   *
+   * `break-before: page` is set per element in the markup, because which sheets start a new page
+   * is a fact about the binder's order and belongs where that order is written.
+   */
+  .binder-sheet { break-inside: avoid; }
+  .binder-page { break-inside: avoid; max-height: 247mm; width: auto; max-width: 100%; margin-left: auto; margin-right: auto; }
+
   /* A drawer is `position: fixed` in a 720px column over the page. Printing it gave a clipped
      strip of the drawer AND the whole page behind it. `printDrawer()` stamps this class on
      <body> for the duration of the dialog: the page is hidden, and the drawer stops being a

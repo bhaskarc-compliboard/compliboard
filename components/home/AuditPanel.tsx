@@ -1,4 +1,3 @@
-// GATE F4 — docs/PUBLIC-PAGES-PLAN.md §5. "Download the binder" waits on the binder being built. Walked at step 33.
 // GATE F7 — closed for this panel at `docs/GAPS-PLAN.md` Part A step 6b: the Audits page has the
 // chat, its two routes and its one offer, so the question typed into the box below and the
 // conversation it starts both exist behind the login now. §5 assigned F7 to this panel and
@@ -74,7 +73,13 @@ const WORDS = {
     missingCount: '1',
     report: 'report',
     add: 'Add a document',
-    binder: 'Download the binder',
+    // *** THE PRODUCT'S OWN WORDS SINCE PART C, 4 November 2026 (decision 61). *** The binder is
+    // printed by the browser from the report page, so the control is called "Print the binder"
+    // there — on the report's footer and on the latest run of an auditor's checklist card. GATE F4
+    // came off this file with that build. The card here is a PICTURE of that card and its three
+    // actions stay spans, as Print and Audit again beside it always have: step 33 walks the words
+    // against the product, and a marketing panel that was half live would be the odd thing.
+    binder: 'Print the binder',
     print: 'Print',
     again: 'Audit again',
   },

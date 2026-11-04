@@ -1,4 +1,10 @@
-// GATE F4 — docs/PUBLIC-PAGES-PLAN.md §5. The binder is not built; this whole panel waits on it. Walked at step 33.
+// GATE F4 — CLOSED 4 November 2026 (`docs/GAPS-PLAN.md` Part C, decision 61). The binder exists:
+// the report page has a binder mode that lays out the cover, the rows and the cited documents and
+// hands the whole thing to the browser's print. The card's button carries the product's own words,
+// "Print the binder". TWO THINGS IN THIS PANEL ARE STILL THE SCENE'S AND NOT THE PRODUCT'S, and
+// they are recorded in `docs/GAPS-PLAN.md` §8 rather than quietly changed here: the typed line
+// asks for a binder in the chat, and the product builds one from a BUTTON on the report or the
+// checklist card; and "PDF · 96 pages" is a sample count. Both are words for step 12/33 to settle.
 // GATE F6, a hypothesis to settle at step 12 — docs/PENDING.md F6 says the checklist (template) audit answers "not ready"; app/api/audit-runs/route.ts has a `kind === 'template'` branch. Which is true decides whether this scene's checklist is real. Do not resolve it here.
 // SAMPLE TEXT — every string below is in the product's voice and is replaced at step 12 by words from a real run. Kept in WORDS so the swap is one place.
 /**
@@ -47,7 +53,7 @@ const WORDS = {
     title: 'Northwest Grocers supplier audit',
     meta: 'prepared 4 November 2026 · 12 requirements · 11 documents · 96 pages · sample company',
     more: 'and 8 more tabs, in the checklist’s own order',
-    download: 'Download the binder',
+    download: 'Print the binder',
     print: 'Print',
     format: 'PDF · 96 pages',
     report: 'report',

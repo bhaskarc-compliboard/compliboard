@@ -24,7 +24,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
 const read = (p: string) => readFileSync(p, 'utf8')
@@ -33,6 +33,18 @@ const code = (src: string) => src
 
 const REPORT = read('components/AuditReport.tsx')
 const REPORT_CODE = code(REPORT)
+/**
+ * *** THE WORDS, THE ORDER AND THE PALETTE MOVED TO `lib/auditRows.ts` AT PART C. ***
+ * The binder (`components/AuditBinder.tsx`) prints the same rows as the report page, so one file
+ * holds the vocabulary both draw: the five labels, their order, the four tints and the ordering
+ * rules. Every assertion below that used to read the component now reads the module — the rule
+ * each one protects is unchanged, and the point of E1a's palette tests is stronger for it: there
+ * is one file to look in, not two.
+ */
+const ROWS = read('lib/auditRows.ts')
+const ROWS_CODE = code(ROWS)
+const BINDER = read('components/AuditBinder.tsx')
+const BINDER_CODE = code(BINDER)
 const PAGE = read('app/audits/page.tsx')
 const PAGE_CODE = code(PAGE)
 const DRAWER_CODE = code(read('components/Drawer.tsx'))
@@ -54,7 +66,7 @@ describe('the report is a page on /audits and a drawer on the Calendar — decis
   })
 
   test('it defaults to a drawer, so the Calendar needs no change at all', () => {
-    assert.match(REPORT_CODE, /chrome = 'drawer' \}/)
+    assert.match(REPORT_CODE, /chrome = 'drawer', onPrintBinder \}/)
     assert.match(REPORT_CODE, /chrome\?: 'page' \| 'drawer'/)
     assert.ok(!code(read('app/calendar/page.tsx')).includes('chrome='),
       'the Calendar must take the default')
@@ -188,9 +200,12 @@ describe('the strip is the checklist\'s picture, and agency runs have none', () 
   test('it is built from the ROWS, in the auditor\'s order', () => {
     // Not from `run.template_lines`: a strip that disagreed with the rows under it would be worse
     // than no strip. Decision 50 — a line nobody answered is still a row, and still a cell.
-    assert.match(REPORT_CODE, /const stripCells = sections/)
-    assert.match(REPORT_CODE, /\.sort\(\(a, b\) => a\.ordinal - b\.ordinal\)\)/)
-    assert.match(REPORT_CODE, /f\.kind !== 'expected'/, 'a suggestion is not a line of the checklist')
+    // The order itself lives in `lib/auditRows.ts` `orderedRows` since Part C, so the strip, the
+    // report's rows and the binder's tabs cannot fall into three different orders.
+    assert.match(REPORT_CODE, /const stripCells = orderedRows\(sections, openF\)/)
+    assert.match(ROWS_CODE, /export function orderedRows/)
+    assert.match(ROWS_CODE, /\.sort\(\(a, b\) => a\.ordinal - b\.ordinal\)\)/)
+    assert.match(ROWS_CODE, /f\.kind !== 'expected'/, 'a suggestion is not a line of the checklist')
   })
 
   test('it is drawn on the template report and NOWHERE else', () => {
@@ -208,12 +223,15 @@ describe('the strip is the checklist\'s picture, and agency runs have none', () 
   })
 
   test('a line with no answer is a hole, not a sixth colour', () => {
-    assert.match(REPORT_CODE, /border border-dashed border-\[var\(--amber\)\] bg-white/)
+    assert.match(ROWS_CODE, /border border-dashed border-\[var\(--amber\)\] bg-white/)
+    // The strip and the binder both draw it from the one constant.
+    assert.match(REPORT_CODE, /: TINT_NO_ANSWER\}`\}/)
+    assert.match(BINDER_CODE, /TINT_NO_ANSWER/)
     assert.equal(Object.keys({
       on_file: 1, on_file_gaps: 1, stale: 1, nothing_on_file: 1, not_a_document_question: 1,
     }).length, 5)
     for (const w of ['on_file', 'on_file_gaps', 'stale', 'nothing_on_file', 'not_a_document_question']) {
-      assert.ok(REPORT_CODE.includes(`${w}:`), `WORD_TINT has no ${w}`)
+      assert.ok(ROWS_CODE.includes(`${w}:`), `WORD_TINT has no ${w}`)
     }
   })
 
@@ -269,10 +287,10 @@ describe('the five words have one palette — E1a item 2', () => {
   test('each value appears in exactly ONE file, and that file is the palette', () => {
     const files = execSync("grep -rl -- '#DCEFE3\\|#FCEBC6\\|#F8D7D3\\|#E9EBEF' app lib components || true",
       { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
-    assert.deepEqual(files, ['components/AuditReport.tsx'],
+    assert.deepEqual(files, ['lib/auditRows.ts'],
       'a second file carries the tints and the two will drift')
     for (const hex of TINTS) {
-      assert.equal((REPORT_CODE.match(new RegExp(hex, 'g')) ?? []).length, 1,
+      assert.equal((ROWS_CODE.match(new RegExp(hex, 'g')) ?? []).length, 1,
         `${hex} is written more than once inside the palette's own file`)
     }
   })
@@ -288,24 +306,28 @@ describe('the five words have one palette — E1a item 2', () => {
       assert.ok(block.length > 0, `${name} is not where this test thinks it is`)
       assert.match(block, /WORD_TINT\[/, `${name} does not read the palette`)
     }
-    assert.match(REPORT_CODE, /const WORD_TINT: Record<string, string> = \{/)
+    // And the binder's pill is the fourth reader of the same map — Part C, decision 61.
+    assert.match(BINDER_CODE, /WORD_TINT\[f\.word\] \?\? TINT_GREY/)
+    assert.match(ROWS_CODE, /export const WORD_TINT: Record<string, string> = \{/)
     // nothing_on_file is the PINK in all three, because all three read one map.
-    assert.match(REPORT_CODE, /nothing_on_file: TINT_PINK/)
-    assert.match(REPORT_CODE, /nothing_on_file: INK_PINK/)
+    assert.match(ROWS_CODE, /nothing_on_file: TINT_PINK/)
+    assert.match(ROWS_CODE, /nothing_on_file: INK_PINK/)
     // The ink map is built FROM the same four values, not written out again: `TINT_PINK` is
     // `bg-[#F8D7D3] ${INK_PINK}`, so there is one place to change a colour and not two.
-    assert.match(REPORT_CODE, /const TINT_PINK = `bg-\[#F8D7D3\] \$\{INK_PINK\}`/)
-    assert.match(REPORT_CODE, /not_a_document_question: TINT_GREY/)
-    assert.match(REPORT_CODE, /on_file: TINT_GREEN/)
-    assert.match(REPORT_CODE, /on_file_gaps: TINT_AMBER/)
-    assert.match(REPORT_CODE, /stale: TINT_AMBER/)
+    assert.match(ROWS_CODE, /export const TINT_PINK = `bg-\[#F8D7D3\] \$\{INK_PINK\}`/)
+    assert.match(ROWS_CODE, /not_a_document_question: TINT_GREY/)
+    assert.match(ROWS_CODE, /on_file: TINT_GREEN/)
+    assert.match(ROWS_CODE, /on_file_gaps: TINT_AMBER/)
+    assert.match(ROWS_CODE, /stale: TINT_AMBER/)
   })
 
   test('there is still ONE label per word: the pill capitalises in CSS', () => {
     // The counts read "4 on file" and board 1's pill reads "On file". A second map of capitalised
     // labels is how `lib/documentStatus.ts`'s note about four copies of KIND_WORD happened.
     assert.match(REPORT_CODE, /first-letter:uppercase/)
-    assert.equal((REPORT_CODE.match(/on_file_gaps: 'on file, gaps found'/g) ?? []).length, 1)
+    assert.equal((ROWS_CODE.match(/on_file_gaps: 'on file, gaps found'/g) ?? []).length, 1)
+    assert.ok(!REPORT_CODE.includes("on_file_gaps: 'on file, gaps found'"),
+      'the component carries a second copy of the labels')
   })
 })
 
@@ -422,7 +444,7 @@ describe('the footer is board 1\'s row — E1a item 8', () => {
   test('the order is Audit again · Print · Make a checklist · Download the files · Not right', () => {
     const foot = REPORT_CODE.slice(REPORT_CODE.indexOf('const footer = ('),
                                    REPORT_CODE.indexOf('const WORDS_IN_ORDER'))
-    const order = ['Audit again', '>Print<', 'Make a checklist', 'Download the files', 'Not right']
+    const order = ['Audit again', '>Print<', 'Make a checklist', 'Print the binder', 'Not right']
     let at = -1
     for (const bit of order) {
       const next = foot.indexOf(bit)
@@ -431,9 +453,10 @@ describe('the footer is board 1\'s row — E1a item 8', () => {
     }
   })
 
-  test('"Download the documents" is gone until Part C replaces the button', () => {
+  test('the zip\'s button is gone: Part C replaced it, as §143 said it would', () => {
     assert.ok(!REPORT_CODE.includes('Download the documents'),
       'the button still calls the raw files "the documents", which reads as the report')
+    assert.ok(!REPORT_CODE.includes('Download the files'), 'the zip button is still there')
     // And it is no longer pushed to the far right, where the closing sentence belongs.
     assert.ok(!REPORT_CODE.includes('ml-auto text-[14px] text-gray-600'))
   })
@@ -452,8 +475,12 @@ describe('the footer is board 1\'s row — E1a item 8', () => {
     assert.match(foot, /\{chrome === 'page' && \(/)
   })
 
-  test('there is still no binder control — decision 57, hidden and not greyed', () => {
-    assert.ok(!REPORT_CODE.includes('Build the binder'), 'a greyed control promises something')
+  test('the binder control is REAL now, and it was never greyed first', () => {
+    // Decision 57 held it back to Part C hidden rather than disabled, because a greyed control
+    // promises something. It arrived as a working control and the word is "Print", not "Build":
+    // the browser makes it (decision 61).
+    assert.ok(!REPORT_CODE.includes('Build the binder'))
+    assert.match(REPORT_CODE, /Print the binder/)
   })
 })
 
@@ -509,5 +536,262 @@ describe('the suggestions are one folded grey line at the foot — E1a item 7', 
     assert.match(REPORT_CODE, /'hidden print:mt-2 print:block'/)
     assert.match(REPORT_CODE, /countsFor\(openF\.filter\(\(f\) => f\.kind !== 'expected'\)\)/)
     assert.match(REPORT_CODE, /expected: false,/)
+  })
+})
+
+/* ── PART C: THE BINDER — decision 61 ─────────────────────────────────────── */
+
+/**
+ * *** THESE RUN THE RULES, THEY DO NOT READ THEM. ***
+ *
+ * `lib/auditRows.ts` is pure on purpose — it imports nothing, so a test can call it. The numbering
+ * a binder's tabs depend on is therefore checked by numbering some findings, not by matching a
+ * regular expression against the source. Everything in this file above it is a SHAPE test because
+ * there is no renderer here; this part needs none.
+ */
+import {
+  citationOrder, citedDocumentIds, documentNumbers, pageFromLocator, citeLabel, orderedRows,
+  plainTextOf,
+} from '../../lib/auditRows.ts'
+
+const f = (id: string, doc: string | null, extra: Partial<{
+  section_id: string; ordinal: number; kind: string; document_b_id: string | null; locator: string | null
+}> = {}) => ({
+  id, document_id: doc, document_b_id: extra.document_b_id ?? null,
+  section_id: extra.section_id ?? 's1', ordinal: extra.ordinal ?? 0,
+  kind: extra.kind ?? 'finding', locator: extra.locator ?? null,
+})
+
+describe('the binder numbers documents by first citation — decision 57', () => {
+  test('one number per document, however many rows cite it', () => {
+    const rows = [f('1', 'A'), f('2', 'B'), f('3', 'A'), f('4', 'C'), f('5', 'B')]
+    assert.deepEqual(citedDocumentIds(rows), ['A', 'B', 'C'])
+    assert.deepEqual([...documentNumbers(rows)], [['A', 1], ['B', 2], ['C', 3]])
+  })
+
+  test('a contradiction cites TWO documents and both get a number, in the order written', () => {
+    const rows = [f('1', 'A', { document_b_id: 'B', kind: 'contradiction' }), f('2', 'C')]
+    assert.deepEqual(citedDocumentIds(rows), ['A', 'B', 'C'])
+  })
+
+  test('a row with nothing on file adds no tab', () => {
+    assert.deepEqual(citedDocumentIds([f('1', null), f('2', 'A'), f('3', null)]), ['A'])
+  })
+
+  test('the TABS are the cited documents; the read-only ones are not tabs', () => {
+    // `citationOrder` appends everything the run read, which is right for the report's last page
+    // and wrong for the binder: eleven documents nothing cites would be eleven tabs to leaf past.
+    const rows = [f('1', 'A')]
+    assert.deepEqual(citationOrder(rows, ['A', 'B', 'C']), ['A', 'B', 'C'])
+    assert.deepEqual(citedDocumentIds(rows), ['A'])
+  })
+
+  test('the auditor\'s order is section by section, and a suggestion is not a line', () => {
+    const sections = [{ id: 's2', ordinal: 2 }, { id: 's1', ordinal: 1 }]
+    const rows = [
+      f('b', 'A', { section_id: 's2', ordinal: 1 }),
+      f('a2', 'A', { section_id: 's1', ordinal: 2 }),
+      f('a1', 'A', { section_id: 's1', ordinal: 1 }),
+      f('x', 'A', { section_id: 's1', ordinal: 3, kind: 'expected' }),
+    ]
+    assert.deepEqual(orderedRows(sections, rows).map((r) => r.id), ['a1', 'a2', 'b'])
+  })
+})
+
+describe('a row cites "Document n, page p" — and only a page the locator names', () => {
+  test('the page comes off the real column\'s own shapes', () => {
+    // Every one of these is a locator read off staging, not an invented example.
+    assert.equal(pageFromLocator('page 1, header table'), 'page 1')
+    assert.equal(pageFromLocator('Page 1, September table and supervisor review section'), 'page 1')
+    assert.equal(pageFromLocator('Pages 1–2, August and September 2026 tables'), 'pages 1–2')
+    assert.equal(pageFromLocator('Section 1, page 2'), 'page 2')
+    assert.equal(pageFromLocator('next six-year maintenance due dates shown on page 1'), 'page 1')
+    // The FIRST page named wins: a finding that spans two pages starts on the first.
+    assert.equal(pageFromLocator('page 1, operator table; page 2'), 'page 1')
+  })
+
+  test('a locator with no page gives the document alone, and nothing is invented', () => {
+    assert.equal(pageFromLocator('Section 3, chemical inventory; Section 6, training'), null)
+    assert.equal(pageFromLocator(null), null)
+    assert.equal(citeLabel(3, 'Section 3, chemical inventory'), 'Document 3')
+    assert.equal(citeLabel(3, 'page 1, operator table'), 'Document 3, page 1')
+    // No document, no citation — a line with nothing on file cites nothing.
+    assert.equal(citeLabel(undefined, 'page 1'), null)
+  })
+})
+
+describe('the rows are written once, and the binder reads them — decision 61', () => {
+  test('the report, the binder and the module are one chain', () => {
+    assert.match(REPORT_CODE, /from '@\/lib\/auditRows'/)
+    assert.match(BINDER_CODE, /from '@\/lib\/auditRows'/)
+    assert.match(ROWS_CODE, /export function citationOrder/)
+    // The component no longer owns it: a second `export function citationOrder` is a second rule.
+    assert.ok(!REPORT_CODE.includes('export function citationOrder'))
+  })
+
+  test('the zip route and its button are gone, and nothing calls them', () => {
+    assert.ok(!existsSync('app/api/audit-runs/[id]/documents/route.ts'),
+      'the zip route is still there; it hand-copied citationOrder and failed over 4.5 MB')
+    // CODE, not comments: `components/AuditReport.tsx` keeps a paragraph saying what was deleted
+    // and why, which is the record of a decision and not a caller.
+    for (const [file, src] of [['components/AuditReport.tsx', REPORT_CODE],
+                               ['app/audits/page.tsx', PAGE_CODE],
+                               ['components/AuditBinder.tsx', BINDER_CODE]] as Array<[string, string]>) {
+      assert.ok(!src.includes('downloadDocuments'), `${file} still calls the zip`)
+      assert.ok(!/audit-runs\/[^'"`]*\/documents/.test(src), `${file} still fetches the zip`)
+    }
+  })
+
+  test('the module stays pure, so the binder never counts as a paid route', () => {
+    // `scripts/check-schema-contracts.js` makes any route that can REACH lib/ai.ts call
+    // requireAccess (PAID_COUNT). The binder calls no model; an import is how that would change.
+    assert.ok(!/^import /m.test(ROWS_CODE.replace(/^\s*$/gm, '')),
+      'lib/auditRows.ts imports something; it must import nothing at all')
+  })
+})
+
+describe('what the binder lays out — decision 61 and the Part C map\'s words', () => {
+  test('the cover says who, what, when, how many, and who prepared it', () => {
+    assert.match(BINDER_CODE, /Audited \{auditedOn\} · Printed \{printDate\(new Date\(\)\)\}/)
+    assert.match(BINDER_CODE, /Prepared with CompliBoard\./)
+    assert.match(BINDER_CODE, /None of it is a verdict on whether the company complies\./)
+    // The auditor's own title, whole — decision 57, and the same expression the report uses.
+    assert.match(BINDER_CODE, /rep\.documents\?\.\[run\.template_document_id \?\? ''\]\?\.title/)
+  })
+
+  test('one header sheet per cited document, each starting a new page', () => {
+    assert.match(BINDER_CODE, /\{\(tabs \?\? \[\]\)\.map\(\(t\) => \(/)
+    assert.match(BINDER_CODE, /Document \{t\.n\}/)
+    assert.match(BINDER_CODE, /cited by \$\{t\.citedBy\.join\(', '\)\}/)
+    assert.match(BINDER_CODE, /style=\{\{ breakBefore: 'page' \}\}/)
+  })
+
+  test('a file we could not fetch is a page that says so, and the cover counts it', () => {
+    assert.match(BINDER_CODE, /This file could not be fetched on \$\{when\}\./)
+    assert.match(BINDER_CODE, /Its record and its reading are intact/)
+    assert.match(BINDER_CODE, /\{missing\} file\{missing === 1 \? '' : 's'\} could not be fetched/)
+    // §5.1: it never says what is IN a file it could not read, and never blames the person.
+    assert.ok(!/your file|you (did|should)/i.test(BINDER_CODE))
+  })
+
+  test('a Word original is the stored text, read under RLS as the caller, and says so', () => {
+    assert.match(BINDER_CODE, /createClient\(\)\.from\('document_scans'\)/)
+    assert.match(BINDER_CODE, /\.select\('document_id, extracted_text'\)/)
+    assert.match(BINDER_CODE, /\.eq\('is_current', true\)/)
+    assert.ok(!BINDER_CODE.includes('supabaseAdmin'), 'the binder must read as the person')
+    assert.match(BINDER_CODE, /A text rendering of \$\{what\}; the original is on file in CompliBoard\./)
+  })
+
+  test('the files come down the path "Open the file" already uses', () => {
+    // B2's decision 53: that route hands over the CONVERTED copy when there is one, which is
+    // exactly what a binder wants for a HEIC or a multi-page TIFF.
+    assert.match(BINDER_CODE, /'\/api\/document-actions'/)
+    assert.match(BINDER_CODE, /action: 'file_url'/)
+    assert.match(BINDER_CODE, /Preparing the binder… \$\{i \+ 1\} of \$\{cited\.length\}/)
+  })
+
+  test('pdf.js is loaded ONLY when a binder is being prepared', () => {
+    // 1.6 MB of PDF machinery on a page that is not a binder is a page nobody asked to be slower.
+    assert.match(BINDER_CODE, /await Promise\.all\(\[\s*import\('pdfjs-dist\/build\/pdf\.mjs'\)/)
+    assert.ok(!/^import .*pdfjs/m.test(BINDER_CODE), 'a static import would bundle it into the page')
+    const elsewhere = execSync("grep -rln pdfjs-dist app lib components || true", { encoding: 'utf8' })
+      .trim().split('\n').filter(Boolean)
+    assert.deepEqual(elsewhere, ['components/AuditBinder.tsx'])
+  })
+
+  test('the worker is the main thread, and the reason is read out of pdf.js itself', () => {
+    assert.match(BINDER_CODE, /globalThis as unknown as \{ pdfjsWorker\?: unknown \}\)\.pdfjsWorker = worker/)
+    assert.ok(!BINDER_CODE.includes('new Worker('), 'Turbopack does not promise that shape')
+    assert.ok(!BINDER_CODE.includes('workerSrc'), 'a worker URL means a file copied into public/')
+  })
+
+  test('a rendered page is a JPEG, not a live canvas', () => {
+    // 40 pages of canvas at print resolution is ~350 MB of live bitmaps; and a data URL survives
+    // the print dialog, which the 120-second signed URL the bytes came from does not.
+    assert.match(BINDER_CODE, /canvas\.toDataURL\('image\/jpeg', 0\.82\)/)
+    assert.match(BINDER_CODE, /canvas\.width = 0; canvas\.height = 0/)
+  })
+
+  test('the binder prints through the ONE print path, with its own type on the paper', () => {
+    assert.match(BINDER_CODE, /<section className="print-drawer/)
+    assert.match(BINDER_CODE, /data-print-company=\{companyName \?\? ''\} data-print-type="Audit binder"/)
+    assert.match(BINDER_CODE, /printDrawer\(\)/)
+    // E1a's rule still holds: without it the pills and the strip print as white capsules.
+    assert.match(CSS, /\.print-tint \{ -webkit-print-color-adjust: exact; print-color-adjust: exact; \}/)
+    assert.match(CSS, /\.binder-sheet \{ break-inside: avoid; \}/)
+  })
+})
+
+describe('getting to the binder — one address, three doors', () => {
+  test('it is a mode of the report page, at the report\'s own address', () => {
+    assert.match(PAGE_CODE, /const binderParam = params\.get\('binder'\) === '1'/)
+    assert.match(PAGE_CODE, /\{binder \? \(/)
+    assert.match(PAGE_CODE, /<AuditBinder runId=\{openRun\} companyName=\{companyName\}/)
+    // Closing the report closes the binder with it, or the next run would open in binder mode.
+    assert.match(PAGE_CODE, /if \(k === 'run' && v === null\) p\.delete\('binder'\)/)
+  })
+
+  test('the report\'s footer switches modes; the Calendar\'s drawer navigates', () => {
+    assert.match(REPORT_CODE, /onPrintBinder\?: \(\) => void/)
+    assert.match(REPORT_CODE, /window\.location\.href = `\/audits\?run=\$\{run\.id\}&binder=1`/)
+    assert.match(PAGE_CODE, /onPrintBinder=\{\(\) => setParam\('binder', '1'\)\}/)
+    // And the Calendar is unchanged, as it has been since E1: it passes no prop and gets the link.
+    assert.ok(!code(read('app/calendar/page.tsx')).includes('onPrintBinder'))
+  })
+
+  test('board 3\'s card gets it on the latest FINISHED run', () => {
+    // It was `i === 0`, the top row — and the walk found the top row of this card on staging is a
+    // run still queued, so the control vanished. A binder can only be made of an audit that
+    // finished, and the newest finished one is the one a person hands over today.
+    assert.match(PAGE_CODE, /const latestDone = runs\.find\(\(r\) => r\.status === 'done'\)\?\.id/)
+    assert.match(PAGE_CODE, /\{r\.id === latestDone && \(/)
+    assert.match(PAGE_CODE, /onPrintBinder\(r\.id\)/)
+    assert.match(PAGE_CODE, /onPrintBinder=\{\(id\) => \{ setParam\('run', id\); setParam\('binder', '1'\) \}\}/)
+  })
+
+  test('a paused company may print one: no gate, no model', () => {
+    assert.ok(!BINDER_CODE.includes('requireAccess') && !BINDER_CODE.includes('paused'),
+      'the binder is the customer\'s own files and their own finished audit')
+    assert.ok(!BINDER_CODE.includes('@/lib/ai'))
+  })
+
+  test('GATE F4 is off both homepage panels, and the words are the product\'s', () => {
+    const audit = read('components/home/AuditPanel.tsx')
+    const binderPanel = read('components/home/BinderPanel.tsx')
+    assert.ok(!/^\/\/ GATE F4 — docs/m.test(audit), 'the gate comment is still open on AuditPanel')
+    assert.match(audit, /binder: 'Print the binder'/)
+    assert.match(binderPanel, /GATE F4 — CLOSED/)
+    assert.match(binderPanel, /download: 'Print the binder'/)
+    assert.match(read('docs/PENDING.md'), /~~\*\*F4\*\*~~ \| ~~The binder~~ — \*\*CLOSED/)
+  })
+})
+
+/**
+ * *** THE WORD DOCUMENT'S STORED TEXT IS HTML, AND THE BINDER PRINTED THE TAGS. ***
+ * Found by the walk, not by reading: `lib/documentContent.ts:421` reads a `.docx` with
+ * `mammoth.convertToHtml`, so `document_scans.extracted_text` holds markup — confirmed on
+ * staging, where the Emergency Action Plan's text begins `<p>Emergency Action Plan and Hazardous
+ * Waste Contingency Plan</p>`. The reading is not changed (that is what the model is shown, a
+ * §3.1 decision); the binder converts it, and never renders it.
+ */
+describe('a Word original prints its words, not its tags — found by the walk', () => {
+  test('block tags become line breaks and every other tag goes', () => {
+    const stored = '<p>Emergency Action Plan</p><p>Clackamas Blending &amp; Supply LLC</p>'
+      + '<h1>7. Non-routine tasks</h1><p>Before a non-routine task<br />the shift lead reviews.</p>'
+    assert.equal(plainTextOf(stored),
+      'Emergency Action Plan\nClackamas Blending & Supply LLC\n7. Non-routine tasks\n'
+      + 'Before a non-routine task\nthe shift lead reviews.')
+  })
+
+  test('an entity that spells a tag stays text, and does not become one', () => {
+    // `&amp;` is decoded LAST, or `&amp;lt;p&amp;gt;` would come out as a tag nobody wrote.
+    assert.equal(plainTextOf('<p>a &amp;lt;p&amp;gt; b</p>'), 'a &lt;p&gt; b')
+    assert.equal(plainTextOf('<p>5 &lt; 6 &amp; 7 &gt; 6</p>'), '5 < 6 & 7 > 6')
+  })
+
+  test('the binder converts and never renders', () => {
+    assert.ok(!BINDER_CODE.includes('dangerouslySetInnerHTML'),
+      "a customer's own file would be putting markup into the page")
+    assert.match(BINDER_CODE, /\{plainTextOf\(t\.text\)\}/)
   })
 })

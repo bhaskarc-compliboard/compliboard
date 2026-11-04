@@ -14,10 +14,10 @@ not been judged.
 What it is **not**: the method. `HOW-WE-BUILD.md` holds that, unchanged, and it worked —
 `DECISIONS.md` §144 to §149 are this section's decisions in the order they were made.
 
-> ### ⚡ TWO THINGS IN HERE WERE OVERTAKEN ON 4 NOVEMBER 2026, AND THE FILE IS NOT REWRITTEN FOR THEM.
+> ### ⚡ THREE THINGS IN HERE WERE OVERTAKEN ON 4 NOVEMBER 2026, AND THE FILE IS NOT REWRITTEN FOR THEM.
 >
 > `docs/GAPS-PLAN.md` Part E steps **E0** and **E1** changed the section's vocabulary and the shape of
-> its report. Both are recorded there with their measurements; this box names what in this file is now
+> its report, and **Part C** built the binder. Both are recorded there with their measurements; this box names what in this file is now
 > history, so nobody reads a state that has moved.
 >
 > **§6's "THE FOUR WORDS" is five.** `on_file_gaps` — shown as *"On file, gaps found"*, amber, read
@@ -36,6 +36,16 @@ What it is **not**: the method. `HOW-WE-BUILD.md` holds that, unchanged, and it 
 > Everything else in §5a — the 720 drawer for a DOCUMENT's reading, the footer vocabulary, the
 > section headings, the rule that a section appears only when it has content — is unchanged and is
 > still the template §5 says it is.
+>
+> **§8.4's "the binder, after the file-types run" IS BUILT, and not as that paragraph expected.**
+> Decision 61: the binder is **the report page printed, with the cited documents behind it, made by
+> the browser** — `/audits?run=<id>&binder=1`, no server build and no stored file. §8.4's own
+> sentence still holds and is what shipped: *"when the binder lands it replaces the download.
+> 'Download the documents' becomes…one button, not two"* — it reads **"Print the binder"**, and
+> `GET /api/audit-runs/[id]/documents`, the zip named in §3's route table, is **deleted** with it.
+> The documents are numbered by first citation (decision 57) and each row cites *"Document n,
+> page p"*. `PENDING.md` **F4 is closed**; the server-built PDF is rev 2 in `GAPS-PLAN.md` §5b with
+> its measurements.
 
 ---
 

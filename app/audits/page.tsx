@@ -23,6 +23,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import AppLayout from '@/components/AppLayout'
 import AuditReport from '@/components/AuditReport'
+import AuditBinder from '@/components/AuditBinder'
 import { runName, checklistTitle as sharedChecklistTitle } from '@/lib/auditView'
 import DocumentReport from '@/components/DocumentReport'
 import { authHeaders, createClient } from '@/lib/supabase'
@@ -315,9 +316,24 @@ function Audits() {
     : TAB_KEYS.includes((rawTab ?? '') as Tab) ? (rawTab as Tab)
     : runParam ? 'audits'
     : 'ask'
+  /**
+   * *** THE BINDER IS A MODE OF THE REPORT PAGE, AT ITS OWN ADDRESS — Part C, decision 61. ***
+   *
+   * `/audits?run=<id>&binder=1`, and a parameter rather than a state for three reasons: the
+   * checklist card and the Calendar's drawer both LINK to it from outside this component; a person
+   * who reloads while the dialog is open gets the binder back and not the report; and the hotfix
+   * above is satisfied by construction — `binder` is never the only parameter, because it is
+   * meaningless without `run`, so the empty-query case it records cannot arise from closing it.
+   *
+   * **The derived-tab rule is untouched**: `?run=` still decides the tab, and `binder` says
+   * nothing about which tab is behind the page.
+   */
+  const binderParam = params.get('binder') === '1'
   const [openRun, setOpenRun] = useState<string | null>(runParam)
+  const [binder, setBinder] = useState<boolean>(binderParam)
   const [tab, setTab] = useState<Tab>(tabParam)
   useEffect(() => { setOpenRun(runParam) }, [runParam])
+  useEffect(() => { setBinder(binderParam) }, [binderParam])
   useEffect(() => { setTab(tabParam) }, [tabParam])
   /**
    * *** AND THE TAB BEHIND A TEMPLATE RUN'S PAGE IS THE CHECKLISTS TAB — decision 56. ***
@@ -707,12 +723,17 @@ function Audits() {
    */
   const setParam = (k: string, v: string | null) => {
     if (k === 'run') setOpenRun(v)
+    if (k === 'binder') setBinder(v === '1')
+    // Closing the report closes the binder with it: a `&binder=1` left behind would open the
+    // binder of the NEXT run somebody pressed.
+    if (k === 'run' && v === null) setBinder(false)
     // Three tabs since step 6b, and `ask` is still what an unknown word falls back to — a tab
     // name arrives from links, bookmarks and typing. The old two words both mean Audits.
     if (k === 'tab') setTab(v === 'past' || v === 'stand' ? 'audits'
       : TAB_KEYS.includes((v ?? '') as Tab) ? (v as Tab) : 'ask')
     const p = new URLSearchParams(searchRef.current)
     if (v === null) p.delete(k); else p.set(k, v)
+    if (k === 'run' && v === null) p.delete('binder')
     searchRef.current = p.toString()
     const url = `/audits${p.toString() ? `?${p}` : ''}`
     if (p.toString()) router.replace(url, { scroll: false })
@@ -1138,6 +1159,7 @@ function Audits() {
         {/* ============ AUDITOR CHECKLISTS — board 3, decision 56 ============ */}
         {tab === 'checklists' && (
           <ChecklistCards cards={checklistCards} idx={idx} paused={paused} busy={busy}
+            onPrintBinder={(id) => { setParam('run', id); setParam('binder', '1') }}
             onOpen={(id) => setParam('run', id)}
             onOpenDoc={(id) => { setFromAudit(null); setOpenDoc(id) }}
             onAuditAgain={auditAgainstTemplate} />
@@ -1162,11 +1184,21 @@ function Audits() {
           Hidden under a document's reading, which is the ONE drawer over it (decision 55). */}
       {openRun && (
         <div className={`${openDoc ? 'hidden' : ''} mx-auto w-full max-w-[1000px] px-4 pb-16 pt-6 sm:px-6`}>
-          <AuditReport runId={openRun} focusWord={drawerWord} paused={paused} chrome="page"
-            onClose={() => { setParam('run', null); setDrawerWord(null) }}
-            onChanged={load}
-            onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }}
-            companyName={companyName} />
+          {/* *** THE BINDER IS THE SAME PAGE IN ANOTHER MODE — decision 61. *** Same address with
+              `&binder=1`, same container, same sibling-of-`.print-page` rule, so the print path is
+              the one E1 proved. The two never render together: the binder IS the report, with its
+              documents behind it. */}
+          {binder ? (
+            <AuditBinder runId={openRun} companyName={companyName}
+              onBack={() => setParam('binder', null)} />
+          ) : (
+            <AuditReport runId={openRun} focusWord={drawerWord} paused={paused} chrome="page"
+              onClose={() => { setParam('run', null); setDrawerWord(null) }}
+              onChanged={load}
+              onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }}
+              onPrintBinder={() => setParam('binder', '1')}
+              companyName={companyName} />
+          )}
         </div>
       )}
 
@@ -1265,12 +1297,14 @@ function Audits() {
  * line up down a card and between cards whatever the dates beside them are.
  */
 const CELL = 'w-[86px] shrink-0 text-left text-[12px]'
-function ChecklistCards({ cards, idx, paused, busy, onOpen, onOpenDoc, onAuditAgain }: {
+function ChecklistCards({ cards, idx, paused, busy, onOpen, onPrintBinder, onOpenDoc, onAuditAgain }: {
   cards: Array<{ key: string; runs: Run[]; newest: Run }>
   idx: Index
   paused: Banner | null
   busy: boolean
   onOpen: (runId: string) => void
+  /** Board 3's second action on the latest run: open that run's page in binder mode. */
+  onPrintBinder: (runId: string) => void
   onOpenDoc: (documentId: string) => void
   onAuditAgain: (documentId: string, fileName: string) => void
 }) {
@@ -1303,6 +1337,8 @@ function ChecklistCards({ cards, idx, paused, busy, onOpen, onOpenDoc, onAuditAg
           ? (newest.template_lines as Array<{ lines?: unknown[] }>)
             .reduce((n, sec) => n + (Array.isArray(sec?.lines) ? sec.lines.length : 0), 0)
           : 0
+        /** The newest run that FINISHED: the only kind there can be a binder of. */
+        const latestDone = runs.find((r) => r.status === 'done')?.id
         return (
           <div key={key} className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-[15px] text-gray-900">{title}</p>
@@ -1321,7 +1357,7 @@ function ChecklistCards({ cards, idx, paused, busy, onOpen, onOpenDoc, onAuditAg
                 <span className={CELL}>Out of date</span>
                 <span className={CELL}>Not on file</span>
                 <span className="min-w-0 flex-1">Since last run</span>
-                <span className="w-[120px] shrink-0 text-left">&nbsp;</span>
+                <span className="w-[230px] shrink-0 text-left">&nbsp;</span>
               </div>
               {runs.map((r, i) => {
                 const s = r.summary
@@ -1341,9 +1377,24 @@ function ChecklistCards({ cards, idx, paused, busy, onOpen, onOpenDoc, onAuditAg
                         : '—'}
                     </span>
                     {/* Decision 59: a fixed, left-aligned column, so Open the report starts at
-                        the same place on every row of every card. No binder control until C. */}
-                    <span className="w-[120px] shrink-0 text-left">
+                        the same place on every row of every card.
+                        *** AND BOARD 3'S SECOND ACTION ARRIVED AT PART C — decision 61. *** The
+                        board draws "Build the binder" on the LATEST run only, and that is right
+                        for the same reason the strip is: the binder is the thing you hand over
+                        today, and an older run's binder is a historical document nobody asks for.
+                        It is "Print the binder" now, because the browser makes it. */}
+                    <span className="w-[230px] shrink-0 text-left">
                       <button onClick={() => onOpen(r.id)} className={ACTION_GREEN}>Open the report</button>
+                      {/* *** THE LATEST FINISHED RUN, NOT THE LATEST ROW — found by the walk. ***
+                          It was `i === 0`, and the top row of this card on staging is a run that
+                          is still queued: the control vanished altogether. A binder can only be
+                          made of an audit that finished, and the newest finished one is the one a
+                          person hands over today. */}
+                      {r.id === latestDone && (
+                        <button onClick={() => onPrintBinder(r.id)} className={`ml-3 ${ACTION_GREEN}`}>
+                          Print the binder
+                        </button>
+                      )}
                     </span>
                   </div>
                 )

@@ -1376,6 +1376,24 @@ build time and must exist **before** the push that builds — it does.
 **Nothing fails at build or deploy time in any of these cases** — `getStripe()` is lazy by design.
 
 
+## Storage: the upload ceiling, and what no longer depends on it — Part C, 4 November 2026
+
+**The `company-documents` bucket carries no limit of its own.** Read from the live schema:
+`select id, public, file_size_limit, allowed_mime_types from storage.buckets` returns
+`file_size_limit: null` for it, which means **the project-level limit governs** — a dashboard
+setting, like the Fluid-compute reading below, with no representation in this repository.
+Supabase's default is **50 MB**. **It still governs every upload**, which is the one place it has
+ever mattered: a customer's 60 MB scanned permit is refused by Storage before anything of ours runs.
+
+**What changed is that the BINDER does not depend on it.** The Part C map costed a server-built
+PDF stored at `<company>/binders/<runId>.pdf`, and a realistic binder — twelve documents with two
+40-page scans — measured about **25 MB**, close enough to 50 that the number had to be read before
+building. **Decision 61 took the browser instead**: the binder is the report page printed, the
+person saves the PDF themselves, and nothing is stored. So the ceiling is an upload question again
+and not a release-day one. (The measured binders: Clackamas **1.36 MB over 19 pages**, Cascade DEQ
+**2.96 MB over 27**.) If the server-built binder is ever wanted — `docs/GAPS-PLAN.md` §5b, R2b —
+**the project's storage limit is the first thing to read off the dashboard.**
+
 ## Function memory — ANSWERED 4 November 2026, by reading the dashboard (GAPS-PLAN Part E step E1)
 
 > ### ⚡ FLUID COMPUTE IS **ON**. EVERY FUNCTION GETS **1 vCPU AND 2 GB**, SET IN THE DASHBOARD.

@@ -161,7 +161,11 @@ describe('the fifth word is counted as something that needs a person', () => {
 describe('every file that says the words says all five', () => {
   const sites: Array<[string, string]> = [
     ['app/audits/page.tsx', "on_file_gaps: 'on file, gaps found'"],
-    ['components/AuditReport.tsx', "on_file_gaps: 'on file, gaps found'"],
+    // *** `components/AuditReport.tsx` LEFT THIS LIST AT PART C, and the list got shorter, not
+    // weaker. *** The binder prints the same rows as the report, so the labels moved to
+    // `lib/auditRows.ts` and both read them from there — one copy where there were two. The
+    // other three are a page, an email and a prompt, and each still says all five.
+    ['lib/auditRows.ts', "on_file_gaps: 'on file, gaps found'"],
     ['lib/ask/auditsBrief.ts', "on_file_gaps: 'on file, gaps found'"],
     ['lib/auditNotify.ts', "on_file_gaps: 'on file, gaps found'"],
   ]
@@ -177,7 +181,7 @@ describe('every file that says the words says all five', () => {
   })
 
   test('it is read second, before "out of date"', () => {
-    const src = code(read('components/AuditReport.tsx'))
+    const src = code(read('lib/auditRows.ts'))
     assert.match(src,
       /WORD_ORDER = \['nothing_on_file', 'on_file_gaps', 'stale', 'on_file', 'not_a_document_question'\]/)
   })
