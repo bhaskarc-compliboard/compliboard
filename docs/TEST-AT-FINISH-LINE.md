@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 8 · **Updated:** 3 November 2026: **the Audits chat's part added** (A, D, E), by Part A step 6b. Its six keys were written from Cascade's own rows and committed before the first model call, and measured on `claude-sonnet-5-5` against the Documents brief on the same six questions. Version 7: 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 9 · **Updated:** 4 November 2026: **the audit's words added** (Part E step E0) — the fifth word and the narrowing of `on_file` are measured on Haiku and carry two things only Opus can settle, both of them one prompt sentence. Version 8: 3 November 2026: **the Audits chat's part added** (A, D, E), by Part A step 6b. Its six keys were written from Cascade's own rows and committed before the first model call, and measured on `claude-sonnet-5-5` against the Documents brief on the same six questions. Version 7: 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -919,3 +919,52 @@ never been audited · (5) which lines point at a document read since the audit, 
    right. **Watch this one on Opus: a Haiku walk answer said 46 too**, so the anchor is not reliably used.
 8. **Cost.** A costs about **1.44×** the Documents brief for the same question ($0.065 against $0.045 on
    Sonnet), and scores 4.75× against the keys.
+
+---
+
+## The audit's words — the fifth word, on Opus (Part E step E0, 4 November 2026)
+
+### Why this is here and not done
+
+**E0 widened the audit's vocabulary from four words to five and narrowed what the first one means.** Both halves
+were measured on **Haiku**, twice, against the commit before them, and both do what they were built to do: five of
+ten lines of the owner's own checklist moved from `on_file` to `on_file_gaps`, and every one of them is a line
+whose body already listed what was missing. **What cannot be settled on Haiku is whether the narrowing sends a
+stronger model to the wrong neighbour**, and two runs say it sends Haiku there twice.
+
+### What to run
+
+1. **The owner's Clackamas checklist, on Opus, three times**, with
+   `scripts/measure-audit-words.mjs --label OPUS-n`. It takes the whole comparison — the word per line, the
+   handles per field, `documents_read`, the summary sentence and the cost — and writes one JSON per run. The
+   Haiku baseline to compare against is run **`a7c049db-3c23-4fc9-8412-82554e65bc7e`** (4 November).
+2. **`npm run golden:audit --times 3`, both modes**, which is the first time this set will have a `sections`-mode
+   baseline of its own. Today's single Haiku run is recorded in `GAPS-PLAN.md` §8 finding 2 and is **not** a
+   baseline.
+
+### What to judge
+
+1. ⚡ **Does Opus call a current permit "out of date"?** Haiku did, in 2 of 2 runs, on line A1 — *"This permit is
+   current but will expire in approximately 21 months"* under the word **out of date**. The suspected pull is the
+   tie-break sentence, *"WHEN BOTH FIT, OUT OF DATE WINS"*, which never says what *too old* means. **If Opus does
+   it too, the one-clause fix in `GAPS-PLAN.md` §8 finding 1 goes in before the release.**
+2. ⚡ **Does Opus put the fifth word on a practice question?** Haiku did, on `cascade-template-12` C1 — a line
+   about what an inspector sees on the day. Same shape, same suspected cause.
+3. **Does the fifth word land on the lines it is for?** A3, B2, B3 and B4 on the Clackamas checklist are the four
+   W4 named from the owner's own Opus run of 3 November. They should carry it.
+4. **Is `on_file` ever written beside a shortfall again?** That is the defect the whole word exists for. Read every
+   `on_file` line's `what_to_do` and look for *missing*, *overdue*, *not covered*.
+5. **Does a handle reach the person?** 0 of 10 lines on Haiku after the sweep, from 6 of 10 on the owner's Opus run
+   of 3 November. On Opus it should be 0 of 10 in prose and **the quotes must be untouched** — a document whose own
+   text says "D1" must keep it.
+6. **`cascade-template-12` A5.** Its key accepts only `nothing_on_file` and Haiku now answers `on_file_gaps`, which
+   looks like the better answer: the deviation IS recorded and the notification evidence is what is missing.
+   **A decision for the owner, not a fix** (`GAPS-PLAN.md` §8 finding 3).
+7. **Cost.** A Clackamas run is 4 calls: $0.084 on Haiku, measured. Record Opus's, for the model table above.
+
+### The shared files this part depends on
+
+`lib/auditRun.ts` · `lib/audit.ts` · `lib/auditNotify.ts` · `prompts/audit-agency.ts` ·
+`prompts/audits-answer.ts` · `components/AuditReport.tsx` (**Audits and the Calendar**) ·
+`components/DocumentReport.tsx` (**four sections**) · `lib/documentStatus.ts` · `lib/ask/documentsBrief.ts` ·
+migrations **093** (the view) and **094** (the word).

@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 17 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 18 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -17,6 +17,7 @@
 **Updated:** 3 November 2026 — **Part A step 6b done, and PART A IS COMPLETE** (§5). Two commits: `cca74dc` the page, the looker, the merged tab, the two routes and the three shared edits, and the plan's own. §3 gains decisions **43–45**. The Audits page has three tabs; the box left the audits tab and the Ask box took its job. **The agency rows did not move: 0 differing pixels** over the whole group at −192px, with 14 on the bottom edge of two native dropdowns. §7's two stops are closed. §8 gains **two defects the walk found**, one of them in the rule the owner wrote: a QUESTION about an audit was starting one. Walked on Haiku for **$0.7136**.
 **Updated:** 3 November 2026 — **PART A IS CLOSED, THE OWNER'S OWN WALK IS RECORDED, AND PARTS B TO E ARE MAPPED** (§5a). Read-only: no code, one commit, this file. The owner walked the finished product on Opus on his own dev server — a folder of eight synthetic documents, a ten-line auditor checklist on the paperclip, *"Audit us against the attached template"* typed into the Ask box — and **the audit scored 10 of 10 against his key and caught two errors in the key**. Nine things the walk found are W1–W9, every one of them read back from staging's own rows with the Supabase CLI's read-only connection. §7 gains **the audit's fifth word** as the first open question, with the whole map of where the word lives, plus the template-reads-its-own-template question and the legal-name question. §8 gains six findings, of which two are new product defects with a price on them: **a reading that failed on an unchecked field while its row says the model was never called** (three scans, two companies, one evening), and **six seconds of nothing on screen after a typed command, which bought a second identical audit for $0.49**. §5a writes Parts B (file formats), C (the binder), D (Resend, Stripe, the loose ends) and E (the display pass) as step tables with what exists today by file and line.
 **Updated:** 4 November 2026 — **PART B IS COMPLETE. STEP B4 DONE: the six formats that were already free, and the PDF nobody can open (decision 54, commit `b35b78e`).** `officeparser` has been a dependency since the PowerPoint branch and its own refusal names everything it reads, so `.odt .ods .odp .rtf .md .html` cost **a branch and a fixture each** — no dependency, no converter, no service. **`READABLE_EXTENSIONS` 17 → 23.** `.html` becomes its **text, not its tags** (1,432 characters of markup → 612 of words); `isExcel` is narrowed from `spreadsheet` to `spreadsheetml`, because an ODS's media type contains the word and the old test claimed every one of them; and an **empty `.md` or `.html`, which throws nothing at all**, is now a failure rather than an empty block handed to the model. **The headline is what the product was paying for:** a password-protected PDF went to the model whole and base64'd — `ok: true`, 1,420 base64 bytes, `text: ''` — while the log said *"No password given"*. **The library already knew and the catch threw it away.** It is refused before the model call now, with the owner's sentence; read back from staging, `ai_call_id = null`. **B5 is closed by B2's map with no code** (every reading path checks access before any conversion, by line), **B3 was struck**, and `PENDING.md` **D2 is CLOSED**. `npm run check` **2,414 tests**, floor 2395 → 2414. D3 is answered and not built: two lines in one file, recorded as a Part E item. — *Previously:* **PART B STEP B2 DONE: the product reads a phone photo, a scan and a drum label, inside Vercel (decisions 52 and 53, commit `96d05ae`).** No conversion service: `libheif-js` is libheif compiled to WebAssembly and runs in Vercel's Node runtime, which is why **B3 is struck** and the container is rev 2 in §5b. `lib/imageConvert.ts` converts HEIC/HEIF (`heic-decode`, raw RGBA straight into sharp), TIFF (sharp, **one image block per page, capped at 20** — the API's own threshold) and BMP (`bmp-ts`; sharp can read neither BMP nor HEIC, both settled by running it), then puts every image through **one rule: rotate → 2,576 px inside → JPEG q80**, with a byte belt. An image already inside the caps is passed through untouched. **Anything over 50 megapixels is refused from its header in under half a second**, with a sentence that says the number, because `heic-decode` has no scaled decode and a 48-megapixel photograph measured **1,036 MB**; `vercel.json` gives the two reading routes 2048 MB for the same reason, and `/api/document-scan` — which had declared no ceiling at all — now says 800 like its siblings. **Walked on Haiku:** the drum label read and the reading named the chemical, the CAS number and both hazard statements; the paperclip answered a question about it; a 3-page TIFF read as three; a **real 48 MP JPEG** read with no rejection; a half-sent HEIC landed `could_not_read` with the fallback sentence. `npm run check` **2,395 tests**, floor 2365 → 2395. `docs/VISION-DOCUMENTS.md` corrected on both counts. **The converted copy is stored** at `<company>/converted/<documentId>.jpg` by `saveScan` — two levels, which is what account delete's walk needs — with migration 092 applied to staging and read back from the live schema, and *"Open the file"* handing over the copy when there is one. Proved on staging: the key landed, the copy is a real JPEG (`ffd8ff`, 230,573 bytes) and **the original is untouched** (192,356 bytes, brand `heic`). — *Previously:* **PART B STEP B1 DONE: the product now offers only the file types it can read, and says which type and what to do about the rest (decision 51, commit `a2e56e4`).** `lib/acceptedFiles.ts` is the one list — **twelve extensions, read off `lib/documentContent.ts`'s own branches, and no `image/*`** — and the one place the sentences live; `parseDocumentToBlocks` calls `refusalFor` as its **first statement**, 40 lines before any model call, so every picker and all three reading paths say one thing. `isWord` claims `.docx` only and `isPowerPoint` `.pptx` only; mammoth, officeparser and xlsx each have a `try`, and an **accepted** type that will not open gets its own different sentence. The folder picker — which can have no `accept` at all — drops what it cannot read **before anything is uploaded** and says *"1 file skipped: 1 old Word (.doc)"* with the sentence underneath. **Walked on Haiku as Cascade:** the folder, the paperclip, the Workspace, HR, and a `.doc` that reached the sweep anyway — which landed `could_not_read` with its own words, `model = '(not called)'` and **0 cost rows**, read back from staging. `npm run check` **2,365 tests**, floor 2336 → 2365; 29 new, the first four reading both the list and the reader and failing on drift. `PENDING.md` **D2 is narrowed to the converters, not closed**. §8 carries five findings, two of them fixed in the same commit. — *Previously:* **PART B STEP B0 DONE, and the owner's five decisions after the walk are §3's 46–50.** One commit of code, `43b304e`. Both fixes cost money while they were open. **The reader** sent `doc_date_kind` to the database unchecked while holding `kind` and `status` against their lists, so a sixth word made the INSERT throw and the whole paid reading was lost — three documents, two companies, one evening, and the row that landed said the model had never been called about a call that had just cost $0.114168. An unrecognised word is now `unknown`, said out loud, with the word itself still in `raw_text`; the constraint is unchanged; the three real failures were re-read on Haiku and **all three landed**. **The screen** set `busy` only on an `'ask'` verdict, so a section's look happened with the screen at rest and a second press went through: **a double press was 2 × `POST /api/audit-runs` before and 1 after**, photographed at 700 ms on two isolated servers. `npm run check` **2,336 tests**, floor 2328 → 2336. **§5a is reordered to the owner's addendum**: B0, the rest of B, then **E0 and E1 before C** so the binder is built once on the finished report, then the rest of E; what was Part D is now **§5b, pre-release work in a separate chat**, carrying the S1 correction. §8's W2 and W3 are closed with the fix and the proof, and three things B0 found and did not change are recorded there.
+**Updated:** 4 November 2026 — **PART E STEP E0 DONE: the audit's words (decisions 47–49, 55–60 and W5).** **The audit has five words.** `on_file_gaps` — *"On file, gaps found"* — means a document answers the line AND what the document itself shows does not meet it in full; the four old words keep their meanings exactly. **The defect was never a wrong answer:** `prompts/audit-agency.ts` told the model *"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART"*, so four greens over four lists of gaps were the only honest thing it could say. **Measured, the owner's own checklist run on two trees on Haiku: 5 of 10 lines moved from `on_file` to `on_file_gaps` — A3, B2, B3 and B4 are exactly the four W4 named — and the run's sentence went from "4 things that need you" to "9 things that need you".** `documents_read` **12 → 11** (decision 49: a template run no longer reads its own template, excluded from BOTH lists); **handles at the person 1 → 0** (W5: `nameDocumentHandles` at save time, on `title`, `locator` and `what_to_do` and **never on `quote`**, tested on the six real leaking lines). **Decision 48 lives in the VIEW** — migration **093**, because *"the status the document would otherwise have"* is the six CASE arms underneath and only SQL can compute them — with `inferred_gap_count` appended last, since `calendar_v` depends on that view; migration **094** restates `audit_findings_word_check` whole. Both applied to staging and read back from the catalog. **It moves exactly one row on all of staging** (17 of 18 `gaps_found` scans have a gap read from the page) and nothing at all on the Clackamas company. `npm run check` exit 0, **2,460 tests**, floor 2414 → 2460; **46 new**. **Three things found and NOT fixed, because each needs one prompt sentence and that is the owner's (§3.1):** a permit expiring in 2028 now reads *"out of date"* (stable over two runs), the same pull puts the fifth word on a practice question, and one golden key is now out of date rather than wrong. §8 has all nine findings with their evidence. **E0 spent $0.9710 over 30 Haiku calls.**
 **Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
 
 ---
@@ -256,6 +257,58 @@ Each names its effect on other sections.
     `app/api/chat/route.ts:126`, each `requireAccess` before anything. *Effect: B4 is trimmed to the
     six free formats and the password-protected PDF; §5b carries zip and email as rev 1.5.*
 
+### The owner's decisions for Part E step E0, 4 November 2026 — the audit's words
+
+*The boards are `docs/audit-report-boards.html` (draft 2, four boards). Boards 1, 2 and 4 are E0's
+words on the page; board 3 is E1's.*
+
+55. **The audit report is a PAGE, full width, not a drawer** (the owner, 4 November 2026). A
+    document's reading opens as **the one drawer over it**, with *"Open the file"* at its foot.
+    **Never a drawer inside a drawer.** The email's and the Dashboard's `?run=` links land on the
+    page. *Effect: E1 builds it; recorded at E0 so the vocabulary and the page are decided together.
+    `components/AuditReport.tsx`, `app/audits/page.tsx`, `app/calendar/page.tsx`, `lib/auditNotify.ts`'s
+    link.*
+
+56. **The Audits section has four tabs** (the owner, 4 November 2026): *Ask a question · Conversations
+    · Agency audits · Auditor checklists*. **"Agency audits" is today's rows untouched.** "Auditor
+    checklists" carries the line *"Checklists your auditors gave you, and every audit run against
+    them."*: one white card per checklist, inside it a table of its runs (date · on file · gaps found ·
+    out of date · not on file · since last run · *Open the report* · *Build the binder* on the latest),
+    under it *"Audit again against this checklist"* and *"Open the auditor's file"*. **The binder is
+    built from a run on this tab and nowhere else.** *Effect: E1. `app/audits/page.tsx`.*
+
+57. **The binder numbers documents in order of first citation** (the owner, 4 November 2026), one tab
+    per document however many rows cite it; rows cite *"Tab n, page p"*. The report page carries the
+    **auditor's own title** for the checklist. *Effect: Part C. `lib/auditRun.ts` `sectionDocumentIds`
+    is already that list.*
+
+58. **Every row of a template report carries the auditor's line WHOLE** (the owner, 4 November 2026),
+    word for word as printed, never truncated — with decision 50. *Effect: E1; and at E0 it is why the
+    handle sweep does **not** touch a template finding's `title`, which IS the auditor's line.*
+
+59. **ALIGNMENT, EVERYWHERE** (the owner, 4 November 2026). Status words and action links sit in
+    **fixed, left-aligned columns** on every list and report in the app, so they line up down the page
+    whatever sits beside them. **A column that drifts is a failure, photographed, not a style note.**
+    Applies from E0's screens onward and is checked in every Part E job. *Effect at E0: four columns —
+    `app/documents/page.tsx` (was `w-[160px] text-right`), `components/AuditReport.tsx`'s word column
+    (was `shrink-0` with no width, so every title's left edge moved with the word beside it),
+    `app/audits/page.tsx`'s document status and its Audit/Open actions.*
+
+60. **The words, as the customer sees them** (the owner, 4 November 2026). A line's five: **On file ·
+    On file, gaps found · Out of date · Nothing on file · Not a document question.** Suggestions
+    (`expected` rows) carry a **sixth label, "Usually held — not seen"**, grey, folded by default,
+    **never in the counts or the strip**. A document's status turns **"Needs work" only on a gap read
+    from the page**; a document whose gaps are all inferred keeps its normal state (Current, Expiring,
+    **Recorded**…) with **"n notes"** beside it, opening to the reader's own hedged words. *Effect:
+    the nine files in E0's row, plus `lib/documentStatus.ts` and migration 093.*
+
+**And the three that were decided at E0's map, on 4 November:** decision 48 lives **in the view**, not
+in code, because *"the status the document would otherwise have"* is the six CASE arms underneath the
+one being changed and only SQL can compute them (migration 093); **a record falls to Recorded, not
+Current**, which is decision 60's own wording and not board 4's drawing; and decision 49 excludes the
+template **from everything**, not only from `carries()` — the auditor's own checklist is not evidence
+about the company, it is the question.
+
 17. **Reading every file format (`.doc`, `.ppt`, HEIC, TIFF, the honest refusals) is its own part**, after the chats, as `docs/VISION-DOCUMENTS.md` "Where the converting runs" decided. The binder follows it. *Effect: later parts of this file.*
 
 ---
@@ -278,6 +331,20 @@ order, and is the source for 6a's brief.
 
 **Three example lines** (`config/examples.ts`, the owner's, 3 November): "Audit us against the attached template" ·
 "Audit us against an agency, like Oregon DEQ" · "Ask anything about whether you are audit ready".
+
+### `docs/audit-report-boards.html` — the audit report (draft 2, 4 November 2026)
+
+**The owner's own run drawn as a page.** Four boards, in the Calendar boards' frame: **1** the report
+as a full-width page, the Clackamas run with two rows open; **2** a document's reading as **the one
+drawer over it**, with *"Open the file"* at its foot; **3** the Auditor checklists tab, one white card
+per checklist with a table of its runs; **4** the Documents list with the new notes. **Boards 1, 2 and
+4 are E0's words on the page; board 3 is E1's.** Every line is from the Clackamas Blending & Supply
+run of 3 November, reworded only where the new vocabulary applies. Its CSS is a mock-up and is never
+a source for the product's spacing, type or colour.
+
+**Where the boards and the rows disagree, §8's findings 8 and 9 say so**: a record with only inferred
+gaps falls to **Recorded**, not Current (decision 60's own words), and the respirator fit-test
+record's one gap is read off the page with a verified quote, so it keeps **Needs work**.
 
 ---
 
@@ -351,8 +418,8 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 
 | # | Step | The shared files it touches | The sections that render them, from `grep` | Status |
 |---|---|---|---|---|
-| E0 | **THE AUDIT'S WORDS** — four items in one job, because they are one vocabulary (decisions 47, 48, 49 and W5) | **(1)** the fifth word, *"on file, gaps found"* (47): the migration that restates `audit_findings_word_check`, `lib/auditRun.ts:827` `WORDS` and `normaliseWord`, `prompts/audit-agency.ts:95` and `:124`–`:130`, `app/audits/page.tsx:70`–`:71`, `:107`–`:111`, `:128`–`:131`, `:147`, `:197`–`:198`, `:704`, `components/AuditReport.tsx:85`–`:86`, `:103`–`:111`, `:125`–`:126`, `:231`, `:585`, `:702`–`:704`, `lib/ask/auditsBrief.ts:135`–`:140`, `:150`–`:161`, `:238`, `prompts/audits-answer.ts` `AUDITS_FOUR_WORDS`, `lib/auditNotify.ts:32`–`:35`, and **`app/api/audit-checklist/route.ts:22` `NEEDS_PERSON`, which must be decided into or out of** · **(2)** Needs work only on a gap read from the page (48) · **(3)** a template run stops reading its own template (49): `lib/audit.ts:122`–`:124` gains the id, `:148`–`:150` excludes it · **(4)** the handle leak (W5): 6 of 10 lines wrote a bare `D<n>` at the person, which `prompts/audit-agency.ts:81` already half-forbids | `lib/auditRun.ts`, `lib/audit.ts`, `prompts/audit-agency.ts`, `components/AuditReport.tsx` (**Audits and the Calendar**), `app/audits/page.tsx`, `lib/ask/auditsBrief.ts`, `lib/auditNotify.ts`, `app/api/audit-checklist/route.ts`, one migration | not started — **the measurement is the golden set plus the owner's Clackamas template run re-run and compared line by line** |
-| E0b | The boards for E1 | `docs/audit-report-boards.html` (new), in the Calendar boards' frame | — | not started |
+| E0 | **THE AUDIT'S WORDS** — four things in one job, because they are one vocabulary (decisions 47, 48, 49, 59, 60 and W5) | **(1)** the fifth word **`on_file_gaps`**, *"on file, gaps found"*: migration **094** restates `audit_findings_word_check` whole; `lib/auditRun.ts` `WORDS`, `NEAR_MISS` (+5), `RunSummary`, `summariseRun`, `attention`, `runSummaryLine`; `prompts/audit-agency.ts` (both shapes, the definitions, the tie-break, the JSON schema enum); `prompts/audits-answer.ts` `AUDITS_FOUR_WORDS` → **`AUDITS_FIVE_WORDS`**; `app/audits/page.tsx` (six edits); `components/AuditReport.tsx` (six); `lib/ask/auditsBrief.ts`; `lib/auditNotify.ts`; `app/api/audit-checklist/route.ts` `NEEDS_PERSON` **in** · **(2)** Needs work only on a gap read from the page (48): migration **093** in the VIEW, `inferred_gap_count` appended last, `lib/documentStatus.ts` `notesWord`, the Documents list, the drawer split in two, the chat brief · **(3)** a template run stops reading its own template (49) · **(4)** the handle leak (W5): `nameDocumentHandles`, at save time, on `title`, `locator` and `what_to_do` and never on `quote` | `lib/auditRun.ts`, `lib/audit.ts`, `lib/auditNotify.ts`, `lib/documentStatus.ts`, `lib/ask/auditsBrief.ts`, `lib/ask/documentsBrief.ts`, `prompts/audit-agency.ts`, `prompts/audits-answer.ts`, `components/AuditReport.tsx` (**Audits and the Calendar**), `components/DocumentReport.tsx` (**four sections**), `app/audits/page.tsx`, `app/documents/page.tsx`, `app/api/audit-checklist/route.ts`, `scripts/run-golden-audit.js`, `scripts/measure-audit-words.mjs` (new), two migrations | **done 4 Nov** — the same checklist run on two trees on Haiku: **5 of 10 lines moved from `on_file` to `on_file_gaps`**, `documents_read` **12 → 11**, handles at the person **1 → 0**, *"4 things that need you"* → *"9 things that need you"*. One regression found and reported, not fixed: A1 |
+| E0b | The boards for E1 | `docs/audit-report-boards.html`, four boards in the Calendar boards' frame | — | **done 4 Nov** — the owner's, drawn on his own run; committed with E0. §4 records what each board is for |
 | E1 | **The audit report's display and print** — the row body, the drawer sub-item, the print (W9), **in the auditor's own order and numbering** (decision 50: one row per checklist line, never regrouped, an unanswered line still a row) | `components/AuditReport.tsx` (1,000+ lines: the pills at `:103`–`:111`, `AMBER_WORD` `:109`, `WORD_ORDER` `:111`, the filter chips `:702`–`:704`, the footer `:673`), `components/Drawer.tsx`, `app/audits/page.tsx`'s own rows (`:107`–`:131`, `:147`) | **`app/audits/page.tsx` and `app/calendar/page.tsx`** both render `AuditReport`; `Drawer` is also rendered by `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/DocumentReport.tsx`, `components/ConversationDrawer.tsx` and `components/CalendarDateDrawer.tsx` | not started |
 
 ### Part C — the binder (`PENDING.md` F4, a release gate) — AFTER E0 and E1
@@ -412,7 +479,22 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 
 ## 7. Open, waiting on the owner
 
-### ⚡ THE FIRST OPEN QUESTION — the audit's four words hide gaps (W4). A §3.1 decision.
+### ~~⚡ THE FIRST OPEN QUESTION — the audit's four words hide gaps (W4)~~ — **ANSWERED AND BUILT, 4 November 2026 (E0, decision 47, migration 094)**
+
+**The fifth word is `on_file_gaps`, shown as "On file, gaps found", amber, read second.** The map
+below is kept exactly as it was written on 3 November, because it is what the owner decided from —
+with two corrections E0 found while building it, marked. Measured on the same checklist run twice on
+Haiku: **5 of 10 lines moved from `on_file` to `on_file_gaps`**, and the run's own sentence went from
+*"4 things that need you"* to *"9 things that need you"*. §8 carries what else the two runs found.
+
+**The two corrections to this map.** *(a)* It says *"One prompt serves both the agency and the
+template run… there is no second audit prompt"* — **wrong**: `prompts/audit-agency.ts:292`
+`auditTemplatePrompt` is a second prompt in the same file, with its own word list and its own
+partial-answer rule, and THAT rule is what caused W4 (*"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN
+PART"*). *(b)* It does not name `AUDIT_TEMPLATE_JSON_SCHEMA`, which carried the four words as a hard
+`enum`; a four-word enum beside a five-word prompt is §136's trap waiting for
+`AI_AUDIT_STRUCTURED` to be switched on. Both are fixed in E0's commit.
+
 
 **The owner's walk, 3 November.** Four of the template audit's ten lines came back **`on_file`** while the sentence under them listed gaps. Read from staging, run `8707eea9-6c58-4c98-ab9d-4ec5825642cd`:
 
@@ -446,7 +528,8 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 
 ### The other two product questions the walk raised
 
-- **W6 — a template run reads its own template, twice.** Proved: all three sections of run `8707eea9` list **both** copies of the checklist in `documents_read` (`511e8bcd`, the paperclip's, and `40145b5e`, the one that came in with the folder), and two of the ten findings say *"D9 and D10 are blank checklist templates: they list these records as expected but contain no records themselves."* **What the code does today, by line:** `lib/auditRun.ts:407` builds a template run with `buildAuditInput(db, companyId, '*')`; `lib/audit.ts:148`–`:150` makes `carries()` return `true` for every row when the label is `'*'`, so every document in `document_index_v` is packed. **`buildAuditInput`'s signature (`lib/audit.ts:122`–`:124`) is never told the `template_document_id`**, so the exclusion cannot be written without a new argument. Two questions, both the owner's: *(a)* should a template run exclude its own `template_document_id` from `documents_read`? *(b)* should an attached checklist be filed as a kind that audits skip — the scan already gives it `status = 'not_judged'` and the title *"…, blank template"*, so the signal exists?
+- ~~**W6 — a template run reads its own template, twice.**~~ **HALF ANSWERED AND BUILT, 4 November 2026 (E0, decision 49).** `buildAuditInput` takes `excludeDocumentId` and drops the run's own template out of **both** lists, and `runSection` passes `template_document_id` off the run row. Measured: `documents_read` **12 → 11** on the same checklist, read back from `audit_sections`. **(b) is still open and is rev 2:** the SECOND copy of that checklist is a different `documents` row (`40145b5e-7efa-4aff-9e9f-3e563af04d14`, uploaded with the folder) and nothing in decision 49 touches it, so a run can still remark on a blank checklist. Whether an attached checklist should be filed as a kind audits skip is the owner's, and it waits. *The original note follows.*
+- **W6, as written on 3 November —** Proved: all three sections of run `8707eea9` list **both** copies of the checklist in `documents_read` (`511e8bcd`, the paperclip's, and `40145b5e`, the one that came in with the folder), and two of the ten findings say *"D9 and D10 are blank checklist templates: they list these records as expected but contain no records themselves."* **What the code does today, by line:** `lib/auditRun.ts:407` builds a template run with `buildAuditInput(db, companyId, '*')`; `lib/audit.ts:148`–`:150` makes `carries()` return `true` for every row when the label is `'*'`, so every document in `document_index_v` is packed. **`buildAuditInput`'s signature (`lib/audit.ts:122`–`:124`) is never told the `template_document_id`**, so the exclusion cannot be written without a new argument. Two questions, both the owner's: *(a)* should a template run exclude its own `template_document_id` from `documents_read`? *(b)* should an attached checklist be filed as a kind that audits skip — the scan already gives it `status = 'not_judged'` and the title *"…, blank template"*, so the signal exists?
 - **W7 — the profile name against the legal name.** **`companies` has no legal-name column.** Read from the live schema: `name`, `about`, `what_you_do`, `naics_code`, `industry`, `state`, `county`, `city` and twenty billing columns — and nothing else that could hold *"Clackamas Blending & Supply LLC"*. The audit gets the name through `buildCompanyContext(db, companyId, { parts: ['company', …] })` at `lib/audit.ts:131`–`:133`. **It is smaller than it looked**: 2 of 10 lines on the first template run, 3 of 10 on the second, 1 of 19 on the agency run — not every line — and the two that do say it are doing the right thing (*"D5 is issued to 'Clackamas Blending & Supply LLC'… while the company profile says Step 20 Card Walk, so confirm how the two are related"*). The question is whether a `legal_name` is owed, or whether this is the test fixture being a test fixture.
 
 ### Rev 2 — not rev 1, recorded so they are not lost
@@ -521,6 +604,121 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### ⚡ What Part E step E0 found (4 November 2026) — THE AUDIT HAS FIVE WORDS
+
+**The measurement, and it is the whole of E0 in one table.** The owner's own checklist, his own
+documents, run once on the commit before the change and once on this tree, both on Haiku through the
+guard, by `scripts/measure-audit-words.mjs` — the same harness file on both sides, each tree's own
+`lib/` and `prompts/`. Run `19815fc9` (before) and `a7c049db` (after), read back from
+`audit_findings`:
+
+| line | BEFORE | AFTER | the document |
+|---|---|---|---|
+| A1 | `on_file` | **`stale`** | same |
+| A2 | `on_file` | `on_file` | same |
+| **A3** | `on_file` | **`on_file_gaps`** | same |
+| A4 | `stale` | **`on_file_gaps`** | same |
+| B1 | `stale` | `stale` | same |
+| **B2** | `on_file` | **`on_file_gaps`** | same |
+| **B3** | `on_file` | **`on_file_gaps`** | same |
+| **B4** | `on_file` | **`on_file_gaps`** | same |
+| C1 | `nothing_on_file` | `nothing_on_file` | — |
+| C2 | `nothing_on_file` | `nothing_on_file` | — |
+
+**A3, B2, B3 and B4 are exactly the four lines W4 named**, found again by a different model on a
+different day. Every line kept the document it rested on. The run's own sentence went from
+*"Your compliance audit across 3 agencies found **4 things that need you**"* to *"found **9 things
+that need you**: 2 things with nothing on file, 5 things on file with gaps found, and 2 things out
+of date."* **`documents_read` 12 → 11** (decision 49), and **handles at the person 1 → 0** (W5).
+`npm run check` exit 0, **2,460 tests**, floor 2414 → 2460. **E0 spent $0.9710 over 30 Haiku calls.**
+
+**1. ⚡ A1: A PERMIT THAT EXPIRES IN 2028 IS NOW CALLED "OUT OF DATE". Found, measured twice, NOT
+fixed — it needs one prompt sentence and that is the owner's (§3.1).** The after run's own words:
+*"This permit is current but will expire in approximately 21 months; plan renewal now"* — under the
+word **out of date**. Stable across both after runs, so it is not variance.
+
+  **Why, pointed at the line.** `on_file` was narrowed to *"a document is on file and carries a
+  date, **and nothing the document shows falls short of what was asked**"*. Line A1 asks for the
+  permit *"with the renewal application due date noted"*, and nothing on file notes it — the date
+  was worked out. So the model correctly refuses `on_file`, and then picks the wrong neighbour. The
+  tie-break sentence added in the same edit — *"WHEN BOTH FIT, OUT OF DATE WINS"* — is the likely
+  pull, because it never says what *too old* means.
+
+  **The smallest honest change is one clause**, to the tie-break at `prompts/audit-agency.ts:144`:
+  *"A document still inside its own dates is never stale, whatever is missing from it: that is
+  on_file_gaps."* **Not made.** The sentences the owner approved are in as written.
+
+**2. The golden audit set has no prior `sections`-mode recording, so today's five numbers are a new
+baseline and not a comparison.** Everything on disk before today is `whole` mode on **Opus**, 30
+September. Today, Haiku, one run each: `cascade-deq` **20/22**, `cascade-fire` **7/9**, `cascade-osha`
+**7/13**, `cascade-template-12` **15/20**, `cascade-template-13` **12/12**. The one near-comparable
+point is template-13, which scored **10/12 on Haiku** on 1 October and **12/12** today — including
+all three lines E0 widened. **`cascade-osha`'s six failures have nothing to do with a word:** its
+nineteen findings are about fire extinguishers, so the keyword checks for the plan, the forklift log
+and the SDS matched nothing. One Haiku run of an agency case is not evidence about E0.
+
+**3. Of the fifteen golden failures, exactly two touch the new word, and one of them is the KEY being
+out of date rather than the answer being wrong.** `cascade-template-12` **A5** — *"Deviation reports:
+any deviation in the last 12 months notified within 24 hours…"* — came back `on_file_gaps` where the
+key accepts only `nothing_on_file`, and the answer is right: the 2025 annual report records the
+deviation and the notification evidence is what is missing, which is a document answering the line in
+part. **The key was written when there was no word for that.** Widening it is the owner's call and it
+is not done. **C1** is the other half of defect 1: *"Each scrubber operating with the associated line,
+pressure drop within range **at the time of inspection**"* came back `on_file_gaps` where the key
+wants `not_a_document_question`. Same shape as A1 — narrowing `on_file` pushes the model off green
+and it lands on whichever neighbour is nearest. The second clause that would close it, also not made:
+*"A line about what an inspector will see on the day is not_a_document_question even when a document
+bears on it."*
+
+**4. §7's own map of W4 was wrong in two places, and both were load-bearing.** It said *"One prompt
+serves both the agency and the template run… there is no second audit prompt."* There is:
+`prompts/audit-agency.ts:292` `auditTemplatePrompt`, with its own word list **and its own
+partial-answer rule** — *"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART"* — which is **the cause
+of W4**. The model was not making a mistake; it was following that paragraph. And the map did not
+name `AUDIT_TEMPLATE_JSON_SCHEMA`, which carried the four words as a hard `enum`: a four-word enum
+beside a five-word prompt is §136's trap, waiting for `AI_AUDIT_STRUCTURED` to be switched on.
+
+**5. The email would have printed "…and -2 more", and no test could have caught it.**
+`lib/auditNotify.ts` computes it as `nothing_on_file + stale − attention.length`, and
+`summariseRun`'s `attention` list gains the fifth word. Widening one without the other goes negative.
+Found by reading the two files together while mapping; nothing in the product reads a finished run's
+email text.
+
+**6. ⚡ A RECORD'S GAPS WERE INVISIBLE IN ITS OWN DRAWER, AND ITS ROW SAID "Needs work".** Every gap
+list in `components/DocumentReport.tsx` was behind `isProgram` — `kind === 'program' || kind ===
+'policy'`. The Clackamas forklift roster is a **record** with **two gaps read from the page**: the row
+said Needs work and opening it showed no gaps at all, so a person was told there was work and never
+told what. Found by mapping decision 48 against board 2, which draws that roster's gaps. The gate is
+now `hasFindings` — a document with something to show shows it, whatever kind it is.
+
+**7. The template report counted suggestions among the findings.** `tCounts` ran `countsFor(openF)`,
+and every `expected` row carries the word `nothing_on_file` (`audit_findings_expected_is_expected`,
+058:209). A template run writes no expected rows today, so nothing was wrong on screen — but board 1
+puts *"Usually held — not seen"* on this report, and the count would have been wrong the day E1
+arrived. Fixed with decision 60's label, folded always.
+
+**8. Decision 48 moves exactly one row on all of staging, and it moves nothing on the Clackamas
+company.** 18 current scans carry `gaps_found`; **17 have at least one gap with `basis = 'read'`**.
+The one that moves is Cascade's *"Spill Response Procedure — Caustic Soda"* (`spill-response.odt`),
+6 inferred gaps and 0 read: **Needs work → On file, with 6 notes**, photographed. It shows **On
+file** and not **Current** because it is a `program`, and `on_file` is the state it would otherwise
+have — decision 60's own list says *"Current, Expiring, Recorded…"*, and board 4's drawing of
+*Current* on two records does not follow from the view's arms.
+
+**And board 4's picture does not match the rows in one more place, which is worth saying plainly.**
+It shows the respirator fit-test record going from red to *"Current · 1 note"* on a hedged guess. Its
+one gap is `basis = 'read'` with a verified quote — *"No PortaCount printout or test report
+attached"* — so it stays **Needs work**. The owner's note of 4 November says B0 re-read that document
+on Haiku and the board drew the older reading; nothing is wrong with the decision, only with that
+one row of the picture.
+
+**9. `basisOf` defaults a missing basis to `read`, and decision 48 therefore errs toward keeping
+"Needs work".** `lib/documentScan.ts:62`'s own comment: *"Anything the model does not say is `read`,
+which is the value that OVERSTATES a claim… the direction that gets noticed."* A model that never
+labels an inference produces all-read gaps and the new rule never fires. That is the safe direction
+and it is why the recorded golden document runs of 25 September — whose gaps carry no `basis` key at
+all — are untouched by this change.
 
 ### ⚡ What Part B step B4 found (3 November 2026, `b35b78e`) — and PART B IS DONE
 

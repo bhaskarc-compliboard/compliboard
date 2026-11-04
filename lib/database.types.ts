@@ -4536,6 +4536,7 @@ export type Database = {
           file_name: string | null
           folder_id: string | null
           folder_name: string | null
+          inferred_gap_count: number | null
           issuer: string | null
           kind: string | null
           latest_confirmed_at: string | null

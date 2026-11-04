@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The audit report — boards</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Canvas chrome and the app tokens are docs/calendar-boards.html's, unchanged, except the sidebar:
+   it is drawn as the app has it since the Dashboard's decision 12 (components/AppLayout.tsx NAV_ITEMS:
+   the owner's order, a hairline before Company information, the active page underlined, no green box).
+   This CSS is a mock-up and is never a source for the product's spacing, type or colour. */
+:root {
+  --desk: #E9EBEE; --desk-fg: #14171A; --desk-muted: #6B7280; --desk-faint: #9CA3AF; --desk-line: #D6D9DE; --desk-surface: #FFFFFF;
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  --ink: #14171A; --heading: #111827; --text-strong: #1F2937; --text: #4B5563; --text-nav: #5B6470; --text-muted: #6B7280; --text-faint: #9CA3AF;
+  --group-heading: #374151; --dot: #D1D5DB; --line: #E5E7EB; --line-faint: #F0F1F3; --page: #F7F8FA; --surface: #FFFFFF; --panel: #F9FAFB; --bubble: #E5E7EB; --scrim: rgba(20,23,26,0.4);
+  --brand: #2F7D52; --brand-strong: #256541; --brand-tint: #EAF3ED; --warning: #B7791F; --danger: #B42318; --orange: #F94300;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: var(--font-ui); }
+.cv-top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 16px; background: var(--desk-surface); border-bottom: 1px solid var(--desk-line); }
+.cv-top h1 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cv-top .sp { flex: 1; }
+.cv-top select, .cv-top button { font-family: inherit; font-size: 13px; height: 30px; padding: 0 10px; border: 1px solid var(--desk-line); border-radius: 6px; background: var(--desk-surface); color: var(--desk-fg); cursor: pointer; }
+.cv-top button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-strong); }
+.cv-intro { max-width: 900px; padding: 28px 16px 8px; }
+.cv-intro h2 { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; line-height: 1.2; }
+.cv-intro p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--desk-muted); max-width: 76ch; }
+.cv-band { padding: 28px 16px 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.cv-frame { padding: 12px 16px 24px; }
+.cv-label { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; font-size: 13px; color: var(--desk-muted); }
+.cv-label .t { font-weight: 500; color: var(--desk-fg); }
+.cv-label .s { font-size: 11px; color: var(--desk-faint); white-space: nowrap; }
+.cv-note { margin: 0 0 8px; font-size: 13px; line-height: 20px; color: var(--desk-muted); max-width: 86ch; }
+.cv-note b { color: var(--desk-fg); font-weight: 600; }
+.cv-ask { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--warning); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-ask b { font-weight: 600; }
+.cv-dec { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--brand); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-dec b { font-weight: 600; }
+.scaler { position: relative; width: 100%; overflow: hidden; }
+.board { position: relative; width: 1280px; transform-origin: 0 0; background: var(--page); color: var(--ink); font-family: var(--font-ui); box-shadow: 0 1px 3px rgba(20,23,26,0.12), 0 8px 24px rgba(20,23,26,0.06); overflow: hidden; }
+.board a { color: var(--brand-strong); }
+.board button { font-family: inherit; }
+
+/* the app frame */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { height: 57px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .name { font-size: 14px; font-weight: 600; }
+.topbar .org { font-size: 13px; color: var(--text-nav); }
+.bodyrow { display: flex; flex: 1; min-height: 0; }
+.sidebar { width: 224px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 16px 12px; background: var(--surface); border-right: 1px solid var(--line); }
+.board .nav { display: flex; justify-content: space-between; padding: 10px 12px; font-size: 14px; color: var(--text-nav); text-decoration: none; }
+.nav .badge { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.board .nav.active { font-weight: 500; color: var(--brand-strong); }
+.nav.active .l { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.nav-rule { height: 1px; margin: 14px 12px; background: var(--line); }
+.main { flex: 1; display: flex; justify-content: center; padding: 24px 24px 64px; min-width: 0; }
+.column { width: 852px; max-width: 100%; display: flex; flex-direction: column; }
+.page-title { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; }
+.lede { margin: 4px 0 0; font-size: 14px; color: var(--text-muted); }
+.tabs { display: flex; align-items: center; gap: 24px; margin: 20px 0; border-bottom: 1px solid var(--line); }
+.tab { padding: 8px 0 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--brand-strong); border-bottom-color: var(--brand); }
+.tabs .spacer { flex: 1; }
+.tabs .side-link { padding: 8px 0 12px; font-size: 14px; color: var(--text-muted); text-decoration: none; }
+.btn-primary { font-size: 14px; font-weight: 500; padding: 8px 16px; color: #fff; background: var(--brand); border: 0; border-radius: 6px; }
+.btn-text { font-size: 14px; padding: 0; color: var(--text); background: transparent; border: 0; }
+.btn-text.strong { font-weight: 500; color: var(--brand-strong); }
+.attach { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0; background: none; border: 0; font-size: 12px; color: var(--text-muted); }
+.attach span { text-decoration: underline; }
+.send { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--brand); border: 0; border-radius: 8px; color: #fff; }
+.askbox { min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.askbox .inner { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.askbox .example { margin: 0; font-size: 14px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.askbox-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 10px; }
+.thread { display: flex; flex-direction: column; gap: 20px; margin-bottom: 28px; }
+.bubble-row { display: flex; justify-content: flex-end; }
+.bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; background: var(--bubble); font-size: 16px; line-height: 24px; }
+.bubble .chip { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; color: var(--text); }
+.answer { display: flex; flex-direction: column; gap: 14px; }
+.answer h3 { margin: 8px 0 0; font-family: var(--font-reading); font-size: 19px; font-weight: 600; }
+.answer p, .answer li { margin: 0; font-family: var(--font-reading); font-size: 17px; line-height: 28px; }
+.answer ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+.answer .note { font-family: var(--font-ui); font-size: 13px; line-height: 19px; color: var(--text-faint); }
+.cite { margin: 0 2px; padding: 0 4px; border-radius: 4px; background: var(--brand-tint); font-family: var(--font-ui); font-size: 10px; font-weight: 600; color: var(--brand); vertical-align: super; }
+.sources { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sources .label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.source { display: flex; gap: 8px; font-size: 13px; line-height: 18px; }
+.source .n, .source .origin { color: var(--text-faint); }
+.source .quote { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.composer { display: flex; flex-direction: column; padding: 14px 16px 10px; min-height: 104px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.composer .ph { flex: 1; font-size: 16px; line-height: 24px; color: var(--text-faint); }
+.composer .bar { display: flex; justify-content: flex-end; }
+.actions { display: flex; align-items: center; gap: 20px; margin-top: 12px; }
+.actions .q { outline: 2px dashed var(--warning); outline-offset: 4px; border-radius: 2px; }
+.hint { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+/* conversations */
+.day { margin: 4px 0 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.convs { border-top: 1px solid var(--line-faint); border-bottom: 1px solid var(--line-faint); margin-bottom: 24px; }
+.conv { padding: 10px 0; border-top: 1px solid var(--line-faint); }
+.conv:first-child { border-top: 0; }
+.conv .t { font-size: 13px; color: var(--ink); }
+.conv .m { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px; font-size: 12px; color: var(--text-muted); }
+.conv .m .file { display: inline-flex; align-items: center; gap: 4px; }
+
+/* documents tab, today's page */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.ctl { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 14px; color: var(--text-strong); }
+.lbl { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-muted); }
+.toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.btn-add { padding: 10px 20px; border-radius: 6px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 500; }
+.under { font-size: 14px; color: var(--text); text-decoration: underline; }
+.grp { margin-top: 22px; }
+.grp h4 { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.grp h4 span { color: var(--text-faint); font-weight: 400; }
+table.docs { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.docs td:nth-child(2) { width: 11%; } table.docs td:nth-child(3) { width: 19%; } table.docs td:nth-child(4) { width: 12%; } table.docs td:nth-child(5) { width: 12%; }
+table.docs td { padding: 10px 0; border-bottom: 1px solid var(--line-faint); font-size: 12px; color: var(--text); vertical-align: top; }
+table.docs td.doc { font-size: 13px; color: var(--ink); width: 46%; }
+table.docs td.doc span { display: block; font-size: 12px; color: var(--text-muted); }
+table.docs td.st { font-size: 13px; color: var(--text-muted); text-align: right; }
+table.docs td.st.amber { color: var(--warning); }
+
+/* audits: where you stand */
+.arow { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line-faint); }
+.arow .chev { width: 12px; color: var(--text-faint); font-size: 12px; margin-top: 2px; }
+.arow .body { flex: 1; min-width: 0; }
+.arow .t { font-size: 14px; color: var(--ink); }
+.arow .m { margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.arow .act { flex-shrink: 0; font-size: 14px; color: var(--brand-strong); }
+.auditbox { position: relative; min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.auditbox .example { margin: 0 0 12px; font-size: 14px; color: var(--text-faint); }
+.auditbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-top: 12px; }
+.auditbar .links { font-size: 12px; color: var(--text-muted); }
+.auditbar .links span { text-decoration: underline; }
+.note { margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+.grp { margin: 22px 0 2px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.arow .sub { margin-top: 8px; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+/* report page */
+.rp-title { margin: 0; font-family: var(--font-reading); font-size: 24px; font-weight: 400; line-height: 32px; }
+.rp-meta { margin: 6px 0 0; font-size: 13px; color: var(--text-muted); }
+.rp-back { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; display: block; }
+.strip { display: flex; gap: 4px; margin: 18px 0 6px; }
+.strip .cell { flex: 1; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+.c-green { background: #DCEFE3; color: #1F5A3A; } .c-amber { background: #FCEBC6; color: #7A4F0F; } .c-red { background: #F8D7D3; color: #7A1F17; } .c-grey { background: #E9EBEF; color: #4B5563; }
+.counts { display: flex; gap: 18px; font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+.counts b { color: var(--ink); font-weight: 600; }
+.sec { margin: 22px 0 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.frow { display: grid; grid-template-columns: 10px 132px 26px 1fr 260px; column-gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--line-faint); }
+.frow .pill { margin-top: 1px; width: 132px; box-sizing: border-box; font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 3px 8px; border-radius: 999px; text-align: center; }
+.frow .ln { font-size: 13px; font-weight: 600; color: var(--text-strong); line-height: 20px; }
+.frow .req { font-size: 14px; line-height: 20px; color: var(--ink); }
+.frow .docl { font-size: 13px; line-height: 20px; color: var(--brand-strong); text-decoration: underline; text-align: right; }
+.frow .chev { color: var(--text-faint); font-size: 12px; line-height: 20px; }
+.fopen { padding: 6px 0 16px 180px; border-bottom: 1px solid var(--line-faint); }
+.fopen .lab { margin: 12px 0 3px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.fopen p { margin: 0; font-size: 14px; line-height: 21px; color: var(--ink); }
+.fopen .q { font-family: var(--font-reading); font-style: italic; color: var(--text-strong); }
+.fopen .src { font-size: 13px; color: var(--text-muted); }
+.fopen .src a { color: var(--brand-strong); }
+.fopen .fold { margin-top: 12px; font-size: 13px; color: var(--text-muted); }
+.fopen .fold span { text-decoration: underline; }
+.rp-foot { display: flex; align-items: center; gap: 18px; white-space: nowrap; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.rp-foot .meta { margin-left: auto; font-size: 12px; color: var(--text-faint); }
+.sugg { margin-top: 18px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line-faint); border-radius: 8px; font-size: 13px; color: var(--text-muted); }
+.sugg b { color: var(--text-strong); font-weight: 500; }
+/* auditor checklists tab */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+.card .t { margin: 0; font-size: 16px; color: var(--ink); }
+.card .m { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); }
+.card .tools { display: flex; gap: 18px; margin-top: 12px; font-size: 13px; }
+.card .tools a { color: var(--brand-strong); }
+table.runs { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+table.runs th { white-space: nowrap; text-align: left; font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); padding: 0 10px 8px 0; border-bottom: 1px solid var(--line); }
+table.runs th.n, table.runs td.n { text-align: center; width: 78px; }
+table.runs th.run, table.runs td.run { width: 126px; }
+table.runs th.since, table.runs td.since { width: 150px; }
+table.runs td { white-space: nowrap; padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line-faint); vertical-align: middle; color: var(--ink); }
+table.runs tr:last-child td { border-bottom: 0; }
+table.runs td.n span { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 999px; font-weight: 600; font-size: 12px; }
+table.runs td.act { width: 236px; padding-right: 0; }
+table.runs td.act .acts { display: grid; grid-template-columns: 112px 1fr; column-gap: 10px; }
+table.runs td.act a { color: var(--brand-strong); }
+table.runs td.act a.b { font-weight: 500; }
+table.runs td.closed { color: var(--text-muted); font-size: 12px; white-space: normal; }
+.trow { padding: 14px 0; border-bottom: 1px solid var(--line-faint); }
+.trow .t { font-size: 15px; color: var(--ink); }
+.trow .m { margin-top: 3px; font-size: 12px; color: var(--text-muted); }
+.trow .runs { margin: 10px 0 0 22px; }
+.trow .run { display: flex; align-items: center; gap: 14px; padding: 7px 0; font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--line-faint); }
+.trow .run .d { width: 150px; color: var(--ink); }
+.trow .run .a { margin-left: auto; color: var(--brand-strong); text-decoration: underline; }
+.trow .run .b { color: var(--brand-strong); font-weight: 500; }
+/* documents row */
+.drow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line-faint); }
+.drow .l { flex: 1; } .drow .l .t { font-size: 14px; color: var(--ink); } .drow .l .m { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.drow .ag { width: 150px; font-size: 12px; color: var(--text-muted); }
+.drow .st { display: grid; grid-template-columns: 92px 56px; column-gap: 8px; width: 190px; font-size: 13px; }
+.drow .st .w { font-weight: 500; text-align: left; } .drow .st .d { grid-column: 1 / 3; font-size: 12px; color: var(--text-muted); margin-top: 2px; text-align: left; white-space: nowrap; }
+.drow .st .notes { grid-column: 2; justify-self: start; }
+.st-work .w { color: var(--warning); } .st-cur .w { color: var(--brand-strong); } .st-exp .w { color: var(--danger); }
+.drow .st .notes { display: inline-block; padding: 1px 7px; border-radius: 999px; background: var(--line-faint); color: var(--text-muted); font-size: 11px; text-decoration: underline; }
+/* the drawer over the page */
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.drw { position: absolute; top: 0; right: 0; bottom: 0; width: 720px; background: var(--surface); box-shadow: -8px 0 24px rgba(20,23,26,.12); padding: 28px 32px; }
+.drw h2 { margin: 0; font-family: var(--font-reading); font-size: 20px; font-weight: 400; line-height: 28px; }
+.drw .m { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+.drw .lab { margin: 22px 0 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.drw p { margin: 0 0 6px; font-size: 14px; line-height: 21px; }
+.drw .foot { position: absolute; left: 32px; right: 32px; bottom: 24px; display: flex; gap: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px; color: var(--brand-strong); }
+.drw .x { position: absolute; top: 22px; right: 24px; color: var(--text-faint); font-size: 18px; }
+/* the notes band at the end */
+.notes { max-width: 900px; padding: 0 16px 48px; }
+.notes h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 600; }
+.notes p, .notes li { font-size: 14px; line-height: 22px; color: var(--desk-fg); }
+.notes ul { margin: 0; padding-left: 20px; }
+.notes code { font-size: 12.5px; background: var(--desk-surface); padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="cv-top">
+  <h1>CompliBoard — the audit report, boards</h1>
+  <span class="sp"></span>
+  <select id="goto" aria-label="Go to a board"><option value="">Go to a board…</option></select>
+  <button type="button" id="z-fit" aria-pressed="true">Fit</button>
+  <button type="button" id="z-75" aria-pressed="false">75%</button>
+  <button type="button" id="z-100" aria-pressed="false">100%</button>
+</div>
+
+<div class="cv-intro">
+  <h2>The audit report, drawn on the owner's own run</h2>
+  <p><strong>Draft 2, 4 November 2026 — the auditor's lines whole on the report; the checklists tab as white cards with a run table.</strong> Every line is from the Clackamas Blending &amp; Supply run of 3 November — the owner's ten-line auditor checklist, the audit's own findings, reworded only where the new vocabulary applies. Four boards: the report as a full-width page; a document's reading as the one drawer over it; the Auditor checklists tab; and the Documents list with the new notes.</p>
+  <p>The five words a line can carry, as the customer sees them: <b>On file</b> · <b>On file, gaps found</b> · <b>Out of date</b> · <b>Nothing on file</b> · <b>Not a document question</b>. Suggestions carry a sixth label, <b>Usually held — not seen</b>, folded and never counted. Green boxes are decisions; amber boxes are the owner's calls.</p>
+</div>
+
+<div class="cv-band">The report is a page</div>
+
+<section class="cv-frame" id="b1">
+  <div class="cv-label"><span class="t">1 · The report page — the Clackamas run, two rows open</span><span class="s">1280 × 1960</span></div>
+  <p class="cv-note">Full width, no drawer. The title is the auditor's own title for the checklist, and <b>each row carries the auditor's line whole, word for word</b> — once a person has this page they never need the auditor's file open beside it. The ten-cell strip is the picture: one cell per line in the auditor's order, coloured by its word, and the counts under it. Then one row per line — pill · line · requirement · the document it rests on — in Section A, B, C order, never regrouped. Two rows are drawn open: <b>B2</b>, the forklift roster, where today's "on file" hid two overdue operators and the fifth word now says so; and <b>C1</b>, a nothing-on-file line, which has no document and so no "line we read". An open row has three labelled parts — <b>What we found · The line we read · What to do</b> — and a fourth fold, <b>Also noted</b>, holding the caveats, the "proposed, not confirmed" asides and the dates that are not findings. No document handle (D6, D12) anywhere: the document's own title, as a link to its reading.</p>
+  <div class="cv-dec"><b>Decided 4 November (55–58).</b> The report is a page, the reading is a drawer over it, the file is a button in the drawer. One row per checklist line in the auditor's order and numbering (50). The binder is built from a run, here and nowhere else; it numbers documents in order of first citation, one tab per document however many rows cite it.</div>
+  <div class="cv-ask"><b>Your reading — the five words.</b> The pill says <i>On file, gaps found</i> in amber for A3 and B2. Alternatives were <i>Gaps found</i> (shorter, but does not say the document exists) and <i>On file, incomplete</i> (sounds like a judgement on the document). The suggestions sit in one folded grey line at the end, <i>Usually held — not seen</i>, outside the counts and the strip.</div>
+  <div class="scaler"><div class="board" style="height:1960px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Clackamas Blending &amp; Supply LLC</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav active" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <a class="rp-back" href="#">← Auditor checklists</a>
+          <h1 class="rp-title">Pre-Inspection Audit Checklist — Oregon chemical blending and distribution facilities</h1>
+          <p class="rp-meta">Northwest Supplier Assurance Program, revision 2026-03 · audited 3 November 2026 · readings as of 3 November 2026 · you asked: “Audit us against the attached template.”</p>
+          <div class="strip"><div class="cell c-green">A1</div><div class="cell c-green">A2</div><div class="cell c-amber">A3</div><div class="cell c-amber">A4</div><div class="cell c-amber">B1</div><div class="cell c-amber">B2</div><div class="cell c-green">B3</div><div class="cell c-green">B4</div><div class="cell c-red">C1</div><div class="cell c-red">C2</div></div><div class="counts"><span><b>4</b> on file</span><span><b>2</b> on file, gaps found</span><span><b>2</b> out of date</span><span><b>2</b> nothing on file</span><span style="margin-left:auto">10 lines · 3 sections · 11 documents read</span></div>
+          <p style="margin:0 0 4px;font-size:14px;color:var(--text-muted)">Every line below is a line of your checklist, answered against the documents you have given us. None of it is a verdict on whether the company complies.</p>
+          <p class="sec">Section A — Permits and plans</p><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">A1</span><span class="req">Current Oregon DEQ Air Contaminant Discharge Permit on site, not expired, with the renewal application due date noted.</span><span class="docl">Simple ACDP 03-0217-ST-01</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">A2</span><span class="req">Hazardous waste generator status notified to DEQ, with the EPA ID number and current contact on file; re-notified within the last two years.</span><span class="docl">DEQ acknowledgement, EPA ID ORR 000 215 889</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-amber">On file, gaps found</span><span class="ln">A3</span><span class="req">Written Hazard Communication Program, reviewed within the last 12 months, with a chemical inventory and an SDS for every product listed.</span><span class="docl">Hazard Communication Program, Rev 6</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-amber">Out of date</span><span class="ln">A4</span><span class="req">Emergency Action Plan / contingency plan naming a primary and an alternate emergency coordinator with 24-hour phone numbers, and an evacuation map with assembly point.</span><span class="docl">Emergency Action and Contingency Plan, Rev 3</span></div><p class="sec">Section B — Records and training</p><div class="frow"><span class="chev">▸</span><span class="pill c-amber">Out of date</span><span class="ln">B1</span><span class="req">Hazardous waste handler training records for every employee who handles waste, within the last 12 months.</span><span class="docl">Training roster, 14 March 2025</span></div><div class="frow"><span class="chev">▾</span><span class="pill c-amber">On file, gaps found</span><span class="ln">B2</span><span class="req">Powered industrial truck (forklift) operator certifications, with an evaluation for each operator within the last three years.</span><span class="docl">Forklift operator certifications, 2026</span></div><div class="fopen">
+            <p class="lab">What we found</p>
+            <p>Two of four operators are past the three-year evaluation the line asks for: Rohan Patel, due 2 February 2026, and Marcus Reed, due 19 September 2026. Kevin Tran and Lena Hoffmann are current.</p>
+            <p class="lab">The line we read</p>
+            <p class="q">“Rohan Patel · Sit-down counterbalance, LP · 11 January 2020 · 2 February 2023”</p>
+            <p class="src"><a href="#">Powered Industrial Truck Operator Certifications, current as of 1 October 2026</a> · page 1, operator table · <a href="#">open the file</a></p>
+            <p class="lab">What to do</p>
+            <p>Re-evaluate Patel and Reed, one evaluation per truck type, then reissue the roster, because as written it says it is current and shows two overdue operators.</p>
+            <p class="fold">▸ <span>Also noted</span> — 3 things: the roster shows no trainer or training date; certification cards are kept in the warehouse office and are not on file; Tran and Hoffmann are due in 2028.</p>
+          </div><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">B3</span><span class="req">Respirator fit test records within the last 12 months for every employee who wears a respirator, with medical evaluations.</span><span class="docl">Respirator fit test records, June 2026</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">B4</span><span class="req">Weekly inspection log for the hazardous waste accumulation area, complete for the last 12 weeks, with deficiencies and corrections noted.</span><span class="docl">Weekly container inspection log, Aug–Oct 2026</span></div><p class="sec">Section C — Transport and fire</p><div class="frow"><span class="chev">▾</span><span class="pill c-red">Nothing on file</span><span class="ln">C1</span><span class="req">DOT hazmat employee training records (general awareness, function-specific, safety, security) within the last three years for employees who prepare or offer hazardous materials for transport, and shipping papers retained for two years.</span><span class="docl">—</span></div><div class="fopen">
+            <p class="lab">What we found</p>
+            <p>None of the 11 documents on file is a DOT hazmat training record or a shipping paper. If anyone prepares or offers hazardous materials for transport, both are needed; if the company does not ship hazardous materials, record that this line does not apply.</p>
+            <p class="lab">What to do</p>
+            <p>Add a training record from the last three years for each employee who prepares shipments, showing all four training types, and shipping papers from the last two years.</p>
+          </div><div class="frow"><span class="chev">▸</span><span class="pill c-red">Nothing on file</span><span class="ln">C2</span><span class="req">Current fire code operational permit for hazardous materials storage from the local fire authority, with the Hazardous Materials Inventory Statement submitted for the current year.</span><span class="docl">—</span></div>
+          <div class="sugg">▸ <b>Usually held — not seen</b> · 4 documents companies like this usually hold that we have not been shown. These are suggestions, not findings, and are not counted above.</div>
+          <div class="rp-foot"><button class="btn-primary">Build the binder</button><button class="btn-text strong">Audit again</button><button class="btn-text">Print</button><button class="btn-text">Make a checklist</button><button class="btn-text">Not right</button><span class="meta">Every audit is kept. This one is exactly what it said on 3 November 2026.</span></div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<section class="cv-frame" id="b2">
+  <div class="cv-label"><span class="t">2 · A document's reading, as the one drawer over the page</span><span class="s">1280 × 900</span></div>
+  <p class="cv-note">The forklift roster's title clicked on row B2. The same drawer the Documents list opens — nothing new — with <b>Open the file</b> at its foot (B2 made that hand over a readable copy for a HEIC or a TIFF). Close it and the report is where it was. Never a drawer inside a drawer. The reading now separates <b>Gaps read from the page</b> from <b>Notes</b> — the reader's own hedged guesses — which is decision 48 on the page.</p>
+  <div class="scaler"><div class="board" style="height:900px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Clackamas Blending &amp; Supply LLC</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav active" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <a class="rp-back" href="#">← Auditor checklists</a>
+          <h1 class="rp-title">Pre-Inspection Audit Checklist — Oregon chemical blending and distribution facilities</h1>
+          <p class="rp-meta">Northwest Supplier Assurance Program, revision 2026-03 · audited 3 November 2026 · readings as of 3 November 2026 · you asked: “Audit us against the attached template.”</p>
+          <div class="strip"><div class="cell c-green">A1</div><div class="cell c-green">A2</div><div class="cell c-amber">A3</div><div class="cell c-amber">A4</div><div class="cell c-amber">B1</div><div class="cell c-amber">B2</div><div class="cell c-green">B3</div><div class="cell c-green">B4</div><div class="cell c-red">C1</div><div class="cell c-red">C2</div></div><div class="counts"><span><b>4</b> on file</span><span><b>2</b> on file, gaps found</span><span><b>2</b> out of date</span><span><b>2</b> nothing on file</span><span style="margin-left:auto">10 lines · 3 sections · 11 documents read</span></div>
+          <p style="margin:0 0 4px;font-size:14px;color:var(--text-muted)">Every line below is a line of your checklist, answered against the documents you have given us. None of it is a verdict on whether the company complies.</p>
+          <p class="sec">Section A — Permits and plans</p><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">A1</span><span class="req">Current Oregon DEQ Air Contaminant Discharge Permit on site, not expired, with the renewal application due date noted.</span><span class="docl">Simple ACDP 03-0217-ST-01</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">A2</span><span class="req">Hazardous waste generator status notified to DEQ, with the EPA ID number and current contact on file; re-notified within the last two years.</span><span class="docl">DEQ acknowledgement, EPA ID ORR 000 215 889</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-amber">On file, gaps found</span><span class="ln">A3</span><span class="req">Written Hazard Communication Program, reviewed within the last 12 months, with a chemical inventory and an SDS for every product listed.</span><span class="docl">Hazard Communication Program, Rev 6</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-amber">Out of date</span><span class="ln">A4</span><span class="req">Emergency Action Plan / contingency plan naming a primary and an alternate emergency coordinator with 24-hour phone numbers, and an evacuation map with assembly point.</span><span class="docl">Emergency Action and Contingency Plan, Rev 3</span></div><p class="sec">Section B — Records and training</p><div class="frow"><span class="chev">▸</span><span class="pill c-amber">Out of date</span><span class="ln">B1</span><span class="req">Hazardous waste handler training records for every employee who handles waste, within the last 12 months.</span><span class="docl">Training roster, 14 March 2025</span></div><div class="frow"><span class="chev">▾</span><span class="pill c-amber">On file, gaps found</span><span class="ln">B2</span><span class="req">Powered industrial truck (forklift) operator certifications, with an evaluation for each operator within the last three years.</span><span class="docl">Forklift operator certifications, 2026</span></div><div class="fopen">
+            <p class="lab">What we found</p>
+            <p>Two of four operators are past the three-year evaluation the line asks for: Rohan Patel, due 2 February 2026, and Marcus Reed, due 19 September 2026. Kevin Tran and Lena Hoffmann are current.</p>
+            <p class="lab">The line we read</p>
+            <p class="q">“Rohan Patel · Sit-down counterbalance, LP · 11 January 2020 · 2 February 2023”</p>
+            <p class="src"><a href="#">Powered Industrial Truck Operator Certifications, current as of 1 October 2026</a> · page 1, operator table · <a href="#">open the file</a></p>
+            <p class="lab">What to do</p>
+            <p>Re-evaluate Patel and Reed, one evaluation per truck type, then reissue the roster, because as written it says it is current and shows two overdue operators.</p>
+            <p class="fold">▸ <span>Also noted</span> — 3 things: the roster shows no trainer or training date; certification cards are kept in the warehouse office and are not on file; Tran and Hoffmann are due in 2028.</p>
+          </div><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">B3</span><span class="req">Respirator fit test records within the last 12 months for every employee who wears a respirator, with medical evaluations.</span><span class="docl">Respirator fit test records, June 2026</span></div><div class="frow"><span class="chev">▸</span><span class="pill c-green">On file</span><span class="ln">B4</span><span class="req">Weekly inspection log for the hazardous waste accumulation area, complete for the last 12 weeks, with deficiencies and corrections noted.</span><span class="docl">Weekly container inspection log, Aug–Oct 2026</span></div><p class="sec">Section C — Transport and fire</p><div class="frow"><span class="chev">▾</span><span class="pill c-red">Nothing on file</span><span class="ln">C1</span><span class="req">DOT hazmat employee training records (general awareness, function-specific, safety, security) within the last three years for employees who prepare or offer hazardous materials for transport, and shipping papers retained for two years.</span><span class="docl">—</span></div><div class="fopen">
+            <p class="lab">What we found</p>
+            <p>None of the 11 documents on file is a DOT hazmat training record or a shipping paper. If anyone prepares or offers hazardous materials for transport, both are needed; if the company does not ship hazardous materials, record that this line does not apply.</p>
+            <p class="lab">What to do</p>
+            <p>Add a training record from the last three years for each employee who prepares shipments, showing all four training types, and shipping papers from the last two years.</p>
+          </div><div class="frow"><span class="chev">▸</span><span class="pill c-red">Nothing on file</span><span class="ln">C2</span><span class="req">Current fire code operational permit for hazardous materials storage from the local fire authority, with the Hazardous Materials Inventory Statement submitted for the current year.</span><span class="docl">—</span></div>
+          <div class="sugg">▸ <b>Usually held — not seen</b> · 4 documents companies like this usually hold that we have not been shown. These are suggestions, not findings, and are not counted above.</div>
+          <div class="rp-foot"><button class="btn-primary">Build the binder</button><button class="btn-text strong">Audit again</button><button class="btn-text">Print</button><button class="btn-text">Make a checklist</button><button class="btn-text">Not right</button><span class="meta">Every audit is kept. This one is exactly what it said on 3 November 2026.</span></div>
+        </div></main>
+      </div>
+    </div><div class="scrim"></div><div class="drw"><span class="x">✕</span>
+    <h2>Powered Industrial Truck (Forklift) Operator Certification Roster, current as of 1 October 2026</h2>
+    <p class="m">Record · OSHA · read 3 November 2026 · Powered_Industrial_Truck_Operator_Certifications_2026.pdf</p>
+    <p class="lab">What it is</p>
+    <p>A one-page roster of four forklift operators with truck type, initial certification and last evaluation, signed by the Operations Manager on 1 October 2026.</p>
+    <p class="lab">Gaps read from the page</p>
+    <p>Rohan Patel’s last evaluation is 2 February 2023, past the three-year interval. Marcus Reed’s is 19 September 2023, past it since 19 September 2026.</p>
+    <p class="lab">Notes</p>
+    <p style="color:var(--text-muted)">The roster says certification cards are kept in the warehouse office; they may well be on file there. No trainer or training date is shown.</p>
+    <p class="lab">Dates</p>
+    <p>Last entry 1 October 2026 · next evaluations due 14 May 2028 (Tran), 8 August 2028 (Hoffmann)</p>
+    <div class="foot"><span>Open the file</span><span>Read it again</span><span>Not right</span></div>
+  </div>
+  </div></div>
+</section>
+
+<div class="cv-band">The home of the auditor's checklist</div>
+
+<section class="cv-frame" id="b3">
+  <div class="cv-label"><span class="t">3 · The Auditor checklists tab</span><span class="s">1280 × 760</span></div>
+  <p class="cv-note"><b>A rule for every list and report in the app (decision 59):</b> status words and action links sit in fixed columns, left-aligned, so they line up down the page whatever sits beside them. Four tabs: <b>Ask a question · Conversations · Agency audits · Auditor checklists</b>, with the line "Checklists your auditors gave you, and every audit run against them." <b>One white card per checklist</b>, and inside it a table of its runs, newest first: the date, the four counts as coloured cells, what closed since the run before, and the two links — <b>Open the report</b> on every run, <b>Build the binder</b> on the latest. Under the table: <i>Audit again against this checklist</i> and <i>Open the auditor's file</i>. The last line teaches the paperclip. Agency audits is today's rows, untouched.</p>
+  <div class="scaler"><div class="board" style="height:800px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Clackamas Blending &amp; Supply LLC</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav active" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Audits</h1>
+          <p class="lede">Where you stand with each agency, from the documents you have given us. Every line points at a document, or at something we do not see.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab">Conversations</div><div class="tab">Agency audits</div><div class="tab" aria-selected="true">Auditor checklists</div></div>
+          <p style="margin:0 0 14px;font-size:13px;color:var(--text-muted)">Checklists your auditors gave you, and every audit run against them.</p>
+          <div class="card"><p class="t">Pre-Inspection Audit Checklist — Oregon chemical blending and distribution facilities</p><p class="m">Northwest Supplier Assurance Program, rev 2026-03 · 10 lines in 3 sections · last run 3 November 2026</p><table class="runs"><tr><th class="run">Run</th><th class="n">On file</th><th class="n">Gaps found</th><th class="n">Out of date</th><th class="n">Not on file</th><th class="since">Since last run</th><th class="act"></th></tr><tr><td class="run">3 November 2026</td><td class="n"><span class="c-green">4</span></td><td class="n"><span class="c-amber">2</span></td><td class="n"><span class="c-amber">2</span></td><td class="n"><span class="c-red">2</span></td><td class="since closed">1 line closed since 28 August</td><td class="act"><div class="acts"><a href="#">Open the report</a><a class="b" href="#">Build the binder</a></div></td></tr><tr><td class="run">28 August 2026</td><td class="n"><span class="c-green">3</span></td><td class="n"><span class="c-amber">2</span></td><td class="n"><span class="c-amber">2</span></td><td class="n"><span class="c-red">3</span></td><td class="since closed">—</td><td class="act"><div class="acts"><a href="#">Open the report</a><span></span></div></td></tr></table><div class="tools"><a href="#">Audit again against this checklist</a><a href="#">Open the auditor's file</a></div></div><div class="card"><p class="t">Northwest Grocers supplier audit checklist, 2026</p><p class="m">12 lines in 4 sections · last run 30 October 2026</p><table class="runs"><tr><th class="run">Run</th><th class="n">On file</th><th class="n">Gaps found</th><th class="n">Out of date</th><th class="n">Not on file</th><th class="since">Since last run</th><th class="act"></th></tr><tr><td class="run">30 October 2026</td><td class="n"><span class="c-green">9</span></td><td class="n"><span class="c-amber">1</span></td><td class="n"><span class="c-amber">0</span></td><td class="n"><span class="c-red">2</span></td><td class="since closed">—</td><td class="act"><div class="acts"><a href="#">Open the report</a><a class="b" href="#">Build the binder</a></div></td></tr></table><div class="tools"><a href="#">Audit again against this checklist</a><a href="#">Open the auditor's file</a></div></div><p style="margin-top:22px;font-size:13px;color:var(--text-muted)">Have another auditor’s checklist? Attach it with the paperclip on the Ask tab and type <i>Audit us against the attached template</i>.</p>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="cv-band">The Documents list with decision 48</div>
+
+<section class="cv-frame" id="b4">
+  <div class="cv-label"><span class="t">4 · Needs work only on a gap read from the page; guesses become notes</span><span class="s">1280 × 720</span></div>
+  <p class="cv-note">The owner's own run again. The forklift roster and the HazCom program keep <b>Needs work</b>, because their gaps were read off the page. The fit-test record — red yesterday on one hedged guess — is <b>Current</b> with <b>1 note</b> beside it; the inspection log the same. The note count opens the reading's Notes. Nothing is hidden: the guess is still there, in the reader's own words, and it no longer turns a clean record red.</p>
+  <div class="cv-ask"><b>Your reading — the words "Needs work" and "note".</b> Both are the product's existing words; only when they are used changes.</div>
+  <div class="scaler"><div class="board" style="height:720px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Clackamas Blending &amp; Supply LLC</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav active" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Documents</h1>
+          <p class="lede">Everything you hold, read and grouped by what it is — not by where you filed it.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab">Conversations</div><div class="tab" aria-selected="true">Documents (11)</div></div>
+          <p class="sec">Needs work &nbsp;3</p>
+          <div class="drow"><div class="l"><p class="t">Powered Industrial Truck (Forklift) Operator Certification Roster, current as of 1 October 2026</p><p class="m">Powered_Industrial_Truck_Operator_Certifications_2026.pdf · read 3 Nov</p></div><span class="ag">OSHA · Record</span><span class="st st-work"><span class="w">Needs work</span><span class="notes">1 note</span><span class="d">Last entry 1 October 2026</span></span></div>
+          <div class="drow"><div class="l"><p class="t">Emergency Action Plan and Hazardous Waste Contingency Plan, Revision 3</p><p class="m">Emergency_Action_and_Contingency_Plan_Rev3.docx · read 3 Nov</p></div><span class="ag">OSHA · DEQ · Program</span><span class="st st-work"><span class="w">Needs work</span><span class="d">Revised 10 February 2025</span></span></div>
+          <div class="drow"><div class="l"><p class="t">Written Hazard Communication Program, Revision 6 (Clackamas facility)</p><p class="m">Hazard_Communication_Program_Rev6_2026.docx · read 3 Nov</p></div><span class="ag">OSHA · Program</span><span class="st st-work"><span class="w">Needs work</span><span class="notes">2 notes</span><span class="d">Effective 15 January 2026</span></span></div>
+          <p class="sec">Current &nbsp;5</p>
+          <div class="drow"><div class="l"><p class="t">Respirator Fit Test Records: annual quantitative fit testing, 4–5 June 2026</p><p class="m">Respirator_Fit_Test_Records_June_2026.pdf · read 3 Nov</p></div><span class="ag">OSHA · Record</span><span class="st st-cur"><span class="w">Current</span><span class="notes">1 note</span><span class="d">Last entry 9 June 2026</span></span></div>
+          <div class="drow"><div class="l"><p class="t">Oregon DEQ Simple Air Contaminant Discharge Permit (ACDP) No. 03-0217-ST-01</p><p class="m">Oregon_DEQ_Simple_ACDP_03-0217-ST-01.pdf · read 3 Nov</p></div><span class="ag">Oregon DEQ · Permit</span><span class="st st-cur"><span class="w">Current</span><span class="d">Expires 31 August 2028</span></span></div>
+          <div class="drow"><div class="l"><p class="t">Hazardous Waste Accumulation Area Weekly Inspection Log, North Dock, Aug–Oct 2026</p><p class="m">…Inspection_Log_Aug-Oct_2026.pdf · read 3 Nov</p></div><span class="ag">Oregon DEQ · EPA · Record</span><span class="st st-cur"><span class="w">Current</span><span class="notes">1 note</span><span class="d">Last entry 26 October 2026</span></span></div>
+        </div></main>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="notes">
+  <h3>What this does not change</h3>
+  <p>The audit itself: what it reads, in what order, how it decides. The fifth word is a new word the model may use when a document answers the line and the line's requirement is still not met in full; the four old words keep their meanings. The agency audit rows on the Agency audits tab are untouched. The binder (Part C) is this page printed with the files behind numbered tabs.</p>
+</div>
+
+<script>
+(function () {
+  var sel = document.getElementById('goto');
+  document.querySelectorAll('.cv-frame').forEach(function (f) {
+    var t = f.querySelector('.cv-label .t'); var o = document.createElement('option'); o.value = f.id; o.textContent = t ? t.textContent : f.id; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { if (sel.value) { var el = document.getElementById(sel.value); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); sel.value = ''; } });
+  var mode = 'fit';
+  function layout() {
+    document.querySelectorAll('.scaler').forEach(function (s) {
+      var b = s.firstElementChild; var w = b.offsetWidth; var h = parseFloat(b.style.height) || b.offsetHeight;
+      var avail = s.clientWidth; var scale = mode === 'fit' ? Math.min(1, avail / w) : mode === '75' ? Math.min(0.75, avail / w) : 1;
+      b.style.transform = 'scale(' + scale + ')';
+      s.style.height = Math.ceil(h * scale) + 'px';
+      s.style.overflowX = (scale === 1 && avail < w) ? 'auto' : 'hidden';
+    });
+  }
+  ['fit', '75', '100'].forEach(function (m) {
+    document.getElementById('z-' + m).addEventListener('click', function () {
+      mode = m; ['fit', '75', '100'].forEach(function (x) { document.getElementById('z-' + x).setAttribute('aria-pressed', x === m ? 'true' : 'false'); }); layout();
+    });
+  });
+  window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  layout();
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href="#"]'); if (a) e.preventDefault(); });
+})();
+</script>
+</body>
+</html>

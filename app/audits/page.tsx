@@ -68,6 +68,8 @@ interface Finding {
 }
 interface RunSummary {
   total: number; needs_person?: number; nothing_on_file: number; stale: number; on_file: number
+  /** The fifth word (decision 47). Optional: a run summarised before 4 November has no key. */
+  on_file_gaps?: number
   not_a_document_question: number; contradictions: number; expected: number
   sections: number; sections_done: number; could_not_complete: number
   carried: number; closed: number; agencies: string[]; note: string | null
@@ -105,6 +107,7 @@ interface Index {
 /* ── the vocabulary, and it is short on purpose ───────────────────────────── */
 const WORD: Record<string, string> = {
   nothing_on_file: 'nothing on file',
+  on_file_gaps: 'on file, gaps found',
   stale: 'out of date',
   on_file: 'on file',
   not_a_document_question: 'not a document question',
@@ -126,6 +129,7 @@ const WORD: Record<string, string> = {
  */
 const WORD_CLAUSE: Record<string, (n: number) => string> = {
   nothing_on_file: (n) => `${n} thing${n === 1 ? '' : 's'} with nothing on file`,
+  on_file_gaps: (n) => `${n} thing${n === 1 ? '' : 's'} on file with gaps found`,
   contradiction: (n) => `${n} disagreement${n === 1 ? '' : 's'} between documents`,
   not_a_document_question: (n) => `${n} thing${n === 1 ? '' : 's'} no document can answer`,
   on_file: (n) => `${n} thing${n === 1 ? '' : 's'} on file`,
@@ -194,7 +198,7 @@ const controlClass =
 function needsOf(s: RunSummary | null | undefined): number {
   if (!s) return 0
   if (typeof s.needs_person === 'number') return s.needs_person
-  return (s.nothing_on_file ?? 0) + (s.stale ?? 0) + (s.contradictions ?? 0)
+  return (s.nothing_on_file ?? 0) + (s.on_file_gaps ?? 0) + (s.stale ?? 0) + (s.contradictions ?? 0)
     + (s.not_a_document_question ?? 0)
 }
 
@@ -702,12 +706,16 @@ function Audits() {
       : []
     const byWord = {
       nothing_on_file: findings.filter((f) => f.word === 'nothing_on_file' && f.kind === 'finding').length,
+      // No `kind` guard: `audit_findings_expected_is_expected` (058:209) forbids a suggestion from
+      // carrying the fifth word, which is what keeps decision 60's suggestions out of the counts.
+      on_file_gaps: findings.filter((f) => f.word === 'on_file_gaps').length,
       stale: findings.filter((f) => f.word === 'stale').length,
       contradiction: findings.filter((f) => f.kind === 'contradiction').length,
       not_a_document_question: findings.filter((f) => f.word === 'not_a_document_question').length,
       on_file: findings.filter((f) => f.word === 'on_file').length,
     }
-    const needs = byWord.nothing_on_file + byWord.stale + byWord.contradiction + byWord.not_a_document_question
+    const needs = byWord.nothing_on_file + byWord.on_file_gaps + byWord.stale
+      + byWord.contradiction + byWord.not_a_document_question
     const failed = activeSections.filter((s) => s.status === 'could_not_complete')
     return { docs, lastRun, activeRun, mine, k, n: activeSections.length, byWord, needs, failed }
   }
@@ -972,7 +980,9 @@ function Audits() {
                               </p>
                             )}
                           </div>
-                          <div className="shrink-0 text-right">
+                          {/* Decision 59: the action sits in a fixed, left-aligned column, so
+                              "Audit again" and "section 2 of 4" start at the same place. */}
+                          <div className="w-[104px] shrink-0 text-left">
                             {v.activeRun ? (
                               <p className="text-[12px] text-gray-500">
                                 {v.n > 1 ? `section ${v.k} of ${v.n}` : ''}
@@ -1072,7 +1082,8 @@ function Audits() {
                         )}
                         {r.scope && <p className="mt-0.5 text-[12px] text-gray-400">&ldquo;{r.scope}&rdquo;</p>}
                       </div>
-                      <div className="shrink-0 space-x-3 text-right">
+                      {/* Decision 59, the same column for the same reason. */}
+                      <div className="w-[104px] shrink-0 space-x-3 text-left">
                         <button onClick={() => setParam('run', r.id)} className={ACTION_GREEN}>Open</button>
                         {/* *** NO "Audit again" HERE, AND IT IS NOT AN OVERSIGHT. ***
                             `POST /api/audit-runs { kind: 'template' }` reads the file out of
@@ -1308,7 +1319,8 @@ function AgencyBody({ label, idx, v, onOpenRun, onOpenDoc }: {
           disagreements between documents" is a clause that costs a reader time and tells them
           nothing. */}
       {v.lastRun && (() => {
-        const clauses = (['nothing_on_file', 'contradiction', 'not_a_document_question', 'on_file', 'stale'] as const)
+        const clauses = (['nothing_on_file', 'on_file_gaps', 'contradiction',
+                          'not_a_document_question', 'on_file', 'stale'] as const)
           .filter((w) => v.byWord[w] > 0)
           .map((w) => (
             <button key={w} onClick={() => onOpenRun(w)} className="underline hover:text-gray-900">
@@ -1389,7 +1401,9 @@ function GroupedByOther({ by, idx, docs, onAudit, busy, paused, onOpenDoc }: {
                 <div key={d.document_id} className="flex items-center gap-3 py-1">
                   <button onClick={() => onOpenDoc(d.document_id)} title={d.title}
                     className={`min-w-0 flex-1 ${TITLE_LINE}`}>{d.title}</button>
-                  <p className={`shrink-0 text-[12px] ${AMBER_DOC.has(d.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
+                  {/* Decision 59: fixed and left-aligned, so the words line up down the group
+                      however long the titles beside them are. 96px fits "Could not read". */}
+                  <p className={`w-[96px] shrink-0 text-left text-[12px] ${AMBER_DOC.has(d.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
                     {DOC_STATUS[d.display_status] ?? d.display_status}
                   </p>
                 </div>

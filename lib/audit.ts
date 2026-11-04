@@ -119,8 +119,31 @@ export async function auditAgenciesFor(db: Db, companyId: string): Promise<strin
   return ((data ?? []) as Array<{ label: string }>).map((l) => l.label)
 }
 
+/**
+ * *** A TEMPLATE RUN STOPS READING ITS OWN TEMPLATE — W6, decision 49, 4 November 2026. ***
+ *
+ * Proved on staging before the change: all three sections of run
+ * `8707eea9-6c58-4c98-ab9d-4ec5825642cd` read **12** documents, and two of them were the same
+ * auditor's checklist — the one the paperclip brought in (`511e8bcd`, the run's own
+ * `template_document_id`) and a second copy that arrived with a folder (`40145b5e`). Two of the
+ * ten findings then said *"D9 and D10 are blank checklist templates: they list these records as
+ * expected but contain no records themselves"*, which is the audit answering a question about its
+ * own question paper.
+ *
+ * `excludeDocumentId` is filtered out of `all` — out of `documents` AND out of `other_documents`
+ * — not merely out of `carries()`. The "everything else this company holds" list exists so that
+ * *"there is no scrubber log among the five"* is a statement about evidence; the auditor's own
+ * checklist is not evidence about the company, it is the question. Leaving its TITLE in that list
+ * would leave something for the model to cite.
+ *
+ * **And it removes one copy, not two.** The second upload is a separate `documents` row and
+ * nothing here touches it, so a run still reads 11 and may still remark on a blank checklist.
+ * W6's other question — whether an attached checklist should be filed as a kind audits skip — is
+ * open for rev 2 (`docs/GAPS-PLAN.md` §7).
+ */
 export async function buildAuditInput(
-  db: Db, companyId: string, agencyLabel: string, opts: { today?: string } = {},
+  db: Db, companyId: string, agencyLabel: string,
+  opts: { today?: string; excludeDocumentId?: string | null } = {},
 ): Promise<BuiltAuditInput> {
   const today = opts.today ?? new Date().toISOString().slice(0, 10)
 
@@ -137,7 +160,10 @@ export async function buildAuditInput(
           + 'significant_date, significant_date_kind, scan_status, display_status, summary, scan_id')
     .eq('company_id', companyId).order('title').order('document_id')
 
-  const all = (indexRows ?? []) as Array<Record<string, unknown>>
+  // Decision 49: the run's own template never appears, in either list. See the note on the
+  // signature for why it is dropped here rather than inside `carries()`.
+  const all = ((indexRows ?? []) as Array<Record<string, unknown>>)
+    .filter((r) => !opts.excludeDocumentId || r.document_id !== opts.excludeDocumentId)
   // *** `'*'` MEANS EVERY DOCUMENT — Audits Run 4b. ***
   // A template audit is measured against a checklist that spans regulators (case 13's own form
   // covers the air permit, the forklifts and the extinguishers), so scoping it to one agency label

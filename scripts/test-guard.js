@@ -447,7 +447,31 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   one was costing a full call on a file nobody could open - proved by running it, the parser
 //   returned ok:true with 1,420 base64 bytes and text:'' while the log said "No password given".
 //   The library already knew and the catch threw the answer away.
-const FLOOR = 2414
+//
+// 2414 -> 2460, 4 November 2026 (GAPS-PLAN Part E step E0, decisions 47-49, 59, 60 and W5).
+//   FORTY-SIX in tests/unit/auditWords.test.ts, about one walk rather than one patch. On
+//   3 November the owner ran his own auditor's checklist against his own documents and found two
+//   things in the report: four of ten lines came back ON_FILE - green - while the sentence under
+//   each listed what was missing, and six of ten wrote a bare D6, D9, D12 at him.
+//
+//   The first was not a wrong answer. prompts/audit-agency.ts TOLD the model so, in a paragraph
+//   headed "ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART". The audit had no word for "on
+//   file, with gaps", so four greens were the only honest thing it could say. A fifth word,
+//   on_file_gaps, now exists in nine files and one CHECK constraint, and the test that matters in
+//   a year is the one asserting the five as a SORTED LIST rather than a membership: a word added
+//   to the audit and not to the chat fails there instead of reaching somebody as a raw
+//   on_file_gaps on a pill.
+//
+//   The second is tested on the six leaking lines' REAL TEXT, read back out of staging. Real text
+//   has the shapes nobody would invent - "D6 is on file", "The reading of D1 proposes", "D9 and
+//   D10 are blank checklist templates", "D7 (ACDP 26-0192-ST)" - and across all 425 findings on
+//   staging the leak is 51 in what_to_do, 4 in locator and ZERO in quote, which is why the sweep
+//   deliberately does not touch a quote.
+//
+//   And one defect found by reading two files together rather than by any test: the email's
+//   "...and n more" is nothing_on_file + stale - attention.length, so widening the attention list
+//   without widening that sum prints "...and -2 more". Nothing reads a finished run's email text.
+const FLOOR = 2460
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -80,9 +80,18 @@ export const AUDITS_A_RUN_HAS_A_DATE =
  * the ACDP permit is "Expiring" as a document and "out of date" as a finding, and an answer that
  * merges them has lost the distinction the person needs.
  */
-export const AUDITS_FOUR_WORDS =
-  'An audit says one of four things about a line: on file, out of date, nothing on file, or not a '
-  + 'document question. Use the audit\'s own word and do not make it stronger. Nothing on file '
+/*
+ * *** RENAMED, BECAUSE THE NAME WAS THE COUNT — decision 47, 4 November 2026. ***
+ * It was `AUDITS_FOUR_WORDS`. The audit now has five words and a constant whose name says four
+ * is the kind of thing that stays wrong for a year: `docs/GAPS-PLAN.md` §7's map named it for
+ * exactly that reason. The rename is mechanical — this file and `tests/unit/auditsBrief.test.ts`.
+ */
+export const AUDITS_FIVE_WORDS =
+  'An audit says one of five things about a line: on file, on file with gaps found, out of date, '
+  + 'nothing on file, or not a document question. Use the audit\'s own word and do not make it '
+  + 'stronger. On file with gaps found means a document answers the line and something the '
+  + 'document itself shows falls short of it — never read it as the company being in breach, and '
+  + 'never read it as the document being worthless. Nothing on file '
   + 'means we have not been shown it, not that it does not exist and not that anybody failed to '
   + 'do it. Out of date does not mean expired unless a reading gives a date that has passed. A '
   + 'document\'s own state in the list — Current, Expiring, Needs work — is a different thing from '
@@ -181,7 +190,7 @@ export const AUDITS_IDS =
 export const AUDITS_SENTENCES: string[] = [
   AUDITS_GIVEN,
   AUDITS_A_RUN_HAS_A_DATE,
-  AUDITS_FOUR_WORDS,
+  AUDITS_FIVE_WORDS,
   DOCUMENTS_WHICH_ONE,
   DOCUMENTS_PLAIN_NAME,
   DOCUMENTS_NOT_ON_FILE,

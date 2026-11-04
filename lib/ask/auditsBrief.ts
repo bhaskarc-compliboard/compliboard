@@ -130,10 +130,12 @@ export const FINDING_COLUMNS =
 /**
  * The audit's four words, in the product's own vocabulary — `app/audits/page.tsx:85`–`:90` and
  * `components/AuditReport.tsx`, read rather than invented. The chat must not grow a fifth way of
- * saying them (`prompts/audits-answer.ts` `AUDITS_FOUR_WORDS`).
+ * saying them (`prompts/audits-answer.ts` `AUDITS_FIVE_WORDS`).
  */
 export const FINDING_WORD: Record<string, string> = {
   nothing_on_file: 'nothing on file',
+  // The fifth word, decision 47. It reads second everywhere, before "out of date".
+  on_file_gaps: 'on file, gaps found',
   stale: 'out of date',
   on_file: 'on file',
   not_a_document_question: 'not a document question',
@@ -152,6 +154,7 @@ const counts = (s: Record<string, unknown> | null): string => {
   const n = (k: string) => (typeof s[k] === 'number' ? (s[k] as number) : 0)
   const parts = [
     n('on_file') ? `${n('on_file')} on file` : '',
+    n('on_file_gaps') ? `${n('on_file_gaps')} on file with gaps found` : '',
     n('stale') ? `${n('stale')} out of date` : '',
     n('nothing_on_file') ? `${n('nothing_on_file')} nothing on file` : '',
     n('not_a_document_question') ? `${n('not_a_document_question')} not a document question` : '',
@@ -216,7 +219,7 @@ export function runPlain(r: RunRow, opts: { templateTitle: string | null; docume
  *
  * Nine of Cascade's 34 open rows are `expected`, and they carry the word `nothing_on_file`. Packed
  * without their kind they read as nine more things the company has failed to file, which is
- * exactly the upgrade `prompts/audits-answer.ts` `AUDITS_FOUR_WORDS` forbids the model from making
+ * exactly the upgrade `prompts/audits-answer.ts` `AUDITS_FIVE_WORDS` forbids the model from making
  * — and it would be the packer making it first. Found by reading the packed block back.
  */
 export const KIND_WORD: Record<string, string> = {

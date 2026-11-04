@@ -105,7 +105,7 @@ U.S. OSHA**. Only **Oregon DEQ** has ever been audited.
 **Must NOT say:**
 - That the company **is** or **is not** compliant, ready, in good shape, or in trouble
   (`AUDITS_NEVER_A_VERDICT`, `DOCUMENTS_WORDS`). A score or a grade is the same failure.
-- That "nothing on file" means a thing was **not done** (`AUDITS_FOUR_WORDS`).
+- That "nothing on file" means a thing was **not done** (`AUDITS_FIVE_WORDS`).
 - That any of the **nine suggestions** (Tier II, hazardous waste generator records, a 1200-Z
   stormwater permit, eyewash flush log, HazCom program, and the rest) is a **finding**. They are
   marked `this_is="something companies like this usually hold…"` and must be said as suggestions.
@@ -228,11 +228,11 @@ the permit, quote `"Expires: November 15, 2026"`, locator *"Permit expiration da
   application that Condition 1.3 required **on or before 18 July 2026** is not on file — which is
   also the DEQ audit's finding 7.
 - **⚡ "Out of date" is the AUDIT's word; the document's own state in the list is "Expiring".** Two
-  vocabularies, kept apart (`AUDITS_FOUR_WORDS`).
+  vocabularies, kept apart (`AUDITS_FIVE_WORDS`).
 
 **Must NOT:**
 - Say the permit is **expired**. It is not — 15 November 2026 is in the future
-  (`AUDITS_FOUR_WORDS`: *"Out of date does not mean expired unless a reading gives a date that has
+  (`AUDITS_FIVE_WORDS`: *"Out of date does not mean expired unless a reading gives a date that has
   passed"*). This is the key's single sharpest must-not.
 - Say the company is operating unlawfully, or any verdict of that shape.
 - Give a rule number for the 120-day renewal window that is not the one in the permit's own

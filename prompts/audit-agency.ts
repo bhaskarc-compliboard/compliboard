@@ -79,7 +79,8 @@ confirmed and which is only proposed. That disagreement is worth raising; the va
 yours to settle.
 
 NEVER NAME WHAT DID THE READING. Write "the reading found", "this was read on", "nothing on file".
-Never name a tool, a model, a vendor or a technology anywhere in your answer.`
+Never name a tool, a model, a vendor or a technology anywhere in your answer — and never name our
+own numbering either: no D1, no D6, no F2, no R3 in any sentence a person reads.`
 
 const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text around it.
 
@@ -92,7 +93,7 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
   "findings": [
     {
       "title": "what an inspector would ask about, in the company's own terms",
-      "word": "on_file | stale | nothing_on_file | not_a_document_question — one of these four and no other",
+      "word": "on_file | on_file_gaps | stale | nothing_on_file | not_a_document_question — one of these five and no other",
       "document": "<document handle, e.g. D3> or null",
       "locator": "where in that document, or null",
       "quote": "word for word from the reading, or null",
@@ -121,22 +122,43 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
 }
 
 THE WORDS IN "word", AND WHAT EACH ONE CLAIMS:
-  on_file                 — a document is on file and carries a date. It says nothing about whether
+  on_file                 — a document is on file and carries a date, and nothing the document
+                            shows falls short of what was asked. It says nothing about whether
                             the thing it describes is being done.
+  on_file_gaps            — a document on file answers it, AND what the document itself shows does
+                            not meet what was asked in full. Say what falls short, out of the
+                            document: two of four operators past the evaluation date the line asks
+                            for; a written program on file with no SDS on file for the products it
+                            lists; a record naming a medical evaluation that is not on file. It is
+                            not an accusation and it is not a verdict. It is the document's own
+                            words measured against the words of the line.
   stale                   — on file, and old enough or superseded enough that an inspector will ask.
                             Say what makes it stale.
   nothing_on_file         — a document obliges them to hold or produce something and no reading has
                             produced it. NOT an accusation.
   not_a_document_question — this agency will ask about it and no document can settle it.
 
+ON FILE IS FOR SOMETHING WITH NOTHING FALLING SHORT. If you write on_file and then say in
+what_to_do that something is missing, overdue, or not covered, the word is wrong: it is
+on_file_gaps. Somebody scanning the words has to be able to trust that on_file means nothing there
+needs them. WHEN BOTH FIT, OUT OF DATE WINS: if the whole document is too old, the word is stale,
+however many things are also missing inside it.
+
 NAME A DOCUMENT BY ITS HANDLE. Each document you are shown carries one — D1, D2, D3 — printed
 beside its title. Write that handle and nothing else wherever a document is asked for. Do not write a
 title, a file name, or an identifier of any other shape: a handle is checked against the list you were
 given, and one that is not on it is recorded as an error against your finding.
 
+A HANDLE GOES IN THE "document" FIELD AND NOWHERE ELSE. Never write D1, D6 or any handle inside
+title, locator, quote or what_to_do. Those are read by the person who owns these documents, and a
+handle means nothing to them: it is our numbering of the list we showed you, not a name their file
+has. Write what the document IS — "the forklift roster", "the air permit" — or put the handle in
+"document" and then say "it" or "the document". A handle in prose is recorded as an error against
+your finding, exactly as a handle we did not give you is.
+
 A QUESTION NO DOCUMENT CAN SETTLE IS A FINDING TOO, with word not_a_document_question and
-"document": null. There is no separate list for them. One list of findings, four words, so nothing has
-to be said twice and nothing gets counted twice.
+"document": null. There is no separate list for them. One list of findings, five words, so nothing
+has to be said twice and nothing gets counted twice.
 
 "passed" is against today's date, given at the top of the block. A recurring date whose most recent
 occurrence is behind today is passed.
@@ -280,7 +302,7 @@ export function auditSectionPrompt(sectionIndex: number): string {
  *
  * An agency audit works out what to ask from the documents' own conditions. A template audit is
  * handed the questions: a checklist section, its lines, and their references as printed. So ROLE and
- * HONESTY are unchanged — the four words mean the same things, "nothing on file" is still not an
+ * HONESTY are unchanged — the five words mean the same things, "nothing on file" is still not an
  * accusation, a quote is still word for word, and nothing names what did the reading — and only the
  * SHAPE differs: one answer per line, in the checklist's order, carrying the line's own reference.
  *
@@ -303,7 +325,7 @@ Respond with valid JSON only. No markdown, no backticks, no text around it.
   "lines": [
     {
       "ref": "the line's reference, exactly as given above",
-      "word": "on_file | stale | nothing_on_file | not_a_document_question — one of these four and no other",
+      "word": "on_file | on_file_gaps | stale | nothing_on_file | not_a_document_question — one of these five and no other",
       "document": "<document handle, e.g. D3> or null",
       "locator": "where in that document, or null",
       "quote": "word for word from the reading, or null",
@@ -317,18 +339,23 @@ A line asking about a practice rather than a document — whether something is p
 somebody was trained on the day — is not_a_document_question with "document": null. That is an
 answer, not a failure to answer.
 
-*** ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART. ***
-A line is on_file when a document on file answers it at all — and you say what is missing in
-what_to_do. A scrubber log covering two of the twelve months the line asks for is ON FILE, with
-"the log covers August and September 2026; the line asks for twelve months" as the thing to do.
-nothing_on_file means NO document on file answers the line at all. Calling a partial answer nothing
-on file tells somebody they have nothing when they have most of it, and they stop trusting the
-report — which costs more than the line was worth.
+*** A DOCUMENT THAT ANSWERS THE LINE ONLY IN PART IS on_file_gaps, NOT on_file. ***
+A line is on_file when a document on file answers it and nothing the document shows falls short of
+what the line asks for. A line a document answers only in part is on_file_gaps, and you say what
+falls short in what_to_do. A scrubber log covering two of the twelve months the line asks for is
+on_file_gaps, with "the log covers August and September 2026; the line asks for twelve months" as
+the thing to do.
 
-A line you can answer from a document the company holds is on_file, with the handle, and a quote if
-the reading carries one. A line whose document is old enough that an inspector will ask is stale, and
-say what makes it stale. A line nothing on file answers is nothing_on_file — which is not an
-accusation: the record may exist on a clipboard and never have been uploaded.
+nothing_on_file still means NO document on file answers the line at all. Calling a partial answer
+nothing on file tells somebody they have nothing when they have most of it, and they stop trusting
+the report — which costs more than the line was worth. And calling it on_file tells them a line is
+settled when it is not, which is worse: they will find out from the inspector.
+
+A line a document the company holds answers in full is on_file, with the handle, and a quote if the
+reading carries one. A line a document answers with something still falling short is on_file_gaps,
+and you say what falls short. A line whose document is old enough that an inspector will ask is
+stale, and say what makes it stale. A line nothing on file answers is nothing_on_file — which is not
+an accusation: the record may exist on a clipboard and never have been uploaded.
 
 *** ANSWER EVERY LINE, ESPECIALLY WHEN YOU HAVE NOTHING FOR IT. ***
 Thin evidence is not a reason to decline; it is the answer. A line with no document behind it is
@@ -368,7 +395,7 @@ export const AUDIT_TEMPLATE_JSON_SCHEMA = {
         required: ['ref', 'word'],
         properties: {
           ref: { type: 'string' },
-          word: { type: 'string', enum: ['on_file', 'stale', 'nothing_on_file', 'not_a_document_question'] },
+          word: { type: 'string', enum: ['on_file', 'on_file_gaps', 'stale', 'nothing_on_file', 'not_a_document_question'] },
           document: { type: ['string', 'null'] },
           locator: { type: ['string', 'null'] },
           quote: { type: ['string', 'null'] },

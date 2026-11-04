@@ -30,6 +30,7 @@ type Db = { from: (t: string) => any; auth?: { admin?: { getUserById: (id: strin
 
 const WORD: Record<string, string> = {
   nothing_on_file: 'nothing on file',
+  on_file_gaps: 'on file, gaps found',
   stale: 'out of date',
   on_file: 'on file',
   not_a_document_question: 'no document can answer this',
@@ -116,8 +117,20 @@ export async function notifyRun(
       const w = a.word ? WORD[a.word] ?? a.word : null
       lines.push(`  ${a.title}${w ? ` — ${w}` : ''}${a.document ? ` (${a.document})` : ''}`)
     }
-    if (summary.nothing_on_file + summary.stale > summary.attention.length) {
-      lines.push(`  …and ${summary.nothing_on_file + summary.stale - summary.attention.length} more.`)
+    /**
+     * *** THE ARITHMETIC HAS TO NAME EVERY WORD `attention` HOLDS — decision 47, 4 November 2026. ***
+     *
+     * `summariseRun` builds `attention` from the words that need a person and caps it at 25; this
+     * says how many did not fit. When the fifth word joined that list and this sum did not, the
+     * subtraction went NEGATIVE and the email printed "…and -2 more". Found by reading the two
+     * together rather than by any test — nothing reads a finished run's email text.
+     *
+     * `on_file_gaps ?? 0` because a run summarised before 4 November has no such key, which is
+     * the same reason every reader derives `needs_person` instead of trusting the stored number.
+     */
+    const inAttention = summary.nothing_on_file + (summary.on_file_gaps ?? 0) + summary.stale
+    if (inAttention > summary.attention.length) {
+      lines.push(`  …and ${inAttention - summary.attention.length} more.`)
     }
     lines.push('')
   }

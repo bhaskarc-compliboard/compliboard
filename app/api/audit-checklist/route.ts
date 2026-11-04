@@ -18,8 +18,16 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 
-/** The four words that mean a person has something to do. `on_file` is not one of them. */
-const NEEDS_PERSON = new Set(['nothing_on_file', 'stale', 'not_a_document_question'])
+/**
+ * The words that mean a person has something to do. `on_file` is not one of them.
+ *
+ * *** THE FIFTH WORD IS IN — the owner's decision, 4 November 2026. ***
+ * `docs/GAPS-PLAN.md` §7 flagged this set as the thing a fifth word had to be decided into or out
+ * of, because leaving it out would make "Make a checklist" quietly drop every gap that HAS a
+ * document behind it — which is most of the gaps worth acting on. Two of four forklift operators
+ * past their evaluation date is the clearest possible checklist item.
+ */
+const NEEDS_PERSON = new Set(['nothing_on_file', 'on_file_gaps', 'stale', 'not_a_document_question'])
 
 export async function POST(request: NextRequest) {
   try {

@@ -83,6 +83,8 @@ interface Section {
 }
 interface RunSummary {
   total: number; needs_person?: number; nothing_on_file: number; stale: number; on_file: number
+  /** The fifth word (decision 47). Optional: a run summarised before 4 November has no key. */
+  on_file_gaps?: number
   not_a_document_question: number; contradictions: number; expected: number
   sections: number; sections_done: number; could_not_complete: number
   carried: number; closed: number; agencies: string[]; note: string | null
@@ -101,14 +103,27 @@ interface Report { run: Run; sections: Section[]; findings: Finding[]
 
 const WORD: Record<string, string> = {
   nothing_on_file: 'nothing on file',
+  on_file_gaps: 'on file, gaps found',
   stale: 'out of date',
   on_file: 'on file',
   not_a_document_question: 'not a document question',
 }
-/** Amber is attention. On file is not attention, and must not borrow the colour. */
-const AMBER_WORD = new Set(['nothing_on_file', 'stale'])
-/** The order findings are read in: what is missing, then what is old, then what is there. */
-const WORD_ORDER = ['nothing_on_file', 'stale', 'on_file', 'not_a_document_question']
+/**
+ * Amber is attention. On file is not attention, and must not borrow the colour.
+ *
+ * *** AND THE FIFTH WORD IS AMBER, WHICH IS THE WHOLE POINT OF IT — decision 47. ***
+ * The defect it was made for is four lines of the owner's own run reading GREEN while the
+ * sentence underneath each listed what was missing.
+ */
+const AMBER_WORD = new Set(['nothing_on_file', 'on_file_gaps', 'stale'])
+/**
+ * The order findings are read in: what is missing, then what is there with something falling
+ * short, then what is old, then what is there.
+ *
+ * The fifth word sits SECOND, before "out of date" (the owner, 4 November): a gap read off the
+ * page names a specific thing to fix, where a stale date only says an inspector will ask.
+ */
+const WORD_ORDER = ['nothing_on_file', 'on_file_gaps', 'stale', 'on_file', 'not_a_document_question']
 
 /**
  * *** A STORED SUMMARY GOES STALE THE FIRST TIME YOU LEARN SOMETHING. ***
@@ -122,7 +137,7 @@ const WORD_ORDER = ['nothing_on_file', 'stale', 'on_file', 'not_a_document_quest
 function needsOf(s: RunSummary | null | undefined): number {
   if (!s) return 0
   if (typeof s.needs_person === 'number') return s.needs_person
-  return (s.nothing_on_file ?? 0) + (s.stale ?? 0) + (s.contradictions ?? 0)
+  return (s.nothing_on_file ?? 0) + (s.on_file_gaps ?? 0) + (s.stale ?? 0) + (s.contradictions ?? 0)
     + (s.not_a_document_question ?? 0)
 }
 
@@ -194,7 +209,14 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }}
         className="flex cursor-pointer items-baseline gap-2 py-1.5 hover:bg-gray-50">
         <span className={`no-print w-3 shrink-0 text-[11px] text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
-        <span className="shrink-0 text-[12px]">{word}</span>
+        {/* *** A FIXED, LEFT-ALIGNED COLUMN — decision 59, 4 November 2026. ***
+            This was `shrink-0` with no width, so every title's left edge moved with the length of
+            the word beside it, and twenty rows down a page read as a ragged edge. The fifth word
+            made it worse before it fixed anything: "on file, gaps found" is more than twice "on
+            file". 150px is the longest of the five, "not a document question", at 12px — measured,
+            not guessed, and no truncation, because a clipped status word is a worse failure than a
+            wide column. */}
+        <span className="w-[150px] shrink-0 text-[12px]">{word}</span>
         <span className="min-w-0 flex-1 truncate text-[14px] text-gray-900" title={f.title}>
           {f.template_line ? <span className="mr-2 font-medium text-gray-500">{f.template_line}</span> : null}
           {f.template_text ?? f.title}
@@ -474,7 +496,12 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
      */
     setOpen({
       covers: single, dates: single, contradictions: single,
-      expected: single, failed: single, earlier: false, dismissed: false,
+      // *** SUGGESTIONS ARE FOLDED, ALWAYS — decision 60, 4 November 2026. ***
+      // Every other group opens when it is the only one there is. This one does not, even then:
+      // a suggestion is not a finding, and a report that opens on "what companies like you
+      // usually hold" leads with the one list nobody has checked.
+      expected: false,
+      failed: single, earlier: false, dismissed: false,
     })
   }, [runId, rep])
 
@@ -700,6 +727,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
    */
   const WORDS_IN_ORDER: Array<{ word: string; label: string }> = [
     { word: 'nothing_on_file', label: 'nothing on file' },
+    { word: 'on_file_gaps', label: 'on file, gaps found' },
     { word: 'stale', label: 'out of date' },
     { word: 'on_file', label: 'on file' },
     { word: 'not_a_document_question', label: 'not a document question' },
@@ -749,7 +777,15 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     const noAnswer = openF.filter((f) => f.template_line && !f.word).length
     // The counts are now the FILTER (Run 7b, item 6) — the same control the agency report has, and
     // one more entry for the rows that carry no word at all, which only a checklist produces.
-    const tCounts = [...countsFor(openF),
+    /**
+     * *** A SUGGESTION IS NEVER IN THE COUNTS — decision 60, 4 November 2026. ***
+     * This counted over `openF`, which includes `kind = 'expected'` rows — and every expected row
+     * carries the word `nothing_on_file` (`audit_findings_expected_is_expected`, 058:209). A
+     * template run writes no expected rows today, so nothing was wrong on screen; but board 1 puts
+     * "Usually held — not seen" on this report, and the count would have been wrong the day that
+     * arrived. The agency report has always counted over `plain` for the same reason.
+     */
+    const tCounts = [...countsFor(openF.filter((f) => f.kind !== 'expected')),
                      ...(noAnswer ? [{ word: '__none', label: 'we did not get an answer for', n: noAnswer }] : [])]
     // `__none` is not a word, so it cannot be compared with one: it selects the rows whose word is
     // null, which is what the person clicking it is asking for.
@@ -1146,8 +1182,10 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       )}
 
       {/* ── EXPECTED ─────────────────────────────────────────────────────── */}
+      {/* *** DECISION 60'S SIXTH LABEL. *** It is not one of the five words: it is a suggestion,
+          folded, outside every count and outside the strip. The words are the owner's, board 1. */}
       {expected.length > 0 && (
-        <Section_ title="What we would expect and do not see · based on similar companies"
+        <Section_ title="Usually held — not seen · documents companies like this usually hold that we have not been shown"
           count={expected.length} open={!!open.expected}
           onToggle={() => setOpen((o) => ({ ...o, expected: !o.expected }))}>
           {expected.map((f) => (

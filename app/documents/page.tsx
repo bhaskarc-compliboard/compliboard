@@ -75,7 +75,7 @@ import {
   DOCUMENTS_ATTACH_LABEL, DOCUMENTS_LINK_MISSED, documentsThinkingLine,
   DOCUMENTS_NOTHING_YET_BEFORE, DOCUMENTS_NOTHING_YET_LINK, DOCUMENTS_NOTHING_YET_AFTER,
 } from '@/lib/documentsWords'
-import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord } from '@/lib/documentStatus'
+import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord, notesWord } from '@/lib/documentStatus'
 import { ACCEPTED_FILE_TYPES, refusalFor, skippedLine, skippedSentences } from '@/lib/acceptedFiles'
 import DocumentReport from '@/components/DocumentReport'
 import { LIVE_SCAN_MAX } from '@/lib/documentBatch'
@@ -107,6 +107,8 @@ interface IndexRow {
   version_of: string | null
   scan_id: string | null
   open_gap_count: number
+  /** How many open gaps the reading worked out rather than quoted — migration 093, decision 48. */
+  inferred_gap_count: number
   display_status: string
 }
 
@@ -841,11 +843,27 @@ function DocumentsPageContent() {
               agency, the status — competed with a widget nobody touches most days. Filing
               lives once, in the drawer's header area. Three columns again. */}
 
-          <div className="w-[160px] shrink-0 text-right">
-            <p className={`text-[13px] ${amber ? 'text-[var(--amber)]' : 'text-gray-500'}`}>{rowWord(r)}</p>
-            {r.significant_date && (
-              <p className="mt-0.5 text-[12px] text-gray-400">{dateLabel} {fmtDate(r.significant_date)}</p>
-            )}
+          {/* *** ALIGNMENT, AND IT IS A RULE NOW — decision 59, 4 November 2026. ***
+              This column was `text-right`, so the status word sat against the edge and the note
+              count beside it would have pushed the word around: a column that drifts is a
+              failure, photographed, not a style note. Status words and action links sit in fixed,
+              LEFT-aligned columns on every list and report in the app, so they line up down the
+              page whatever sits beside them. The width is unchanged; only the alignment and the
+              one new cell inside it are. */}
+          <div className="flex w-[200px] shrink-0 items-start gap-3 text-left">
+            <div className="w-[108px] shrink-0">
+              <p className={`text-[13px] ${amber ? 'text-[var(--amber)]' : 'text-gray-500'}`}>{rowWord(r)}</p>
+              {r.significant_date && (
+                <p className="mt-0.5 text-[12px] text-gray-400">{dateLabel} {fmtDate(r.significant_date)}</p>
+              )}
+            </div>
+            {/* *** THE GUESSES, COUNTED AND NEVER HIDDEN — decision 48. ***
+                A document whose gaps are all worked out keeps its normal state; this is how
+                somebody knows there is still something in the reading to look at. Grey, because
+                it asks nothing of them today. Opening the row opens the reading's Notes. */}
+            <p className="w-[64px] shrink-0 text-[12px] text-gray-400">
+              {notesWord(r.inferred_gap_count) ?? ''}
+            </p>
           </div>
         </div>
 

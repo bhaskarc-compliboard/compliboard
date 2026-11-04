@@ -65,6 +65,23 @@ export const KIND_WORD: Record<string, string> = {
   other: 'Other',
 }
 
+/**
+ * *** HOW MANY OF THIS DOCUMENT'S GAPS THE READING WORKED OUT RATHER THAN QUOTED — decision 48. ***
+ *
+ * `inferred_gap_count` comes from `document_index_v` (migration 093), beside the `read` gaps that
+ * now decide whether the row says "Needs work" at all. The words are the product's existing ones;
+ * only when they are used changed (the owner, 4 November). It lives here for this file's own
+ * reason: a display map with more than one copy is more than one answer.
+ *
+ * It is NOT amber and it is not a status. It sits beside the status word, in its own fixed column,
+ * and it opens the reading's Notes.
+ */
+export function notesWord(n: number | null | undefined): string | null {
+  const k = Number(n ?? 0)
+  if (!k) return null
+  return `${k} note${k === 1 ? '' : 's'}`
+}
+
 const AMBER_STATUSES = new Set(['needs_work', 'expiring', 'expired', 'could_not_read'])
 
 /**

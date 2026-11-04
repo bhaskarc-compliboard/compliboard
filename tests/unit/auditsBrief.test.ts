@@ -56,7 +56,7 @@ const finding = (p: Partial<FindingRow> & { id: string; run_id: string }): Findi
 const doc = (p: Partial<IndexRow> & { document_id: string }): IndexRow => ({
   title: 'A document', file_name: 'a.pdf', kind: 'permit', agencies: [], subjects: [],
   site_name: null, doc_date: null, significant_date: null, significant_date_kind: null,
-  scanned_at: '2026-10-14T00:00:00Z', display_status: 'current', open_gap_count: 0,
+  scanned_at: '2026-10-14T00:00:00Z', display_status: 'current', open_gap_count: 0, inferred_gap_count: 0,
   summary: 'What we made of it.', issuer: null, could_not_read_reason: null,
   version_of: null, correction_count: 0, ...p,
 })
@@ -222,11 +222,15 @@ describe('a run line, and the quote check that nearly could not see it', () => {
 })
 
 describe('a finding, and the suggestion that must not read as a failure', () => {
-  test('the four words are the audit\'s own, not a fifth vocabulary', () => {
+  test('the five words are the audit\'s own, not a sixth vocabulary', () => {
+    // *** FIVE SINCE DECISION 47, 4 November 2026. *** The list is asserted whole, so a word added
+    // to the audit and not to the chat fails here rather than reaching a person as a bare
+    // `on_file_gaps`. That is the point of asserting a sorted list instead of a membership.
     assert.deepEqual(Object.keys(FINDING_WORD).sort(),
-      ['not_a_document_question', 'nothing_on_file', 'on_file', 'stale'])
+      ['not_a_document_question', 'nothing_on_file', 'on_file', 'on_file_gaps', 'stale'])
     assert.equal(FINDING_WORD.stale, 'out of date')
     assert.equal(FINDING_WORD.nothing_on_file, 'nothing on file')
+    assert.equal(FINDING_WORD.on_file_gaps, 'on file, gaps found')
     // The page's own map, read rather than remembered.
     const page = readFileSync('app/audits/page.tsx', 'utf8')
     for (const [k, v] of Object.entries(FINDING_WORD)) {

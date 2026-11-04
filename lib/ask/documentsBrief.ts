@@ -81,6 +81,8 @@ export interface IndexRow {
   scanned_at: string | null
   display_status: string
   open_gap_count: number
+  /** How many of those the reading worked out rather than quoted — migration 093, decision 48. */
+  inferred_gap_count: number
   summary: string | null
   issuer: string | null
   could_not_read_reason: string | null
@@ -91,8 +93,8 @@ export interface IndexRow {
 /** The columns the index and the reports both read. `document_index_v` is `security_invoker`. */
 export const INDEX_COLUMNS =
   'document_id, title, file_name, kind, agencies, subjects, site_name, doc_date, significant_date, '
-  + 'significant_date_kind, scanned_at, display_status, open_gap_count, summary, issuer, '
-  + 'could_not_read_reason, version_of, correction_count'
+  + 'significant_date_kind, scanned_at, display_status, open_gap_count, inferred_gap_count, '
+  + 'summary, issuer, could_not_read_reason, version_of, correction_count'
 
 const list = (v: unknown): string[] =>
   Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : []
@@ -111,7 +113,22 @@ export function indexLine(d: IndexRow, id: string): string {
     d.site_name ? `site="${attr(d.site_name)}"` : '',
     `state="${attr(STATUS_WORD[d.display_status] ?? d.display_status)}"`,
     d.significant_date ? `${attr(d.significant_date_kind ?? 'date')}="${d.significant_date}"` : '',
-    d.open_gap_count > 0 ? `gaps="${d.open_gap_count}"` : '',
+    /**
+     * *** THE TWO KINDS OF GAP, SAID APART — decision 48, 4 November 2026. ***
+     *
+     * This was one number, `gaps="5"`, and the chat could only read it as five things wrong with
+     * the document. Since migration 093 the two halves mean different things to the person: a gap
+     * READ from the page is why the row says "Needs work", and a NOTE is something the reading
+     * worked out that nobody has checked. An answer that merges them states a guess as a finding,
+     * which is the one thing `DOCUMENTS_WORDS` exists to stop — and it would be the packer making
+     * the mistake first, before the model got a chance to.
+     *
+     * `gaps=` keeps its name and narrows to the read ones, so an answer written against the old
+     * attribute cannot silently start counting notes.
+     */
+    d.open_gap_count - (d.inferred_gap_count ?? 0) > 0
+      ? `gaps="${d.open_gap_count - (d.inferred_gap_count ?? 0)}"` : '',
+    (d.inferred_gap_count ?? 0) > 0 ? `notes="${d.inferred_gap_count}"` : '',
   ].filter(Boolean)
   return `<document ${parts.join(' ')}/>`
 }

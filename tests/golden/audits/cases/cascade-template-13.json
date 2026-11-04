@@ -24,9 +24,11 @@
       "type": "line_word",
       "ref": "2",
       "accept": [
-        "on_file",
-        "stale"
-      ]
+        "on_file_gaps",
+        "stale",
+        "on_file"
+      ],
+      "corrected": "2026-11-04 (decision 47, E0): added \"on_file_gaps\". This line's own spec says the document answers it AND names something falling short \u2014 the August week missing and the 9 September reading above 6.0 \u2014 which is exactly what the fifth word is for. Before the fifth word existed the only honest answer was on_file, so the accept list keeps it: a model that says on_file here is not wrong, it is using the vocabulary it had. Both pass until the whole set has been re-run on the new prompt."
     },
     {
       "id": "3",
@@ -34,9 +36,11 @@
       "type": "line_word",
       "ref": "3",
       "accept": [
-        "on_file",
-        "stale"
-      ]
+        "on_file_gaps",
+        "stale",
+        "on_file"
+      ],
+      "corrected": "2026-11-04 (decision 47, E0): added \"on_file_gaps\". This line's own spec says the document answers it AND names something falling short \u2014 the week of 14 September missing \u2014 which is exactly what the fifth word is for. Before the fifth word existed the only honest answer was on_file, so the accept list keeps it: a model that says on_file here is not wrong, it is using the vocabulary it had. Both pass until the whole set has been re-run on the new prompt."
     },
     {
       "id": "4",
@@ -44,9 +48,11 @@
       "type": "line_word",
       "ref": "4",
       "accept": [
-        "on_file",
-        "stale"
-      ]
+        "on_file_gaps",
+        "stale",
+        "on_file"
+      ],
+      "corrected": "2026-11-04 (decision 47, E0): added \"on_file_gaps\". This line's own spec says the document answers it AND names something falling short \u2014 the forklift log's missing days and the horn defect \u2014 which is exactly what the fifth word is for. Before the fifth word existed the only honest answer was on_file, so the accept list keeps it: a model that says on_file here is not wrong, it is using the vocabulary it had. Both pass until the whole set has been re-run on the new prompt."
     },
     {
       "id": "5",

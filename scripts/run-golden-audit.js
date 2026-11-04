@@ -538,13 +538,26 @@ function resolveHandles(answer, handles) {
  * route makes — creates the run and runs every section. The judge then reads the FINDING ROWS by
  * `template_line`, which is the only thing that makes two runs of the same checklist comparable.
  */
-async function runTemplateAsRows(co, c) {
-  const t0 = Date.now()
+/**
+ * The checklist document itself, by file name, newest upload first. One function because two
+ * places need the same row: the run, and the block this script reports (decision 49).
+ */
+async function templateDocumentRow(co, c) {
   const { data: doc, error } = await db.from('documents')
     .select('id, name, file_url, file_type').eq('company_id', co.id).eq('name', c.template_file)
     .order('uploaded_at', { ascending: false }).limit(1).maybeSingle()
   if (error) die(`looking for ${c.template_file}: ${error.message}`)
   if (!doc) die(`${c.template_file} is not on file for ${co.name}. Run: npm run golden:docs`)
+  return doc
+}
+
+async function templateDocumentIdFor(co, c) {
+  return (await templateDocumentRow(co, c)).id
+}
+
+async function runTemplateAsRows(co, c) {
+  const t0 = Date.now()
+  const doc = await templateDocumentRow(co, c)
 
   const { data: blob, error: dl } = await db.storage.from('company-documents').download(doc.file_url)
   if (dl || !blob) die(`downloading ${c.template_file}: ${dl?.message ?? 'no file'}`)
@@ -1000,7 +1013,15 @@ for (const c of caseFiles) {
   // A template case has no agency: its questions come from a checklist and its evidence is every
   // document the company holds.
   const isTemplateCase = c.kind === 'template'
-  const built = await buildAuditInput(db, co.id, isTemplateCase ? '*' : c.agency, { today: TODAY })
+  // *** AND IT EXCLUDES THE TEMPLATE, AS `runSection` NOW DOES — decision 49, 4 November 2026. ***
+  // `runTemplateAsRows` below is what actually runs, through `lib/auditRun.ts`, and that path reads
+  // `template_document_id` off the run row and drops it from the block. This `built` is only used
+  // for the line this script PRINTS and for the judging context — so without the same exclusion the
+  // report would say "17 documents" about a run that read 16. A script's report of a block it did
+  // not feed is the §136 failure in miniature.
+  const templateDocId = isTemplateCase ? await templateDocumentIdFor(co, c) : null
+  const built = await buildAuditInput(db, co.id, isTemplateCase ? '*' : c.agency,
+    { today: TODAY, excludeDocumentId: templateDocId })
 
   // Every file any check in this case wants a live reading of, read once per case.
   const wantFiles = [...new Set([...c.must, ...c.must_not, ...(c.acceptable ?? [])]

@@ -386,6 +386,29 @@ export default function DocumentReport({
   const isPermit = kind === 'permit' || kind === 'certificate'
   const openGaps = r.gaps.filter((g) => g.status !== 'dismissed')
   const dismissed = r.gaps.filter((g) => g.status === 'dismissed')
+  /**
+   * *** GAPS READ FROM THE PAGE, AND NOTES — decision 48, 4 November 2026 (board 2). ***
+   *
+   * Migration 093 made `basis` decide whether the ROW says "Needs work"; this is the same split
+   * in the drawer, so somebody who sees "Current · 1 note" on the list can open it and find the
+   * note. A gap whose words are in the document is a gap; one the reading worked out is a note,
+   * in the reader's own hedged words. Nothing is hidden either way.
+   */
+  const readGaps = openGaps.filter((g) => g.basis !== 'inferred')
+  const noteGaps = openGaps.filter((g) => g.basis === 'inferred')
+  /**
+   * *** AND THE GATE IS GONE, WHICH WAS A DEFECT ALL ALONG. ***
+   *
+   * Every gap list here was behind `isProgram` — `kind === 'program' || kind === 'policy'`. The
+   * forklift roster is a RECORD: its row said "Needs work" off two gaps read from the page, and
+   * opening it showed no gaps at all. A person was told there was work and never told what. Found
+   * by mapping decision 48 against board 2, which draws that roster's gaps and its notes.
+   *
+   * `hasFindings` replaces the kind test: a document with something to show shows it, whatever
+   * kind it is. `isProgram` stays for the two things that really are about programs — the
+   * three-year freshness line and the checklist button, which drafts program text.
+   */
+  const hasFindings = openGaps.length > 0 || dismissed.length > 0 || (r.earlierGaps ?? []).length > 0
 
   // *** THE SUB-LINE SAYS WHEN IT WAS READ, AND NOW SAYS WHEN IT IS BEING READ. ***
   // While a re-read is queued or running, the drawer goes on showing the OLD reading — which is the
@@ -407,6 +430,83 @@ export default function DocumentReport({
     row.doc_date ? `${(row.doc_date_kind && DATE_LABEL[row.doc_date_kind]) || 'Dated'} ${fmt(row.doc_date)}` : null,
     row.scanned_at ? `Read ${fmt(row.scanned_at)}` : null,
   ].filter(Boolean).join(' · ')
+
+  /**
+   * ONE GAP, RENDERED THE SAME WHICHEVER LIST IT IS IN — decision 48, 4 November 2026.
+   *
+   * It was inline inside one "Gaps" list. There are two lists now — what was read from the page
+   * and what the reading worked out — and they get the same body, the same actions and the same
+   * numbering logic, because a note somebody can act on is not a lesser thing: it can still be
+   * drafted, researched, made into a checklist and dismissed. A second copy of sixty lines of
+   * JSX is how the two would have drifted into saying different things.
+   *
+   * `<Inferred>` is gone from the title: the section heading says what every item in it is, and
+   * the badge on every line of a list called Notes is noise. The badge is still used on facts.
+   */
+  const gapItem = (g: Gap, i: number) => (
+  <li key={g.id}>
+    <p className="text-[14px] font-medium text-gray-900">
+      {i + 1}. {g.title}
+    </p>
+    {g.description && <p className="mt-0.5 text-[13px] leading-relaxed text-gray-700">{g.description}</p>}
+    {g.fix && <p className="mt-1 text-[13px] leading-relaxed text-gray-700"><span className="text-gray-400">Fix. </span>{g.fix}</p>}
+    <p className="mt-1 text-[12px] text-gray-500">
+      {g.citation && (g.citation_url
+        ? <a href={g.citation_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">{g.citation}</a>
+        : <span>{g.citation}</span>)}
+      {g.citation && g.locator && ' · '}
+      {g.locator}
+    </p>
+    {/* THE CHECKLIST MADE FROM THIS GAP, with its progress read live off the items.
+        "checklist made 17 Sep · 2 of 5 done" weeks later is the point of the link. */}
+    {r.checklists.filter((c) => c.document_gap_id === g.id).map((c) => (
+      <p key={c.id} className="mt-1 text-[12px] text-gray-500">
+        <a href={`/compliance?checklist=${c.id}`} className="underline hover:text-gray-800">{c.title}</a>
+        {' '}· checklist made {fmt(c.created_at)} · {c.done} of {c.total} done
+      </p>
+    ))}
+
+    {g.draft_text && (
+      <div className="mt-2 rounded-lg bg-gray-50 p-3">
+        <p className="text-[12px] text-gray-500">{DRAFT_NOTICE}</p>
+        <pre className="mt-2 whitespace-pre-wrap font-serif text-[15px] leading-relaxed text-gray-800">{g.draft_text}</pre>
+        <div className="mt-2 flex items-center gap-3 text-[12px]">
+          <button onClick={() => { navigator.clipboard?.writeText(g.draft_text ?? ''); setCopied(g.id) }}
+            className="text-[var(--green)]">{copied === g.id ? 'Copied' : 'Copy'}</button>
+          <span className="text-gray-400">drafted {fmt(g.draft_created_at)}</span>
+        </div>
+      </div>
+    )}
+
+    {reasonFor === g.id ? (
+      <ReasonBox label="Why is this not right?" onCancel={() => setReasonFor(null)}
+        onSave={async (reason) => { await act({ action: 'dismiss_gap', gap_id: g.id, reason }); setReasonFor(null) }} />
+    ) : (
+      <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px]">
+        {/* E in the design puts the actions under the gap they belong to. */}
+        <button disabled={!!working || Boolean(paused)} onClick={() => runChecklist({ gap_id: g.id })}
+          className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+          {working === g.id ? 'Working…' : 'Make a checklist'}
+        </button>
+        {/* ONLY WHEN THE SCAN SAID THE TEXT COULD BE WRITTEN. A gap needing their
+            floor plan is not one we can draft, and offering it would be a promise
+            the route then refuses. */}
+        {g.draftable && (
+          <button disabled={!!working || Boolean(paused)} onClick={() => runDraft(g.id)}
+            className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+            {working === `draft-${g.id}` ? 'Writing…' : (g.draft_text ? 'Draft it again' : 'Draft this section')}
+          </button>
+        )}
+        <button onClick={() => {
+          const q = [g.title, g.fix].filter(Boolean).join('. ')
+          window.location.href = `/compliance?ask=${encodeURIComponent(q)}&document=${documentId}`
+        }} className="text-gray-600 underline hover:text-gray-900">Research this</button>
+        <button onClick={() => setReasonFor(g.id)}
+          className="text-gray-500 underline hover:text-gray-800">Not right</button>
+      </div>
+    )}
+  </li>
+  )
 
   const footer = (
     <>
@@ -576,8 +676,11 @@ export default function DocumentReport({
           <span className={AMBER.has(row.display_status) ? 'text-[var(--amber)]' : 'text-gray-700'}>
             {STATUS_WORD[row.display_status] ?? row.display_status}
           </span>
-          {isProgram && openGaps.length > 0 && (
-            <span className="text-gray-500"> · {openGaps.length} gap{openGaps.length === 1 ? '' : 's'}</span>
+          {readGaps.length > 0 && (
+            <span className="text-gray-500"> · {readGaps.length} gap{readGaps.length === 1 ? '' : 's'} read from the page</span>
+          )}
+          {noteGaps.length > 0 && (
+            <span className="text-gray-500"> · {noteGaps.length} note{noteGaps.length === 1 ? '' : 's'}</span>
           )}
           {row.significant_date && (
             <span className="text-gray-500">
@@ -709,75 +812,23 @@ export default function DocumentReport({
         )}
       </Section>
 
-      {/* 5 ── gaps, for programs and policies only */}
-      {isProgram && (openGaps.length > 0 || dismissed.length > 0 || (r.earlierGaps ?? []).length > 0) && (
-        <Section title="Gaps">
-          <ol className="space-y-4">
-            {openGaps.map((g, i) => (
-              <li key={g.id}>
-                <p className="text-[14px] font-medium text-gray-900">
-                  {i + 1}. {g.title}<Inferred basis={g.basis} />
-                </p>
-                {g.description && <p className="mt-0.5 text-[13px] leading-relaxed text-gray-700">{g.description}</p>}
-                {g.fix && <p className="mt-1 text-[13px] leading-relaxed text-gray-700"><span className="text-gray-400">Fix. </span>{g.fix}</p>}
-                <p className="mt-1 text-[12px] text-gray-500">
-                  {g.citation && (g.citation_url
-                    ? <a href={g.citation_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">{g.citation}</a>
-                    : <span>{g.citation}</span>)}
-                  {g.citation && g.locator && ' · '}
-                  {g.locator}
-                </p>
-                {/* THE CHECKLIST MADE FROM THIS GAP, with its progress read live off the items.
-                    "checklist made 17 Sep · 2 of 5 done" weeks later is the point of the link. */}
-                {r.checklists.filter((c) => c.document_gap_id === g.id).map((c) => (
-                  <p key={c.id} className="mt-1 text-[12px] text-gray-500">
-                    <a href={`/compliance?checklist=${c.id}`} className="underline hover:text-gray-800">{c.title}</a>
-                    {' '}· checklist made {fmt(c.created_at)} · {c.done} of {c.total} done
-                  </p>
-                ))}
-
-                {g.draft_text && (
-                  <div className="mt-2 rounded-lg bg-gray-50 p-3">
-                    <p className="text-[12px] text-gray-500">{DRAFT_NOTICE}</p>
-                    <pre className="mt-2 whitespace-pre-wrap font-serif text-[15px] leading-relaxed text-gray-800">{g.draft_text}</pre>
-                    <div className="mt-2 flex items-center gap-3 text-[12px]">
-                      <button onClick={() => { navigator.clipboard?.writeText(g.draft_text ?? ''); setCopied(g.id) }}
-                        className="text-[var(--green)]">{copied === g.id ? 'Copied' : 'Copy'}</button>
-                      <span className="text-gray-400">drafted {fmt(g.draft_created_at)}</span>
-                    </div>
-                  </div>
-                )}
-
-                {reasonFor === g.id ? (
-                  <ReasonBox label="Why is this not right?" onCancel={() => setReasonFor(null)}
-                    onSave={async (reason) => { await act({ action: 'dismiss_gap', gap_id: g.id, reason }); setReasonFor(null) }} />
-                ) : (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px]">
-                    {/* E in the design puts the actions under the gap they belong to. */}
-                    <button disabled={!!working || Boolean(paused)} onClick={() => runChecklist({ gap_id: g.id })}
-                      className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
-                      {working === g.id ? 'Working…' : 'Make a checklist'}
-                    </button>
-                    {/* ONLY WHEN THE SCAN SAID THE TEXT COULD BE WRITTEN. A gap needing their
-                        floor plan is not one we can draft, and offering it would be a promise
-                        the route then refuses. */}
-                    {g.draftable && (
-                      <button disabled={!!working || Boolean(paused)} onClick={() => runDraft(g.id)}
-                        className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
-                        {working === `draft-${g.id}` ? 'Writing…' : (g.draft_text ? 'Draft it again' : 'Draft this section')}
-                      </button>
-                    )}
-                    <button onClick={() => {
-                      const q = [g.title, g.fix].filter(Boolean).join('. ')
-                      window.location.href = `/compliance?ask=${encodeURIComponent(q)}&document=${documentId}`
-                    }} className="text-gray-600 underline hover:text-gray-900">Research this</button>
-                    <button onClick={() => setReasonFor(g.id)}
-                      className="text-gray-500 underline hover:text-gray-800">Not right</button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ol>
+      {/* 5 ── WHAT THE READING FOUND, IN TWO LISTS — decision 48, 4 November 2026 (board 2).
+             There is no kind gate any more: `hasFindings` above says why that gate was a defect. */}
+      {hasFindings && (
+        <Section title="Gaps read from the page">
+          {readGaps.length > 0 ? (
+            <ol className="space-y-4">
+              {readGaps.map((g, i) => gapItem(g, i))}
+            </ol>
+          ) : (
+            /* AN EMPTY STATE IS A MESSAGE, AND THIS ONE IS A CLAIM — §5.1. This section only
+               renders because the reading DID find things; printing nothing here would read as a
+               list that failed to load. What is true is that none of them is quoted. */
+            <p className="text-[13px] text-gray-600">
+              Nothing in this reading is quoted from the document itself.
+              {noteGaps.length > 0 ? ' What it found is under Notes, in its own words.' : ''}
+            </p>
+          )}
           {/* A GAP FROM AN EARLIER READING THAT STILL CARRIES WORK. The new scan did not raise
               it — the model changed its mind, or renamed it past matching — and the checklist
               somebody has been working through does not vanish because of that. */}
@@ -829,6 +880,22 @@ export default function DocumentReport({
               </ul>
             </div>
           )}
+        </Section>
+      )}
+
+      {/* 5b ── NOTES: WHAT THE READING WORKED OUT — decision 48, 4 November 2026 (board 2).
+             The reader's own hedged guesses, in its own words. They no longer turn a clean record
+             red (migration 093) and nothing is hidden: they are here, counted on the row, and
+             every action a gap has they have too — a note can still be worth a checklist. */}
+      {noteGaps.length > 0 && (
+        <Section title="Notes">
+          <p className="text-[13px] text-gray-600">
+            These are things the reading worked out rather than read off the page. They may be
+            right; nobody has checked them against the document.
+          </p>
+          <ol className="mt-3 space-y-4">
+            {noteGaps.map((g, i) => gapItem(g, i))}
+          </ol>
         </Section>
       )}
 

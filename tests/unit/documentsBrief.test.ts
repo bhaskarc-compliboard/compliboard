@@ -24,7 +24,7 @@ import { DOCUMENTS_EXAMPLE_QUESTIONS } from '../../config/examples.ts'
 const doc = (p: Partial<IndexRow> & { document_id: string }): IndexRow => ({
   title: 'A document', file_name: 'a.pdf', kind: 'permit', agencies: [], subjects: [],
   site_name: null, doc_date: null, significant_date: null, significant_date_kind: null,
-  scanned_at: '2026-10-01T00:00:00Z', display_status: 'current', open_gap_count: 0,
+  scanned_at: '2026-10-01T00:00:00Z', display_status: 'current', open_gap_count: 0, inferred_gap_count: 0,
   summary: 'What we made of it.', issuer: null, could_not_read_reason: null,
   version_of: null, correction_count: 0, ...p,
 })

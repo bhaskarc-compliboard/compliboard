@@ -52,6 +52,18 @@ export interface RunSummary {
    */
   needs_person: number
   nothing_on_file: number
+  /**
+   * *** THE FIFTH WORD — decision 47, 4 November 2026. ***
+   * A document on file answers the line AND what the document itself shows does not meet it in
+   * full. It is part of `needs_person`: two operators past their evaluation date is a thing a
+   * person has to do something about, and the walk that produced this decision found four of ten
+   * such lines sitting under a green pill.
+   *
+   * **A run written before 4 November has no such key**, which is why every reader derives
+   * `needs_person` through `needsOf` rather than reading the stored number — migration 049's rule
+   * again: a derived field stored is a field that goes stale the first time you learn something.
+   */
+  on_file_gaps: number
   stale: number
   on_file: number
   not_a_document_question: number
@@ -329,7 +341,8 @@ export async function createRun(db: Db, args: {
 }
 
 function emptySummary(note: string | null): RunSummary {
-  return { total: 0, needs_person: 0, nothing_on_file: 0, stale: 0, on_file: 0, not_a_document_question: 0,
+  return { total: 0, needs_person: 0, nothing_on_file: 0, on_file_gaps: 0, stale: 0, on_file: 0,
+           not_a_document_question: 0,
            contradictions: 0, dates_passed: 0, expected: 0, sections: 0, sections_done: 0,
            could_not_complete: 0, carried: 0, closed: 0, reshaped_to_dates: [],
            dropped_undated: [], dropped_wordless: [],
@@ -404,8 +417,12 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       .select('kind, template_lines, previous_run_id, template_document_id, entity_id').eq('id', sec.run_id).maybeSingle()
     const isTemplate = runRow?.kind === 'template'
 
+    // And decision 49: a template run is NOT shown its own template. `runRow` already carries
+    // `template_document_id`, so this is one more argument on a call that was already made and no
+    // extra query. An agency run passes null, because an agency run has no template.
     const built = await buildAuditInput(db, sec.company_id, isTemplate ? '*' : sec.title,
-      { today: opts.today })
+      { today: opts.today,
+        excludeDocumentId: isTemplate ? (runRow?.template_document_id ?? null) : null })
 
     // The previous run's open findings, if this run is a re-audit. Shown as F1, F2 — the same
     // reason documents are shown as D1, D2: the model must be able to point at one without
@@ -670,6 +687,9 @@ export function shapeFindings(
   const handles = input.handles
   const scanByDoc = new Map<string, string | null>()
   for (const d of input.documents) scanByDoc.set(d.document_id, d.scan_id ?? null)
+  /** W5: a handle is our numbering, not a name the customer's file has. */
+  const titles = titlesByHandle(input)
+  const named = (s: string | null) => nameDocumentHandles(s, titles)
 
   const handleErrors: string[] = []
   /** Findings turned into dates because they were not due yet. Reported and stored. */
@@ -778,15 +798,17 @@ export function shapeFindings(
 
       rows.push({
         run_id: ids.runId, section_id: ids.sectionId, company_id: ids.companyId,
-        ordinal: ordinal++, kind: useKind, title: title.slice(0, 2000),
+        // Every prose field goes through `nameDocumentHandles` (W5). `quote` does not — see its
+        // comment: a quote is word for word or it is nothing.
+        ordinal: ordinal++, kind: useKind, title: named(title.slice(0, 2000))!,
         word,
         basis: useKind === 'expected' ? 'expected'
           : (['read', 'inferred', 'expected'].includes(String(item.basis)) ? String(item.basis) : 'read'),
         document_id: a.id,
         scan_id: a.id ? (scanByDoc.get(a.id) ?? null) : null,
-        locator: str(item.locator),
+        locator: named(str(item.locator)),
         quote: str(item.quote),
-        what_to_do: str(item.what_to_do) ?? str(item.why),
+        what_to_do: named(str(item.what_to_do) ?? str(item.why)),
         due_on: useKind === 'date' ? due : null,
         recurs: typeof item.recurs === 'boolean' ? item.recurs : null,
         passed: typeof item.passed === 'boolean' ? item.passed : null,
@@ -823,8 +845,33 @@ export function shapeFindings(
  * two are the same claim in another section's words. The prompt now says so as well, and every
  * mapping is counted so the report can say how often it happened.
  */
-const NEAR_MISS: Record<string, string> = { expiring: 'stale', expired: 'stale' }
-const WORDS = ['on_file', 'stale', 'nothing_on_file', 'not_a_document_question']
+/**
+ * *** AND THE FIFTH WORD BRINGS FOUR MORE NEAR MISSES — decision 47, 4 November 2026. ***
+ *
+ * No measured evidence, and that is said out loud rather than implied: `dropped_wordless` is
+ * EMPTY on every run on staging and no finding carries `word is null`, so no model has ever sent
+ * a word outside the four except `expiring`, which Run 4b caught above. These four are proposed
+ * on meaning:
+ *
+ *   partial · incomplete · gaps · gaps_found · on_file_with_gaps  →  on_file_gaps
+ *
+ * Each is the SAME CLAIM in other words, which is the only test `expiring → stale` passed.
+ * `incomplete` is the one with a second reading — it could mean "the line was not answered" —
+ * and it maps to the document's reading because the shape asks about the document. Nothing that
+ * merely implies a problem maps: not `missing`, not `insufficient`, not `non_compliant`, because
+ * each of those could as easily mean `nothing_on_file`, and a mapping that guesses is this
+ * function deciding what the model meant.
+ *
+ * `gaps_found` is Documents' own word for a scan, and `AUDITS_FIVE_WORDS` deliberately
+ * keeps the two vocabularies apart. It is mapped anyway, for the `expiring` reason: borrowing
+ * another section's word for the identical claim is a near miss, not a different claim.
+ */
+const NEAR_MISS: Record<string, string> = {
+  expiring: 'stale', expired: 'stale',
+  partial: 'on_file_gaps', incomplete: 'on_file_gaps', gaps: 'on_file_gaps',
+  gaps_found: 'on_file_gaps', on_file_with_gaps: 'on_file_gaps',
+}
+const WORDS = ['on_file', 'on_file_gaps', 'stale', 'nothing_on_file', 'not_a_document_question']
 
 export function normaliseWord(raw: unknown): { word: string | null; mapped: string | null } {
   const w = typeof raw === 'string' ? raw.trim().toLowerCase() : ''
@@ -832,6 +879,77 @@ export function normaliseWord(raw: unknown): { word: string | null; mapped: stri
   if (WORDS.includes(w)) return { word: w, mapped: null }
   if (NEAR_MISS[w]) return { word: NEAR_MISS[w], mapped: w }
   return { word: null, mapped: null }
+}
+
+/**
+ * *** A HANDLE NEVER REACHES THE PERSON — W5, the owner's walk of 3 November 2026. ***
+ *
+ * SIX OF THE TEN LINES of the Clackamas checklist run wrote a bare `D<n>` at the customer, read
+ * back from this database (run `8707eea9-6c58-4c98-ab9d-4ec5825642cd`):
+ *
+ *   A1  "D6 is on file. It is an Oregon DEQ Simple Air Contaminant Discharge Permit…"   D6, D7
+ *   A2  "D5 is on file: Oregon DEQ's acknowledgement, dated 2026-01-22…"                D5
+ *   A3  "D12 is on file: Written Hazard Communication Program Revision 6…"              D12, D4
+ *   A4  "D1 is on file: Emergency Action Plan and Hazardous Waste Contingency Plan…"    D1
+ *   C1  "D9 and D10 are blank checklist templates…"                              D9, D10, D12
+ *   C2  "The reading of D1 proposes Clackamas Fire District #1…"                 D1, D9, D10
+ *
+ * And across all 425 findings on staging: **51 in `what_to_do`, 4 in `locator`, 0 in `title`, 0
+ * in `quote`.** A handle is OUR numbering of the list we showed the model — not a name anything
+ * the customer owns has — so to them it is a line of a report with a code in it.
+ *
+ * *** TWO LAYERS, BECAUSE THE PROMPT ALONE HAS NOT HELD. ***
+ * `prompts/audit-agency.ts` already forbade naming what did the reading, and the tightened handle
+ * rule now forbids a handle in prose explicitly. This is the layer behind it, and the reason it
+ * exists is the same one `lib/ask/passages.ts:223` `replacePassageIds` exists for: HR 6c's rule
+ * met a Calendar run that answered *"we have this on your calendar as dates C6 and C7"* and went
+ * through every check untouched, because the checks look at markers and quotes. A rule a model is
+ * asked to follow is a rule that is followed most of the time.
+ *
+ * *** AND `quote` IS DELIBERATELY NOT SWEPT. *** A quote is word for word from the reading it
+ * cites (`prompts/audit-agency.ts`'s own rule, and `quote_verified` checks it). If a real
+ * document's text says "D1" — a drum number, a form code — rewriting it would corrupt the one
+ * field the product promises is untouched. 0 of 425 rows have a handle there.
+ *
+ * A HANDLE WE NEVER GAVE IS LEFT EXACTLY AS WRITTEN. There is nothing true to put in its place,
+ * and `handle_error` is already how the row records that the model named something it was not
+ * shown.
+ */
+export function nameDocumentHandles(text: string | null, titleByHandle: Map<string, string>): string | null {
+  if (!text) return text
+  const known = (h: string) => titleByHandle.has(h.toUpperCase())
+  /**
+   * A LIST FIRST, then a range, then a bare handle — `replacePassageIds`' order, for its reason:
+   * three long titles spliced into one parenthesis is worse than the handles were. Two keep their
+   * names, which reads well ("D9 and D10" → both titles).
+   */
+  const listed = text.replace(/\bD\d{1,3}(?:\s*(?:,|and)\s*D\d{1,3}){2,}/g, (whole) => {
+    const ids = whole.match(/D\d{1,3}/g) ?? []
+    return ids.every(known) ? `${ids.length} of the documents on file` : whole
+  })
+  const ranged = listed.replace(/\bD(\d{1,3})\s*[–—-]\s*D?(\d{1,3})\b/g, (whole, from: string, to: string) => {
+    const a = Number(from)
+    const b = Number(to)
+    if (!known(`D${a}`) || !known(`D${b}`) || b <= a) return whole
+    return `${b - a + 1} of the documents on file`
+  })
+  /**
+   * "the reading of D12" and "document D4" both read correctly once the handle becomes a title,
+   * so the leading word is kept rather than eaten — the same shape as the passage version's
+   * `dates?\s+|passages?\s+`.
+   */
+  return ranged.replace(/\b(documents?\s+)?(D\d{1,3})\b/g, (whole, word: string | undefined, id: string) => {
+    const name = titleByHandle.get(id.toUpperCase())
+    return name ? `${word ?? ''}${name}` : whole
+  })
+}
+
+/** handle -> the title the person sees, off the block the section was actually given. */
+export function titlesByHandle(input: AuditInput): Map<string, string> {
+  const m = new Map<string, string>()
+  for (const d of input.documents) if (d.handle && d.title) m.set(d.handle.toUpperCase(), d.title)
+  for (const d of input.other_documents) if (d.handle && d.title) m.set(d.handle.toUpperCase(), d.title)
+  return m
 }
 
 /**
@@ -858,6 +976,9 @@ export function shapeTemplateFindings(
   const handles = input.handles
   const scanByDoc = new Map<string, string | null>()
   for (const d of input.documents) scanByDoc.set(d.document_id, d.scan_id ?? null)
+  // W5 again, and this is the shaper the six leaking lines came out of.
+  const titles = titlesByHandle(input)
+  const named = (s: string | null) => nameDocumentHandles(s, titles)
 
   const handleErrors: string[] = []
   const reshaped: Array<{ title: string; due_on: string }> = []
@@ -962,8 +1083,8 @@ export function shapeTemplateFindings(
       basis: ['read', 'inferred', 'expected'].includes(String(a.basis)) ? String(a.basis) : 'read',
       document_id: docId,
       scan_id: docId ? (scanByDoc.get(docId) ?? null) : null,
-      locator: str(a.locator), quote: str(a.quote),
-      what_to_do: str(a.what_to_do),
+      locator: named(str(a.locator)), quote: str(a.quote),
+      what_to_do: named(str(a.what_to_do)),
       due_on: kind === 'date' ? due : null,
       recurs: typeof a.recurs === 'boolean' ? a.recurs : null,
       passed: typeof a.passed === 'boolean' ? a.passed : null,
@@ -1336,14 +1457,19 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
   }
 
   const nothingOnFile = count((r) => r.word === 'nothing_on_file' && r.kind !== 'expected')
+  // An `expected` row cannot carry the fifth word — `audit_findings_expected_is_expected` (058:209)
+  // pins it to `nothing_on_file` — so this needs no `kind` guard. The guard above exists because
+  // suggestions DO carry `nothing_on_file`, and nine of Cascade's rows are suggestions.
+  const onFileGaps = count((r) => r.word === 'on_file_gaps')
   const stale = count((r) => r.word === 'stale')
   const contradictions = count((r) => r.kind === 'contradiction')
   const notADocument = count((r) => r.word === 'not_a_document_question')
 
   return {
     total: f.length,
-    needs_person: nothingOnFile + stale + contradictions + notADocument,
+    needs_person: nothingOnFile + onFileGaps + stale + contradictions + notADocument,
     nothing_on_file: nothingOnFile,
+    on_file_gaps: onFileGaps,
     stale,
     on_file: count((r) => r.word === 'on_file'),
     not_a_document_question: notADocument,
@@ -1360,10 +1486,16 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     // It counts the previous findings still being raised.
     carried: new Set(f.map((r: Record<string, unknown>) => r.same_as).filter(Boolean)).size,
     closed,
-    // What an inspector would ask about first: nothing on file, and stale. Not the expected items,
-    // which are a suggestion and say so.
+    // What an inspector would ask about first: nothing on file, a document that answers the line
+    // with something falling short, and stale. Not the expected items, which are a suggestion and
+    // say so.
+    //
+    // *** THE FIFTH WORD HAD TO BE ADDED HERE AND IN `lib/auditNotify.ts:119` TOGETHER. ***
+    // That line computes the email's "…and n more" as `nothing_on_file + stale − attention.length`.
+    // Widening this list without widening that arithmetic prints "…and -2 more".
     attention: f.filter((r: Record<string, unknown>) =>
-        r.kind !== 'expected' && (r.word === 'nothing_on_file' || r.word === 'stale'))
+        r.kind !== 'expected'
+        && (r.word === 'nothing_on_file' || r.word === 'on_file_gaps' || r.word === 'stale'))
       .slice(0, 25)
       .map((r: Record<string, unknown>) => ({
         title: String(r.title), word: (r.word as string) ?? null,
@@ -1425,6 +1557,9 @@ export function runSummaryLine(s: RunSummary): string {
    */
   const bits: string[] = []
   if (s.nothing_on_file) bits.push(`${s.nothing_on_file} thing${s.nothing_on_file === 1 ? '' : 's'} with nothing on file`)
+  // The fifth word reads second, before "out of date", because a gap read off the page names a
+  // specific thing to fix where a date only says an inspector will ask (the owner, 4 November).
+  if (s.on_file_gaps) bits.push(`${s.on_file_gaps} thing${s.on_file_gaps === 1 ? '' : 's'} on file with gaps found`)
   if (s.stale) bits.push(`${s.stale} thing${s.stale === 1 ? '' : 's'} out of date`)
   if (s.contradictions) bits.push(`${s.contradictions} disagreement${s.contradictions === 1 ? '' : 's'} between documents`)
   if (s.not_a_document_question) bits.push(`${s.not_a_document_question} thing${s.not_a_document_question === 1 ? '' : 's'} no document can answer`)
