@@ -142,7 +142,21 @@ const files = walk(ROOT);
 // ---------------------------------------------------------------------------
 // CHECK 1 — every column named in a query string exists on the table queried.
 // ---------------------------------------------------------------------------
-const FROM = /\.from\(\s*['"]([a-z_0-9]+)['"]\s*\)/g;
+// *** THE RECEIVER IS EXCLUDED HERE TOO, AND IT WAS NOT UNTIL 3 November 2026 (GAPS-PLAN B2). ***
+// The dynamic-site scan below already said it — "not Array.from, not Buffer.from, not
+// storage.from" — and this regex, which does the actual checking, had no such guard. So
+// `Buffer.from('x')` in a test was reported as **".from('x') — no such table in the generated
+// schema"**, twice, and `npm run check` failed on a line that has nothing to do with the database.
+//
+// A guard that cries wolf is a guard people learn to skip, which is the one thing this script
+// cannot afford: it exists because a column name inside a query string is invisible to `tsc`
+// (`CLAUDE.md` §3.6), and it is believed precisely because it has never been wrong.
+//
+// EXCLUDED BY NAME rather than allow-listed by receiver, deliberately. The real call sites are
+// `db.`, `supabase.`, `supabaseAdmin.`, `client.`, `admin.`, `asUser.`, `authed.db.` and more in
+// the scripts; an allow-list would quietly stop checking whichever one somebody adds next, and a
+// guard that silently checks less is worse than one that occasionally checks too much.
+const FROM = /(?<!\b(?:Buffer|Array|storage|Object|Uint8Array))\.from\(\s*['"]([a-z_0-9]+)['"]\s*\)/g;
 const COLMETH = /\.(eq|neq|gt|gte|lt|lte|like|ilike|is|in|contains|containedBy|overlaps|order)\(\s*['"]([a-z_0-9]+)['"]/g;
 const SELECT = /\.select\(\s*[`'"]([\s\S]*?)[`'"]\s*[,)]/;
 

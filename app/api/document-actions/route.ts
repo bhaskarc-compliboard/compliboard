@@ -178,12 +178,29 @@ export async function POST(request: NextRequest) {
       // -----------------------------------------------------------------------
       case 'file_url': {
         const { data: full } = await db.from('documents')
-          .select('file_url').eq('id', documentId).maybeSingle()
+          .select('file_url, converted_url').eq('id', documentId).maybeSingle()
         if (!full?.file_url) {
           return NextResponse.json({ error: 'That document has no stored file.' }, { status: 404 })
         }
+        /**
+         * *** THE CONVERTED COPY WHEN THERE IS ONE — B2, decision 53. ***
+         *
+         * `converted_url` is set only for a document we had to convert for the model: a HEIC, a
+         * TIFF, a BMP, or a photograph too big to send. Those are precisely the files that do
+         * NOT open on an ordinary computer — a HEIC downloads and shows nothing on Windows, and
+         * a multi-page TIFF opens in whatever the machine guesses. Handing somebody the original
+         * in that case is handing them the problem back.
+         *
+         * **The original is never altered and never deleted**; it is still what the reading was
+         * made from and what an audit cites. This is about the one button whose whole job is to
+         * let a person LOOK at their file.
+         *
+         * NULL for every PDF, every spreadsheet and every photograph that was already fine,
+         * which is the great majority — those fall straight through to `file_url` as before.
+         */
+        const key = full.converted_url || full.file_url
         const { data: signed, error } = await db.storage
-          .from('company-documents').createSignedUrl(full.file_url, 120)
+          .from('company-documents').createSignedUrl(key, 120)
         if (error || !signed) {
           return NextResponse.json({ error: 'We could not open that file just now.' }, { status: 502 })
         }

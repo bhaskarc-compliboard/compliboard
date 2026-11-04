@@ -25,6 +25,8 @@
 import { createHash } from 'node:crypto'
 import { askAIWithCitations, extractJsonText, modelForTask, scanStructuredOutput, type AIContent } from './ai.ts'
 import { parseDocumentToBlocks } from './documentContent.ts'
+import { storeConvertedCopy } from './imageConvert.ts'
+import { DOCUMENTS_BUCKET } from './storage.ts'
 import { buildCompanyContext } from './companyContext.ts'
 import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts/document-scan.ts'
 // The ONE writer for every date in the product (Calendar step 5, decision 6). The scan files its
@@ -126,6 +128,27 @@ export interface DocumentScan {
   expected_missing: ScanExpectedMissing[]
   confidence_notes: string | null
   could_not_read: { reason: string | null; way_forward: string | null }
+
+  /**
+   * *** THE CONVERTED COPY, CARRIED THROUGH TO `saveScan` — B2, decision 53. ***
+   *
+   * A HEIC, a TIFF, a BMP or an oversized photograph is turned into a JPEG before the model sees
+   * it (`lib/imageConvert.ts`). The copy is **stored beside the original and the original is
+   * never altered**, which is what `docs/VISION-DOCUMENTS.md` decided and what the binder
+   * (Part C step C1) will need, because a HEIC cannot go behind a tab sheet in a PDF.
+   *
+   * It rides on the scan rather than being plumbed through every caller because **`saveScan` is
+   * already the one function that owns writing a reading to the database**, and it is the only
+   * one that holds the admin client, the company and the document id at the same moment. The two
+   * paths that own a `documents` row — the sweep and `/api/document-scan` — both go through it;
+   * `lib/attachedDocument.ts` and `/api/document-draft` only read, and store nothing, which is
+   * why they are untouched.
+   *
+   * `null` for a PDF, a spreadsheet, and for a photograph already small enough to send as it is.
+   * **These bytes are never written into `document_scans`** — `saveScan` builds an explicit
+   * column list and this is not in it.
+   */
+  converted?: { bytes: Buffer; mediaType: string } | null
 
   // --- how it was produced, for the row and the report's quiet last line ---
   raw_text: string
@@ -687,6 +710,9 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
   // back separately from the blocks. Still '' for a photograph of a page, which keeps the verdict
   // null there — no text to check against is not the same as a quote being wrong.
   const extractedText = parsed.text
+  // Carried from here to `saveScan`, which is the only place that can store it. See the field's
+  // own note on `DocumentScan` for why it travels this way rather than through seven callers.
+  const converted = parsed.converted ?? null
 
   const startedAt = new Date().toISOString()
   const structured = scanStructuredOutput()
@@ -723,7 +749,10 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
     // own last-resort catch say "something went wrong at our end", which is all anyone knows.
     if (status === null) throw error
     console.error(`document scan: the model call was refused with ${status} —`, error)
-    return refusedScan({ error, model, status, extractedText, startedAt, structured, promptSha })
+    // *** THE COPY SURVIVES A REFUSED MODEL CALL, AND SHOULD. *** The conversion happened and
+    // cost real decode time; the API refusing the request afterwards says nothing about the
+    // photograph. Storing it here means the re-read does not decode a 48-megapixel HEIC twice.
+    return { ...refusedScan({ error, model, status, extractedText, startedAt, structured, promptSha }), converted }
   }
 
   const raw = answer.text ?? ''
@@ -737,7 +766,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
         reason: 'the reading came back in a form we could not use',
         way_forward: 'Read it again — this is usually temporary.' } }, extractedText),
       raw_text: raw, json_parsed: false, model, cited_sources: answer.sources.length, searches: null,
-      structured,
+      structured, converted,
       prompt_sha256: promptSha, quotes_checked: 0, quotes_verified: 0,
       extracted_text: extractedText, started_at: startedAt,
     }
@@ -748,7 +777,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
   return {
     ...shape,
     raw_text: raw, json_parsed: true, model, cited_sources: answer.sources.length, searches: null,
-    structured,
+    structured, converted,
     prompt_sha256: promptSha,
     quotes_checked: checked.length,
     quotes_verified: checked.filter((x) => x.quote_verified === true).length,
@@ -1158,6 +1187,28 @@ export async function saveScan(
   await db.from('documents')
     .update({ status: scan.status === 'could_not_read' ? 'could_not_read' : 'read' })
     .eq('id', documentId)
+
+  /**
+   * *** THE CONVERTED COPY, STORED BESIDE THE ORIGINAL — B2, decision 53. ***
+   *
+   * Last, and on purpose: the reading is the expensive thing and it is already written by this
+   * point. `storeConvertedCopy` never throws and never fails the reading — a storage refusal
+   * leaves `converted_url` NULL, which is exactly what NULL means (there is no copy to point at)
+   * and the next re-read writes one.
+   *
+   * *** THE STATUS UPDATE ABOVE COMES FIRST AND THE ORDER IS NOT INCIDENTAL. *** Both touch the
+   * same row; doing the cheap, correct one first means a slow or refused upload cannot leave a
+   * document saying "Reading…" to somebody watching the page.
+   *
+   * `scan.converted` is null for a PDF, a spreadsheet, and for a photograph already small enough
+   * to send as it is. Only the two paths that own a `documents` row reach here, which is the
+   * whole reason the copy travels on the scan rather than through seven callers.
+   */
+  if (scan.converted) {
+    await storeConvertedCopy(db, DOCUMENTS_BUCKET, {
+      companyId, documentId, bytes: scan.converted.bytes, mediaType: scan.converted.mediaType,
+    })
+  }
 
   return { scanId, aiCallId }
 }

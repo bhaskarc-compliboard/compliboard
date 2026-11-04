@@ -26,8 +26,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import sharp from 'sharp'
 import {
-  JPEG_QUALITY, LONG_EDGE, MAX_IMAGE_BYTES, MAX_MEGAPIXELS, MAX_TIFF_PAGES, ImageTooLargeError,
-  convertImage,
+  CONVERTED_PREFIX, JPEG_QUALITY, LONG_EDGE, MAX_IMAGE_BYTES, MAX_MEGAPIXELS, MAX_TIFF_PAGES,
+  ImageTooLargeError, convertImage, convertedPath, storeConvertedCopy,
 } from '../../lib/imageConvert.ts'
 import { parseDocumentToBlocks } from '../../lib/documentContent.ts'
 import { IMAGE_FALLBACK_WORDS, READABLE_EXTENSIONS } from '../../lib/acceptedFiles.ts'
@@ -298,5 +298,142 @@ describe('6. the accepted list still IS the reader’s branches, with five more'
     // as `permit` with image/tiff on it is a real case and not a hypothetical one.
     const r = await convertImage(read('inspection-sheets-3pages.tiff'), '', 'image/tiff')
     assert.equal(r.pages.length, 3, 'routed by media type, not by a name it does not have')
+  })
+})
+
+describe('7. the converted copy is stored beside the original (B2, decision 53)', () => {
+  /** A storage-and-rows stand-in small enough to read, so what it records is what was done. */
+  function fakeDb(opts: { uploadError?: string; rowError?: string } = {}) {
+    const uploads: Array<{ bucket: string; path: string; bytes: number; contentType: string; upsert: boolean }> = []
+    const updates: Array<{ table: string; patch: Record<string, unknown>; id: string }> = []
+    return {
+      uploads,
+      updates,
+      storage: {
+        from: (bucket: string) => ({
+          upload: async (path: string, bytes: Buffer, o: { contentType: string; upsert: boolean }) => {
+            if (opts.uploadError) return { error: { message: opts.uploadError } }
+            uploads.push({ bucket, path, bytes: bytes.length, contentType: o.contentType, upsert: o.upsert })
+            return { error: null }
+          },
+        }),
+      },
+      from: (table: string) => ({
+        update: (patch: Record<string, unknown>) => ({
+          eq: async (_c: string, id: string) => {
+            if (opts.rowError) return { error: { message: opts.rowError } }
+            updates.push({ table, patch, id })
+            return { error: null }
+          },
+        }),
+      }),
+    }
+  }
+
+  const CO = '11111111-1111-1111-1111-111111111111'
+  const DOC = '22222222-2222-2222-2222-222222222222'
+
+  test('the key is EXACTLY two levels deep, which is what makes a deletion complete', () => {
+    const p = convertedPath(CO, DOC)
+    assert.equal(p, `${CO}/converted/${DOC}.jpg`)
+    assert.equal(p.split('/').length, 3,
+      'app/api/account/route.ts lists <company>/ and then ONE folder down. A third level would '
+      + 'survive a deletion the customer asked for — lib/storage.ts records the rule')
+    assert.equal(p.split('/')[0], CO, 'the company prefix first, as migration 002 requires')
+    assert.equal(p.split('/')[1], CONVERTED_PREFIX)
+  })
+
+  test('…and it is keyed by the DOCUMENT, so a re-read overwrites its own copy', () => {
+    assert.equal(convertedPath(CO, DOC), convertedPath(CO, DOC))
+    assert.notEqual(convertedPath(CO, DOC), convertedPath(CO, '33333333-3333-3333-3333-333333333333'))
+    // A timestamp in the key would leave the old copy behind for ever on every re-read.
+    assert.ok(!/\d{13}/.test(convertedPath(CO, DOC)), 'no timestamp')
+  })
+
+  test('a slash in either id is refused rather than escaping the company’s folder', () => {
+    assert.throws(() => convertedPath(`${CO}/..`, DOC), /company id/)
+    assert.throws(() => convertedPath(CO, `${DOC}/../x`), /document id/)
+  })
+
+  test('storing it uploads the bytes and points the row at them', async () => {
+    const db = fakeDb()
+    const bytes = Buffer.from('a converted jpeg')
+    const path = await storeConvertedCopy(db, 'company-documents',
+      { companyId: CO, documentId: DOC, bytes, mediaType: 'image/jpeg' })
+
+    assert.equal(path, convertedPath(CO, DOC))
+    assert.deepEqual(db.uploads, [{
+      bucket: 'company-documents', path: convertedPath(CO, DOC), bytes: bytes.length,
+      contentType: 'image/jpeg',
+      // *** `upsert` MATTERS. *** "Read it again" stores to the same key, and without this the
+      // second reading would fail on a key that is already there.
+      upsert: true,
+    }])
+    assert.deepEqual(db.updates, [{ table: 'documents', patch: { converted_url: path }, id: DOC }])
+  })
+
+  test('a storage refusal NEVER fails the reading, and leaves converted_url null', async () => {
+    const db = fakeDb({ uploadError: 'bucket is full' })
+    // The reading is the expensive thing and it has already happened by this point. Losing it
+    // because an upload was refused would be the worst trade available.
+    const path = await storeConvertedCopy(db, 'company-documents',
+      { companyId: CO, documentId: DOC, bytes: Buffer.from('x'), mediaType: 'image/jpeg' })
+    assert.equal(path, null, 'null, which is what NULL means: there is no copy to point at')
+    assert.deepEqual(db.updates, [], 'and nothing claims there is one')
+  })
+
+  test('a row update refusal is the same: said in the log, never thrown', async () => {
+    const db = fakeDb({ rowError: 'row is locked' })
+    const path = await storeConvertedCopy(db, 'company-documents',
+      { companyId: CO, documentId: DOC, bytes: Buffer.from('x'), mediaType: 'image/jpeg' })
+    assert.equal(path, null)
+    assert.equal(db.uploads.length, 1, 'the file IS there; only the pointer is missing')
+  })
+
+  test('the parser produces a copy, and EVERY post-parse return carries it', async () => {
+    const parsed = await parseDocumentToBlocks(bufferOf('drum-label.heic'), 'drum-label.heic', 'image/heic')
+    assert.ok(parsed.ok && parsed.converted, 'the parser produced a copy')
+
+    // *** THREE RETURNS, NOT ONE, AND THE THIRD IS THE ONE WORTH HAVING. *** `runDocumentScan`
+    // leaves by three doors once the file has been parsed: the model call refused, the answer
+    // unparseable, and the reading landing. **A refused model call still converted the file**,
+    // and storing the copy there is what stops a re-read decoding a 48-megapixel HEIC twice.
+    // Asserted from the source because the model call cannot run in a test.
+    const src = readFileSync(join(process.cwd(), 'lib/documentScan.ts'), 'utf8')
+    const body = src.slice(src.indexOf('export async function runDocumentScan'))
+    const after = body.slice(body.indexOf('const converted = parsed.converted'))
+    assert.equal((after.match(/converted,|\), converted \}/g) ?? []).length, 3,
+      'all three post-parse returns carry the copy')
+    assert.match(after, /\.\.\.refusedScan\(\{[^}]*\}\), converted \}/,
+      'including the one where the API refused the request')
+  })
+
+  test('saveScan stores it LAST, after the status, and only when there is one', () => {
+    // Read out of the source: both writes touch the same row, and doing the cheap correct one
+    // first means a slow upload cannot leave a document saying "Reading…" to somebody watching.
+    const src = readFileSync(join(process.cwd(), 'lib/documentScan.ts'), 'utf8')
+    const status = src.lastIndexOf("status: scan.status === 'could_not_read' ? 'could_not_read' : 'read'")
+    const store = src.indexOf('storeConvertedCopy(db, DOCUMENTS_BUCKET')
+    assert.ok(status > 0 && store > status, 'the status update comes first')
+    assert.match(src.slice(store - 400, store), /if \(scan\.converted\) \{/,
+      'and the copy is stored only when the reading produced one')
+  })
+
+  test('"Open the file" hands over the converted copy when there is one', () => {
+    // A HEIC downloads and shows nothing on Windows; a multi-page TIFF opens in whatever the
+    // machine guesses. The original is never altered and never deleted — this is the one button
+    // whose job is to let a person LOOK at their file.
+    const route = readFileSync(join(process.cwd(), 'app/api/document-actions/route.ts'), 'utf8')
+    assert.match(route, /\.select\('file_url, converted_url'\)/)
+    assert.match(route, /const key = full\.converted_url \|\| full\.file_url/)
+    assert.match(route, /createSignedUrl\(key, 120\)/, 'still short-lived, still never public')
+  })
+
+  test('account delete still reaches it, because the depth was chosen for that', () => {
+    const walk = readFileSync(join(process.cwd(), 'app/api/account/route.ts'), 'utf8')
+    assert.equal((walk.match(/\.list\(/g) ?? []).length, 2,
+      'two levels: the company folder, then each folder in it')
+    // `converted` is a sibling of `unfiled` and `handbooks`, so the second `.list` finds it.
+    assert.equal(convertedPath(CO, DOC).split('/').length, 3)
   })
 })

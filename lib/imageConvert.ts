@@ -108,6 +108,27 @@ export class ImageTooLargeError extends Error {
 }
 
 /**
+ * *** WHERE A CONVERTED COPY LIVES, AND WHY IT IS EXACTLY TWO LEVELS DEEP. ***
+ *
+ * `<company_id>/converted/<document_id>.jpg` — a sibling of `unfiled` and `handbooks`, never a
+ * child of one. `app/api/account/route.ts` `listCompanyObjects` lists `<company>/` and then each
+ * folder exactly ONE level down, so **a file at a third level would survive a deletion the
+ * customer asked for**. `lib/storage.ts` records the rule and `tests/unit/storage.test.ts` holds
+ * it; this is the third thing in the bucket to obey it.
+ *
+ * Keyed by the DOCUMENT's id and not by a timestamp, deliberately: a re-read of the same document
+ * overwrites its own copy rather than leaving the old one behind for ever. One document, one
+ * converted copy, and `documents.converted_url` points at it.
+ */
+export const CONVERTED_PREFIX = 'converted'
+
+export function convertedPath(companyId: string, documentId: string): string {
+  if (!companyId || /[/\\]/.test(companyId)) throw new Error('convertedPath: a company id with no slash is required')
+  if (!documentId || /[/\\]/.test(documentId)) throw new Error('convertedPath: a document id with no slash is required')
+  return `${companyId}/${CONVERTED_PREFIX}/${documentId}.jpg`
+}
+
+/**
  * *** WHICH DECODER, BY EXTENSION **OR** BY MEDIA TYPE. ***
  * Both, for the reason the rest of `lib/documentContent.ts` reads both: a file can arrive with a
  * correct media type and no extension at all (`app/documents/page.tsx` sends
@@ -291,5 +312,49 @@ export async function convertImage(
     // Stored, because the original is the one that is awkward to open and heavy to re-read.
     stored: { bytes, mediaType: OUT_MEDIA },
     note: `${width}x${height} resized to fit ${LONG_EDGE} px and re-encoded as JPEG`,
+  }
+}
+
+
+/**
+ * *** STORING THE COPY, AND IT IS DELIBERATELY FORGIVING. ***
+ *
+ * Called by the two reading paths that own a `documents` row — the sweep and
+ * `/api/document-scan` — after the reading has landed. `parseDocumentToBlocks` computes the copy
+ * and stores nothing, because it has no database and its seven callers do not share one.
+ *
+ * **A failure here never fails the reading.** The reading is the expensive thing and it has
+ * already happened; losing it because a storage write was refused would be the worst possible
+ * trade. So this logs and returns null, and `converted_url` stays NULL — which is exactly what it
+ * means: there is no copy to point at. The next re-read writes one.
+ *
+ * `upsert: true` because a re-read of the same document must overwrite its own copy rather than
+ * fail on a key that is already there.
+ */
+export async function storeConvertedCopy(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  bucket: string,
+  args: { companyId: string; documentId: string; bytes: Buffer; mediaType: string },
+): Promise<string | null> {
+  const path = convertedPath(args.companyId, args.documentId)
+  try {
+    const { error } = await db.storage.from(bucket)
+      .upload(path, args.bytes, { contentType: args.mediaType, upsert: true })
+    if (error) {
+      console.warn(`converted copy: ${path} could not be stored (the reading is unaffected):`, error.message)
+      return null
+    }
+    const { error: rowError } = await db.from('documents')
+      .update({ converted_url: path }).eq('id', args.documentId)
+    if (rowError) {
+      console.warn(`converted copy: ${path} is stored and the row could not be pointed at it:`, rowError.message)
+      return null
+    }
+    return path
+  } catch (e) {
+    console.warn(`converted copy: ${path} could not be stored (the reading is unaffected):`,
+      e instanceof Error ? e.message : e)
+    return null
   }
 }

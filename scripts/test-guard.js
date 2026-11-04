@@ -421,7 +421,19 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   from a multi-page TIFF. The ceiling is held too: an 81-megapixel image is refused FROM ITS
 //   HEADER in under half a second, because heic-decode allocates width*height*4 with no scaled
 //   decode and a 48-megapixel photograph measured 1,036 MB of peak memory.
-const FLOOR = 2385
+//
+// 2385 -> 2395, 3 November 2026 (B2's second half). TEN more, all about the converted copy being
+//   STORED rather than computed and dropped. The one that matters in a year is the first: the key
+//   is `<company>/converted/<document>.jpg` and the test counts the slashes, because account
+//   delete walks `<company>/` and exactly ONE folder down and a file at a third level would
+//   survive a deletion a customer asked for. The rest: a re-read overwrites its own copy rather
+//   than leaving the old one behind (no timestamp in the key, upsert on the upload); a storage
+//   refusal leaves converted_url NULL and never fails the reading that has already been paid for;
+//   the copy rides all THREE of runDocumentScan's post-parse returns, including the one where the
+//   API refused the request, because the conversion happened either way; saveScan stores it after
+//   the status so a slow upload cannot leave a row saying "Reading…"; and "Open the file" hands
+//   over the copy when there is one, because a HEIC downloads and shows nothing on Windows.
+const FLOOR = 2395
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

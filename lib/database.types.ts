@@ -2323,6 +2323,7 @@ export type Database = {
         Row: {
           batch_id: string | null
           company_id: string | null
+          converted_url: string | null
           entity_id: string | null
           file_size: number | null
           file_type: string
@@ -2345,6 +2346,7 @@ export type Database = {
         Insert: {
           batch_id?: string | null
           company_id?: string | null
+          converted_url?: string | null
           entity_id?: string | null
           file_size?: number | null
           file_type: string
@@ -2367,6 +2369,7 @@ export type Database = {
         Update: {
           batch_id?: string | null
           company_id?: string | null
+          converted_url?: string | null
           entity_id?: string | null
           file_size?: number | null
           file_type?: string
