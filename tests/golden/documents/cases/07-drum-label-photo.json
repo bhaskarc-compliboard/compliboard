@@ -57,23 +57,6 @@
         "severe skin burns"
       ],
       "min_keywords": 1
-    },
-    {
-      "id": "names-the-missing-signal-word",
-      "line": "The planted gap: no signal word. A reading that names it has read the label against the rule; one that does not has described the label back.",
-      "type": "text_keywords",
-      "fields": [
-        "summary",
-        "gaps",
-        "expected_missing",
-        "confidence_notes"
-      ],
-      "keywords": [
-        "signal word",
-        "danger",
-        "warning"
-      ],
-      "min_keywords": 1
     }
   ],
   "must_not": [
@@ -98,6 +81,23 @@
     }
   ],
   "reported": [
+    {
+      "id": "names-the-missing-signal-word",
+      "line": "The planted gap: no signal word. **Reported rather than required, and the reason is a finding of its own**: on the first live run (3 November 2026, Haiku) the scan classified this label as `supplier_document` and `not_judged`, so it looked for no gaps at all. That is the product's own rule for somebody else's document \u2014 and a container label on your own drum is arguably your 1910.1200(f) obligation rather than the supplier's. Changing that is a judgement change (CLAUDE.md \u00a73.1) and not B2's; recorded in GAPS-PLAN \u00a78.",
+      "type": "text_keywords",
+      "fields": [
+        "summary",
+        "gaps",
+        "expected_missing",
+        "confidence_notes"
+      ],
+      "keywords": [
+        "signal word",
+        "danger",
+        "warning"
+      ],
+      "min_keywords": 1
+    },
     {
       "id": "says-it-is-a-photograph",
       "line": "A note that this is a photograph rather than a document is welcome, not required \u2014 it is what makes a quote unverifiable (there is no extracted text behind an image).",

@@ -1375,6 +1375,37 @@ build time and must exist **before** the push that builds — it does.
 
 **Nothing fails at build or deploy time in any of these cases** — `getStripe()` is lazy by design.
 
+
+## Function memory — added 3 November 2026 (GAPS-PLAN Part B step B2, decision 53)
+
+**`vercel.json` now carries a `functions` block, and it is the first one this project has had.**
+
+```
+"app/api/jobs/scan-documents/route.ts": { "memory": 2048, "maxDuration": 800 }
+"app/api/document-scan/route.ts":       { "memory": 2048, "maxDuration": 800 }
+```
+
+**Why 2048, and why only these two.** B2 reads an iPhone HEIC by decoding it in the function.
+`heic-decode` allocates `width * height * 4` and has no scaled decode, so the memory is the source
+photograph's: a **48-megapixel HEIC measured a peak of 1,036 MB** on 3 November. `lib/imageConvert.ts`
+refuses above **50 megapixels**, so 48 is a size the product deliberately accepts — and a 1 GB
+function would be killed by the very photograph the ceiling lets through. 2048 is the next step up
+and leaves room for the model call's own JSON. **Only the two routes that read documents**, because
+memory is billed per GB-second and the other thirty-odd functions decode nothing.
+
+> ### ⚡ THE OWNER MUST CHECK ONE THING ON THE DASHBOARD, AND THE REPOSITORY CANNOT ANSWER IT.
+>
+> Vercel's own reference says: *"Memory cannot be set in `vercel.json` with **Fluid compute**
+> enabled. Instead set it in the **Functions** section in your project dashboard sidebar."* Fluid
+> compute is on by default for projects created recently. **So if Fluid is on, the `memory` above is
+> ignored and the real value is whatever the dashboard says** — `maxDuration` is honoured either
+> way.
+>
+> This is the same shape as the model variables (`CLAUDE.md` §3.4a): *what a function is allowed to
+> use is a fact about a dashboard, not a fact this codebase contains.* **This file is the
+> authoritative record of what Vercel holds**, so when the owner has read it, the number goes here.
+> Until then the honest statement is: the repository asks for 2048 MB and cannot confirm it got it.
+
 ## D. The checks that wait for live mode
 
 Numbered to follow the free checks in step 7 above.
