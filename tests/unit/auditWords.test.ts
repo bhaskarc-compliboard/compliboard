@@ -207,6 +207,20 @@ describe('every file that says the words says all five', () => {
     assert.doesNotMatch(src, /one of these four and no other/)
     assert.match(src, /ON FILE IS FOR SOMETHING WITH NOTHING FALLING SHORT/)
     assert.match(src, /WHEN BOTH FIT, OUT OF DATE WINS/)
+    /**
+     * *** AND THE TWO SENTENCES OF 4 NOVEMBER ARE IN **BOTH** SHAPES — E0a. ***
+     *
+     * `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]`, so a template run never sees one
+     * word of `SHAPE`. E0 put the tie-break in `SHAPE` only and then named it as the likely cause
+     * of a TEMPLATE line going wrong — a sentence that model had never been shown. Counting two
+     * occurrences is the cheap way to make the next rule land in both places.
+     */
+    assert.equal((src.match(/still inside its own dates is never\s+stale/gi) ?? []).length, 2,
+      'the stale sentence must be in both shapes, not one')
+    assert.match(src, /A DOCUMENT STILL INSIDE ITS OWN DATES IS NEVER STALE/,
+      'the TEMPLATE shape carries it in capitals, where its own stale clause is')
+    assert.equal((src.match(/an inspector will see on the day/g) ?? []).length, 2,
+      'the practice-question sentence must be in both shapes, not one')
     // *** AND THE PARAGRAPH THAT CAUSED W4 IS GONE. ***
     // It read "ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART", which is why the model was
     // right to call four lines with gaps `on_file`.
@@ -462,6 +476,20 @@ describe('a template run does not read its own template — decision 49', () => 
     const src = code(read('scripts/run-golden-audit.js'))
     assert.match(src, /excludeDocumentId: templateDocId/)
     assert.match(src, /async function templateDocumentIdFor/)
+  })
+})
+
+describe('a golden key that the fifth word made out of date — E0a', () => {
+  test('cascade-template-12 A5 accepts the fifth word, with the reason written on the case', () => {
+    // The 2025 annual report ON FILE records the deviation; the notification evidence is what is
+    // missing. That is a document answering the line in part. The key was written when there was
+    // no word for that, and the owner widened it rather than let a right answer fail.
+    const j = JSON.parse(read('tests/golden/audits/cases/cascade-template-12.json'))
+    const all = [...(j.must ?? []), ...(j.must_not ?? []), ...(j.acceptable ?? [])]
+    const a5 = all.find((c: { ref?: string }) => c.ref === 'A5')
+    assert.ok(a5, 'cascade-template-12 has no A5 check')
+    assert.deepEqual(a5.accept, ['nothing_on_file', 'on_file_gaps'])
+    assert.match(a5.corrected, /THE KEY WAS OUT OF DATE, NOT THE ANSWER/)
   })
 })
 

@@ -137,12 +137,15 @@ THE WORDS IN "word", AND WHAT EACH ONE CLAIMS:
   nothing_on_file         — a document obliges them to hold or produce something and no reading has
                             produced it. NOT an accusation.
   not_a_document_question — this agency will ask about it and no document can settle it.
+                            A line about what an inspector will see on the day is
+                            not_a_document_question even when a document bears on it.
 
 ON FILE IS FOR SOMETHING WITH NOTHING FALLING SHORT. If you write on_file and then say in
 what_to_do that something is missing, overdue, or not covered, the word is wrong: it is
 on_file_gaps. Somebody scanning the words has to be able to trust that on_file means nothing there
 needs them. WHEN BOTH FIT, OUT OF DATE WINS: if the whole document is too old, the word is stale,
-however many things are also missing inside it.
+however many things are also missing inside it. A document still inside its own dates is never
+stale, whatever is missing from it: that is on_file_gaps.
 
 NAME A DOCUMENT BY ITS HANDLE. Each document you are shown carries one — D1, D2, D3 — printed
 beside its title. Write that handle and nothing else wherever a document is asked for. Do not write a
@@ -306,6 +309,19 @@ export function auditSectionPrompt(sectionIndex: number): string {
  * accusation, a quote is still word for word, and nothing names what did the reading — and only the
  * SHAPE differs: one answer per line, in the checklist's order, carrying the line's own reference.
  *
+ * *** ⚡ `SHAPE_T` REPLACES `SHAPE`. IT DOES NOT ADD TO IT. ***
+ * `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]`, so a template run NEVER SEES the word
+ * definitions, the tie-break or the handle rule written in `SHAPE` above. Every rule about the five
+ * words therefore has to be written TWICE, once in each shape, and the two must agree.
+ *
+ * **This was found by being wrong about it (E0a, 4 November 2026).** E0 put "WHEN BOTH FIT, OUT OF
+ * DATE WINS" in `SHAPE` and then reported, as the likely cause of a template run calling a permit
+ * that expires in 2028 "out of date", a sentence the model producing that line had never been
+ * shown. The real cause was `SHAPE_T`'s own clause — "A line whose document is old enough that an
+ * inspector will ask is stale" — with nothing beside it to say what *old enough* means. Both shapes
+ * now carry the owner's two sentences of 4 November, and this note is here so the next rule goes in
+ * both places the first time.
+ *
  * *** IT IS SHOWN EVERY DOCUMENT THE COMPANY HOLDS, NOT ONE AGENCY'S. *** A checklist spans
  * regulators: case 13's own monthly form covers the air permit, the forklifts and the
  * extinguishers. Scoping it to one agency would answer half its lines "nothing on file" about
@@ -337,7 +353,8 @@ Respond with valid JSON only. No markdown, no backticks, no text around it.
 
 A line asking about a practice rather than a document — whether something is posted, whether
 somebody was trained on the day — is not_a_document_question with "document": null. That is an
-answer, not a failure to answer.
+answer, not a failure to answer. A line about what an inspector will see on the day
+is not_a_document_question even when a document bears on it.
 
 *** A DOCUMENT THAT ANSWERS THE LINE ONLY IN PART IS on_file_gaps, NOT on_file. ***
 A line is on_file when a document on file answers it and nothing the document shows falls short of
@@ -354,8 +371,10 @@ settled when it is not, which is worse: they will find out from the inspector.
 A line a document the company holds answers in full is on_file, with the handle, and a quote if the
 reading carries one. A line a document answers with something still falling short is on_file_gaps,
 and you say what falls short. A line whose document is old enough that an inspector will ask is
-stale, and say what makes it stale. A line nothing on file answers is nothing_on_file — which is not
-an accusation: the record may exist on a clipboard and never have been uploaded.
+stale, and say what makes it stale — but A DOCUMENT STILL INSIDE ITS OWN DATES IS NEVER STALE,
+whatever is missing from it: that is on_file_gaps. A line nothing on file answers is
+nothing_on_file — which is not an accusation: the record may exist on a clipboard and never have
+been uploaded.
 
 *** ANSWER EVERY LINE, ESPECIALLY WHEN YOU HAVE NOTHING FOR IT. ***
 Thin evidence is not a reason to decline; it is the answer. A line with no document behind it is

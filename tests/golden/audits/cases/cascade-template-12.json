@@ -50,8 +50,10 @@
       "type": "line_word",
       "ref": "A5",
       "accept": [
-        "nothing_on_file"
-      ]
+        "nothing_on_file",
+        "on_file_gaps"
+      ],
+      "corrected": "2026-11-04 (E0a, the owner): added \"on_file_gaps\" beside nothing_on_file. THE KEY WAS OUT OF DATE, NOT THE ANSWER. The line asks for deviations notified within 24 hours and reported in writing within 15 days. The 2025 annual report ON FILE records the one deviation (S-2 pump failure, August 2025) as reported; what is missing is the notification evidence. That is a document answering the line IN PART, which is exactly what the fifth word is for \u2014 and before 4 November there was no word for it, so nothing_on_file was the nearest honest answer and the key froze it. Both pass: a model that still says nothing on file is using the vocabulary this key was written in."
     },
     {
       "id": "B1",

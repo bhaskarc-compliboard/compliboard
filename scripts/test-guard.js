@@ -471,7 +471,16 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   And one defect found by reading two files together rather than by any test: the email's
 //   "...and n more" is nothing_on_file + stale - attention.length, so widening the attention list
 //   without widening that sum prints "...and -2 more". Nothing reads a finished run's email text.
-const FLOOR = 2460
+//
+// 2460 -> 2461, 4 November 2026 (E0a, the owner's three sentences). ONE test, and it is a counter
+//   rather than a matcher, which is the point. `auditTemplatePrompt` returns [ROLE, HONESTY,
+//   SHAPE_T] and NEVER includes SHAPE, so every rule about the five words has to be written twice,
+//   once in each shape. E0 did not know that: it put the tie-break in SHAPE only and then reported
+//   that sentence, in GAPS-PLAN 8, as the likely cause of a TEMPLATE line going wrong - a sentence
+//   the model producing that line had never been shown. So the new assertions count occurrences
+//   (2 of the stale sentence, 2 of the practice sentence) instead of matching one, and a rule that
+//   lands in one shape fails here rather than in a measurement three weeks later.
+const FLOOR = 2461
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
