@@ -126,6 +126,64 @@ const AMBER_WORD = new Set(['nothing_on_file', 'on_file_gaps', 'stale'])
 const WORD_ORDER = ['nothing_on_file', 'on_file_gaps', 'stale', 'on_file', 'not_a_document_question']
 
 /**
+ * *** THE PALETTE — ONE NAMED SET OF TINTS, READ OFF BOARD 1 — E1a, 4 November 2026. ***
+ *
+ * A word is drawn THREE times on this page: in the strip, in the counts under it, and as the row's
+ * own pill. Three copies of a colour is three copies that drift, and the one that drifts is always
+ * the one nobody is looking at — `components/Drawer.tsx`'s own header says the same thing about
+ * copying a drawer. So the tints are defined once, here, and all three read them.
+ *
+ * The values are `docs/audit-report-boards.html:149` — `.c-green`, `.c-amber`, `.c-red`, `.c-grey`
+ * — copied out of the file rather than matched by eye. They are SOFT grounds with DARK text, which
+ * is the change: the strip was five saturated blocks with white text, and the row's word was
+ * coloured text that made "on file" and "not a document question" look like the same thing to
+ * anybody skimming the left edge.
+ *
+ * *** AND NOTHING ON FILE IS A PINK, NOT A RED — the owner, 4 November. *** `#F8D7D3` behind
+ * `#7A1F17`. It is the strongest of the five words and it is still not an alarm: a report somebody
+ * has to act on is not improved by a stop sign.
+ *
+ * `print-tint` (`app/globals.css`) is not decoration either: a browser drops background colours on
+ * paper by default, so without it the five words print as five identical white capsules.
+ */
+const INK_GREEN = 'text-[#1F5A3A]'
+const INK_AMBER = 'text-[#7A4F0F]'
+const INK_PINK = 'text-[#7A1F17]'
+const INK_GREY = 'text-[#4B5563]'
+const TINT_GREEN = `bg-[#DCEFE3] ${INK_GREEN}`
+const TINT_AMBER = `bg-[#FCEBC6] ${INK_AMBER}`
+const TINT_PINK = `bg-[#F8D7D3] ${INK_PINK}`
+const TINT_GREY = `bg-[#E9EBEF] ${INK_GREY}`
+/** The ground and the ink together: the strip's cells and the row's pill. */
+const WORD_TINT: Record<string, string> = {
+  on_file: TINT_GREEN,
+  on_file_gaps: TINT_AMBER,
+  stale: TINT_AMBER,
+  nothing_on_file: TINT_PINK,
+  not_a_document_question: TINT_GREY,
+}
+/**
+ * *** THE INK ALONE, FOR THE COUNTS — and this is where the brief and board 1 differ. ***
+ * Board 1 draws the counts in plain dark text: `.counts b { color: var(--ink) }`. The brief says
+ * the palette is used by "the strip, the counts and the row pills", and the brief wins where the
+ * two disagree. So the COUNT takes the word's ink and the words after it stay muted, which is how
+ * board 3 draws the same five numbers on a checklist card. The filled pill is kept for the one
+ * that is SELECTED, so a filter that is on still looks different from four that are off.
+ */
+const WORD_INK: Record<string, string> = {
+  on_file: INK_GREEN,
+  on_file_gaps: INK_AMBER,
+  stale: INK_AMBER,
+  nothing_on_file: INK_PINK,
+  not_a_document_question: INK_GREY,
+}
+/**
+ * A line nobody answered is not a sixth word: it is the absence of one, so it is an outline and
+ * not a tint — a hole in the row rather than a verdict. The strip has drawn it this way since E1.
+ */
+const TINT_NO_ANSWER = 'border border-dashed border-[var(--amber)] bg-white text-[var(--amber)]'
+
+/**
  * *** A STORED SUMMARY GOES STALE THE FIRST TIME YOU LEARN SOMETHING. ***
  * `needs_person` was added to `RunSummary` on 30 September; every run written before that has a
  * summary jsonb without the key, and reading it straight gave "0 to look at" on runs holding
@@ -242,10 +300,18 @@ function Section_({ title, count, children, open, onToggle }: {
  * `Section_` follows, and for the same reason: a printed report with a collapsed finding is a report
  * missing its evidence, and nobody reading it on paper can click.
  */
-function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onCancelReason, onSaveReason, highlight, alsoUnder, off }: {
+function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onCancelReason, onSaveReason, highlight, alsoUnder, off, showDoc }: {
   f: Finding
   /** The other agencies that raised this same finding, already joined into words. */
   alsoUnder?: string | null
+  /**
+   * *** THE FOURTH COLUMN — board 1, E1a item 5 — AND ONLY THE CHECKLIST REPORT HAS IT. ***
+   * Board 1 ends every row with the document it rests on, right-aligned, or an em dash when there
+   * is none. The AGENCY report groups its findings UNDER the document they cite (`DocGroup`), so
+   * the same column there would print the title once as a heading and again on each row beneath
+   * it. One prop, so there is still one row component and not two.
+   */
+  showDoc?: boolean
   open: boolean
   onToggle: () => void
   onOpenDoc: (documentId: string) => void
@@ -261,9 +327,23 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
    */
   off?: boolean
 }) {
+  /**
+   * *** THE WORD IS A TINTED PILL IN A FIXED COLUMN — board 1, E1a item 5. ***
+   *
+   * It was coloured TEXT: amber for three of the five words and grey for the other two, so
+   * "on file" and "not a document question" were the same object to anybody reading down the left
+   * edge. The pill is the board's own, and it is the strip's cell again at the size of a word —
+   * which is the point: the picture at the top of the page and the rows under it now say the same
+   * thing in the same four colours.
+   *
+   * 132px is board 1's own pill width. `first-letter:uppercase` is why there is still ONE label per
+   * word in this file: the counts read "4 on file" and the pill reads "On file".
+   */
+  const pill = 'print-tint mt-px w-[132px] shrink-0 rounded-full px-2 py-0.5 text-center '
+    + 'text-[11px] font-semibold leading-[15px] first-letter:uppercase'
   const word = f.word
-    ? <span className={AMBER_WORD.has(f.word) ? 'text-[var(--amber)]' : 'text-gray-600'}>{WORD[f.word] ?? f.word}</span>
-    : <span className="text-[var(--amber)]">no answer</span>
+    ? <span className={`${pill} ${WORD_TINT[f.word] ?? TINT_GREY}`}>{WORD[f.word] ?? f.word}</span>
+    : <span className={`${pill} ${TINT_NO_ANSWER}`}>no answer</span>
   /** The asides that are columns, not prose. Everything else stays where the model wrote it. */
   const noted = [
     f.basis === 'inferred' ? 'worked out from the document, not stated in it' : '',
@@ -279,22 +359,21 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
   return (
     /* `id` is what the strip's cell scrolls to — a picture nobody can get to the inside of is a
        picture they have to take on trust. */
-    <div id={`f-${f.id}`} className={`border-b border-gray-100 last:border-b-0 ${highlight ? 'bg-amber-50/40' : ''} ${
+    <div id={`f-${f.id}`} className={`${highlight ? 'bg-amber-50/40' : ''} ${
       off ? 'hidden print:block' : ''}`}>
       {/* The whole line is the control. A title that is clickable only on its first few words is a
           control nothing announces (the same note the Audits page carries about its agency rows). */}
       <div role="button" tabIndex={0} onClick={onToggle}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }}
-        className="flex cursor-pointer items-baseline gap-2 py-1.5 hover:bg-gray-50">
-        <span className={`no-print w-3 shrink-0 text-[11px] text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
-        {/* *** A FIXED, LEFT-ALIGNED COLUMN — decision 59, 4 November 2026. ***
-            This was `shrink-0` with no width, so every title's left edge moved with the length of
-            the word beside it, and twenty rows down a page read as a ragged edge. The fifth word
-            made it worse before it fixed anything: "on file, gaps found" is more than twice "on
-            file". 150px is the longest of the five, "not a document question", at 12px — measured,
-            not guessed, and no truncation, because a clipped status word is a worse failure than a
-            wide column. */}
-        <span className="w-[150px] shrink-0 text-[12px]">{word}</span>
+        className="flex cursor-pointer items-start gap-3 border-b border-gray-50 py-2.5 last:border-b-0 hover:bg-gray-50">
+        <span className={`no-print w-3 shrink-0 text-[11px] leading-5 text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
+        {/* *** FOUR FIXED COLUMNS THAT LINE UP DOWN THE PAGE — decision 59, board 1's own grid. ***
+            Board 1 is `10px 132px 26px 1fr 260px` with a 12px gutter. The word's column was 150px
+            and held coloured text; it is the board's 132px pill now. Everything decision 59 was
+            about still holds and is why these are widths and not padding: the cell was `shrink-0`
+            with NO width once, so every requirement's left edge moved with the length of the word
+            beside it and twenty rows read as a ragged edge. Nothing truncates. */}
+        {word}
         {/* *** THE AUDITOR'S LINE, WHOLE — decision 58, 4 November 2026, and W9. ***
             This was `truncate`, so a 235-character checklist line ended in an ellipsis and the
             person had to open the row — or hover — to read the question they had been asked. The
@@ -309,24 +388,51 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
             date / noted." — the second line 37px to the left of the first. Photographed before
             this was changed. Two cells, so a requirement of any length is one block. */}
         {f.template_line
-          ? <span className="w-[36px] shrink-0 text-[14px] font-medium leading-snug text-gray-500">{f.template_line}</span>
+          ? <span className="w-[36px] shrink-0 text-[13px] font-semibold leading-5 text-gray-700">{f.template_line}</span>
           : null}
         <span className="min-w-0 flex-1 text-[14px] leading-snug text-gray-900">
           {f.template_text ?? f.title}
+          {/* *** THE SAME FINDING, SHOWN ONCE UNDER EACH AGENCY IT BELONGS TO — Run 7b, item 5. ***
+              Two regulators wanting the same record is a fact about the company, not a mistake, and
+              a person reading the OSHA group should know the Department of Agriculture wants it too.
+              *** INSIDE THE REQUIREMENT'S OWN CELL SINCE E1a. *** It was a `shrink-0` span of its
+              own between the requirement and the document, which is a fifth column that only some
+              rows have — and a column only some rows have is what makes the others look misaligned.
+              It is context about the finding, so it sits with the finding. */}
+          {alsoUnder && <span className="text-[11px] text-gray-400"> · also under {alsoUnder}</span>}
+          {f.handle_error && (
+            <span className="text-[11px] text-[var(--amber)]"> · no document matched</span>
+          )}
         </span>
-        {alsoUnder && (
-          /* *** THE SAME FINDING, SHOWN ONCE UNDER EACH AGENCY IT BELONGS TO — Run 7b, item 5. ***
-             Two regulators wanting the same record is a fact about the company, not a mistake, and
-             a person reading the OSHA group should know the Department of Agriculture wants it too.
-             Grey, after the title, because it is context and not the finding. */
-          <span className="shrink-0 text-[11px] text-gray-400">also under {alsoUnder}</span>
-        )}
-        {f.handle_error && (
-          <span className="shrink-0 text-[11px] text-[var(--amber)]">no document matched</span>
+        {showDoc && (
+          /* Board 1's last column: the document this line rests on, right-aligned and wrapping, or
+             an em dash where there is nothing — which on this report is the honest mark for a line
+             with nothing on file.
+             *** 260px, BUT NEVER MORE THAN 28% OF THE ROW. *** `shrink` alone does nothing here:
+             the requirement is `flex-1` with `min-w-0`, so it gives up its own width first and the
+             line never overflows — measured at a 661px row, where the requirement was squeezed to
+             149px and this column still held all 260. The cap is what makes the two share, and it
+             is a percentage of the row, so every row in one report still lands on one edge. */
+          <span className="w-[260px] min-w-0 max-w-[28%] text-right text-[13px] leading-snug">
+            {f.document && f.document_id ? (
+              <button onClick={(e) => { e.stopPropagation(); onOpenDoc(f.document_id as string) }}
+                title={f.document.title}
+                className="cursor-pointer text-right text-[var(--green)] underline hover:text-[var(--green-ink)]">
+                {f.document.title}
+              </button>
+            ) : <span className="text-gray-400">—</span>}
+          </span>
         )}
       </div>
 
-      <div className={open ? 'pb-3 pl-5' : 'hidden pb-3 pl-5 print:block'}>
+      {/* *** INDENTED UNDER THE ROW'S TEXT, NOT UNDER THE CHEVRON — board 1's `.fopen`. ***
+          Board 1 indents the open part to 180px where its requirement column starts at 204 — 24px
+          to the left of the text it belongs to, so the fold reads as part of that line and not as
+          a new left edge. This row's requirement starts at 216 (12 chevron + 12 + 132 pill + 12 +
+          36 reference + 12), measured off the classes above rather than chosen, so the same 24px
+          is 192. Photographed at 168 first, which put it 48px out and under the reference. */}
+      <div className={open ? 'border-b border-gray-50 pb-3 pl-[192px]'
+                           : 'hidden border-b border-gray-50 pb-3 pl-[192px] print:block'}>
         {/*
           *** TWO LABELLED PARTS, NOT THREE — board 1 asks for three and the data holds two. ***
           Board 1's open row is *What we found · The line we read · What to do*. There is no
@@ -366,8 +472,15 @@ function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onC
           nothing is moved out of the prose, where it stays visible above.
         */}
         {noted.length > 0 && (
+          /* Board 1 draws this as one folded grey line — "▸ Also noted — 3 things: …" — and the
+             things are on the line in the board too, so the ▸ there opens nothing. One line here,
+             with the count, for the reason the board's is one line: it is already inside the fold
+             the row itself is, and a fold inside a fold would have to be unfolded on paper by
+             somebody who cannot click. */
           <p className="mt-2 text-[12px] text-gray-400">
-            <span className="font-medium uppercase tracking-wide">Also noted</span> — {noted.join(' · ')}
+            <span className="no-print">▸ </span>
+            <span className="font-medium uppercase tracking-wide">Also noted</span>
+            {' '}— {noted.length} thing{noted.length === 1 ? '' : 's'}: {noted.join(' · ')}
           </p>
         )}
         <div className="no-print mt-1.5 flex items-center gap-4">
@@ -443,28 +556,26 @@ function DocGroup({ doc, docId, children, onOpenDoc, off }: {
  * The cell is a BUTTON: it scrolls to its row and opens it, because a picture nobody can get to
  * the inside of is a picture they have to take on trust (the same reason the counts are a filter).
  */
-const STRIP_COLOUR: Record<string, string> = {
-  on_file: 'bg-[var(--green)]',
-  on_file_gaps: 'bg-[var(--amber)]',
-  stale: 'bg-[var(--amber)]',
-  nothing_on_file: 'bg-[var(--danger,#B42318)]',
-  not_a_document_question: 'bg-gray-400',
-}
+/**
+ * *** THE CELLS STRETCH THE FULL WIDTH — board 1, E1a item 2. ***
+ * `flex-1`, as the board's own `.strip .cell` does. They were `min-w-[34px]` and left-packed, so a
+ * ten-line checklist drew a short row of chips in the top-left corner of a 1000px page and read as
+ * a toolbar. Stretched, the row IS the checklist: every line has the same share of it, and the
+ * colours are in the proportions the counts underneath say they are in.
+ */
 function Strip({ cells, onPick }: {
   cells: Array<{ id: string; ref: string | null; word: string | null }>
   onPick: (id: string) => void
 }) {
   if (!cells.length) return null
   return (
-    <div className="mt-3 flex flex-wrap gap-1">
+    <div className="mt-4 flex gap-1">
       {cells.map((c) => (
         <button key={c.id} onClick={() => onPick(c.id)}
           title={`${c.ref ?? ''} — ${c.word ? (WORD[c.word] ?? c.word) : 'we did not get an answer'}`}
-          className={`flex h-7 min-w-[34px] items-center justify-center rounded px-1.5 text-[10px] font-medium text-white ${
-            /* A line with no answer is not a sixth colour: it is the absence of one, drawn as an
-               outline so it reads as a hole in the row rather than as a verdict. */
-            c.word ? (STRIP_COLOUR[c.word] ?? 'bg-gray-400')
-                   : 'border border-dashed border-[var(--amber)] bg-white text-[var(--amber)]'}`}>
+          className={`print-tint flex h-[34px] min-w-0 flex-1 items-center justify-center overflow-hidden
+            rounded-md px-1 text-[12px] font-semibold ${
+            c.word ? (WORD_TINT[c.word] ?? TINT_GREY) : TINT_NO_ANSWER}`}>
           {c.ref ?? '·'}
         </button>
       ))}
@@ -472,36 +583,59 @@ function Strip({ cells, onPick }: {
   )
 }
 
-function WordFilter({ counts, value, onChange, extra }: {
+/**
+ * *** THE COUNTS ROW, DIRECTLY UNDER THE STRIP — board 1, E1a item 3. ***
+ *
+ * The numbers in the word's own tint with the count bold, and the run's totals on the right:
+ * *"4 on file · 2 on file, gaps found · 2 out of date · 2 nothing on file"* and
+ * *"10 lines · 3 sections · 11 documents read"*. It is the shape of the answer in one line, which
+ * is what turns "43 findings" into "show me the eleven with nothing on file".
+ *
+ * *** THE "all" CHIP IS GONE — the owner, 4 November. *** It was there so the control would always
+ * say which state it was in rather than leave a person to infer it from nothing being highlighted.
+ * A row of five tinted counts with none of them ringed says that by itself: ringed means only
+ * those are shown, and pressing the ringed one again shows them all. One fewer control, and the
+ * row now reads as the board's counts rather than as a filter bar that happens to carry numbers.
+ */
+function Counts({ counts, value, onChange, right }: {
   counts: Array<{ word: string; label: string; n: number }>
   value: string | null
   onChange: (w: string | null) => void
-  extra?: React.ReactNode
+  /** The totals the board puts at the right-hand end. The checklist report passes them. */
+  right?: string
 }) {
   const live = counts.filter((c) => c.n > 0)
   if (!live.length) return <p className="text-[13px] text-gray-600">Nothing was answered.</p>
-  const pill = (on: boolean) =>
-    `rounded-full px-2 py-0.5 text-[12px] transition-colors ${
-      on ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`
   return (
-    <div className="no-print flex flex-wrap items-center gap-1.5">
-      <button onClick={() => onChange(null)} className={pill(value === null)}>all</button>
+    <div className="no-print mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
       {live.map((c) => (
         <button key={c.word} onClick={() => onChange(value === c.word ? null : c.word)}
-          className={pill(value === c.word)}>
-          {c.n} {c.label}
+          title={value === c.word
+            ? 'Showing only these — press again for all of them'
+            : `Show only these ${c.n}`}
+          className={`rounded-full px-2 py-0.5 text-[13px] ${
+            value === c.word ? `${WORD_TINT[c.word] ?? TINT_GREY} ring-1 ring-gray-900/25`
+                             : 'text-gray-500 hover:bg-gray-100'}`}>
+          <b className={`font-semibold ${value === c.word ? '' : (WORD_INK[c.word] ?? INK_GREY)}`}>{c.n}</b>
+          {' '}{c.label}
         </button>
       ))}
-      {extra}
+      {right && <span className="ml-auto text-[12px] text-gray-500">{right}</span>}
     </div>
   )
 }
 
-/** The same counts as plain text, for print — a pill row prints as a row of grey boxes. */
-function WordCountsPrint({ counts }: { counts: Array<{ word: string; label: string; n: number }> }) {
+/** The same counts as plain text, for print — a row of tinted capsules is a screen control. */
+function WordCountsPrint({ counts, right }: {
+  counts: Array<{ word: string; label: string; n: number }>; right?: string
+}) {
   const bits = counts.filter((c) => c.n > 0).map((c) => `${c.n} ${c.label}`)
   if (!bits.length) return null
-  return <p className="hidden text-[13px] text-gray-700 print:block">{bits.join(' · ')}</p>
+  return (
+    <p className="hidden text-[13px] text-gray-700 print:block">
+      {bits.join(' · ')}{right ? ` · ${right}` : ''}
+    </p>
+  )
 }
 
 function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: string) => void }) {
@@ -887,33 +1021,84 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     ? (rep.documents?.[run.template_document_id ?? '']?.title ?? 'Against your checklist')
     : `${everything ? 'Audit of everything' : agency}${auditedOn ? `, ${auditedOn}` : ''}`
 
-  const sub = `audited ${fmt(run.finished_at ?? run.created_at)} · `
-    + `${run.section_count} section${run.section_count === 1 ? '' : 's'} · `
+  /**
+   * *** ONE META LINE UNDER THE TITLE — board 1, E1a item 1. ***
+   *
+   * The board's line is *"Northwest Supplier Assurance Program, revision 2026-03 · audited
+   * 3 November 2026 · readings as of 3 November 2026 · you asked: '…'"*, and **its first part is
+   * not a field.** The scan writes ONE string and the issuer and revision are inside it —
+   * *"…(Northwest Supplier Assurance Program, revision 2026-03), blank template"* — read off
+   * `document_index_v.title` on staging, where there is no issuer column and no revision column to
+   * read instead. Splitting it is a prompt change (§3.1), recorded in `docs/GAPS-PLAN.md` §7 with
+   * the title split it belongs to. So this line starts at "audited", and the issuer stays in the
+   * title above it, where it is true.
+   *
+   * *** AND "You asked" IS IN IT NOW, NOT UNDER IT. *** It was a fourth grey paragraph of its own
+   * on both reports. The board has four things on one line; four lines of meta is the jungle this
+   * step is clearing.
+   *
+   * The lines, sections and documents go to the RIGHT-HAND END OF THE COUNTS ROW on the checklist
+   * report, which is where board 1 puts them. An agency run has no strip and no fixed line count,
+   * so its sections and documents stay here.
+   */
+  const counted = `${run.section_count} section${run.section_count === 1 ? '' : 's'} · `
     + `${docsRead.length} document${docsRead.length === 1 ? '' : 's'} read`
     + (docsUnread.length ? `, ${docsUnread.length} held unread` : '')
-    + (run.readings_as_of ? ` · readings as of ${fmt(run.readings_as_of)}` : '')
+  const sub = [
+    `audited ${fmt(run.finished_at ?? run.created_at)}`,
+    run.kind === 'template' ? '' : counted,
+    run.readings_as_of ? `readings as of ${fmt(run.readings_as_of)}` : '',
+    run.scope ? `you asked: “${run.scope}”` : '',
+  ].filter(Boolean).join(' · ')
   // ON PAPER (board 10): one line of this audit's own dates, absolute. Sections and documents print in the body.
   const printDates = `Audited ${fmt(run.finished_at ?? run.created_at)}`
     + (run.readings_as_of ? ` · Readings as of ${fmt(run.readings_as_of)}` : '')
 
+  /**
+   * *** THE FOOTER IN BOARD 1'S ORDER — E1a item 8. ***
+   *
+   * Audit again · Print · Make a checklist · Download the files · Not right, then the board's own
+   * closing sentence at the right-hand end. Print moved up to second because it is the thing a
+   * person does with a finished report; "Download the files" used to be pushed to the far right by
+   * `ml-auto`, where a reader found it last and the sentence that belongs there had nowhere to go.
+   *
+   * *** "Download the documents" → "Download the files" — the owner, 4 November. *** Until Part C
+   * builds the binder, this button hands over the raw files it has, and "the documents" reads like
+   * the report. Board 1's primary action is **Build the binder**, which decision 57 holds back to
+   * Part C: HIDDEN, not greyed, because a greyed control promises something.
+   */
   const footer = (
     <>
       <button disabled={busy || Boolean(paused)} onClick={auditAgain}
-        className="rounded-md border border-[var(--green)] px-3 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-green-50 disabled:opacity-50">
+        className="whitespace-nowrap rounded-md border border-[var(--green)] px-3 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-green-50 disabled:opacity-50">
         {busy ? 'Working…' : 'Audit again'}
       </button>
+      <button onClick={printDrawer} className="whitespace-nowrap text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Print</button>
       <button disabled={busy || !plain.length} onClick={makeChecklist}
-        className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
+        className="whitespace-nowrap text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
         Make a checklist
       </button>
-      <button onClick={printDrawer} className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Print</button>
       <button disabled={busy} onClick={downloadDocuments}
-        className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
-        Download the documents
+        className="whitespace-nowrap text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
+        Download the files
       </button>
-      <button onClick={() => setReasonFor('run')} className="text-[12px] text-gray-400 hover:text-gray-700 hover:underline">
+      <button onClick={() => setReasonFor('run')} className="whitespace-nowrap text-[12px] text-gray-400 hover:text-gray-700 hover:underline">
         Not right
       </button>
+      {/*
+        *** THE SENTENCE IS THE PAGE'S, AND `whitespace-nowrap` IS WHY. ***
+        Board 1's footer is `white-space: nowrap` across a 852px page. The Calendar opens this same
+        report in a 720px drawer, and photographed there the sentence took the room five actions
+        needed: "Audit again", "Make a checklist", "Download the files" and "Not right" each broke
+        mid-phrase onto two lines. The actions are what the footer is FOR, so they never break now,
+        and the one thing that is only commentary stands down where there is no room for it. The
+        drawer still says when the audit ran — it is the first thing in the meta line.
+      */}
+      {chrome === 'page' && (
+        <span className="ml-auto text-[12px] text-gray-400">
+          Every audit is kept. This one is exactly what it said on {auditedOn}.
+        </span>
+      )}
     </>
   )
 
@@ -1002,36 +1187,54 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       .flatMap((sec) => openF.filter((f) => f.section_id === sec.id && f.kind !== 'expected')
         .sort((a, b) => a.ordinal - b.ordinal))
       .map((f) => ({ id: f.id, ref: f.template_line, word: f.word }))
+    /** Board 1's right-hand end: "10 lines · 3 sections · 11 documents read". The lines are the
+     *  cells, so the number beside the strip and the strip itself can never disagree. */
+    const tRight = `${stripCells.length} line${stripCells.length === 1 ? '' : 's'} · `
+      + `${run.section_count} section${run.section_count === 1 ? '' : 's'} · `
+      + `${docsRead.length} document${docsRead.length === 1 ? '' : 's'} read`
+      + (docsUnread.length ? `, ${docsUnread.length} held unread` : '')
 
     return (
       <Shell chrome={chrome} title={titleText} sub={sub} onClose={onClose} footer={footer} topLine={topLine}
         company={companyName} printType="Audit report" printDates={printDates}>
-        <Strip cells={stripCells} onPick={(id) => {
-          setOpenFinding((o) => ({ ...o, [id]: true }))
-          document.getElementById(`f-${id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-        }} />
-        <WordFilter counts={tCounts} value={wordFilter} onChange={setWordFilter} />
-        <WordCountsPrint counts={tCounts} />
-        {/* The sentence about the form itself, under the header: what we noticed before answering
-            a single line (Run 5a, item 6). */}
-        {run.summary?.note && (
-          <p className="mt-1 text-[13px] text-gray-500">{run.summary.note}</p>
-        )}
-        {run.scope && <p className="mt-1 text-[12px] text-gray-400">You asked: &ldquo;{run.scope}&rdquo;</p>}
+        {/* The run's own state first, because a page somebody has just opened must say whether
+            what they are looking at is finished. */}
         {run.status !== 'done' && (
           <p className="mt-2 text-[13px] text-gray-600">
             Still running · {run.done_count} of {run.section_count} section
             {run.section_count === 1 ? '' : 's'} done{run.estimate ? ` · ${run.estimate}` : ''}
           </p>
         )}
-        <PausedNote banner={paused} />
-        <PausedNote banner={paused} />
-      {notice && <p className="no-print mt-2 text-[13px] text-gray-700">{notice}</p>}
-
+        <Strip cells={stripCells} onPick={(id) => {
+          setOpenFinding((o) => ({ ...o, [id]: true }))
+          document.getElementById(`f-${id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }} />
+        {/* The counts DIRECTLY under the strip, with the run's totals at the right-hand end — the
+            two together are board 1's answer to "what shape is this report" (E1a items 2 and 3). */}
+        <Counts counts={tCounts} value={wordFilter} onChange={setWordFilter} right={tRight} />
+        <WordCountsPrint counts={tCounts} right={tRight} />
         <p className="mt-3 font-serif text-[15px] leading-relaxed text-gray-800">
           Every line below is a line of your checklist, answered against the documents you have given
           us. None of it is a verdict on whether the company complies.
         </p>
+        {/* The sentence about the form itself: what we noticed before answering a single line
+            (Run 5a, item 6). Under the lede, because both are about the whole report. */}
+        {run.summary?.note && (
+          <p className="mt-1.5 text-[13px] text-gray-500">{run.summary.note}</p>
+        )}
+        {/* *** ONE NOTE, NOT TWO. *** It was rendered twice, one line after the other, from E1's
+            move of this block — invisible on a paying account (`PausedNote` returns null without a
+            banner) and two identical panels on a paused one. */}
+        <PausedNote banner={paused} />
+        {notice && <p className="no-print mt-2 text-[13px] text-gray-700">{notice}</p>}
+        {/* *** "Not right" ON THE RUN HAD NOWHERE TO PUT THE ANSWER ON THIS REPORT. *** The footer
+            button sets `reasonFor` to 'run' on both reports and only the agency branch drew the
+            box, so on a checklist report the press did nothing a person could see. §5 — never
+            silent. */}
+        {reasonFor === 'run' && (
+          <ReasonBox onCancel={() => setReasonFor(null)}
+            onSave={(r) => { setReasonFor(null); setNotice(`Thank you — we have kept that: “${r}”`) }} />
+        )}
 
         {/* One folded group per checklist section, in the checklist's own order. */}
         {sections.map((sec) => {
@@ -1072,7 +1275,7 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
                    The reference, the word and the text; the document, locator, quote and what to do
                    appear on click. The same component the agency report uses, so the two reports
                    cannot drift into two ways of showing one finding. */
-                <FindingLine key={f.id} f={f}
+                <FindingLine key={f.id} f={f} showDoc
                   off={!mine.includes(f)}
                   open={!!openFinding[f.id]} onToggle={() => toggleFinding(f.id)}
                   onOpenDoc={onOpenDoc}
@@ -1090,20 +1293,31 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             excludes them (E0); this is where board 1 puts them on the checklist report, which is
             the last thing on the page and folded even when it is the only thing there. */}
         {expected.length > 0 && (
-          <Section_ title="Usually held — not seen · documents companies like this usually hold that we have not been shown"
-            count={expected.length} open={!!open.expected}
-            onToggle={() => setOpen((o) => ({ ...o, expected: !o.expected }))}>
-            <p className="mb-2 text-[12px] text-gray-500">
-              These are suggestions, based on what similar companies hold. They are not findings,
-              nobody has checked them against a requirement, and they are not in the counts above.
-            </p>
-            {expected.map((f) => (
-              <div key={f.id} className="border-b border-gray-100 py-2 last:border-b-0">
-                <p className="text-[14px] text-gray-800">{f.title}</p>
-                {f.what_to_do && <p className="mt-0.5 text-[12px] text-gray-500">{f.what_to_do}</p>}
-              </div>
-            ))}
-          </Section_>
+          /* *** ONE FOLDED GREY LINE AT THE FOOT OF THE ROWS — board 1's `.sugg`, E1a item 7. ***
+             It was a section heading like every other, which gave a list nobody has checked the
+             same weight on the page as the checklist's own answers. A grey panel after the last
+             row is the board's own answer to that, and it says in the line itself that these are
+             suggestions and are not in the counts. */
+          <div className="mt-5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-3">
+            <button onClick={() => setOpen((o) => ({ ...o, expected: !o.expected }))}
+              className="flex w-full items-baseline gap-1.5 text-left text-[13px] text-gray-500">
+              <span className="no-print text-gray-400">{open.expected ? '▾' : '▸'}</span>
+              <span>
+                <span className="font-medium text-gray-700">Usually held — not seen</span>
+                {' · '}{expected.length} document{expected.length === 1 ? '' : 's'} companies like
+                this usually hold that we have not been shown. These are suggestions, nobody has
+                checked them against a requirement, and they are not in the counts above.
+              </span>
+            </button>
+            <div className={open.expected ? 'mt-2' : 'hidden print:mt-2 print:block'}>
+              {expected.map((f) => (
+                <div key={f.id} className="border-b border-gray-200 py-2 last:border-b-0">
+                  <p className="text-[14px] text-gray-800">{f.title}</p>
+                  {f.what_to_do && <p className="mt-0.5 text-[12px] text-gray-500">{f.what_to_do}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* *** EARLIER AUDITS AGAINST THIS CHECKLIST, AND WHAT MOVED. *** The whole reason to keep
@@ -1171,7 +1385,13 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
           {run.section_count === 1 ? '' : 's'} done{run.estimate ? ` · ${run.estimate}` : ''}
         </p>
       )}
-      {run.scope && <p className="mt-1 text-[12px] text-gray-400">You asked: &ldquo;{run.scope}&rdquo;</p>}
+      {/* *** AND THE AGENCY REPORT HAD NO NOTE AT ALL — found at E1a, 4 November 2026. ***
+          Commit 10786ee put the read-only note in this component twice, one line after the other,
+          and both copies went into the CHECKLIST branch. So a paused customer opening an agency
+          report saw a disabled "Audit again" and nothing saying why, which is the one thing the
+          read-only rule exists to prevent (`tests/unit/readOnlyUi.test.ts`: every paid control
+          sits beside the note). One per branch now. */}
+      <PausedNote banner={paused} />
       {notice && <p className="no-print mt-2 text-[13px] text-gray-700">{notice}</p>}
       {reasonFor === 'run' && (
         <ReasonBox onCancel={() => setReasonFor(null)}
@@ -1233,7 +1453,10 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
           and now doing something: each one narrows every section group below it. */}
       {plain.length > 0 && (
         <div className="mt-3">
-          <WordFilter counts={countsFor(plain)} value={wordFilter} onChange={setWordFilter} />
+          {/* No strip here, and that is decision 55's call, not an omission: an agency run's
+              findings are however many the reading produced, in citation order, and 43 cells in
+              that order is decoration. The counts are true of both reports and stay on both. */}
+          <Counts counts={countsFor(plain)} value={wordFilter} onChange={setWordFilter} />
           <WordCountsPrint counts={countsFor(plain)} />
         </div>
       )}

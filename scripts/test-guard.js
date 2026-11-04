@@ -500,7 +500,26 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   against a 1000 cap, measured on staging - so the ellipsis was ours alone, a `truncate` class.
 //   The test reads the row's own markup rather than a rendered string, because there is no
 //   renderer here and the class is the whole of the defect.
-const FLOOR = 2487
+//
+// 2487 -> 2513, 4 November 2026 (GAPS-PLAN Part E step E1a - board 1's LAYOUT, not only its
+//   colours). TWENTY-SIX, all in tests/unit/auditPage.test.ts, and the group that earns its keep
+//   is the PALETTE's single source. The same word is drawn three times on one page - in the strip,
+//   in the counts under it, and as the row's own pill - and until E1a those were three unrelated
+//   pieces of styling. Three copies of a colour drift, and the one that drifts is the one nobody
+//   is looking at. So one test reads the eight hex values out of docs/audit-report-boards.html
+//   (they must be the board's own), one greps app/ lib/ components/ and fails if any file but the
+//   palette carries them, and one proves all three places read WORD_TINT by name.
+//
+//   AND THE PILLS MUST SURVIVE THE PRINTER. A browser drops background colours on paper by
+//   default, so without `print-color-adjust: exact` the ten strip cells and every word pill print
+//   as identical white capsules - on the copy that goes to an inspector. One CSS rule, scoped to
+//   one class, asserted here because nothing on screen would ever show it.
+//
+//   Three display defects were found by the same reading and are pinned by their own tests: the
+//   read-only note was rendered TWICE on the checklist report and NOT AT ALL on the agency report
+//   (commit 10786ee put both copies in one branch); "Not right" on the run had nowhere to put the
+//   answer on the checklist report; and "Download the documents" called the raw files the report.
+const FLOOR = 2513
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

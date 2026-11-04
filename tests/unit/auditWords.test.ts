@@ -440,8 +440,17 @@ describe('needs work only on a gap read from the page — decision 48', () => {
   })
 
   test('the report\'s status column is fixed too, so the titles line up down the page', () => {
+    /**
+     * *** THE WIDTH MOVED AT E1a, THE RULE DID NOT — 4 November 2026. ***
+     * The word's column was 150px of coloured text, measured on "not a document question" at 12px.
+     * It is board 1's 132px tinted PILL now (E1a item 5), which is still a fixed, left-aligned
+     * column and is still what keeps every requirement's left edge in one line down the page —
+     * which is all decision 59 ever asked for. `tests/unit/auditPage.test.ts` holds the four
+     * columns and the pixel check.
+     */
     const src = code(read('components/AuditReport.tsx'))
-    assert.match(src, /w-\[150px\] shrink-0 text-\[12px\]/)
+    assert.match(src, /w-\[132px\] shrink-0 rounded-full/)
+    assert.doesNotMatch(src, /w-\[150px\]/)
   })
 
   test('the drawer splits what was read from what was worked out, for EVERY kind', () => {

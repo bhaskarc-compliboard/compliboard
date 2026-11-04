@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 21 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 22 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -20,6 +20,8 @@
 **Updated:** 4 November 2026 — **PART E STEP E0 DONE: the audit's words (decisions 47–49, 55–60 and W5).** **The audit has five words.** `on_file_gaps` — *"On file, gaps found"* — means a document answers the line AND what the document itself shows does not meet it in full; the four old words keep their meanings exactly. **The defect was never a wrong answer:** `prompts/audit-agency.ts` told the model *"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART"*, so four greens over four lists of gaps were the only honest thing it could say. **Measured, the owner's own checklist run on two trees on Haiku: 5 of 10 lines moved from `on_file` to `on_file_gaps` — A3, B2, B3 and B4 are exactly the four W4 named — and the run's sentence went from "4 things that need you" to "9 things that need you".** `documents_read` **12 → 11** (decision 49: a template run no longer reads its own template, excluded from BOTH lists); **handles at the person 1 → 0** (W5: `nameDocumentHandles` at save time, on `title`, `locator` and `what_to_do` and **never on `quote`**, tested on the six real leaking lines). **Decision 48 lives in the VIEW** — migration **093**, because *"the status the document would otherwise have"* is the six CASE arms underneath and only SQL can compute them — with `inferred_gap_count` appended last, since `calendar_v` depends on that view; migration **094** restates `audit_findings_word_check` whole. Both applied to staging and read back from the catalog. **It moves exactly one row on all of staging** (17 of 18 `gaps_found` scans have a gap read from the page) and nothing at all on the Clackamas company. `npm run check` exit 0, **2,460 tests**, floor 2414 → 2460; **46 new**. **Three things found and NOT fixed, because each needs one prompt sentence and that is the owner's (§3.1):** a permit expiring in 2028 now reads *"out of date"* (stable over two runs), the same pull puts the fifth word on a practice question, and one golden key is now out of date rather than wrong. §8 has all nine findings with their evidence. **E0 spent $0.9710 over 30 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0a DONE: the three sentences E0 found and did not make.** All three in, and the measurement says **two of three worked.** ⚡ **E0's own diagnosis was wrong, and that is the finding worth keeping:** `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]` and **never includes `SHAPE`**, so E0 named a sentence the model had never been shown as the cause of its own defect. Every rule about the five words has to be written **twice**; both shapes now carry both sentences, the file says so at `prompts/audit-agency.ts:303`–`:317`, and the test counts the copies. **The "out of date" regression is closed** — A1 is no longer `stale` in either run — but it lands on **`on_file`** with `what_to_do: null`, not `on_file_gaps`: whether *"with the renewal application due date noted"* is being under-read is a question about the line, not the word. **`cascade-template-12` 12/17 → 14/17 must**: the widened A5 key passes and C2 and C3 moved, **C1 — the line sentence (2) names — did not**. ⚡ **And the run found something neither of us was looking for: 3 of 6 sections were lost to broken JSON**, every one the same shape on the same line — two quotes joined with `and` inside one `"quote"` field, on B2, which is the fifth word's own two-shortfall case. The product says so honestly and throws a paid section away. Not fixed: a repair in `extractJsonText` or a prompt line about one quote per line are both §3.1. **E0a spent $0.2846 over 12 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0c DONE: one quote per finding** (the owner's brief called it E0b; `E0b` was already the boards row, so it is **E0c** in §5a). One sentence, in **both** shapes, counted by the test — *"One quote per finding. If two things in the document fall short, quote the one the word rests on and put the other in what_to_do, in your own words — never two quotes joined inside the quote field."* **It answers E0a's finding 4: 0 of 3 sections lost, from 3 of 6**, with `status = 'done'` and **`json_parsed = true`** read back from `audit_sections` on all three, and the regular expression that found every earlier failure matching nothing. **B2 — the line every failure happened on — now carries ONE quote**, the one the word rests on, and names the second operator in `what_to_do` in its own words; nothing was lost by quoting once. One run is not a proof and the finish line still counts it on Opus. **E0c spent $0.0824 over 4 Haiku calls.**
+**Updated:** 4 November 2026 — **PART E STEP E1a DONE: the report page is board 1's LAYOUT, not only its colours** (commit below). Display only, no model, no stored word. **One named palette** (`WORD_TINT` / `WORD_INK`, the board's own eight hex values) read by the **strip**, the **counts** and the **row pill** — three copies of a colour was three copies that drift. The strip's cells **stretch the full width**; the counts sit **directly under it**, numbers bold in the word's ink, with *"10 lines · 3 sections · 11 documents read"* at the right-hand end, and the **"all" chip is gone** (pressing the one that is on shows them all). **One meta line** under the title, with *"you asked"* in it. Each row is board 1's **four fixed columns** — chevron · a tinted **132px pill** · the reference · the requirement whole · the document, right-aligned — **measured: one distinct column set across all ten rows, at 1280 and again at 700**. The open part is indented 192px, 24px left of the requirement as the board draws it; the suggestions are **one folded grey line** at the foot; the footer is the board's order with **"Download the files"** and *"Every audit is kept…"*. **`print-color-adjust: exact` is the only reason any of it reaches paper** — proved with `printToPDF` and **`printBackground: false`**, which is the printer with background graphics OFF: the pills still came out coloured. **Four display defects found by the same reading:** the read-only note was drawn **twice** on the checklist report and **not at all** on the agency one (commit `10786ee` put both copies in one branch); **"Not right" on the run had nowhere to put the answer** on the checklist report; the footer **broke four of its five actions mid-phrase** in the Calendar's 720px drawer, photographed; and the document column held all 260px while the requirement was squeezed to 149 at a narrow width. `npm run check` exit 0, **2,513 tests**, floor 2487 → 2513. **No model call: $0.0000.**
+
 **Updated:** 4 November 2026 — **PART E STEP E1 DONE: the audit report is a PAGE** (decisions 50 and 55–60). Full width at **`/audits?run=<id>`** — the same address the email, the Dashboard, the report's own links and every bookmark already send, so **nothing was redirected and the 20 October hotfix is untouched**. `AuditReport` is **one body with two wrappers** (`chrome: 'page' | 'drawer'`), so the **Calendar is unchanged** and keeps its drawer by default. **Four tabs** (Ask a question · Conversations · Agency audits · Auditor checklists), with `audits` keeping its key so every old link lands where it did; **By template left the agency tab** and is board 3's card — one card per checklist, a table of its runs in fixed columns, *"since last run"* from `closed_count`, and **"Audit again against this checklist"**, which step 6b left off until the row could say whether the file still exists. It can. **The auditor's line is whole** (decision 58, W9 closed) — it was stored whole all along and the ellipsis was a `truncate` class — in three fixed, left-aligned columns, with a **ten-cell strip** on template runs only. **Three things would have failed silently:** the report inside `.print-page` prints a BLANK SHEET; `visibleDrawer()` read `aside.print-drawer` and the page is a `<section>`, so a print would have carried no company and no type; and **`template_lines` has been declared and never selected since step 6b**, so the line count has been missing from that row since the day it was written. **The agency rows: 0 differing pixels.** `npm run check` exit 0, **2,487 tests**, floor 2461 → 2487. **$0.0046.** Also in this step: `vercel.json`'s `functions.memory` **removed** — Fluid compute is on and Vercel was ignoring it — and `docs/RELEASE.md` now carries the truth, read from the dashboard: **Fluid compute on, Function CPU Standard, 1 vCPU and 2 GB for every function**, with the line that says the photo reading breaks first if that dial is ever lowered.
 **Line numbers** are from Claude Code's map of 2 November, read at commit `2801faf`. Re-read before citing.
 
@@ -426,6 +428,7 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 | E0c | **ONE QUOTE PER FINDING** (the owner, 4 November) — the sentence that answers E0a's broken JSON. **The owner's brief called this E0b; that id was already taken by the boards row below, so it is E0c here and nowhere else.** | `prompts/audit-agency.ts` **in both shapes**, counted by `tests/unit/auditWords.test.ts` | `prompts/audit-agency.ts`, one test | **done 4 Nov** — **0 of 3 sections lost**, from 3 of 6; `json_parsed = true` on all three, read back from `audit_sections`. B2 now carries **one** quote and puts the second operator in `what_to_do` in its own words |
 | E0b | The boards for E1 | `docs/audit-report-boards.html`, four boards in the Calendar boards' frame | — | **done 4 Nov** — the owner's, drawn on his own run; committed with E0. §4 records what each board is for |
 | E1 | **THE AUDIT REPORT IS A PAGE** (decisions 50, 55–60) — the report full width at `/audits?run=<id>`, the four tabs, the Auditor checklists tab, the print | `components/AuditReport.tsx` — **one body, two wrappers** (`Shell`, `chrome: 'page' \| 'drawer'`); the strip (template runs only); the auditor's line **whole**, in three fixed columns; the open row's **two** labelled parts and **Also noted** · `app/audits/page.tsx` — four tabs, the report in the body **outside `.print-page`**, `ChecklistCards` · `components/Drawer.tsx` — `visibleDrawer()` reads `.print-drawer`, not `aside.print-drawer` · `app/api/audits/index/route.ts` — `template_lines`, declared since 6b and **never selected** | **`app/audits/page.tsx` and `app/calendar/page.tsx`** both render `AuditReport`; the Calendar is **unchanged** and takes the drawer by default | **done 4 Nov** — the agency rows **0 differing pixels**; `npm run check` exit 0, **2,487 tests**, floor 2461 → 2487; walked on Haiku for **$0.0046** |
+| E1a | **THE REPORT PAGE IS BOARD 1'S LAYOUT** (the owner, 4 November) — the meta line, the full-width strip, the counts row, the four columns, the pill, the open row's indent, the suggestions line, the footer | `components/AuditReport.tsx` — `WORD_TINT`/`WORD_INK` (one palette, the board's own values), `Strip` full width, `WordFilter` → `Counts` with no "all" chip and the totals on the right, `FindingLine`'s **four fixed columns** and tinted pill, the fold at 192px, the suggestions as a grey line, the footer in the board's order with **"Download the files"** · `app/globals.css` — one new `.print-tint` rule, scoped to one class | **`app/audits/page.tsx` and `app/calendar/page.tsx`** both render `AuditReport`; neither file changed; the Calendar's drawer was **walked** and its footer fixed there | **done 4 Nov** — one distinct column set across all ten rows at 1280 **and** at 700; the tints proved on paper with `printBackground: false`; `npm run check` exit 0, **2,513 tests**, floor 2487 → 2513; **no model call, $0.0000** |
 
 ### Part C — the binder (`PENDING.md` F4, a release gate) — AFTER E0 and E1
 
@@ -637,6 +640,60 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### ⚡ What Part E step E1a found (4 November 2026) — THE LAYOUT, AND FOUR THINGS IN IT
+
+**E1a is display only: no prompt, no stored word, no model call — $0.0000.** It put board 1's
+layout on the page E1 made. Four of its findings are defects that were already shipped, and one is
+a rule without which none of the colour reaches paper.
+
+**1. ⚡ THE READ-ONLY NOTE WAS DRAWN TWICE ON ONE REPORT AND NOT AT ALL ON THE OTHER.**
+`components/AuditReport.tsx` carried `<PausedNote banner={paused} />` on two consecutive lines, and
+**both copies were inside the checklist branch**. `git log -S` puts it at commit `10786ee` — the
+read-only step itself. On a paying account it is invisible (`PausedNote` returns null without a
+banner), which is why nobody saw it; on a paused one the checklist report showed the panel twice
+and **the agency report showed it not at all**, beside a disabled "Audit again" with nothing saying
+why. One per branch now, and `tests/unit/auditPage.test.ts` counts them.
+*Found by reading the file for the layout work, not by a test: `tests/unit/readOnlyUi.test.ts`
+asserts the component CONTAINS the note, which both a double and a missing one satisfy.*
+
+**2. "Not right" on the run had nowhere to put its answer on the checklist report.** The footer
+button sets `reasonFor` to `'run'` on both reports and only the agency branch rendered the box, so
+on a checklist report the press did nothing a person could see (`CLAUDE.md` §5 — never silent).
+
+**3. The footer broke four of its five actions mid-phrase in the Calendar's 720px drawer.**
+Photographed: *"Audit / again"*, *"Make a / checklist"*, *"Download the / files"*, *"Not / right"*.
+Board 1's footer is `white-space: nowrap` across an 852px page; this report is also a drawer. The
+five actions never break now, and the board's closing sentence — the one thing that is commentary —
+is drawn on the page only.
+
+**4. The document column held all 260px while the requirement was squeezed to 149.** `shrink` does
+nothing when the row never overflows: the requirement is `flex-1 min-w-0`, so it gives up its own
+width first. Measured at a 661px row. The column is capped at **28% of the row** now, which is a
+share and not a width, so every row in one report still lands on one edge.
+
+**5. ⚡ WITHOUT ONE CSS RULE, THE PICTURE DOES NOT REACH PAPER.** A browser drops background
+colours when it prints. The strip and the five word pills ARE backgrounds, so a printed report —
+the copy that goes to an inspector — would have carried ten identical white capsules.
+`app/globals.css` gains `.print-tint { -webkit-print-color-adjust: exact; print-color-adjust:
+exact; }`, scoped to that one class. **And a screenshot with the media emulated proves nothing
+here:** Chrome paints backgrounds in emulated print media either way. The honest instrument is
+`Page.printToPDF` with **`printBackground: false`** — the printer with "Background graphics" off —
+and the pills came out coloured (`shots/e1a-print-no-backgrounds.pdf`).
+
+**What the walk could not reach, said rather than implied:** no template run on staging carries a
+`kind = 'expected'` row — all 182 of them belong to agency runs — so **the new folded grey
+suggestions line on the checklist report was not walked**; it is held by its test and by board 1.
+The same is true of a checklist line with **no answer at all**: every line of every template run on
+staging has a word, so the dashed outline cell in the strip is drawn by no photograph here.
+
+**Where the brief and board 1 disagree, and the brief won:** the board's counts are plain dark text
+(`.counts b { color: var(--ink) }`); the brief says the palette is used by "the strip, the counts
+and the row pills", so the COUNT takes the word's ink and the words after it stay muted — which is
+how **board 3** draws the same five numbers on a checklist card. And board 1's meta line starts with
+the issuer and revision, which **is not a field**: `document_index_v` has no issuer or revision
+column and the scan writes one string, so the line starts at "audited" and the issuer stays inside
+the title. That split is §7's later prompt job, recorded at E1 and unchanged.
 
 ### ⚡ What Part E step E1 found (4 November 2026) — THE REPORT IS A PAGE
 

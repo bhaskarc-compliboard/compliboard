@@ -131,6 +131,21 @@ body {
 @media print {
   .no-print { display: none !important; }
 
+  /*
+   * THE AUDIT'S WORD PILLS AND ITS STRIP MUST SURVIVE THE PRINTER — E1a, 4 November 2026.
+   *
+   * A browser drops background colours on paper by default, to save ink. The audit report's word
+   * is a tinted pill and the strip above it is one cell per checklist line, so without this a
+   * printed report comes out with ten identical white capsules where its picture was — and the
+   * printed report is the one that goes to the inspector. `print-color-adjust: exact` is the
+   * standard property and `-webkit-` the one Chrome and Safari still read; both are written.
+   *
+   * Scoped to one class, on the elements that carry a tint, so nothing else on paper changes:
+   * `components/AuditReport.tsx`'s `Strip` and `FindingLine`. The counts row is `no-print` and
+   * prints as plain text (`WordCountsPrint`), because a ring and a hover are screen furniture.
+   */
+  .print-tint { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
   /* A drawer is `position: fixed` in a 720px column over the page. Printing it gave a clipped
      strip of the drawer AND the whole page behind it. `printDrawer()` stamps this class on
      <body> for the duration of the dialog: the page is hidden, and the drawer stops being a
