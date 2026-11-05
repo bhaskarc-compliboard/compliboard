@@ -61,6 +61,11 @@ All three must be true:
 | `/api/jobs/calendar-month` | `0 14 1 * *` — **the 1st at 14:00** | The monthly calendar email, one per company (Calendar step 11, `DECISIONS.md` §197). **It is the only job that mails every person at every company on a schedule nobody presses**, and the only one gated on the sending domain — see the calendar routine below |
 | `/api/jobs/quality` | `30 13 * * *` — 13:30 | **Night Watch** (`docs/GAPS-PLAN.md` decision 75, added 5 November 2026). Eleven read-only counts over the previous **Pacific** day across every company, written to `quality_reports` and mailed to the owner. **It calls no model and writes nothing but its own report.** See the drift note below |
 
+**THE PLAN AND THE CEILING, read from the dashboard and the docs page on 5 November 2026:** the project is on
+**Vercel Pro**, and vercel.com/docs/limits (dated **2026-08-03**) lists **Cron Jobs per project at 100 on every
+plan**. **Eight are in use.** *Older copies of that page said 40 on Pro, which is why the number is written here
+with the date of the page it came off rather than from memory — if it is ever load-bearing, read it again.*
+
 The summary job and the deleter ran at 03:00 and 03:30 UTC until 8 October.
 
 > ### ⚡ 13:30 UTC IS 05:30 PACIFIC IN WINTER AND 06:30 IN SUMMER. THE FILE CANNOT SAY OTHERWISE.

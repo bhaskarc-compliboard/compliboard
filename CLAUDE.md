@@ -429,7 +429,7 @@ once.
 - **Routes connect as the caller.** `requireCompany()` returns `authed.db`, a client built
   from the anon key plus the request's own token, so policies apply. It is built per
   request and must never be hoisted to module scope or cached — it carries one user's
-  token. Ten routes use it.
+  token. **Every data route uses it — 54 at 5 November 2026**, counted with `grep -rl 'requireCompany(' app/api --include='route.ts'`. *(Corrected at Night Watch's close-out: this line said "Ten routes use it", which was true when it was written and had been stale for some time. 67 files import from `lib/auth.ts` in all. The owner approved this one edit.)*
 - The service-role key is permitted only where no user session exists, or for a **named
   statement** with a comment explaining it. Today: `signup` (no session yet), `account`
   DELETE (`auth.admin.deleteUser`), `industries` (serves the pre-login signup page), and

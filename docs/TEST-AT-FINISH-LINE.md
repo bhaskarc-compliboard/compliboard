@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 11 · **Updated:** 4 November 2026: **question 2b answered on Haiku at E0c** — one quote per finding took the lost sections from 3 of 6 to 0 of 3 — and still counted on Opus, with what the sentence costs added to it. Version 10: 4 November 2026: **the audit's words updated at E0a** — two of its three questions changed because the owner's three sentences changed the defects, and a third was added about broken JSON, which is not about a word at all. Version 9: 4 November 2026: **the audit's words added** (Part E step E0) — the fifth word and the narrowing of `on_file` are measured on Haiku and carry two things only Opus can settle, both of them one prompt sentence. Version 8: 3 November 2026: **the Audits chat's part added** (A, D, E), by Part A step 6b. Its six keys were written from Cascade's own rows and committed before the first model call, and measured on `claude-sonnet-5-5` against the Documents brief on the same six questions. Version 7: 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 12 · **Updated:** 5 November 2026 at Night Watch's close-out (Part F, decision 75): **three real audit sections that parsed as invalid JSON are now the FIRST rows the Opus-vs-Sonnet comparison reads** — found by the job on its first run, diagnosed by reading only. **None is truncation:** all three are whole objects (braces balance 5/5, the fence closes, 563–670 output tokens) that `extractJsonText` handled and `JSON.parse` refused, because the model closed the `quote` string and kept writing outside it. Two of the three are the same malformed line in two separate runs. A second question is recorded beside them and is the owner's under §3.1: the audit call carries no JSON schema while the document scan does. **Version:** 11 · 4 November 2026: **question 2b answered on Haiku at E0c** — one quote per finding took the lost sections from 3 of 6 to 0 of 3 — and still counted on Opus, with what the sentence costs added to it. Version 10: 4 November 2026: **the audit's words updated at E0a** — two of its three questions changed because the owner's three sentences changed the defects, and a third was added about broken JSON, which is not about a word at all. Version 9: 4 November 2026: **the audit's words added** (Part E step E0) — the fifth word and the narrowing of `on_file` are measured on Haiku and carry two things only Opus can settle, both of them one prompt sentence. Version 8: 3 November 2026: **the Audits chat's part added** (A, D, E), by Part A step 6b. Its six keys were written from Cascade's own rows and committed before the first model call, and measured on `claude-sonnet-5-5` against the Documents brief on the same six questions. Version 7: 2 November 2026: **"Which model, per tier" added** as a shared item, by Part A step 4a-compare, with the Documents chat's question 2 on Sonnet 5.5 against Opus 5.5 as its first data point (`q2-A-1..3` against `q2-A-opus-1..3`). It gathers what HR's G, the Calendar's G and the Documents chat's D had each asked for separately. Version 6: 2 November 2026: **the Documents chat's part added** (A, D, E only — its page and routes are not built), by Part A step 4a-test. Its six keys were written from the readings before any run and have been measured on `claude-sonnet-5-5`, with and without everything the brief and the prompt give the model. Version 5: 19 October 2026: **the Calendar's part added** (A–J), by the Calendar chat at its close-out (`docs/CALENDAR-PLAN.md` step 15, `DECISIONS.md` §202). Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -58,6 +58,44 @@ questions, against keys written before the run.**
 **The rule for reading the result.** A tie on the key is a result, not a failure of the test — it says the key
 does not separate the two models and the tie-break has to be named out loud (hedging, dates carried, what the
 person can click). **A cost ratio is only an argument once the quality question has an answer.**
+
+### ⚡ THE FIRST ROWS THIS COMPARISON READS — three audit sections the model wrote as invalid JSON
+
+*Found by **Night Watch** on its first run, 5 November 2026 (`docs/GAPS-PLAN.md` decision 75, Part F). Job run
+`399713a7-0798-478f-b087-fc193d21040a`, Pacific day **2026-11-04**, count `sections_unparsed` = 3, all three on
+the Step 20 Card Walk company, all three on `claude-haiku-4-5`. **Read only — no model was called and nothing
+was fixed.** These are the first rows because they are the cheapest possible question for the comparison to
+answer: not "is the answer better", but **"does the expensive model produce JSON a parser accepts".***
+
+**NONE OF THE THREE IS TRUNCATION.** Every one is a **whole object that `extractJsonText` handled cleanly and
+`JSON.parse` then refused** — proved three ways: the raw text ends `...\n    }\n  ]\n}\n``` ` with the array, the
+object and the fence all closed; braces balance **5 open, 5 close** in all three; and output tokens were
+**600, 563 and 670**, nowhere near a ceiling. `extractJsonText` did not throw on any of them (1,832 → 1,820
+characters, i.e. it stripped the fence and handed back a complete object). `lib/auditRun.ts:487` is the parse;
+`:504` is what stored the raw text, which is the only reason this is answerable at all.
+
+**And the cause is one habit, on the `quote` field:** the model closes the string and keeps writing *outside* it.
+
+| # | `audit_sections.id` | Section | Cause | The line the parser stopped on | Last 80 characters of `raw_text` |
+|---|---|---|---|---|---|
+| 1 | `b7a7f43d-c50e-43d4-ad7f-344ee042763c` | A — Permits and plans | **Whole object, refused.** A closing quote, then prose appended outside the string | `"quote": "Permit number 03-0217-ST-01" with expiry 2028-08-31,` | `eview was due 2026-02-10 and is overdue.",\n      "basis": "read"\n    }\n  ]\n}\n``` ` |
+| 2 | `730212ce-6a22-4f5e-aba3-98d411bb3f40` | B — Records and training | **Whole object, refused.** TWO quotes joined with a bare `and` between them | `"quote": "Rohan Patel's last evaluation was 2 February 2023" and "Marcus Reed was certified and last evaluated on 19 September 2023",` | `done, record that it was missed and why.",\n      "basis": "read"\n    }\n  ]\n}\n``` ` |
+| 3 | `0a2b1fe9-69aa-4a94-bd92-bfb50e3cc98c` | B — Records and training | **Whole object, refused.** The same malformation as 2, byte for byte | `"quote": "Rohan Patel's last evaluation was 2 February 2023" and "Marcus Reed was certified and last evaluated on 19 September 2023",` | `r 2026; the week of 3 August is missing.",\n      "basis": "read"\n    }\n  ]\n}\n``` ` |
+
+**Rows 2 and 3 are the same malformed line, on the same checklist line, in two separate runs.** So this is
+reproducible rather than a one-off — which is what makes it worth a model comparison instead of a retry.
+
+**What the comparison asks of these three, and it is a yes/no:** re-run each section's own input on
+`claude-sonnet-5-5` and `claude-opus-5-5`, three runs each, **everything else unchanged**, and count how many
+of the nine parse. `audit_sections` stores `input_sha256` and `prompt_sha256`, so the input can be proved
+identical rather than assumed.
+
+**And whichever way it goes, there is a second question that is NOT a model question**, and it should be
+asked in the same sitting because it costs nothing to ask: *this is a shape a schema would have refused at the
+API boundary.* `AI_SCAN_STRUCTURED` already sends a JSON schema on the document-scan path (`lib/ai.ts:267`);
+the audit path does not. **Whether the audit's call should carry one too is `CLAUDE.md` §3.1 and the owner's** —
+it changes what is sent to the model. Night Watch will keep counting these either way, which is the point: the
+count is now the thing that tells you whether a fix worked.
 
 ### First data point — the Documents chat, question 2, 2 November 2026
 
