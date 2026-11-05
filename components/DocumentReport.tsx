@@ -223,7 +223,10 @@ function FilingLine({ row, folders, onMove, onChanged }: {
 }) {
   const [saving, setSaving] = useState(false)
   return (
-    <p className="no-print -mt-1 mb-4 flex items-center gap-1.5 text-[12px] text-gray-500">
+    /* *** INLINE SINCE E4a — it sits at the RIGHT of the one line under the title. *** It was a
+       line of its own between the title and the reading, which is one more line in the place
+       E4a is clearing. Its own margins go with it: the row that holds it owns the spacing. */
+    <span className="no-print flex shrink-0 items-center gap-1.5 text-[12px] text-gray-500">
       Filed in
       <select
         value={row.folder_id ?? ''}
@@ -237,7 +240,7 @@ function FilingLine({ row, folders, onMove, onChanged }: {
         <option value="">Nothing yet</option>
         {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
       </select>
-    </p>
+    </span>
   )
 }
 
@@ -477,15 +480,17 @@ export default function DocumentReport({
   // honest thing, because it is still the only reading there is — and this is the one line that tells
   // you a newer one is coming. Without it the drawer looks identical before and after pressing the
   // button, which is the defect this change is about wearing a different disguise.
-  const sub = [
-    kind ? (KIND_LABEL[kind] ?? kind) : null,
-    row.agencies?.join(' · ') || null,
-    row.site_name,
-    row.file_name,
-    row.document_status === 'reading' ? 'Reading…'
-      : row.document_status === 'uploaded' ? 'Queued to be read again'
-      : row.scanned_at ? `read ${fmt(row.scanned_at)}` : null,
-  ].filter(Boolean).join(' · ')
+  /**
+   * *** THE `sub` LINE IS GONE — E4a item 2. *** It said kind · agency · site · file name ·
+   * read date, and decision 72's line under it said the kind, the agency and the read date
+   * again. One line carries all of it now; the SITE is not lost, it is on the header of
+   * *What this document is*, where the rest of the six fields are.
+   *
+   * What the `sub` said and the status word does not: that a re-read is in flight. That is the
+   * first thing the one line says, below.
+   */
+  const inFlightWord = row.document_status === 'reading' ? 'Reading…'
+    : row.document_status === 'uploaded' ? 'Queued to be read again' : null
   // ON PAPER (board 10): one line of this document's own dates, absolute — its own date (DATE_LABEL,
   // e.g. "Revised 1 February 2021") and when it was read. Kind, agency and site print in the body.
   const printDates = [
@@ -542,7 +547,9 @@ export default function DocumentReport({
     {g.draft_text && (
       <div className="mt-2 rounded-lg bg-gray-50 p-3">
         <p className="text-[12px] text-gray-500">{DRAFT_NOTICE}</p>
-        <pre className="mt-2 whitespace-pre-wrap font-serif text-[15px] leading-relaxed text-gray-800">{g.draft_text}</pre>
+        {/* The drafted wording is still a block to copy — `whitespace-pre-wrap` in its own grey
+            box is what says so — but at the card's own size and face (E4a item 1). */}
+        <pre className="mt-2 whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-gray-800">{g.draft_text}</pre>
         <div className="mt-2 flex items-center gap-3 text-[12px]">
           <button onClick={() => { navigator.clipboard?.writeText(g.draft_text ?? ''); setCopied(g.id) }}
             className="text-[var(--green)]">{copied === g.id ? 'Copied' : 'Copy'}</button>
@@ -747,13 +754,22 @@ export default function DocumentReport({
   /* ── a document we could not read: the reason, the way forward, nothing else ── */
   if (row.display_status === 'could_not_read') {
     return (
-      <Drawer title={documentName(row.title)} sub={sub} company={companyName} onClose={onClose} footer={footer}
+      <Drawer title={documentName(row.title)} company={companyName} onClose={onClose} footer={footer}
         printType="Document report" printDates={printDates}
         topLine={topLine}>
         {deletePanel}
-        <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
-        <p className="text-[13px] text-[var(--amber)]">Could not read</p>
-        <p className="mt-3 font-serif text-[17px] leading-relaxed text-gray-800">
+        {/* The same one line, for the one view that has no cards. */}
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <p className="min-w-0 text-[13px] leading-relaxed">
+            <span className="text-[var(--amber)]">Could not read</span>
+            {kind && <span className="text-gray-500"> · {KIND_LABEL[kind] ?? kind}</span>}
+            {row.agencies?.length ? <span className="text-gray-500"> · {row.agencies.join(' · ')}</span> : null}
+            {row.scanned_at && <span className="text-gray-500"> · read {fmt(row.scanned_at)}</span>}
+            <span className="text-gray-400"> · {row.file_name}</span>
+          </p>
+          <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
+        </div>
+        <p className="text-[13px] leading-relaxed text-gray-700">
           {row.could_not_read_reason
             || 'We could not read this clearly enough to rely on.'}
         </p>
@@ -787,7 +803,7 @@ export default function DocumentReport({
   ]
 
   return (
-    <Drawer title={documentName(row.title)} sub={sub} company={companyName} onClose={onClose} footer={footer}
+    <Drawer title={documentName(row.title)} company={companyName} onClose={onClose} footer={footer}
         printType="Document report" printDates={printDates}
         topLine={topLine}>
       {deletePanel}
@@ -800,29 +816,44 @@ export default function DocumentReport({
 
       {/* THE HEADER AREA'S ONE CONTROL — filing, which is the only thing about a document that
           is the person's choice rather than the reading's finding. */}
-      <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
+      {/*
+        *** 1 ── ONE LINE UNDER THE TITLE, AND IT IS THE ONLY ONE — decision 72, narrowed at E4a
+        (the owner, 5 November 2026). ***
 
-      {/* *** 1 ── THE TITLE LINE — decision 72. The old Status card is gone: its word, the two
-             counts, the kind, the agency and the dates are one line under the title. *** */}
-      <p className="mb-1 text-[13px] leading-relaxed">
-        <span className={AMBER.has(row.display_status) ? 'text-[var(--amber)]' : 'text-gray-700'}>
-          {STATUS_WORD[row.display_status] ?? row.display_status}
-        </span>
-        {readGaps.length > 0 && (
-          <span className="text-gray-500"> · {readGaps.length} gap{readGaps.length === 1 ? '' : 's'} read from the page</span>
-        )}
-        {noteGaps.length > 0 && (
-          <span className="text-gray-500"> · {noteGaps.length} note{noteGaps.length === 1 ? '' : 's'}</span>
-        )}
-        {kind && <span className="text-gray-500"> · {KIND_LABEL[kind] ?? kind}</span>}
-        {row.agencies?.length ? <span className="text-gray-500"> · {row.agencies.join(' · ')}</span> : null}
-        {row.significant_date && (
-          <span className="text-gray-500">
-            {' '}· {((row.significant_date_kind && DATE_LABEL[row.significant_date_kind]) ?? 'Date').toLowerCase()} {fmt(row.significant_date)}
+        There were THREE things between the title and the reading: the Drawer's own `sub`
+        (kind · agency · site · file name · read date), the filing control on a line of its own,
+        and decision 72's status line — which repeated the kind, the agency and the read date
+        the `sub` had already said. **Nothing is said twice now**: one line carries the status,
+        the two counts, the kind, the agency, the date that matters, the read date and the file
+        name, and the filing control sits at its right. The Drawer is passed no `sub` at all.
+      */}
+      <div className="mb-3 flex items-start justify-between gap-4">
+        {/* `leading-[18px]`, not `leading-relaxed`: this is one line of facts, and where a long
+            agency label makes it wrap — "Oregon Department of Consumer and Business Services" is
+            50 characters — three tight rows read as one block and three loose ones read as a
+            paragraph. Measured at 1280, where the drawer is 720px wide. */}
+        <p className="min-w-0 text-[13px] leading-[18px]">
+          <span className={!inFlightWord && AMBER.has(row.display_status) ? 'text-[var(--amber)]' : 'text-gray-700'}>
+            {inFlightWord ?? STATUS_WORD[row.display_status] ?? row.display_status}
           </span>
-        )}
-        {row.scanned_at && <span className="text-gray-500"> · read {fmt(row.scanned_at)}</span>}
-      </p>
+          {readGaps.length > 0 && (
+            <span className="text-gray-500"> · {readGaps.length} gap{readGaps.length === 1 ? '' : 's'} read from the page</span>
+          )}
+          {noteGaps.length > 0 && (
+            <span className="text-gray-500"> · {noteGaps.length} note{noteGaps.length === 1 ? '' : 's'}</span>
+          )}
+          {kind && <span className="text-gray-500"> · {KIND_LABEL[kind] ?? kind}</span>}
+          {row.agencies?.length ? <span className="text-gray-500"> · {row.agencies.join(' · ')}</span> : null}
+          {row.significant_date && (
+            <span className="text-gray-500">
+              {' '}· {((row.significant_date_kind && DATE_LABEL[row.significant_date_kind]) ?? 'Date').toLowerCase()} {fmt(row.significant_date)}
+            </span>
+          )}
+          {row.scanned_at && <span className="text-gray-500"> · read {fmt(row.scanned_at)}</span>}
+          <span className="text-gray-400"> · {row.file_name}</span>
+        </p>
+        <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
+      </div>
 
       {/* *** THE ONE NOTE A SCANNED PDF CARRIES — PENDING D3, closed here. *** No text came out
           of the file, so nothing in this reading was checked against it. Said on the one kind of
@@ -833,7 +864,12 @@ export default function DocumentReport({
       {row.summary && (
         <Card tint={CARD_SITUATION} title={DOC_CARD_SAYS} open={cards.says}
           onToggle={() => flip('says')} controls="cb-doc-says">
-          <p className="py-1 font-serif text-[17px] leading-relaxed text-gray-800">{row.summary}</p>
+          {/* *** ONE FACE AND ONE SIZE IN EVERY CARD — E4a item 1. *** This was the reading
+              serif at 17px, which made the summary the largest thing in the drawer after the
+              title and a different voice from the findings under it. It is the gaps' own body
+              text: 13px, the UI face, the same leading. Nothing in the drawer is larger than
+              the title now. */}
+          <p className="py-1 text-[13px] leading-relaxed text-gray-700">{row.summary}</p>
         </Card>
       )}
 

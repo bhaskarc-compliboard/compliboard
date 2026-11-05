@@ -177,9 +177,37 @@ describe('the drawer is cards, folded, in one voice — decisions 72–74', () =
     assert.match(read('app/globals.css'), /@media print \{[\s\S]*\.fold-closed \{ display: block !important; \}/)
   })
 
+  test('⚡ ONE LINE UNDER THE TITLE, AND NOTHING IS SAID TWICE — E4a item 2', () => {
+    // There were three things between the title and the reading: the Drawer's own `sub`, the
+    // filing control on its own line, and decision 72's status line — which repeated the kind,
+    // the agency and the read date the `sub` had already said.
+    assert.ok(!DRAWER_CODE.includes('sub={sub}'), 'the drawer still passes a sub line')
+    assert.ok(!DRAWER_CODE.includes('const sub = ['), 'the sub line is still built')
+    // One row: the facts on the left, the filing control at the right.
+    assert.match(DRAWER_CODE, /<div className="mb-3 flex items-start justify-between gap-4">/)
+    assert.match(DRAWER_CODE, /<span className="text-gray-400"> · \{row\.file_name\}<\/span>/)
+    const row = DRAWER_CODE.slice(DRAWER_CODE.indexOf('flex items-start justify-between gap-4'))
+    assert.ok(row.indexOf('<FilingLine') < row.indexOf('</div>') + 200, 'the filing control is not on the line')
+    assert.ok(!DRAWER_CODE.includes('no-print -mt-1 mb-4 flex'), 'the filing line still has its own row')
+    // …and a re-read in flight is still said, which only the `sub` used to say.
+    assert.match(DRAWER_CODE, /const inFlightWord = row\.document_status === 'reading' \? 'Reading…'/)
+  })
+
+  test('⚡ ONE FACE AND ONE SIZE IN EVERY CARD BODY — E4a item 1', () => {
+    // "What it says" was the reading serif at 17px: the largest thing in the drawer after the
+    // title, and a different voice from the findings under it.
+    assert.match(DRAWER_CODE, /<p className="py-1 text-\[13px\] leading-relaxed text-gray-700">\{row\.summary\}<\/p>/)
+    assert.ok(!DRAWER_CODE.includes('font-serif'), 'the drawer still sets a second face')
+    // Nothing is larger than the Drawer's own title, which is `text-lg` (18px).
+    for (const m of DRAWER_CODE.match(/text-\[(\d+(?:\.\d+)?)px\]/g) ?? []) {
+      assert.ok(Number(m.replace(/\D+/g, '')) <= 18, `the drawer sets ${m}, larger than its title`)
+    }
+    assert.match(code(read('components/Drawer.tsx')), /<h2 className="text-lg font-medium leading-snug text-gray-900">/)
+  })
+
   test('the title line carries what the Status card used to, and that card is gone', () => {
     assert.ok(!DRAWER_CODE.includes('title="Status"'))
-    const line = DRAWER_CODE.slice(DRAWER_CODE.indexOf('STATUS_WORD[row.display_status]'))
+    const line = DRAWER_CODE.slice(DRAWER_CODE.indexOf('inFlightWord ?? STATUS_WORD'))
     assert.match(line.slice(0, 1200), /gap\{readGaps\.length === 1 \? '' : 's'\} read from the page/)
     assert.match(line.slice(0, 1200), /KIND_LABEL\[kind\] \?\? kind/)
     assert.match(line.slice(0, 1200), /row\.agencies\.join\(' · '\)/)

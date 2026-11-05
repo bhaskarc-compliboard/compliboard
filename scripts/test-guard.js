@@ -672,7 +672,14 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   printed report carried twelve), that "Read it again" is not offered while a document is
 //   queued or reading (W1), and decision 74's one voice: no "ours", no "inferred", no honesty
 //   line in the footer, and the scan note on the one kind of document it is true of (D3).
-const FLOOR = 2663
+//
+// 2663 -> 2665, 5 November 2026 (GAPS-PLAN Part E step E4a - the drawer's top). TWO, and one of
+//   them is a sweep rather than a string: every `text-[Npx]` in `components/DocumentReport.tsx`
+//   must be 18 or less, the Drawer's own title size. "What it says" was 17px reading serif, and
+//   a sweep is what stops the next large thing arriving rather than pinning the one that went.
+//   The other holds that the drawer passes NO `sub` and builds none: the top said the kind, the
+//   agency and the read date twice, and E4 is what left it that way.
+const FLOOR = 2665
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
