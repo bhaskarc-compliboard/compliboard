@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 30 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 31 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -20,6 +20,8 @@
 **Updated:** 4 November 2026 — **PART E STEP E0 DONE: the audit's words (decisions 47–49, 55–60 and W5).** **The audit has five words.** `on_file_gaps` — *"On file, gaps found"* — means a document answers the line AND what the document itself shows does not meet it in full; the four old words keep their meanings exactly. **The defect was never a wrong answer:** `prompts/audit-agency.ts` told the model *"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART"*, so four greens over four lists of gaps were the only honest thing it could say. **Measured, the owner's own checklist run on two trees on Haiku: 5 of 10 lines moved from `on_file` to `on_file_gaps` — A3, B2, B3 and B4 are exactly the four W4 named — and the run's sentence went from "4 things that need you" to "9 things that need you".** `documents_read` **12 → 11** (decision 49: a template run no longer reads its own template, excluded from BOTH lists); **handles at the person 1 → 0** (W5: `nameDocumentHandles` at save time, on `title`, `locator` and `what_to_do` and **never on `quote`**, tested on the six real leaking lines). **Decision 48 lives in the VIEW** — migration **093**, because *"the status the document would otherwise have"* is the six CASE arms underneath and only SQL can compute them — with `inferred_gap_count` appended last, since `calendar_v` depends on that view; migration **094** restates `audit_findings_word_check` whole. Both applied to staging and read back from the catalog. **It moves exactly one row on all of staging** (17 of 18 `gaps_found` scans have a gap read from the page) and nothing at all on the Clackamas company. `npm run check` exit 0, **2,460 tests**, floor 2414 → 2460; **46 new**. **Three things found and NOT fixed, because each needs one prompt sentence and that is the owner's (§3.1):** a permit expiring in 2028 now reads *"out of date"* (stable over two runs), the same pull puts the fifth word on a practice question, and one golden key is now out of date rather than wrong. §8 has all nine findings with their evidence. **E0 spent $0.9710 over 30 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0a DONE: the three sentences E0 found and did not make.** All three in, and the measurement says **two of three worked.** ⚡ **E0's own diagnosis was wrong, and that is the finding worth keeping:** `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]` and **never includes `SHAPE`**, so E0 named a sentence the model had never been shown as the cause of its own defect. Every rule about the five words has to be written **twice**; both shapes now carry both sentences, the file says so at `prompts/audit-agency.ts:303`–`:317`, and the test counts the copies. **The "out of date" regression is closed** — A1 is no longer `stale` in either run — but it lands on **`on_file`** with `what_to_do: null`, not `on_file_gaps`: whether *"with the renewal application due date noted"* is being under-read is a question about the line, not the word. **`cascade-template-12` 12/17 → 14/17 must**: the widened A5 key passes and C2 and C3 moved, **C1 — the line sentence (2) names — did not**. ⚡ **And the run found something neither of us was looking for: 3 of 6 sections were lost to broken JSON**, every one the same shape on the same line — two quotes joined with `and` inside one `"quote"` field, on B2, which is the fifth word's own two-shortfall case. The product says so honestly and throws a paid section away. Not fixed: a repair in `extractJsonText` or a prompt line about one quote per line are both §3.1. **E0a spent $0.2846 over 12 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0c DONE: one quote per finding** (the owner's brief called it E0b; `E0b` was already the boards row, so it is **E0c** in §5a). One sentence, in **both** shapes, counted by the test — *"One quote per finding. If two things in the document fall short, quote the one the word rests on and put the other in what_to_do, in your own words — never two quotes joined inside the quote field."* **It answers E0a's finding 4: 0 of 3 sections lost, from 3 of 6**, with `status = 'done'` and **`json_parsed = true`** read back from `audit_sections` on all three, and the regular expression that found every earlier failure matching nothing. **B2 — the line every failure happened on — now carries ONE quote**, the one the word rests on, and names the second operator in `what_to_do` in its own words; nothing was lost by quoting once. One run is not a proof and the finish line still counts it on Opus. **E0c spent $0.0824 over 4 Haiku calls.**
+**Updated:** 5 November 2026 — **E3: the answer and its source cards (decisions 66–69, boards committed).** One card per source — number, title, origin, and the verified quote in the reading italic when there is one — **no kind labels** (a quote means checked, no quote means the answer named it), an **amber left edge** on an audit finding, and the title opening **in place** where the section has a drawer, which until now only a summary's sources did. The refused-quote marker is **lifted out of the running text** into a grey note; **only one of decision 68's four lines could move**, and the other three are named in §8 rather than faked. The run-audit offer says **how many documents are on file** and what adding more would answer, with two buttons. **Measured under decision 66 — 36 runs on Sonnet 5.5, $3.3612: the packed context is byte-identical on all six questions and the keys match on five of six; the sixth is a key the fixture outgrew on 4 November, not a regression, and no Opus tie-break was needed.** A scorer bug of my own is recorded with it: six "must-not" hits were the model saying the opposite, and a check that cannot tell a denial from a claim fails the thing it tests. The follow-up box and action row did not move — identical measurements, 99 pixels in the paperclip's own box from a 0.4px scroll offset. `npm run check` exit 0, **2,643 tests**, floor 2625 → 2643.
+
 **Updated:** 5 November 2026 — **E2f: the summary shows its sources once, and nothing else about sources (decision 65).** No item in *What applies* or *Still to confirm* carries a source line of any kind, and the words *"No source cited in the conversation"* are removed from the product — a test strips the comments and fails if they are in the code of any file in `app/`, `lib/`, `components/` or `prompts/`. **Sources moves directly under What applies and opens with the summary**, each entry opening in place under decision 63 — which until now only the per-item lines did, so a source in that list could not be clicked into the product at all. *Not answered here* is removed, its data still stored. The order on screen and on paper is **Your situation · What applies · Sources · Still to confirm**. **It retires E2c and E2d's per-item sourcing and cancels E2e:** a summary proves itself with one source list; the ANSWER proves each sentence with its own cards. Three effects nothing asked for are in §8 — the source list is now everything the conversation rested on (the one non-display change, and the reason: a conversation whose items cite nothing would otherwise show no sources at all), the checklist drawer lost the words it borrowed, and `SourceShape` lost its dead `link` half. Walked with no model on all four sections that hold a summary, and a document source clicked and brought back. `npm run check` exit 0, **2,625 tests**, floor 2620 → 2625.
 
 **Updated:** 5 November 2026 — **E2d: a document the answer used is a source.** An answer that writes a packed document's own NAME — whole, in order, two inserted words forgiven, because a model reproducing a title writes *"…(old MSDS format) **for** Sulfuric Acid…"* where the title has an en dash — records that document, with no quote and no marker, exactly as E2b's attached file. **A phrase is not a name**, and that refusal is the whole safety of it. Plus the one widening E2c left open, the owner's call made: an item whose basis sits in an uncited paragraph inherits its ANSWER's sources, and the check says which of the two it was. **Measured on Haiku through the guard, two calls, $0.0374: the re-asked Audits answer recorded 4 document sources where it recorded 0, and the re-summary went 0 of 8 → 4 of 6 items with a source.** Three things it did not do are in §8, the first visible on the card and photographed: an item inheriting at the ANSWER level lists every document that answer rested on, so a forklift item carries the safety data sheet. The narrowing that fixes it is one rule in the same file, measured at **3 of 6 items carrying one right source instead of four**, and it is the owner's call because it changes what an item claims. `npm run check` exit 0, **2,620 tests**, floor 2610 → 2620.
@@ -398,6 +400,47 @@ words on the page; board 3 is E1's.*
     `components/ReportView.tsx`, `lib/summaryWords.ts`, `lib/summaryReport.ts` (`renderPlainText`
     and the source list), `lib/checklistView.ts`, `app/hr/HrWorkspace.tsx`.*
 
+66. **⚡ ANSWER QUALITY MUST NOT GO DOWN, AND THAT IS MEASURED, NOT ASSERTED** (the owner,
+    5 November 2026). **Before and after any change near the answer**, the same questions on
+    `claude-sonnet-5-5` against written keys — the 4a-test method, **three runs per question**.
+    A display change must change nothing the model is shown, **so the answers must match within
+    noise**. Only if Sonnet shows a difference, one run on `claude-opus-5-5` to tell the model
+    from the change. **Sonnet 5.5 is the comparison model from here; Opus is the tie-break.**
+    *Effect: every step on the answer's path, starting with E3. `scripts/probe-documents-answer.mjs`,
+    `scripts/probe-audits-answer.mjs`, `tests/golden/*/chat/keys.md`.*
+
+67. **A SOURCE IS A CARD, AND NO CARD CARRIES A KIND LABEL** (the owner, 5 November 2026;
+    `docs/answer-boards.html` draft 3). One card per source in a fixed grid (decision 59): the
+    **number**, the **title** — which is the link — the **origin line**, and **the verified quote
+    in the reading italic under it when there is one**. No pills: **a quote means checked, no
+    quote means the answer named it (E2d), and the origin says whose it is.** An **audit finding**
+    carries a thin **amber left edge**, the audit report's own colour for a shortfall, so it reads
+    as a different kind of thing without a word. The title **opens in place** where the section
+    has a drawer; a web page opens a new tab. *Effect: E3 — `components/AnswerBody.tsx`, and the
+    one prop through `components/AskScreen.tsx` to the three section pages.*
+
+68. **AN HONESTY LINE IS A NOTE, NOT A SENTENCE IN THE ANSWER** (the owner, 5 November 2026).
+    The refused-quote marker, the Queued sentence, "readings as of", "not audited yet" — drawn as
+    **a quiet grey note with a mark, after the body and before the offer**, never inside the
+    running text. **The model's words are unchanged; where they land on the screen changes.** If a
+    marker cannot be separated without a prompt change, say so and leave it.
+    *Built at E3, and only ONE of the four could move:* the refused-quote marker is the product's
+    own words, appended by `finishAnswer`, and it is lifted out and counted. **"not audited yet"
+    and "readings as of" are PROMPT RULES** (`prompts/audits-answer.ts` `AUDITS_NOT_AUDITED_YET`),
+    so the sentence on the screen is the model's own words in its own place and moving it is a
+    §3.1 change; **the Queued sentence is already drawn outside the answer** by the screen. Said
+    in §8 rather than faked.
+
+69. **THE RUN-AUDIT OFFER SAYS WHAT IT NEEDS** (the owner, 5 November 2026). *"Do you want me to
+    run the `<agency>` audit? It reads every `<agency>` document and gives you a line per finding.
+    `<n>` documents are on file for `<agency>`. The more you add first — `<the kinds that agency
+    usually asks for>` — the more the audit can answer."* Two buttons: **"Run the `<agency>`
+    audit"** (the press from 6b, unchanged) and **"Add a folder first"**. The count comes from the
+    same index the agency rows count from; the kinds from a short per-agency list read off what
+    the agency audits actually asked for. The template-audit offer says the same for the attached
+    file. *Effect: E3 — `lib/auditsWords.ts` (`runAuditOffer`, `AGENCY_ASKS`, `ADD_A_FOLDER_HREF`),
+    `app/audits/page.tsx`, `app/documents/page.tsx` + `lib/documentsWords.ts` (`?add=folder`).*
+
 **And the three that were decided at E0's map, on 4 November:** decision 48 lives **in the view**, not
 in code, because *"the status the document would otherwise have"* is the six CASE arms underneath the
 one being changed and only SQL can compute them (migration 093); **a record falls to Recorded, not
@@ -440,6 +483,23 @@ an item and of an authority row, which E2 copied as arithmetic** (`.sr .item` is
 and `.sr .auth` is `10px 0 6px`, so item to item is 19px and an authority row to its first item is
 15px). **Where the board and decision 62 disagree, the brief won:** the board draws *Still to
 confirm* blue and the decision says amber.
+
+### `docs/answer-boards.html` — the answer and its source cards (draft 3, 5 November 2026)
+
+**One board**, drawn in the Audits chat so every kind of source appears at once: an audit finding,
+a verified quote, a named document with no quote, and a web page. The same component draws the
+answer on **seven surfaces**, which is why one board settles all of them.
+
+Top to bottom: the headline in the reading face · the body with its small green citation marks ·
+**an honesty note** as a quiet grey box with a mark, never a sentence inside the answer · **the
+offer** as a green card with two buttons, saying how many documents are on file and what adding
+more would let the audit answer · **Sources**, one card each in a fixed grid · then the follow-up
+box and the action row, exactly where they are today.
+
+**Draft 3 is where the kind pills went.** Drafts 1 and 2 put a label on every card — QUOTE,
+NAMED, WEB, FINDING. The owner took them off: a card with a quote under it is checked, a card
+without one is a reference, and the origin line already says whose it is. The CSS still carries
+the `.k-*` classes; nothing in the drawn board uses them.
 
 ### `docs/audit-report-boards.html` — the audit report (draft 2, 4 November 2026)
 
@@ -557,6 +617,7 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 | E2f | **THE SUMMARY SHOWS ITS SOURCES ONCE** (decision 65, the owner, 5 November) — no item carries a source line of any kind and *"No source cited in the conversation"* is removed from the product; **Sources moves under What applies and opens**, each entry opening in place; *Not answered here* is removed; the order is *Your situation · What applies · Sources · Still to confirm*, on screen and on paper | `components/ReportView.tsx` (the order, the card, `SourceShape` loses its `link` half) · `lib/summaryWords.ts` (`NO_SOURCE` and the three unanswered words go) · `lib/summaryReport.ts` (`renderPlainText`, and the source list is now everything the conversation rested on) · `lib/checklistView.ts` · `app/hr/HrWorkspace.tsx` | the **six** renderers, and the **checklist drawer** on the Workspace, which borrowed the removed words | **done 5 Nov** — no model. Walked on the four sections that hold a summary (Workspace, Audits, Documents, Calendar) and a document source clicked and brought back; HR has no stored summary on staging. `npm run check` exit 0, **2,625 tests**, floor 2620 → 2625 |
 | ~~E2e~~ | **CANCELLED** (the owner, 5 November), replaced by E2f: it would have gone on refining which source sits under which item, and decision 65 takes the per-item line away instead | — | — | **cancelled, never built** |
 | E3 | **The answer body and the source cards** | `components/AnswerBody.tsx`, `lib/ask/passages.ts` | `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/ConversationDrawer.tsx`, `components/AskScreen.tsx` — **and through AskScreen, the Calendar, Documents and Audits**. Seven surfaces in all | not started |
+| E3 | **THE ANSWER AND ITS SOURCE CARDS** (decisions 66–69, the owner, 5 November; `docs/answer-boards.html` draft 3) — one card per source, no kind labels, an amber edge on an audit finding, the title opening in place; the refused-quote marker lifted out of the running text into a grey note; and the run-audit offer saying **how many documents are on file** and what adding more would answer, with two buttons | `components/AnswerBody.tsx` (the cards, the note) · `lib/askWords.ts` **(new, pure — a browser file may not reach `lib/ask/passages.ts`)** · `components/AskScreen.tsx` (one forwarded prop) · `lib/auditsWords.ts` (`runAuditOffer`, `AGENCY_ASKS`) · `app/audits/page.tsx` (the card) · `app/documents/page.tsx` + `lib/documentsWords.ts` (`?add=folder`) · the three section pages name their swap handler once | **all seven surfaces** that draw an answer: the Workspace's chat and summary drawer, HR's chat and drawer, the shared Ask screen (Calendar, Documents, Audits) and the shared conversation drawer | **done 5 Nov** — **measured under decision 66, 36 Sonnet 5.5 runs, $3.3612**: the packed context is **byte-identical** on all six questions and the key scores match on five of six, the sixth explained by a key the fixture has outgrown. **No Opus tie-break: Sonnet showed no difference.** The follow-up box and action row did not move — measured identical, 99 differing pixels in the paperclip's own 13×14 box from a 0.4px scroll offset. `npm run check` exit 0, **2,643 tests**, floor 2625 → 2643 |
 | E4 | **The document report drawer and the Documents page** — W1's progress line included | `components/DocumentReport.tsx`, `app/documents/page.tsx` (the banner `:979`–`:1017`, the controls `:1019`, the row words `lib/documentStatus.ts:86`–`:95`) | `DocumentReport` is rendered by **`app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx` and `app/documents/page.tsx`** | not started |
 | E5 | ~~The Enter-after-pick notice (W3)~~ **— done at B0, `43b304e`** — and **"Audit again" on a By template row**, which still waits for the row to say whether the template file still exists | `app/audits/page.tsx`'s By template group | Audits only | not started |
 
@@ -751,6 +812,88 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### ⚡ What Part E step E3 did and found (5 November 2026)
+
+**E3 is a display step with a measure attached, and the measure is the point:** decision 66 says
+answer quality must not go down, so the same six questions ran three times each on
+`claude-sonnet-5-5` **before** the change and three times each **after** — 36 runs, **$3.3612**.
+
+**1. A source is a card** (decision 67): number, title, origin line, and the verified quote in the
+reading italic when there is one. **No kind labels** — a quote means checked, no quote means the
+answer named it, the origin says whose it is. An audit finding carries a thin amber left edge.
+Photographed on all four sections that hold answers: `shots/e3-docs-quote.png` (one quoted card
+above two named ones), `shots/e3-audits-offer.png` (the finding's amber edge),
+`shots/e3-workspace.png` (web cards, title + host), `shots/e3-calendar.png` (a calendar passage
+with its quote).
+
+**2. The refused-quote marker left the running text** (decision 68) and is a grey note with a mark
+after the body. **Only one of the four lines decision 68 names could move, and the other three are
+named rather than faked:** *"not audited yet"* and *"readings as of"* are PROMPT RULES, so the
+sentence on screen is the model's own words in its own place — moving them is §3.1, which E3 is
+not — and the Queued sentence is already drawn outside the answer by the screen.
+
+**3. The offer says what it needs** (decision 69). Photographed: *"Do you want me to run the
+Oregon OSHA audit? It reads every Oregon OSHA document and gives you a line per finding. **9
+documents are on file for Oregon OSHA.** The more you add first — your written programs, training
+and evaluation records, inspection logs and safety data sheets — the more the audit can answer."*
+with **Run the Oregon OSHA audit** and **Add a folder first**.
+
+#### The measure — 36 runs on Sonnet 5.5, and what it shows
+
+| | before | after |
+|---|---|---|
+| packed context, all six questions | 19641 · 23517 · 23632 · 58024 · 58228 · 58070 | **identical, every one** |
+| key hits, d1 / d2 / d4 (3 runs each) | 4,4,4 of 4 · 6,6,6 of 6 · 2,2,2 of 2 | **4,4,4 · 6,6,6 · 2,2,2** |
+| key hits, a1 / a4 / a6 | 4,4,4 of 5 · 4,4,4 of 4 · 4,4,4 of 4 | 4,4,4 · **4,4,3** · 4,4,4 |
+| must-nots fired | none | none |
+| cost | $1.6841 | $1.6771 |
+
+**The identical context line is the whole proof:** the only file on the model's path that changed
+is `lib/ask/passages.ts`, and the change is a constant moved to `lib/askWords.ts` and re-exported
+— the same characters. **No Opus tie-break was needed.**
+
+**⚡ AND THE ONE MOVED SCORE IS A STALE KEY, NOT A REGRESSION.** `a4` is *"Are we ready for an
+Oregon OSHA inspection?"*, whose key (written 3 November) says **Oregon OSHA has never been
+audited**. Read off `audit_runs`: Cascade gained an **Oregon OSHA agency run on 4 November at
+19:04**, with a fire marshal run and another DEQ run beside it. The after-run says *"The Oregon
+OSHA audit of November 4, 2026…"*, which is **correct about the data and wrong against the key**.
+The audits keys need re-writing against the fixture as it now is; until then a4 cannot be scored
+as written.
+
+```sql
+select id, kind, agency_label, status, created_at from audit_runs
+ where company_id='95f7167d-1d3f-4004-bb44-dde80d0d4262' order by created_at desc limit 6;
+-- Oregon OSHA · agency · done · 2026-11-04 19:04:55+00
+```
+
+**And a scorer bug of my own, caught by reading the sentences rather than the counts.** The first
+pass called six answers must-not violations — *"says the permit is expired"*, *"gives a verdict"*.
+Every one was the model saying the OPPOSITE: *"It does not mean the permit has expired"*, *"I
+can't say you're ready or not"*. The scorer now skips a sentence carrying a negation, and the
+corrected count is **zero violations on either side**. A check that cannot tell a denial from a
+claim is a check that fails the thing it is testing (§9a).
+
+#### The follow-up box and the action row did not move
+
+Measured on the Documents chat at 1280 on two servers — 3997 a worktree at HEAD, 3998 this tree:
+**composer box `319–1171 (852)`, top `y=577`, bottom `y=699`; attach line `x=319 y=709`, pin 13px,
+gap 6px — identical on both.** The pixel diff over `y 560..789` finds **99 differing pixels, all
+inside the paperclip's own 13×14 box** at `x 319..331, y 711..724`, with the words beside it
+unchanged: the thread above is a different height, so the scrolled page lands 0.4px off and an SVG
+stroke anti-aliases differently. Nothing moved.
+
+#### Two more things, neither of them E3's doing
+
+**(a) The Haiku walk opened with a verdict.** The live Audits answer photographed for the offer
+begins *"No. The most recent Oregon OSHA audit…"* — and key 4's sharpest must-not is **never
+answer yes or no**. The Sonnet runs did not do this in six runs; Haiku did it on the first. A
+model-quality finding for the Opus comparison, not a display one.
+
+**(b) A junk title still reaches a card.** `shots/e3-workspace.png` card 2 reads **"1 PHMSA"**,
+from `displaySource`'s fallback. It was a junk title in a row before E3 and is a junk title in a
+card now; the card makes it more visible, which is an argument for looking at `lib/sourceTitle.ts`
+again rather than against the card.
 
 ### ⚡ What Part E step E2f did and found (5 November 2026)
 

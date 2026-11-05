@@ -29,6 +29,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import type React from 'react'
 import { authHeaders } from '@/lib/supabase'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
+import type { SourceTarget } from '@/lib/sourceTitle'
 import { AttachControl } from '@/components/AttachControl'
 import { PRIMARY } from '@/components/buttonStyles'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
@@ -144,7 +145,7 @@ const Clip = () => (
 export function AskScreen({
   section, endpoints, words, examples, companyName, paused,
   topicId, initial, onTopicId, onChanged, onSummarise, summaryBusy,
-  attach, thinkingLine, afterAnswer,
+  attach, thinkingLine, afterAnswer, onOpenSource,
   canMakeChecklist = false, onMakeChecklist, checklistBusy = false, checklistReadyId = null, beforeAsk,
 }: {
   section: TopicSection
@@ -178,6 +179,13 @@ export function AskScreen({
   thinkingLine: (x: Exchange) => string
   /** The one part of an answer that is not prose: a section's own offers, under the answer. */
   afterAnswer?: (x: Exchange, patch: (p: Partial<Exchange>) => void) => React.ReactNode
+  /**
+   * *** A SOURCE CARD'S TITLE OPENS IN PLACE — decision 67, forwarded and nothing more. ***
+   * Handed straight to `SourceList`, for the reason `components/ConversationDrawer.tsx` forwards
+   * the same thing: the swap belongs to the PAGE, which already holds the reading drawer and the
+   * folder list for its own documents. A section that passes nothing keeps today's links.
+   */
+  onOpenSource?: (target: SourceTarget) => void
   /**
    * *** DECISION 8's FIRST ACTION, WIRED AT PART A STEP 5. ***
    *
@@ -504,7 +512,7 @@ export function AskScreen({
           {x.text && (<>
             <AnswerBody text={x.text} sources={x.sources} />
             {afterAnswer?.(x, (p) => patch(x.id, p))}
-            <div className="sources-print"><SourceList sources={x.sources} /></div>
+            <div className="sources-print"><SourceList sources={x.sources} onOpenSource={onOpenSource} /></div>
           </>)}
           {x.phase === 'refused' && <p className="text-[14px] text-gray-600">{x.refusal}</p>}
           {x.phase === 'stopped_early' && (

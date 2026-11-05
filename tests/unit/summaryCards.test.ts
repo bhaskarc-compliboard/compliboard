@@ -201,7 +201,9 @@ describe('the swap, where there is a drawer to swap', () => {
       ['app/compliance/page.tsx', /← Back to the summary/],
     ] as Array<[string, RegExp]>) {
       const src = code(read(file))
-      assert.match(src, /onOpenSource=\{\(t\) => \{/, `${file} does not take a source`)
+      // E3 named the handler on the three section pages — one definition for the summary's cards
+      // AND the answer's — so the match is the handler, however it is passed.
+      assert.match(src, /onOpenSource=\{(\(t\) => \{|openSourceInPlace\})/, `${file} does not take a source`)
       assert.match(src, /t\.kind === 'document'/, `${file} does not open a document in place`)
       assert.match(src, /window\.location\.href = `\/audits\?run=\$\{t\.id\}`/, `${file} does not open an audit`)
       assert.match(src, back, `${file} has no way back to the summary`)
@@ -492,7 +494,9 @@ describe('an attached file is a source because it was attached — E2b item 5', 
   test('the card is drawn with no quote, by the branch that already draws ours', () => {
     const body = code(read('components/AnswerBody.tsx'))
     assert.match(body, /const isOurs = \(s\?: AnswerSource\) => s\?\.kind === 'handbook' \|\| s\?\.kind === 'passage'/)
-    assert.match(body, /\{s\.quote && <span/, 'a source with no quote must still draw')
+    // E3 made the row a card; the quote is still the one part that is drawn only when there is
+    // one, which is what tells a checked source from a named one (decision 67).
+    assert.match(body, /\{s\.quote && \(/, 'a source with no quote must still draw')
   })
 
   test('checkQuote is untouched: a paraphrase is still refused', () => {

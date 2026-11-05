@@ -99,8 +99,14 @@ const MARKER = /\[(\d{1,2})\]|\s?\[([A-Z]{1,2}\d{1,3})(?::\s*["“]([^"”\]]*)[
 /** A plain quoted passage: checked too, because a model that stops writing markers must not stop being checked. */
 const PLAIN_QUOTE = /["“]([^"”\n]{1,800}?)["”]/g
 
-/** The words a quote found in nothing carries. The product's own voice, never a code. */
-export const NOT_IN_WHAT_WE_HAVE = '(we could not find these words in what we have on file)'
+/**
+ * The words a quote found in nothing carries. The product's own voice, never a code.
+ * *** IT MOVED TO `lib/askWords.ts` AT E3 and is re-exported here, so every caller is unchanged. ***
+ * `components/AnswerBody.tsx` draws it as a note now (decision 68) and cannot import this file:
+ * `lib/documentScan.ts`, below, is server-only (`tests/unit/clientImports.test.ts`).
+ */
+import { NOT_IN_WHAT_WE_HAVE } from '../askWords.ts'
+export { NOT_IN_WHAT_WE_HAVE }
 
 /** Where a normalised quote starts in the raw text — HR's `normalisedWithMap`, copied. */
 export function normalisedWithMap(raw: string): { norm: string; at: number[] } {

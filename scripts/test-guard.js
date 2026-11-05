@@ -627,7 +627,27 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   card JSX, not the import list), that an item draws its name and its sentence and nothing
 //   else, and that the source list is every source the CONVERSATION rested on rather than only
 //   the ones the items cited.
-const FLOOR = 2625
+//
+// 2625 -> 2643, 5 November 2026 (GAPS-PLAN Part E step E3 - the answer and its source cards).
+//   EIGHTEEN, in a new file, and the half that matters is RUN rather than read, because E3 put
+//   two rules in pure files for exactly that reason:
+//
+//   `splitHonesty` (lib/askWords.ts) lifts the refused-quote marker out of an answer and counts
+//   it. The test proves the body comes back WITHOUT the marker and with not another character
+//   changed, that two markers count as two, and that an answer carrying none is returned
+//   identical - decision 68's whole claim is "the model's words are unchanged; where they land
+//   changes", and that is the only way to hold it.
+//
+//   `runAuditOffer` (lib/auditsWords.ts) is decision 69's four parts. One test matches the
+//   per-agency kinds against the REAL labels read off company_labels on staging - "Oregon OSHA",
+//   "U.S. OSHA", "OSHA", "Oregon Department of Environmental Quality", "Local fire authority" -
+//   because a label is the company's own words and an exact match would have served one of them.
+//
+//   Of the read tests, two earn their place: no kind pill survives anywhere in the card (draft 3
+//   took them off and a copy would put one back), and "Add a folder first" CANNOT open the
+//   picker - the page says in its own comment that a file dialog needs a user gesture, and the
+//   test holds that sentence there so nobody replaces it with a .click() that silently fails.
+const FLOOR = 2643
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -65,6 +65,7 @@ import { Tabs } from '@/components/Tabs'
 import { Empty } from '@/components/Empty'
 import { ConversationList } from '@/components/ConversationList'
 import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import type { SourceTarget } from '@/lib/sourceTitle'
 import { PLAIN_AS_OF } from '@/lib/summaryWords'
 import { AskScreen, useAskConversations } from '@/components/AskScreen'
 import { ConversationDrawer } from '@/components/ConversationDrawer'
@@ -75,6 +76,7 @@ import {
   DOCUMENTS_EMPTY_CONVERSATIONS, DOCUMENTS_EMPTY_CONVERSATIONS_TITLE, DOCUMENTS_NOT_SUMMARISED,
   DOCUMENTS_ATTACH_LABEL, DOCUMENTS_LINK_MISSED, documentsThinkingLine,
   DOCUMENTS_NOTHING_YET_BEFORE, DOCUMENTS_NOTHING_YET_LINK, DOCUMENTS_NOTHING_YET_AFTER,
+  ADD_FOLDER_HINT,
 } from '@/lib/documentsWords'
 import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord, notesWord } from '@/lib/documentStatus'
 import { ACCEPTED_FILE_TYPES, refusalFor, skippedLine, skippedSentences } from '@/lib/acceptedFiles'
@@ -234,6 +236,19 @@ function DocumentsPageContent() {
    */
   const searchParams = useSearchParams()
   const addHint = (searchParams.get('add') ?? '').trim().slice(0, 200)
+  /**
+   * *** `?add=folder` — WHERE "Add a folder first" LANDS (decision 69, 5 November 2026). ***
+   *
+   * The Audits chat's offer card sends a person here to add an audit's worth of files before the
+   * audit runs. **It cannot open the picker for them, and that is a browser rule, not a gap in
+   * the product:** a file dialog opens only inside a real user gesture, so a `.click()` on mount
+   * is refused by Chrome and would leave the person looking at a page that promised a dialog.
+   *
+   * So the link does the two things a link can: it opens the Documents tab, and it puts the
+   * folder control one keystroke away — the hint says what to do and the control takes the focus
+   * ring. One press of Enter, or one click, and the person is in their own folders.
+   */
+  const wantsFolder = addHint === 'folder'
   /**
    * *** WHERE THE PERSON CAME FROM, SO THEY CAN GO BACK — Calendar step 10b, ADDITIVE. ***
    *
@@ -413,6 +428,18 @@ function DocumentsPageContent() {
     if (v === null) p.delete(k); else p.set(k, v)
     router.replace(`/documents${p.toString() ? `?${p}` : ''}`, { scroll: false })
   }
+  /**
+   * *** WHERE A SOURCE OF OURS OPENS — decision 63 for a summary, decision 67 for an answer. ***
+   * One definition, used by the conversation drawer's report AND by the cards under an answer:
+   * two copies of a swap is two behaviours waiting to differ.
+   */
+  const openSourceInPlace = (t: SourceTarget) => {
+    if (t.kind === 'document') { setDocFromSummary(true); setOpenDoc(t.id) }
+    else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+    // A date lives on the Calendar, which opens it from the address (E2b item 4).
+    else if (t.kind === 'date') window.location.href = `/calendar?date=${t.id}`
+  }
+
   const selectTab = (k: Tab) => setParam('tab', k === 'ask' ? null : k)
 
   /**
@@ -956,6 +983,7 @@ function DocumentsPageContent() {
               key={conv.askKey}
               section="documents"
               endpoints={{ answer: '/api/documents/answer' }}
+              onOpenSource={openSourceInPlace}
               words={{
                 composerHint: DOCUMENTS_COMPOSER_HINT,
                 firstVisitButton: DOCUMENTS_FIRST_VISIT_BUTTON,
@@ -1173,18 +1201,24 @@ function DocumentsPageContent() {
                 ← Back to where you were
               </a>
             )}
-            {addHint && (
+            {addHint && !wantsFolder && (
               <span className="max-w-[300px] truncate text-[12px] text-gray-600" title={addHint}>
                 Add: {addHint}
               </span>
             )}
+            {wantsFolder && <span className="text-[12px] text-gray-600">{ADD_FOLDER_HINT}</span>}
             {progress && <span className="text-[12px] text-gray-500">{progress}</span>}
             <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
               className="rounded-md bg-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-white hover:opacity-90 disabled:opacity-50">
               {uploading ? 'Working…' : 'Add files'}
             </button>
             <button onClick={() => folderInputRef.current?.click()} disabled={uploading}
-              className="text-[14px] text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+              // `autoFocus` only when the person was SENT here for a folder: focus that moves on
+              // an ordinary visit is focus taken from whatever they were doing.
+              autoFocus={wantsFolder}
+              className={`text-[14px] underline disabled:text-gray-300 ${wantsFolder
+                ? 'rounded-sm text-[var(--green-ink)] outline outline-2 outline-offset-4 outline-[var(--green)]'
+                : 'text-gray-600 hover:text-gray-900'}`}>
               Add a folder
             </button>
           </div>
@@ -1381,12 +1415,7 @@ function DocumentsPageContent() {
           onSummarise={conv.summarise}
           summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
           onDeleted={() => { conv.setConvDrawer(null); void reloadTopics() }}
-          onOpenSource={(t) => {
-            if (t.kind === 'document') { setDocFromSummary(true); setOpenDoc(t.id) }
-            else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
-            // A date lives on the Calendar, which opens it from the address (E2b item 4).
-            else if (t.kind === 'date') window.location.href = `/calendar?date=${t.id}`
-          }}
+          onOpenSource={openSourceInPlace}
         />
         </div>
       )}

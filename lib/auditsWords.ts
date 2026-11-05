@@ -117,6 +117,74 @@ export const runAuditCardWords = (what: { agency: string | null; fileName: strin
 }
 
 /**
+ * *** WHAT AN AGENCY'S AUDIT ASKS FOR — decision 69, 5 November 2026 (the owner). ***
+ *
+ * The offer used to be one question. It is a card now, and it says **what it needs**: how many
+ * documents are on file for that agency, and what adding more would let the audit answer — because
+ * an audit against four documents is an audit that says "nothing on file" four times, and the
+ * person could have fixed that in one drag of a folder.
+ *
+ * *** MATCHED ON A KEYWORD, NEVER ON THE WHOLE LABEL, AND THE LABELS ARE WHY. *** An agency label
+ * is the company's own words, read off `company_labels` on staging: "Oregon OSHA", "U.S. OSHA",
+ * "OSHA", "Oregon DEQ", "Oregon Department of Environmental Quality", "EPA", "Local fire
+ * authority", "Oregon State Fire Marshal", "DOT PHMSA". Four keywords cover the four the owner
+ * named; anything else gets the general line, which is true of every agency.
+ *
+ * **The kinds are read off what the audits actually asked for** — the `nothing_on_file` findings
+ * on staging, by section: OSHA asked for written programs, training and evaluation records,
+ * inspection logs and safety data sheets; DEQ for the permit and its renewal, monitoring logs,
+ * the annual report and the chemical inventory; fire for extinguisher maintenance and inspection
+ * records, the evacuation plan and training.
+ */
+export const AGENCY_ASKS: ReadonlyArray<{ match: RegExp; kinds: string }> = [
+  { match: /osha|safety and health/i,
+    kinds: 'your written programs, training and evaluation records, inspection logs and safety data sheets' },
+  { match: /\bdeq\b|environmental quality|ecology/i,
+    kinds: 'your permit and its renewal, the monitoring and inspection logs it sets, and your annual report' },
+  { match: /\bepa\b|environmental protection/i,
+    kinds: 'your waste manifests, the chemical inventory you report, and your spill plan' },
+  { match: /fire|marshal/i,
+    kinds: 'extinguisher maintenance and inspection records, your evacuation plan, and training records' },
+]
+
+/** True of every agency, and said when the label matches none of the four. */
+export const AGENCY_ASKS_GENERAL = 'the permits, records and written programs that agency asks for'
+/** The same, for a checklist a person attached: it is the FILE that asks, not an agency. */
+export const AGENCY_ASKS_FILE = 'the permits, records and written programs the file asks about'
+
+export const agencyAsks = (agency: string | null): string =>
+  AGENCY_ASKS.find((a) => a.match.test(String(agency ?? '')))?.kinds ?? AGENCY_ASKS_GENERAL
+
+/** "7 documents are on file for Oregon OSHA." — the same index the agency rows count from. */
+export const documentsOnFile = (n: number, agency: string | null): string =>
+  `${n === 0 ? 'No documents are' : n === 1 ? '1 document is' : `${n} documents are`} on file`
+  + `${agency && agency !== 'all' ? ` for ${agency}` : ''}.`
+
+/**
+ * THE OFFER CARD'S THREE PARTS — decision 69. The question, then what it reads and what it gives
+ * back, then the count and what adding more would buy. Two buttons: run it, or add a folder first.
+ */
+export function runAuditOffer(what: { agency: string | null; fileName: string | null; documents: number }): {
+  question: string; reads: string; onFile: string; run: string; add: string
+} {
+  const forFile = Boolean(what.fileName)
+  return {
+    question: runAuditCardWords(what),
+    reads: forFile
+      ? 'It reads every line of the file against your documents and gives you a line per finding.'
+      : `It reads every ${what.agency === 'all' ? '' : `${what.agency} `}document and gives you a line per finding.`.replace('  ', ' '),
+    onFile: `${documentsOnFile(what.documents, forFile ? null : what.agency)} The more you add first — `
+      + `${forFile ? AGENCY_ASKS_FILE : agencyAsks(what.agency)} — the more the audit can answer.`,
+    run: forFile ? `Audit against ${what.fileName}`
+      : what.agency === 'all' ? 'Audit against every agency' : `Run the ${what.agency} audit`,
+    add: 'Add a folder first',
+  }
+}
+
+/** Where "Add a folder first" goes: the Documents tab, with the folder control waiting. */
+export const ADD_A_FOLDER_HREF = '/documents?tab=documents&add=folder'
+
+/**
  * A LINK THAT POINTED AT AN AUDIT WE NO LONGER HAVE — Documents' `DOCUMENTS_LINK_MISSED`, applied
  * to `?run=`. Deleted, or another company's, which simply is not in this page's rows because RLS
  * decided that: both say the same thing and neither says which (`CLAUDE.md` §3.6, 404-not-403).

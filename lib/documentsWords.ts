@@ -87,3 +87,15 @@ export const DOCUMENTS_LOOKING_IT_UP = (searches: number) =>
   `Looking it up${searches > 1 ? ` (${searches} searches)` : ''}…`
 export const documentsThinkingLine = (x: Exchange): string =>
   x.phase === 'searching' ? DOCUMENTS_LOOKING_IT_UP(x.searches) : DOCUMENTS_READING_LINE
+
+/**
+ * *** WHAT THE AUDITS CHAT'S "Add a folder first" LANDS ON — decision 69, 5 November 2026. ***
+ *
+ * `/documents?tab=documents&add=folder` opens this tab with the folder control focused. The
+ * sentence is here and not on the Audits page because it is what DOCUMENTS says when somebody
+ * arrives for a folder; the offer that sent them is `lib/auditsWords.ts`.
+ *
+ * It does not say "the picker is open", because it is not: a file dialog needs a real user
+ * gesture and a `.click()` on mount is refused by the browser (`app/documents/page.tsx`).
+ */
+export const ADD_FOLDER_HINT = 'Add the folder for your audit — press "Add a folder".'

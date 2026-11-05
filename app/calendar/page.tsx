@@ -73,6 +73,7 @@ import {
 import { AskScreen, useAskConversations } from '@/components/AskScreen'
 import { ConversationDrawer } from '@/components/ConversationDrawer'
 import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import type { SourceTarget } from '@/lib/sourceTitle'
 import { PLAIN_AS_OF } from '@/lib/summaryWords'
 import { ConversationList } from '@/components/ConversationList'
 import { type DocumentHead, NEEDS_WHEN_ID } from '@/lib/calendarQueue'
@@ -326,6 +327,19 @@ function Calendar() {
     if (v === null) p.delete(k); else p.set(k, v)
     router.replace(`/calendar${p.toString() ? `?${p}` : ''}`, { scroll: false })
   }
+  /**
+   * *** WHERE A SOURCE OF OURS OPENS — decision 63 for a summary, decision 67 for an answer. ***
+   * One definition, used by the conversation drawer's report AND by the cards under an answer:
+   * two copies of a swap is two behaviours waiting to differ.
+   */
+  const openSourceInPlace = (t: SourceTarget) => {
+    if (t.kind === 'document') { setDocFromSummary(true); setOpenDocId(t.id) }
+    else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+    // A DATE opens this page's own drawer — `openDate` is the one way in, so a source
+    // and a click on the month grid land in exactly the same state (E2b item 4).
+    else if (t.kind === 'date') openDate(t.id)
+  }
+
   const selectTab = (k: Tab) => setParam('tab', k === 'ask' ? null : k)
 
   /**
@@ -603,6 +617,7 @@ function Calendar() {
               key={conv.askKey}
               section="calendar"
               endpoints={{ answer: '/api/calendar/answer' }}
+              onOpenSource={openSourceInPlace}
               words={{
                 composerHint: COMPOSER_HINT,
                 firstVisitButton: CALENDAR_FIRST_VISIT_BUTTON,
@@ -900,13 +915,7 @@ function Calendar() {
           onSummarise={conv.summarise}
           summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
           onDeleted={() => { conv.setConvDrawer(null); void refresh() }}
-          onOpenSource={(t) => {
-            if (t.kind === 'document') { setDocFromSummary(true); setOpenDocId(t.id) }
-            else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
-            // A DATE opens this page's own drawer — `openDate` is the one way in, so a source
-            // and a click on the month grid land in exactly the same state (E2b item 4).
-            else if (t.kind === 'date') openDate(t.id)
-          }}
+          onOpenSource={openSourceInPlace}
         />
         </div>
       )}

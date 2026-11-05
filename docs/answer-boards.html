@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The answer — boards</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Canvas chrome and the app tokens are docs/calendar-boards.html's, unchanged, except the sidebar:
+   it is drawn as the app has it since the Dashboard's decision 12 (components/AppLayout.tsx NAV_ITEMS:
+   the owner's order, a hairline before Company information, the active page underlined, no green box).
+   This CSS is a mock-up and is never a source for the product's spacing, type or colour. */
+:root {
+  --desk: #E9EBEE; --desk-fg: #14171A; --desk-muted: #6B7280; --desk-faint: #9CA3AF; --desk-line: #D6D9DE; --desk-surface: #FFFFFF;
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  --ink: #14171A; --heading: #111827; --text-strong: #1F2937; --text: #4B5563; --text-nav: #5B6470; --text-muted: #6B7280; --text-faint: #9CA3AF;
+  --group-heading: #374151; --dot: #D1D5DB; --line: #E5E7EB; --line-faint: #F0F1F3; --page: #F7F8FA; --surface: #FFFFFF; --panel: #F9FAFB; --bubble: #E5E7EB; --scrim: rgba(20,23,26,0.4);
+  --brand: #2F7D52; --brand-strong: #256541; --brand-tint: #EAF3ED; --warning: #B7791F; --danger: #B42318; --orange: #F94300;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: var(--font-ui); }
+.cv-top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 16px; background: var(--desk-surface); border-bottom: 1px solid var(--desk-line); }
+.cv-top h1 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cv-top .sp { flex: 1; }
+.cv-top select, .cv-top button { font-family: inherit; font-size: 13px; height: 30px; padding: 0 10px; border: 1px solid var(--desk-line); border-radius: 6px; background: var(--desk-surface); color: var(--desk-fg); cursor: pointer; }
+.cv-top button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-strong); }
+.cv-intro { max-width: 900px; padding: 28px 16px 8px; }
+.cv-intro h2 { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; line-height: 1.2; }
+.cv-intro p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--desk-muted); max-width: 76ch; }
+.cv-band { padding: 28px 16px 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.cv-frame { padding: 12px 16px 24px; }
+.cv-label { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; font-size: 13px; color: var(--desk-muted); }
+.cv-label .t { font-weight: 500; color: var(--desk-fg); }
+.cv-label .s { font-size: 11px; color: var(--desk-faint); white-space: nowrap; }
+.cv-note { margin: 0 0 8px; font-size: 13px; line-height: 20px; color: var(--desk-muted); max-width: 86ch; }
+.cv-note b { color: var(--desk-fg); font-weight: 600; }
+.cv-ask { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--warning); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-ask b { font-weight: 600; }
+.cv-dec { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--brand); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-dec b { font-weight: 600; }
+.scaler { position: relative; width: 100%; overflow: hidden; }
+.board { position: relative; width: 1280px; transform-origin: 0 0; background: var(--page); color: var(--ink); font-family: var(--font-ui); box-shadow: 0 1px 3px rgba(20,23,26,0.12), 0 8px 24px rgba(20,23,26,0.06); overflow: hidden; }
+.board a { color: var(--brand-strong); }
+.board button { font-family: inherit; }
+
+/* the app frame */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { height: 57px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .name { font-size: 14px; font-weight: 600; }
+.topbar .org { font-size: 13px; color: var(--text-nav); }
+.bodyrow { display: flex; flex: 1; min-height: 0; }
+.sidebar { width: 224px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 16px 12px; background: var(--surface); border-right: 1px solid var(--line); }
+.board .nav { display: flex; justify-content: space-between; padding: 10px 12px; font-size: 14px; color: var(--text-nav); text-decoration: none; }
+.nav .badge { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.board .nav.active { font-weight: 500; color: var(--brand-strong); }
+.nav.active .l { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.nav-rule { height: 1px; margin: 14px 12px; background: var(--line); }
+.main { flex: 1; display: flex; justify-content: center; padding: 24px 24px 64px; min-width: 0; }
+.column { width: 852px; max-width: 100%; display: flex; flex-direction: column; }
+.page-title { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; }
+.lede { margin: 4px 0 0; font-size: 14px; color: var(--text-muted); }
+.tabs { display: flex; align-items: center; gap: 24px; margin: 20px 0; border-bottom: 1px solid var(--line); }
+.tab { padding: 8px 0 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--brand-strong); border-bottom-color: var(--brand); }
+.tabs .spacer { flex: 1; }
+.tabs .side-link { padding: 8px 0 12px; font-size: 14px; color: var(--text-muted); text-decoration: none; }
+.btn-primary { font-size: 14px; font-weight: 500; padding: 8px 16px; color: #fff; background: var(--brand); border: 0; border-radius: 6px; }
+.btn-text { font-size: 14px; padding: 0; color: var(--text); background: transparent; border: 0; }
+.btn-text.strong { font-weight: 500; color: var(--brand-strong); }
+.attach { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0; background: none; border: 0; font-size: 12px; color: var(--text-muted); }
+.attach span { text-decoration: underline; }
+.send { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--brand); border: 0; border-radius: 8px; color: #fff; }
+.askbox { min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.askbox .inner { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.askbox .example { margin: 0; font-size: 14px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.askbox-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 10px; }
+.thread { display: flex; flex-direction: column; gap: 20px; margin-bottom: 28px; }
+.bubble-row { display: flex; justify-content: flex-end; }
+.bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; background: var(--bubble); font-size: 16px; line-height: 24px; }
+.bubble .chip { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; color: var(--text); }
+.answer { display: flex; flex-direction: column; gap: 14px; }
+.answer h3 { margin: 8px 0 0; font-family: var(--font-reading); font-size: 19px; font-weight: 600; }
+.answer p, .answer li { margin: 0; font-family: var(--font-reading); font-size: 17px; line-height: 28px; }
+.answer ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+.answer .note { font-family: var(--font-ui); font-size: 13px; line-height: 19px; color: var(--text-faint); }
+.cite { margin: 0 2px; padding: 0 4px; border-radius: 4px; background: var(--brand-tint); font-family: var(--font-ui); font-size: 10px; font-weight: 600; color: var(--brand); vertical-align: super; }
+.sources { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sources .label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.source { display: flex; gap: 8px; font-size: 13px; line-height: 18px; }
+.source .n, .source .origin { color: var(--text-faint); }
+.source .quote { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.composer { display: flex; flex-direction: column; padding: 14px 16px 10px; min-height: 104px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.composer .ph { flex: 1; font-size: 16px; line-height: 24px; color: var(--text-faint); }
+.composer .bar { display: flex; justify-content: flex-end; }
+.actions { display: flex; align-items: center; gap: 20px; margin-top: 12px; }
+.actions .q { outline: 2px dashed var(--warning); outline-offset: 4px; border-radius: 2px; }
+.hint { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+/* conversations */
+.day { margin: 4px 0 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.convs { border-top: 1px solid var(--line-faint); border-bottom: 1px solid var(--line-faint); margin-bottom: 24px; }
+.conv { padding: 10px 0; border-top: 1px solid var(--line-faint); }
+.conv:first-child { border-top: 0; }
+.conv .t { font-size: 13px; color: var(--ink); }
+.conv .m { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px; font-size: 12px; color: var(--text-muted); }
+.conv .m .file { display: inline-flex; align-items: center; gap: 4px; }
+
+/* documents tab, today's page */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.ctl { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 14px; color: var(--text-strong); }
+.lbl { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-muted); }
+.toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.btn-add { padding: 10px 20px; border-radius: 6px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 500; }
+.under { font-size: 14px; color: var(--text); text-decoration: underline; }
+.grp { margin-top: 22px; }
+.grp h4 { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.grp h4 span { color: var(--text-faint); font-weight: 400; }
+table.docs { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.docs td:nth-child(2) { width: 11%; } table.docs td:nth-child(3) { width: 19%; } table.docs td:nth-child(4) { width: 12%; } table.docs td:nth-child(5) { width: 12%; }
+table.docs td { padding: 10px 0; border-bottom: 1px solid var(--line-faint); font-size: 12px; color: var(--text); vertical-align: top; }
+table.docs td.doc { font-size: 13px; color: var(--ink); width: 46%; }
+table.docs td.doc span { display: block; font-size: 12px; color: var(--text-muted); }
+table.docs td.st { font-size: 13px; color: var(--text-muted); text-align: right; }
+table.docs td.st.amber { color: var(--warning); }
+
+/* audits: where you stand */
+.arow { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line-faint); }
+.arow .chev { width: 12px; color: var(--text-faint); font-size: 12px; margin-top: 2px; }
+.arow .body { flex: 1; min-width: 0; }
+.arow .t { font-size: 14px; color: var(--ink); }
+.arow .m { margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.arow .act { flex-shrink: 0; font-size: 14px; color: var(--brand-strong); }
+.auditbox { position: relative; min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.auditbox .example { margin: 0 0 12px; font-size: 14px; color: var(--text-faint); }
+.auditbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-top: 12px; }
+.auditbar .links { font-size: 12px; color: var(--text-muted); }
+.auditbar .links span { text-decoration: underline; }
+.note { margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+.grp { margin: 22px 0 2px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.arow .sub { margin-top: 8px; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+/* E3: the answer */
+.ans { display: flex; flex-direction: column; gap: 14px; }
+.ans h3 { margin: 8px 0 0; font-family: var(--font-reading); font-size: 19px; font-weight: 600; line-height: 27px; }
+.ans p, .ans li { margin: 0; font-family: var(--font-reading); font-size: 17px; line-height: 28px; }
+.ans ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+.ans .honest { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-left: 3px solid var(--line); background: var(--panel); border-radius: 0 6px 6px 0; font-family: var(--font-ui); font-size: 13px; line-height: 19px; color: var(--text-muted); }
+.ans .honest .i { color: var(--text-faint); }
+.cards { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.card2 { display: grid; grid-template-columns: 26px 1fr; column-gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.card2 .n { font-size: 12px; font-weight: 600; color: var(--text-faint); line-height: 20px; }
+.card2 .t { font-size: 14px; color: var(--brand-strong); text-decoration: underline; line-height: 20px; }
+.card2 .o { font-size: 12px; color: var(--text-muted); line-height: 20px; margin-top: 1px; }
+.card2 .q { grid-column: 2; margin-top: 6px; font-family: var(--font-reading); font-style: italic; font-size: 13.5px; line-height: 19px; color: var(--text-strong); }
+.card2 .k { text-align: right; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; height: fit-content; justify-self: end; }
+.k-quote { background: #DCEFE3; color: #1F5A3A; }
+.k-named { background: #E9EBEF; color: #4B5563; }
+.k-finding { background: #FCEBC6; color: #7A4F0F; }
+.card2.finding { border-left: 3px solid #B7791F; }
+.k-web { background: #E6EFF9; color: #2B4F7A; }
+.srclabel { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.offer { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--brand); border-radius: 10px; background: var(--brand-tint); margin-top: 6px; }
+.offer .t { flex: 1; font-size: 14px; color: var(--ink); }
+.offer .b { font-size: 13px; font-weight: 500; padding: 6px 12px; color: #fff; background: var(--brand); border-radius: 6px; }
+.cite { margin: 0 2px; padding: 0 4px; border-radius: 4px; background: var(--brand-tint); font-family: var(--font-ui); font-size: 10px; font-weight: 600; color: var(--brand); vertical-align: super; }
+/* the notes band at the end */
+.notes { max-width: 900px; padding: 0 16px 48px; }
+.notes h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 600; }
+.notes p, .notes li { font-size: 14px; line-height: 22px; color: var(--desk-fg); }
+.notes ul { margin: 0; padding-left: 20px; }
+.notes code { font-size: 12.5px; background: var(--desk-surface); padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="cv-top">
+  <h1>CompliBoard — the answer, boards</h1>
+  <span class="sp"></span>
+  <select id="goto" aria-label="Go to a board"><option value="">Go to a board…</option></select>
+  <button type="button" id="z-fit" aria-pressed="true">Fit</button>
+  <button type="button" id="z-75" aria-pressed="false">75%</button>
+  <button type="button" id="z-100" aria-pressed="false">100%</button>
+</div>
+<div class="cv-intro">
+  <h2>The answer and its source cards</h2>
+  <p><strong>Draft 3, 5 November 2026 — no kind labels; the follow-up box; the offer asks for documents.</strong> One board, one answer, drawn in the Audits chat so every kind of source appears: an audit finding, a verified quote, a named document with no quote, a web page. The same component draws the answer on seven surfaces — the Workspace, HR, the Calendar, Documents, Audits, the conversation drawer and the report — so what is decided here lands everywhere at once.</p>
+  <p>Nothing about what the model writes changes. E3 is how an answer is laid out, how its four kinds of source are told apart, how an honesty note looks, and how an offer looks. Alignment (decision 59) holds: number, title and kind in fixed columns down the list.</p>
+</div>
+<div class="cv-band">One answer, every kind of source</div>
+<section class="cv-frame" id="b1">
+  <div class="cv-label"><span class="t">1 · "Are we ready for an Oregon OSHA inspection?" — the answer with its cards</span><span class="s">1280 × 1780</span></div>
+  <p class="cv-note">Top to bottom. The <b>headline</b> in the reading face, then the body with small green citation marks as today. An <b>honesty note</b> — the "could not match the file's words" line, the "Queued" line, "readings as of" — drawn as a quiet grey note with a mark, never as a sentence inside the answer. The <b>offer</b> as a green card with two buttons: run now, or add a folder first — and it says how many documents are on file for that agency and what adding more would let the audit answer (the owner, 5 November: the offer is one way documents come in, and an audit's worth of files is a folder). "Add a folder first" goes to the Documents tab's folder picker. Then <b>Sources</b>: one card per source in a fixed grid — number · title and origin · a kind pill on the right — and the verified quote in the reading italic under it when there is one. No kind labels (the owner, 5 November): a card with a quote under it is checked, a card without one is a reference, and the origin line already says whose it is — "your document", "your audit", "osha.oregon.gov". An audit finding gets a thin amber left edge so it reads as a different kind of thing without a word. Every title is the link, opening in place where the section has a drawer. Then the box for the follow-up question and the action row, exactly where they are today.</p>
+  <div class="cv-dec"><b>Decided (proposed) 5 November.</b> A quote and a name look different, because a quote is proof and a name is a reference; a person scanning the pills sees how much of the answer is checked. Honesty lines look like notes, not like the answer. The offer looks like a button, not like prose.</div>
+  <div class="cv-ask"><b>Your reading.</b> The honesty note: grey box as drawn, or a plain line. And the audit finding's amber edge: keep or drop.</div>
+  <div class="scaler"><div class="board" style="height:1780px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Clackamas Blending &amp; Supply LLC</div></div>
+      <div class="bodyrow"><nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav active" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav><main class="main"><div class="column"><div class="tabs"><div class="tab" aria-selected="true">Ask a question</div><div class="tab">Conversations</div><div class="tab">Agency audits</div><div class="tab">Auditor checklists</div><span class="spacer"></span><a class="side-link" href="#">+ New conversation</a></div><div class="thread">
+  <div class="bubble-row"><div class="bubble">Are we ready for an Oregon OSHA inspection?</div></div>
+  <div class="ans">
+    <h3>Not audited for Oregon OSHA yet. From the documents, three things an inspector would ask about first.</h3>
+    <p>No Oregon OSHA audit has been run for this company, so this is what the documents in OSHA's name show, not an audit.<span class="cite">1</span></p>
+    <ol>
+      <li><strong>Forklift evaluations.</strong> Two of four operators are past the three-year evaluation: Rohan Patel, last evaluated 2 February 2023, and Marcus Reed, 19 September 2023.<span class="cite">2</span></li>
+      <li><strong>Hazard communication.</strong> The written program is current (Revision 6, January 2026) and lists twelve products, but only one safety data sheet is on file, and it is the 2019 format.<span class="cite">3</span><span class="cite">4</span></li>
+      <li><strong>Emergency action plan.</strong> Revision 3 names no alternate coordinator and has no after-hours phone number; its annual review was due February 2026.<span class="cite">5</span></li>
+    </ol>
+    <p>Respirator fit tests are current to June 2026 and the training roster covers all nine employees who handle waste.<span class="cite">6</span> Oregon OSHA's own inspection guidance says the written programs are asked for first.<span class="cite">7</span></p>
+    <div class="honest"><span class="i">ⓘ</span><span>One line in the training roster could not be matched to the file's own words, so it is given here in our words, not quoted.</span></div>
+    <div class="offer" style="flex-direction:column;align-items:stretch;gap:10px"><span class="t">Do you want me to run the Oregon OSHA audit? It reads every OSHA document and gives you a line per finding. <b>7 documents are on file for OSHA.</b> The more you add first — training records, your written programs, inspection logs — the more the audit can answer.</span><div style="display:flex;gap:10px"><span class="b">Run the Oregon OSHA audit</span><span class="b" style="background:transparent;color:var(--brand-strong);border:1px solid var(--brand)">Add a folder first</span></div></div>
+    <p class="srclabel">Sources</p>
+    <div class="cards">
+      <div class="card2 finding"><span class="n">1</span><div><a class="t" href="#">Oregon DEQ audit, 3 November 2026 — what it found</a><p class="o">your audit · Where you stand</p></div><p class="q">“Expected a hazardous waste training roster; nothing on file.”</p></div><div class="card2"><span class="n">2</span><div><a class="t" href="#">Powered Industrial Truck Operator Certifications, current as of 1 October 2026</a><p class="o">your document · record · Clackamas</p></div><p class="q">“Rohan Patel · Sit-down counterbalance, LP · 11 January 2020 · 2 February 2023”</p></div><div class="card2"><span class="n">3</span><div><a class="t" href="#">Written Hazard Communication Program, Revision 6</a><p class="o">your document · program · Clackamas</p></div><p class="q">“The inventory below is current as of 15 January 2026.”</p></div><div class="card2"><span class="n">4</span><div><a class="t" href="#">Material Safety Data Sheet (old MSDS format) – Sulfuric Acid, 93%</a><p class="o">your document · other · 2019</p></div></div><div class="card2"><span class="n">5</span><div><a class="t" href="#">Emergency Action Plan and Hazardous Waste Contingency Plan, Revision 3</a><p class="o">your document · program · Clackamas</p></div><p class="q">“Alternate emergency coordinator: ________________________”</p></div><div class="card2"><span class="n">6</span><div><a class="t" href="#">Hazardous Waste Handler Training Attendance Roster, 14 March 2025</a><p class="o">your document · record</p></div></div><div class="card2"><span class="n">7</span><div><a class="t" href="#">Oregon OSHA — What to expect during an inspection</a><p class="o">osha.oregon.gov · official source</p></div><p class="q">“Inspectors generally begin by reviewing written programs and records.”</p></div>
+    </div>
+  </div>
+</div><div class="composer" style="margin-top:24px"><div class="ph">Ask a follow-up, or tell us what to audit…</div><div class="bar"><span class="send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></div>
+<div class="actions"><button class="attach"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span>Attach a template or checklist from your auditor</span></button><span style="flex:1"></span><button class="btn-text strong">Turn this into a checklist</button><button class="btn-text">Summarise this conversation</button><button class="btn-text">Download</button></div>
+<div class="hint">One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.</div></div></main></div>
+    </div></div></div>
+</section>
+<div class="notes"><h3>What this does not change</h3><p>The model, the prompts, which sources exist, when a quote verifies. E3 is measured anyway, the owner's rule: the same questions before and after on Sonnet 5.5 against keys; the display must change nothing the model is shown, so the answers must match; one Opus 5.5 run only if Sonnet shows a difference.</p></div>
+<script>
+(function () {
+  var sel = document.getElementById('goto');
+  document.querySelectorAll('.cv-frame').forEach(function (f) {
+    var t = f.querySelector('.cv-label .t'); var o = document.createElement('option'); o.value = f.id; o.textContent = t ? t.textContent : f.id; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { if (sel.value) { var el = document.getElementById(sel.value); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); sel.value = ''; } });
+  var mode = 'fit';
+  function layout() {
+    document.querySelectorAll('.scaler').forEach(function (s) {
+      var b = s.firstElementChild; var w = b.offsetWidth; var h = parseFloat(b.style.height) || b.offsetHeight;
+      var avail = s.clientWidth; var scale = mode === 'fit' ? Math.min(1, avail / w) : mode === '75' ? Math.min(0.75, avail / w) : 1;
+      b.style.transform = 'scale(' + scale + ')';
+      s.style.height = Math.ceil(h * scale) + 'px';
+      s.style.overflowX = (scale === 1 && avail < w) ? 'auto' : 'hidden';
+    });
+  }
+  ['fit', '75', '100'].forEach(function (m) {
+    document.getElementById('z-' + m).addEventListener('click', function () {
+      mode = m; ['fit', '75', '100'].forEach(function (x) { document.getElementById('z-' + x).setAttribute('aria-pressed', x === m ? 'true' : 'false'); }); layout();
+    });
+  });
+  window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  layout();
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href="#"]'); if (a) e.preventDefault(); });
+})();
+</script>
+</body>
+</html>

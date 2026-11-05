@@ -21,9 +21,10 @@
 import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { displaySource } from '@/lib/sourceTitle'
+import { displaySource, sourceTarget, type SourceTarget } from '@/lib/sourceTitle'
 import { markCitations, citationNumber } from '@/lib/citations'
 import { OTHER_SOURCE_LINE, hostOf } from '@/lib/howTo'
+import { splitHonesty, REFUSED_NOTE } from '@/lib/askWords'
 
 /**
  * `kind`, `label` and `quote` are HR's (Step 6a), and ADDITIVE: a workspace source carries none of them, so
@@ -136,6 +137,7 @@ export const GREY_NOTE_HREF = '#grey-note'
 
 export function AnswerBody({ text, sources }: { text: string; sources: AnswerSource[] }) {
   const byN = new Map(sources.map((s) => [s.n, s]))
+  const { body, refused } = splitHonesty(text)
 
   // The one place a link is inspected: a citation href becomes the marker, anything else stays
   // an ordinary link. Defined here because it needs the sources this answer carries.
@@ -155,64 +157,114 @@ export function AnswerBody({ text, sources }: { text: string; sources: AnswerSou
   return (
     <div className="font-serif text-[17px] leading-[1.65] text-gray-900">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components as never}>
-        {markCitations(text)}
+        {markCitations(body)}
       </ReactMarkdown>
+      {refused > 0 && (
+        <div className="mt-3 flex items-start gap-2 rounded-r-md border-l-[3px] border-gray-200 bg-gray-50 px-3 py-2 font-sans text-[13px] leading-[19px] text-gray-500">
+          <span aria-hidden className="text-gray-400">ⓘ</span>
+          <span>{REFUSED_NOTE(refused)}</span>
+        </div>
+      )}
     </div>
   )
 }
 
 /**
- * THE SOURCES LIST. Not `no-print`: on paper it is the only way a citation can be followed, and
- * the print rule in `globals`/page CSS appends each URL after its title.
+ * THE SOURCES, AS CARDS — decision 67, 5 November 2026; `docs/answer-boards.html` draft 3.
  *
- * *** IT FOLDS AT THREE — Workspace Task 3, board 1. *** An answer that searched widely carried a
- * dozen sources under it, and the list was taller than the answer. The first three show; one line
- * offers the rest, and the state is this list's own, so each answer folds and unfolds by itself.
+ * They were rows: a number, a title, a grey origin, and HR's quote under it. The board makes each
+ * one a **card in a fixed grid** — `26px` for the number, then the title and its origin line, the
+ * verified quote in the reading italic underneath — so a reader scanning an answer's evidence
+ * sees the same three things in the same places down the list (decision 59, alignment).
  *
- *   · ON PAPER EVERY SOURCE PRINTS. The folded rows are `hidden print:flex`, not left out of the
- *     markup, and the fold line is `no-print` — a downloaded answer must carry every citation.
- *   · A MARKER STILL OPENS ITS SOURCE. `CiteMarker`'s card reads the answer's full `sources`
- *     (`byN`, built from the prop, not from this list), so marker 7 shows source 7 whether or not
- *     row 7 is folded away. Nothing here has to unfold for it.
+ * *** NO KIND LABELS, AND THAT IS THE OWNER'S OWN CORRECTION TO DRAFT 2. *** Draft 2 put a pill on
+ * every card — QUOTE, NAMED, WEB, FINDING. Draft 3 takes them off: **a card with a quote under it
+ * is checked, a card without one is a reference the answer named (E2d), and the origin line
+ * already says whose it is** — "your document", "your audit", "osha.oregon.gov". A pill would say
+ * a third time what the card already shows twice.
+ *
+ * *** ONE EXCEPTION, AND IT IS A LINE RATHER THAN A WORD: an audit finding carries a thin amber
+ * left edge *** — the audit report's own colour for a shortfall (`lib/reportPalette.ts`
+ * `TINT_AMBER`'s ink) — so it reads as a different KIND of thing without a label.
+ *
+ * *** IT FOLDS AT THREE — Workspace Task 3, board 1, and unchanged. *** An answer that searched
+ * widely carried a dozen sources; the first three show and one line offers the rest.
+ *   · ON PAPER EVERY SOURCE PRINTS: folded cards are `hidden print:grid`, not left out.
+ *   · A MARKER STILL OPENS ITS SOURCE: `CiteMarker` reads the answer's full `sources`.
  */
 const SOURCES_SHOWN = 3
 
-export function SourceList({ sources }: { sources: AnswerSource[] }) {
+/** The amber of the audit report's shortfall words, as a left edge (decision 67). */
+const FINDING_EDGE = 'border-l-[3px] border-l-[#B7791F]'
+
+/** An audit finding, as the Audits brief packs it: `/audits?run=…` with its own label. */
+const isFinding = (s: AnswerSource) =>
+  s.label === 'an audit finding' || s.label === 'your audit'
+
+export function SourceList({ sources, onOpenSource }: {
+  sources: AnswerSource[]
+  /**
+   * *** THE ONE PROP E3 ADDS, AND IT IS DECISION 63's — "the title opens in place where the
+   * section has a drawer". ***
+   *
+   * A card's title pointed at an address and navigated: a person reading an answer about a
+   * document lost the answer to open the document. Where the page passes this, a source of ours
+   * is handed over and the page swaps its own drawer, exactly as it already does for a summary's
+   * source list (`components/ReportView.tsx`). A page that passes nothing keeps the link, and a
+   * web page is always a new tab. HR passes nothing: a handbook passage has no reading to open.
+   */
+  onOpenSource?: (target: SourceTarget) => void
+}) {
   const [all, setAll] = useState(false)
   if (!sources.length) return null
   const folds = sources.length > SOURCES_SHOWN
   return (
     <div className="mt-4 border-t border-gray-100 pt-3">
       <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Sources</h4>
-      <ol className="space-y-1.5">
+      <div className="space-y-2.5">
         {sources.map((s, i) => {
           const shown = displaySource(s.title, s.url)
           const hidden = folds && !all && i >= SOURCES_SHOWN
+          const ours = isOurs(s)
+          const target = ours ? sourceTarget(s) : null
+          const swaps = Boolean(onOpenSource && target && target.kind !== 'web')
+          const title = ours ? s.title : shown.title
+          const origin = ours ? s.label : shown.host
           return (
-            <li key={s.n} className={`${hidden ? 'hidden print:flex' : 'flex'} gap-2 text-[13px] leading-snug`}>
-              <span className="shrink-0 text-gray-400">{s.n}.</span>
-              {isOurs(s) ? (
-                <span>
-                  {/* A link only when the section gave one: HR's handbook card has nowhere to go
-                      and is unchanged; a calendar date opens its drawer, a reading its document. */}
-                  {s.href
-                    ? <a href={s.href} className="text-emerald-800 underline underline-offset-2">{s.title}</a>
-                    : <span className="text-gray-900">{s.title}</span>}
-                  {' '}<span className="text-gray-400">· {s.label}</span>
-                  {s.quote && <span className="mt-0.5 block italic text-gray-600">“{s.quote}”</span>}
-                </span>
-              ) : (
-                <span>
+            <div key={s.n}
+              className={`${hidden ? 'hidden print:grid' : 'grid'} grid-cols-[26px_1fr] gap-x-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5`
+                + (isFinding(s) ? ` ${FINDING_EDGE}` : '')}>
+              <span className="text-[12px] font-semibold leading-5 text-gray-400">{s.n}</span>
+              <div className="min-w-0">
+                {/* THE TITLE IS THE LINK. In place where the page can swap; a new tab for the web;
+                    plain text where there is nowhere to go (HR's handbook passage). */}
+                {swaps ? (
+                  <button type="button" onClick={() => onOpenSource!(target!)}
+                    className="block text-left text-[14px] leading-5 text-[var(--green-ink)] underline underline-offset-2 hover:text-[var(--green)]">
+                    {title}
+                  </button>
+                ) : ours ? (
+                  s.href
+                    ? <a href={s.href} className="block text-[14px] leading-5 text-[var(--green-ink)] underline underline-offset-2">{title}</a>
+                    : <span className="block text-[14px] leading-5 text-gray-900">{title}</span>
+                ) : (
                   <a href={s.url} target="_blank" rel="noopener noreferrer"
-                     className="text-emerald-800 underline underline-offset-2">{shown.title}</a>
-                  {' '}<span className="text-gray-400">{shown.host}</span>
-                  {s.label === 'other' && <span className="mt-0.5 block text-[12px] text-gray-500">{OTHER_SOURCE_LINE(hostOf(s.url))}</span>}
-                </span>
-              )}
-            </li>
+                    className="block text-[14px] leading-5 text-[var(--green-ink)] underline underline-offset-2">{title}</a>
+                )}
+                <p className="mt-px text-[12px] leading-5 text-gray-500">{origin}</p>
+                {s.label === 'other' && !ours && (
+                  <p className="mt-0.5 text-[12px] leading-[18px] text-gray-500">{OTHER_SOURCE_LINE(hostOf(s.url))}</p>
+                )}
+                {/* THE VERIFIED QUOTE, in the reading face: it is the file's own words, and it is
+                    the only thing on the card that says this source was checked. */}
+                {s.quote && (
+                  <p className="mt-1.5 font-serif text-[13.5px] italic leading-[19px] text-gray-700">“{s.quote}”</p>
+                )}
+              </div>
+            </div>
           )
         })}
-      </ol>
+      </div>
       {folds && (
         <button type="button" onClick={() => setAll((v) => !v)}
           className="no-print mt-2 text-[13px] text-[var(--green-ink)] underline">

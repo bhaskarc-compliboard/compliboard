@@ -35,6 +35,7 @@ import { Empty } from '@/components/Empty'
 import { ConversationList } from '@/components/ConversationList'
 import { ConversationDrawer } from '@/components/ConversationDrawer'
 import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import type { SourceTarget } from '@/lib/sourceTitle'
 import { PLAIN_AS_OF } from '@/lib/summaryWords'
 import { AskScreen, useAskConversations, type Exchange } from '@/components/AskScreen'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
@@ -42,7 +43,7 @@ import { AUDITS_EXAMPLE_QUESTIONS } from '@/config/examples'
 import {
   AUDITS_LEDE, AUDITS_COMPOSER_HINT, AUDITS_FIRST_VISIT_BUTTON, AUDITS_ONE_TOPIC_LINE,
   AUDITS_EMPTY_CONVERSATIONS, AUDITS_EMPTY_CONVERSATIONS_TITLE, AUDITS_NOT_SUMMARISED,
-  AUDITS_ATTACH_LABEL, auditsThinkingLine, runAuditCardWords,
+  AUDITS_ATTACH_LABEL, auditsThinkingLine, runAuditOffer, ADD_A_FOLDER_HREF,
   auditsCommandAgencyLine, auditsCommandTemplateLine,
   WHICH_AGENCY, NO_AGENCIES, ATTACH_THE_FILE, COULD_NOT_AUDIT, AUDITS_COMMAND_TAB_LINK,
 } from '@/lib/auditsWords'
@@ -683,25 +684,44 @@ function Audits() {
               </p>
             )
           }
+          /**
+           * *** THE OFFER IS A CARD, AND IT SAYS WHAT IT NEEDS — decision 69, 5 November 2026. ***
+           * It was one underlined line. The card says what the audit reads and gives back, **how
+           * many documents are on file for that agency** — `agencyView`, the same number the
+           * agency row shows — and what adding more would let it answer. Two buttons: the press
+           * from 6b, unchanged, and a way to add a folder first.
+           */
+          const words = runAuditOffer({
+            agency: o.agency,
+            fileName: o.attached ? (attached?.name ?? 'the attached file') : null,
+            documents: (o.agency && o.agency !== 'all' ? agencyView(o.agency)?.docs.length : visibleDocs.length) ?? 0,
+          })
           return (
-            <p key={i} className="mt-3 text-[15px]">
-              <button
-                disabled={busy || Boolean(paused)}
-                onClick={async () => {
-                  // Marked BEFORE the call, so the line stops being a button at the first press.
-                  patch({ added: { ...(x.added ?? {}), [i]: { id: null, already: false } } })
-                  const out = await pressOffer(o, attached?.id ?? null, attached?.name ?? null)
-                  patch({ added: { ...(x.added ?? {}), [i]: {
-                    id: out.ok ? out.line : null, already: false, failed: !out.ok,
-                  } } })
-                }}
-                className="text-left text-[var(--green-ink)] underline underline-offset-2 hover:no-underline disabled:text-gray-300">
-                {runAuditCardWords({
-                  agency: o.agency,
-                  fileName: o.attached ? (attached?.name ?? 'the attached file') : null,
-                })}
-              </button>
-            </p>
+            <div key={i} className="mt-3 rounded-[10px] border border-[var(--green)] bg-[var(--green-wash)] px-3.5 py-3">
+              <p className="text-[14px] leading-[21px] text-gray-900">
+                {words.question} {words.reads}
+              </p>
+              <p className="mt-1 text-[13px] leading-[19px] text-gray-700">{words.onFile}</p>
+              <div className="no-print mt-2.5 flex flex-wrap items-center gap-2.5">
+                <button
+                  disabled={busy || Boolean(paused)}
+                  onClick={async () => {
+                    // Marked BEFORE the call, so it stops being a button at the first press.
+                    patch({ added: { ...(x.added ?? {}), [i]: { id: null, already: false } } })
+                    const out = await pressOffer(o, attached?.id ?? null, attached?.name ?? null)
+                    patch({ added: { ...(x.added ?? {}), [i]: {
+                      id: out.ok ? out.line : null, already: false, failed: !out.ok,
+                    } } })
+                  }}
+                  className="rounded-md bg-[var(--green)] px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50">
+                  {words.run}
+                </button>
+                <a href={ADD_A_FOLDER_HREF}
+                  className="rounded-md border border-[var(--green)] px-3 py-1.5 text-[13px] font-medium text-[var(--green-ink)] hover:bg-white">
+                  {words.add}
+                </a>
+              </div>
+            </div>
           )
         })}
       </>
@@ -795,6 +815,19 @@ function Audits() {
       + byWord.contradiction + byWord.not_a_document_question
     const failed = activeSections.filter((s) => s.status === 'could_not_complete')
     return { docs, lastRun, activeRun, mine, k, n: activeSections.length, byWord, needs, failed }
+  }
+
+  /**
+   * *** WHERE A SOURCE OF OURS OPENS — decision 63 for a summary, decision 67 for an answer. ***
+   * One definition, used by the conversation drawer's report AND by the cards under an answer:
+   * two copies of a swap is two behaviours waiting to differ.
+   */
+  const openSourceInPlace = (t: SourceTarget) => {
+    if (t.kind === 'document') { setDocFrom('summary'); setFromAudit(null); setOpenDoc(t.id) }
+    // An audit is a PAGE (decision 55), so it is a navigation and not a swap.
+    else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+    // A date lives on the Calendar, which opens it from the address (E2b item 4).
+    else if (t.kind === 'date') window.location.href = `/calendar?date=${t.id}`
   }
 
   /* ── loading, and the two empty states that are claims ────────────────────── */
@@ -898,6 +931,7 @@ function Audits() {
               key={conv.askKey}
               section="audits_chat"
               endpoints={{ answer: '/api/audits/answer' }}
+              onOpenSource={openSourceInPlace}
               words={{
                 composerHint: AUDITS_COMPOSER_HINT,
                 firstVisitButton: AUDITS_FIRST_VISIT_BUTTON,
@@ -1271,13 +1305,7 @@ function Audits() {
           onSummarise={conv.summarise}
           summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
           onDeleted={() => { conv.setConvDrawer(null); void reloadTopics() }}
-          onOpenSource={(t) => {
-            if (t.kind === 'document') { setDocFrom('summary'); setFromAudit(null); setOpenDoc(t.id) }
-            // An audit is a PAGE (decision 55), so it is a navigation and not a swap.
-            else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
-            // A date lives on the Calendar, which opens it from the address (E2b item 4).
-            else if (t.kind === 'date') window.location.href = `/calendar?date=${t.id}`
-          }}
+          onOpenSource={openSourceInPlace}
         />
         </div>
       )}
