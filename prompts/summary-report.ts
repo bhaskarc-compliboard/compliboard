@@ -10,6 +10,15 @@
  * and rewrites each answer's own `[n]` markers to those numbers before this prompt sees the
  * transcript. The model may cite only those numbers, and the check drops any other.
  *
+ * *** AND EVERY LINE OF THAT LIST NOW SAYS WHAT THE SOURCE IS — E2c item 1, 5 November 2026, §3.1,
+ * approved. *** A document, an attached file, an audit finding and a date already carried a label
+ * from the brief that found them; a web page carried only its URL (`lib/sourceTitle.ts`
+ * `passageLineOf`). The measured problem is at the other end of it: E2b's Haiku re-summary cited
+ * NOTHING on any item, so every item of a summary of a conversation about an attached permit read
+ * *"No source cited in the conversation"*. Rule 4 now asks for the numbers an item rests on, says
+ * an empty list should be rare, and the list the model reads says what each number is. The code
+ * half of the same fix is `checkCitations`'s inheritance (E2c item 2), which needs no model at all.
+ *
  * *** IT IS ANCHORED (§3.3). *** It reads one transcript and reports what is IN it. It is told not
  * to research and not to add. A summary that lists an obligation the conversation never reached is
  * the unanchored enumeration §3.3 names as the bug.
@@ -31,7 +40,9 @@ export function summaryReportPrompt(today: string): string {
 
 Today's date is ${today}.
 
-You are given the conversation, and one numbered list of the sources it used. Return a single JSON object and nothing else:
+You are given the conversation, and one numbered list of the sources it used. Every line of that list says what the source IS as well as what it is called: your document, the file you attached, an audit finding, your calendar, or a web page with its address.
+
+Return a single JSON object and nothing else:
 
 {
   "title": "what the conversation is about, at most 70 characters, sentence case, no full stop. Example: Importing organic ethanol from Colombia for vinegar (Oregon)",
@@ -62,7 +73,7 @@ The rules.
 
 3. When a later answer changed or withdrew an earlier point, keep only the later state, and do not list what no longer applies. An earlier point that no later answer changed or withdrew STILL APPLIES and must be in the report, even if a later answer did not repeat it. Not repeating something is not withdrawing it. Do not mention that anything changed. The report says where the person stands now.
 
-4. Every item cites the source numbers the conversation used for it, from the numbered list only. If the conversation cited no source for an item, give an empty list. Never invent a number.
+4. Every item carries, in "sources", the numbers of the sources it rests on, from the numbered list only. The item's "basis" is copied from one sentence of one answer; the numbers to give are the ones that sentence rests on. An item that rests on nothing is allowed — give an empty list — but it should be rare: almost everything in this conversation was read somewhere, and the list is where. Never invent a number, and never give a number that is not in the list.
 
 5. Every item has a "basis": a short phrase of 6 to 20 words, copied exactly from the answer that supports this item. Copy it word for word. Do not paraphrase it. Copy the basis from the sentence that carries the source marker you cite. If a point is said in more than one place, quote the place where it is cited, not a summary paragraph that repeats it.
 

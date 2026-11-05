@@ -102,10 +102,21 @@ export const GROUPS_COUNT = (groups: number) =>
  * *** THE CARD THAT SAID "WE COULD NOT SETTLE THIS" AND OFFERED NOWHERE TO SETTLE IT. ***
  *
  * Company information is the page that holds the answers, and its first section is literally
- * called *Waiting for you*. The header's line sends a person there; each item sends them to the
- * same place, and to the exact question when it can name one.
+ * called *Waiting for you*. So the card leads there.
+ *
+ * *** ONE DOOR, NEVER TWO — E2c item 4, 5 November 2026 (the owner). ***
+ *
+ * E2a put the link on the header AND on every item; E2b took it off the items that could not name
+ * a question, which left a card with a link in its header and a link on one item — the same words
+ * twice, one of them a worse version of the other. The rule now:
+ *
+ *   · an item that names a question Company information is **waiting** for carries `CONFIRM_ONE`,
+ *     which goes to THAT question;
+ *   · the header carries nothing at all, so it lines up with the other four cards;
+ *   · and `CONFIRM_ALL` is drawn once, under the header inside the card, ONLY when no item carries
+ *     a link of its own. A card always offers exactly one way to settle what it lists.
  */
-export const CONFIRM_LINK = 'Confirm them on Company information →'
+export const CONFIRM_ALL = 'Confirm these on Company information →'
 export const CONFIRM_ONE = 'Confirm it on Company information →'
 
 /**
@@ -117,13 +128,14 @@ export const CONFIRM_ONE = 'Confirm it on Company information →'
  * that can name one question, and matching on an item's words would be matching on something the
  * model wrote rather than on something the page holds.
  *
- * *** AND TODAY NO ITEM CARRIES A KEY, WHICH IS SAID HERE RATHER THAN WORKED AROUND. ***
- * `prompts/summary-report.ts` asks for `to_confirm` items of `{ name, what_to_do, basis, sources }`
- * and for `facts` of `{ key, value, quote }`; the key lives on a FACT and nothing joins a fact to
- * an item but its wording. Read on staging: every stored `to_confirm` item is prose and the
- * reports carrying them have no facts at all. So every item links to the page today, and the
- * exact-question link turns on the day a `key` is added to that one prompt shape — a §3.1
- * decision, not a display one. `ReportItem.key` is optional for exactly that reason.
+ * *** AN ITEM CARRIES A KEY SINCE E2b, AND ONLY A WAITING ONE SURVIVES. ***
+ * This said "TODAY NO ITEM CARRIES A KEY", and at E2a that was true: the prompt asked for a key on
+ * a FACT, not on an item, so nothing joined a fact to an item but its wording. E2b item 2 added
+ * `"key"` to the `to_confirm` shape (§3.1, approved), gave the model the list of questions actually
+ * waiting, and made `checkReport` DROP a key that is not on that list — an invented key sends a
+ * person to the wrong question, which is worse than sending them to the page. Measured: the first
+ * Haiku run under it returned `air_permit_number` and `permittee_legal_name`, both waiting.
+ * `ReportItem.key` stays optional because every report stored before E2b has none.
  *
  * **The page resolves it, not the caller.** A key that is no longer waiting opens the page as it
  * always did: asking the drawer to fetch the queue first would be a request per summary opened,

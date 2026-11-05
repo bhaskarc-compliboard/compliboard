@@ -579,7 +579,23 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   every file the turn CARRIES, not the one attached on it. The first build read `files.attached`
 //   and the walk found the permit was attached on turn 1 while the question that needed it was
 //   turn 3 - the same defect, one turn later.
-const FLOOR = 2598
+//
+// 2598 -> 2610, 5 November 2026 (GAPS-PLAN Part E step E2c - items inherit sources).
+//   TWELVE. The one that earns its place is RUN, not read, and it carries a shape taken off
+//   staging: the same sentence appears in an answer THREE times - once in a markdown table of
+//   what the permit says, which cites nothing, and twice in sentences that cite - and the test
+//   pins which occurrence decides. The original rule took the first, which is the table, so an
+//   item was held to a paragraph with no citation and a number it cited CORRECTLY was dropped.
+//   That is a defect the dry run found on a report already stored, before any model was called.
+//
+//   Three more are the "nothing is invented" cases, run: no basis inherits nothing, a basis that
+//   is in no answer inherits nothing, and a paragraph that cites nothing gives nothing. One pins
+//   that `lib/checklistConvert.ts` is deliberately NOT given the option, so the rule has one
+//   implementation and the difference is one flag.
+//
+//   The rest are the prompt's own words (§3.1) and the card's one door: the per-item link, or one
+//   line for the card when no item carries one, and never both.
+const FLOOR = 2610
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

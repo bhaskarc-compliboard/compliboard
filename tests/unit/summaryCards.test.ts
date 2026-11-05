@@ -347,8 +347,9 @@ describe('a source of ours is kept, with its address — E2a', () => {
     const { passageLineOf } = await import('../../lib/sourceTitle.ts')
     assert.equal(passageLineOf({ n: 3, title: 'A document', url: '', label: 'your document' }),
       '3. A document — your document')
+    // E2c item 1: a web page is named as well, and keeps its address in full.
     assert.equal(passageLineOf({ n: 1, title: 'DEQ', url: 'https://oregon.gov/deq' }),
-      '1. DEQ — https://oregon.gov/deq')
+      '1. DEQ — a web page: https://oregon.gov/deq')
   })
 
   test('every section that is not HR passes it, and HR is untouched', () => {
@@ -385,26 +386,27 @@ describe('Still to confirm links to Company information — E2a item 3', () => {
     assert.equal(CONFIRM_HREF, '/company-information')
   })
 
-  test('…and to the page itself when it does not, which is every item today', async () => {
+  test('…and to the page itself when it does not — every report stored before E2b', async () => {
     const { confirmHref } = await import('../../lib/summaryWords.ts')
     for (const k of [undefined, null, '', '   ']) {
       assert.equal(confirmHref(k), '/company-information')
     }
-    // `to_confirm` items are prose and carry no key: read off staging, and the prompt asks for a
-    // key on a FACT, not on an item. The exact-question link turns on with a §3.1 prompt change.
-    assert.match(read('lib/summaryWords.ts'), /TODAY NO ITEM CARRIES A KEY/)
+    // E2b item 2 put `"key"` on the item and gave the model the waiting list to choose from; every
+    // report written before it has no key at all, which is why `ReportItem.key` is optional.
+    assert.match(read('lib/summaryWords.ts'), /AN ITEM CARRIES A KEY SINCE E2b/)
     assert.match(code(read('lib/summaryReport.ts')), /key\?: string/)
   })
 
   test('the words are in the words file, and both are the owner\'s', async () => {
-    const { CONFIRM_LINK, CONFIRM_ONE } = await import('../../lib/summaryWords.ts')
-    assert.equal(CONFIRM_LINK, 'Confirm them on Company information →')
+    const { CONFIRM_ALL, CONFIRM_ONE } = await import('../../lib/summaryWords.ts')
+    // E2c item 4: "these", for the one line that stands for the whole card.
+    assert.equal(CONFIRM_ALL, 'Confirm these on Company information →')
     assert.equal(CONFIRM_ONE, 'Confirm it on Company information →')
     assert.ok(!VIEW_CODE.includes('Company information'), 'the component writes the words itself')
   })
 
-  test('the header carries one link and every item carries its own', () => {
-    assert.match(VIEW_CODE, /\{CONFIRM_LINK\}/)
+  test('the card carries a link, and every item can carry its own', () => {
+    assert.match(VIEW_CODE, /\{CONFIRM_ALL\}/)
     assert.match(VIEW_CODE, /href=\{confirmHref\(it\.key\)\}/)
     assert.match(VIEW_CODE, /\{CONFIRM_ONE\}/)
     // Only under Still to confirm: What applies' items are things to do, not things to settle.
@@ -571,10 +573,10 @@ describe('what the summariser is shown — E2b items 2 and 6', () => {
 })
 
 describe('the per-item link, narrowed — E2b item 1', () => {
-  test('it needs a key AND that key waiting; the header link never wraps', () => {
+  test('it needs a key AND that key waiting', () => {
     assert.match(VIEW_CODE, /\{confirm && it\.key && waiting\.has\(it\.key\) && \(/)
     assert.match(VIEW_CODE, /const waiting = useWaitingKeys\(\)/)
-    assert.match(VIEW_CODE, /ml-auto whitespace-nowrap text-\[12px\] underline/)
+    // The header link this test used to pin is gone at E2c item 4; `one door` below is its rule.
   })
 
   test('the keys come from the read the layout already makes — no second request', () => {
@@ -595,5 +597,66 @@ describe('a checklist keeps the same sources as a summary — E2b item 3', () =>
   test('one option, both places', () => {
     assert.match(code(read('lib/checklistConvert.ts')), /gatherSources\(turns, PASSAGE_SOURCES\)/)
     assert.match(code(read('lib/summaryReport.ts')), /sources: hr \? HR_SOURCES : PASSAGE_SOURCES/)
+  })
+})
+
+/* ── E2c — ITEMS INHERIT SOURCES, AND THE CARD HAS ONE DOOR ───────────────── */
+
+/**
+ * Item 1 is a prompt change (§3.1, approved) and item 4 is the card. Item 2's own tests are in
+ * `tests/unit/summaryReport.test.ts`, where the function it changes is run.
+ */
+describe('the model is told what each source IS — E2c item 1', () => {
+  test('the list it reads names all four kinds, and a web page keeps its address', async () => {
+    const { numberedTranscript } = await import('../../lib/summaryReport.ts')
+    const { PASSAGE_SOURCES } = await import('../../lib/sourceTitle.ts')
+    const { transcript } = numberedTranscript([
+      { role: 'user', text: 'What does my permit say?' },
+      { role: 'assistant', text: 'It says this [1][2][3][4].', sources: [
+        { n: 1, kind: 'passage', label: 'your document', title: 'Spill plan', href: '/documents?document=7d6a4d4f-84a5-450d-a26e-9bf47e8edd36', url: '' },
+        { n: 2, kind: 'passage', label: 'the file you attached', title: 'Title_V_Air_Quality_Permit.pdf', href: '/documents?document=ac3d6966-3d32-470c-b1dd-ce05f5b79405', url: '' },
+        { n: 3, kind: 'passage', label: 'an audit finding', title: 'Hazard communication', href: '/audits?run=b58c179e-d318-4525-b78c-b0f1b12b2850', url: '' },
+        { n: 4, title: 'Oregon DEQ', url: 'https://www.oregon.gov/deq' },
+      ] },
+    ] as never, PASSAGE_SOURCES)
+    assert.match(transcript, /1\. Spill plan — your document/)
+    assert.match(transcript, /2\. Title_V_Air_Quality_Permit\.pdf — the file you attached/)
+    assert.match(transcript, /3\. Hazard communication — an audit finding/)
+    assert.match(transcript, /4\. Oregon DEQ — a web page: https:\/\/www\.oregon\.gov\/deq/)
+  })
+
+  test('the prompt asks for the numbers an item rests on, and says an empty list is rare', () => {
+    const p = read('prompts/summary-report.ts')
+    assert.match(p, /Every line of that list says what the source IS/)
+    assert.match(p, /the numbers of the sources it rests on/)
+    assert.match(p, /An item that rests on nothing is allowed — give an empty list — but it should be rare/)
+    assert.match(p, /Never invent a number/)
+    // §3.1: a prompt change is the owner's, and it is written down where it was made.
+    assert.match(p, /E2c item 1, 5 November 2026, §3\.1,\s*\n?\s*\* approved/)
+    assert.match(read('docs/GAPS-PLAN.md'), /E2c/)
+  })
+})
+
+describe('Still to confirm has exactly one door — E2c item 4', () => {
+  test('the header is title and count only: no link, like the other four cards', () => {
+    assert.match(VIEW_CODE, /title=\{CARD_CONFIRM_TITLE\} count=\{CONFIRM_COUNT\(report\.to_confirm\.length\)\}\s*\n?\s*open=\{cards\.confirm\}/)
+    // One `right` left in the file, and it is What applies' Open all.
+    assert.equal((VIEW_CODE.match(/right=\{/g) ?? []).length, 1)
+    assert.ok(!/CONFIRM_ALL[\s\S]{0,200}ml-auto/.test(VIEW_CODE), 'the card link is not in the header')
+  })
+
+  test('the card\'s own line is drawn ONLY when no item carries one', () => {
+    assert.match(VIEW_CODE,
+      /\{!report\.to_confirm\.some\(\(it\) => it\.key && waiting\.has\(it\.key\)\) && \(/)
+    // It is inside the card's body, above the items.
+    const body = VIEW_CODE.slice(VIEW_CODE.indexOf('CONFIRM_COUNT(report.to_confirm.length)'))
+    assert.ok(body.indexOf('{CONFIRM_ALL}') < body.indexOf('report.to_confirm.map'), 'the line sits above the items')
+  })
+
+  test('neither link is printed: on paper a page to click is a dead end', () => {
+    for (const m of VIEW_CODE.match(/\{(CONFIRM_ALL|CONFIRM_ONE)\}/g) ?? []) {
+      const at = VIEW_CODE.indexOf(m)
+      assert.ok(VIEW_CODE.slice(Math.max(0, at - 400), at).includes('no-print'), `${m} prints`)
+    }
   })
 })

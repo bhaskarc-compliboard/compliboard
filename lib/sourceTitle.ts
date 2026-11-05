@@ -218,10 +218,25 @@ export function passageKey(s: Record<string, unknown>): string | null {
   return t.kind === 'web' ? null : `${t.kind}:${t.id}`
 }
 
-/** The list line the model reads. A web page keeps its URL; one of ours says what it is. */
+/**
+ * *** THE LIST LINE, AND EVERY LINE NOW SAYS WHAT THE SOURCE IS — E2c item 1, §3.1, approved. ***
+ *
+ * One of ours always said so: a passage carries a `label` from the brief that found it — *your
+ * document*, *the file you attached*, *an audit finding*, *your calendar*, *a reading of your
+ * document*. **A web page said nothing**: its line was `3. Oregon DEQ — https://…`, and a model
+ * being asked which sources an item rests on was reading a list where four kinds of thing looked
+ * like one kind of thing with a URL missing from some of them.
+ *
+ * So a web page is named as well: `3. Oregon DEQ — a web page: https://…`. The address is still
+ * there, in full, because that is what the person needs and this same line is the one printed
+ * under "Sources" in the stored plain text (`renderPlainText`). **One function for both readers**,
+ * so the words the model is given and the words the person is given can never drift apart.
+ */
+export const A_WEB_PAGE = 'a web page'
+
 export function passageLineOf(s: { n: number; title: string; url?: string | null; label?: unknown }): string {
   const label = typeof s.label === 'string' && s.label.trim() ? s.label : 'your own records'
-  return s.url ? `${s.n}. ${s.title} — ${s.url}` : `${s.n}. ${s.title} — ${label}`
+  return s.url ? `${s.n}. ${s.title} — ${A_WEB_PAGE}: ${s.url}` : `${s.n}. ${s.title} — ${label}`
 }
 
 /**

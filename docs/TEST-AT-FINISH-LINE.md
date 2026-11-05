@@ -171,6 +171,18 @@ every due handbook on staging. The summary button below runs the same writer; Ch
 - **The long-handbook path:** with a small `HR_HANDBOOK_BUDGET_TOKENS`, so the section-choosing call and the honest
   wait ("<n> of <m> parts done") each run once on Opus.
 - **A conversation:** a follow-up that uses the history; Stop; reopen; "Not answered." with "Ask it again".
+- **⚡ DOES A STRONGER MODEL CITE ITS ITEMS? — added at E2c, 5 November 2026.** Summarise a
+  conversation whose answers carry citations and **count the items that end up with a source**.
+  E2c made the code supply one when the model does not — an item inherits the sources of the
+  paragraph its `basis` was copied from — so the number now measures two different things at
+  once, and both are worth reading: how often the model **cites** (its own `sources` list) and how
+  often it quotes a **cited sentence** as its basis (what the inheritance can work with). On Haiku,
+  5 November: of 14 items over two conversations, **0 cited anything**, 4 quoted a sentence that
+  is in no single paragraph of any answer, and the rest quoted paragraphs that carry no marker —
+  so the count did not move. The same code on the previously stored report of one of those
+  conversations gives **3 of 6**. If Opus quotes cited sentences, the inheritance fires and the
+  question is answered; if it does not, the open widening in `docs/GAPS-PLAN.md` §8 (inherit from
+  the ANSWER, not the paragraph) is the owner's call to make with real numbers.
 - **⚡ THE PARAPHRASE CHECK, ON OPUS — added at E2b, 4 November 2026.** Attach a document with a
   distinctive phrase in it (the fixture permit says *"Renewal Application Due 60 days prior to
   expiration"*), ask a question that needs that line, and **read the answer's sources**. On Haiku

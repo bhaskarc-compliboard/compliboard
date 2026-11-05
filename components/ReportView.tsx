@@ -18,7 +18,8 @@
  *     open** and the rest folded to their counts, Open all / Close all on the right.
  *   · **Still to confirm, Not answered here and Sources open FOLDED**, each with its count on its
  *     header line — and Still to confirm's count says what it means: *"3 things we could not
- *     settle from the documents"*.
+ *     settle from the documents"*. Its header carries nothing else (E2c item 4): the way to settle
+ *     them is one link inside the card, either per item or once for the card, never both.
  *   · **"Asked and not answered" is "Not answered here"**, and each question carries the line that
  *     says what happened and what to do (`lib/summaryWords.ts`).
  *
@@ -45,7 +46,7 @@ import type { ReportItem, ReportSource } from '@/lib/summaryReport'
 import {
   NO_SOURCE, NO_SITUATION, AS_OF_LINE, APPLIES_COUNT, GROUPS_COUNT, CONFIRM_COUNT,
   UNANSWERED_COUNT, UNANSWERED_LINE, CARD_SITUATION_TITLE, CARD_APPLIES_TITLE, CARD_CONFIRM_TITLE,
-  CARD_UNANSWERED_TITLE, CARD_SOURCES_TITLE, CONFIRM_LINK, CONFIRM_ONE, confirmHref,
+  CARD_UNANSWERED_TITLE, CARD_SOURCES_TITLE, CONFIRM_ALL, CONFIRM_ONE, confirmHref,
   CONFIRM_HREF as CONFIRM_HREF_ALL,
 } from '@/lib/summaryWords'
 import { CARD_SITUATION, CARD_APPLIES, CARD_CONFIRM, CARD_QUIET } from '@/lib/reportPalette'
@@ -271,20 +272,22 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
         </Card>
       )}
 
-      {/* ── STILL TO CONFIRM — amber, folded, its count says what it means. ── */}
+      {/* ── STILL TO CONFIRM — blue, folded, its count says what it means. ────
+          *** ONE DOOR, NEVER TWO — E2c item 4. *** The header is title and count on one line and
+          nothing else, so this card's header is the shape the other four are. The way out is a
+          link on each item that can name a waiting question — and when NO item can, one line
+          under the header for the whole card. Exactly one of the two is ever drawn. */}
       {report.to_confirm.length > 0 && (
         <Card tint={CARD_CONFIRM} title={CARD_CONFIRM_TITLE} count={CONFIRM_COUNT(report.to_confirm.length)}
-          open={cards.confirm} onToggle={() => flip('confirm')} controls={`${uid}-con`}
-          right={
-            /* The card's own way out, on the header line. A `span` inside the header button, as
-               "Open all" is, so one control does not sit inside another. */
-            <span className="no-print ml-auto whitespace-nowrap text-[12px] underline underline-offset-2"
-              role="link" tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = CONFIRM_HREF_ALL } }}
-              onClick={(e) => { e.stopPropagation(); window.location.href = CONFIRM_HREF_ALL }}>
-              {CONFIRM_LINK}
-            </span>
-          }>
+          open={cards.confirm} onToggle={() => flip('confirm')} controls={`${uid}-con`}>
+          {!report.to_confirm.some((it) => it.key && waiting.has(it.key)) && (
+            <p className="no-print pb-0.5 pt-1.5">
+              <a href={CONFIRM_HREF_ALL}
+                className="text-[12px] text-[var(--green-ink)] underline underline-offset-2 hover:text-[var(--green)]">
+                {CONFIRM_ALL}
+              </a>
+            </p>
+          )}
           <ul>{report.to_confirm.map((it, i) => item(it, `c-${i}`, true))}</ul>
         </Card>
       )}

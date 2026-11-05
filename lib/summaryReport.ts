@@ -161,6 +161,8 @@ export interface ItemCheck {
   /** In the conversation-wide numbering, before the report's own renumbering. */
   kept: number[]
   dropped: number[]
+  /** E2c item 2: the numbers the item did not cite and inherited from the paragraph its basis sits in. */
+  inherited?: number[]
 }
 
 type CheckResult =
@@ -213,21 +215,73 @@ function paragraphs(turn: TurnLike): Array<{ norm: string; markers: number[] }> 
  *   · a basis that is not in any answer: every source is cleared — the item shows "no source";
  *   · a basis found: only numbers that are markers in THAT paragraph of THAT answer are kept.
  *
+ * *** AND WITH `inherit`, AN ITEM THAT IS LEFT CITING NOTHING TAKES THE PARAGRAPH'S OWN NUMBERS —
+ * E2c item 2, 5 November 2026. ***
+ *
+ * The measured problem: E2b's re-summary of the Calendar permit conversation cited nothing on any
+ * of its six items, so every item read *"No source cited in the conversation"* — about a
+ * conversation whose every answer carried two or three citations. The item's `basis` is copied
+ * from one sentence of one answer, and this function has already FOUND that sentence; the
+ * paragraph it sits in carries its own `[n]` markers. Those are the sources the sentence rests on,
+ * whatever the model did or did not repeat in its `sources` array.
+ *
+ * **Nothing is invented and nothing is guessed.** A source is inherited only from the paragraph
+ * the item's own words were copied out of — the same paragraph whose markers B2 uses to DROP a
+ * number. An item whose basis is not in any answer inherits nothing, an item with no basis
+ * inherits nothing, and a paragraph with no markers gives nothing. What the item cited and lost is
+ * still reported in `dropped`, and what it gained is reported in `inherited`, so the record says
+ * which numbers the model chose and which the code supplied.
+ *
+ * *** AND THE SAME WORDS ARE USUALLY IN THE ANSWER TWICE, WHICH IS WHY THE OCCURRENCE MATTERS. ***
+ * Read off staging, Calendar conversation `aa50ee49`: the basis *"Renewal Application Due 60 days
+ * prior to expiration"* appears in **three** paragraphs of that conversation — a markdown table
+ * listing what the permit says, which carries NO marker, and twice more in sentences that carry
+ * one. The original rule took the first occurrence, which is the table, so an item was held to a
+ * paragraph that cites nothing: **a correctly cited number was being DROPPED**, not merely left
+ * uninherited. With the option, the paragraph that cited the sentence decides, and the LAST such
+ * paragraph wins — the same "latest state" the prompt's rule 3 and its rule 5 ask for (*"quote the
+ * place where it is cited, not a summary paragraph that repeats it"*). Without it, the first
+ * occurrence still decides, unchanged.
+ *
+ * *** THE CHECKLIST IS DELIBERATELY NOT GIVEN IT. *** `lib/checklistConvert.ts` calls this with no
+ * options and keeps today's behaviour: its items write `checklist_items.sources` and `source_url`,
+ * rows a person ticks and a later run reads, and E2c's brief is about the summary's items. One
+ * copy of the rule, with the difference in one flag rather than in two implementations.
+ *
  * Exported for the conversation-to-checklist check (`lib/checklistConvert.ts`, Workspace Task 6), which
  * holds its items to the same rule. One copy, so the two can never drift apart.
  */
 export function checkCitations(item: { basis: string | null; sources: number[] }, turns: TurnLike[],
-  perTurn: Array<Map<number, number>>, basisRequired: boolean): { found: boolean | null; kept: number[]; dropped: number[] } {
+  perTurn: Array<Map<number, number>>, basisRequired: boolean,
+  opts: { inherit?: boolean } = {}): { found: boolean | null; kept: number[]; dropped: number[]; inherited?: number[] } {
   if (!basisRequired && item.basis === null) return { found: null, kept: item.sources, dropped: [] }
   const needle = item.basis ? quoteKey(item.basis) : ''
   if (needle.length >= 8) {
-    for (let t = 0; t < turns.length; t++) {
+    /**
+     * Every paragraph the basis appears in, in order, each as the global numbers it cites. Under
+     * the original rule only the FIRST was ever looked at, and the loop stopped there.
+     */
+    const hits: Array<Set<number>> = []
+    for (let t = 0; t < turns.length && !(hits.length && !opts.inherit); t++) {
       if (turns[t].role !== 'assistant') continue
       for (const para of paragraphs(turns[t])) {
         if (!para.norm.includes(needle)) continue
-        const here = new Set(para.markers.map((k) => perTurn[t].get(k)).filter((g): g is number => !!g))
-        return { found: true, kept: item.sources.filter((n) => here.has(n)), dropped: item.sources.filter((n) => !here.has(n)) }
+        hits.push(new Set(para.markers.map((k) => perTurn[t].get(k)).filter((g): g is number => !!g)))
+        if (!opts.inherit) break
       }
+    }
+    if (hits.length) {
+      // *** WHICH OCCURRENCE DECIDES — E2c item 2. *** The paragraph that CITED the sentence, and
+      // the last such paragraph, which is the latest state. Without the option, the first
+      // occurrence, exactly as before.
+      const here = opts.inherit ? ([...hits].reverse().find((h) => h.size) ?? hits[0]) : hits[0]
+      const kept = item.sources.filter((n) => here.has(n))
+      const dropped = item.sources.filter((n) => !here.has(n))
+      // *** THE ITEM THAT CITES NOTHING INHERITS WHERE ITS SENTENCE CAME FROM. ***
+      if (!kept.length && opts.inherit && here.size) {
+        return { found: true, kept: [...here], dropped, inherited: [...here] }
+      }
+      return { found: true, kept, dropped }
     }
   }
   return { found: false, kept: [], dropped: item.sources }
@@ -260,7 +314,8 @@ export function trimTitle(title: string, max = TITLE_MAX): string {
  * VALIDATE AND CLEAN what the model returned.
  *   · Refuses the whole report when its shape is wrong.
  *   · Source numbers outside the conversation's list are dropped; then B1–B2 (`checkCitations`).
- *   · An item left with no source keeps its place, marked "No source cited in the conversation".
+ *   · An item left with no source INHERITS the sources of the paragraph its basis sits in (E2c
+ *     item 2); one that still has none keeps its place, marked "No source cited in the conversation".
  *   · B3: a fact whose quote is not, word for word, in one of the PERSON's messages is dropped, and
  *     the report records how many and why (`facts_dropped`).
  *   · B4: the report's source list holds only the sources its items cite, renumbered 1..k in order
@@ -293,8 +348,10 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
   const count = all.length
   const checks: ItemCheck[] = []
   const settle = (where: string, c: DraftItem): DraftItem => {
-    const r = checkCitations(c, turns, perTurn, opts.basisRequired)
-    checks.push({ where, name: c.name, basis: c.basis, found: r.found, kept: r.kept, dropped: r.dropped })
+    // E2c item 2: a summary's item inherits its paragraph's sources when it cites none of its own.
+    const r = checkCitations(c, turns, perTurn, opts.basisRequired, { inherit: true })
+    checks.push({ where, name: c.name, basis: c.basis, found: r.found, kept: r.kept, dropped: r.dropped,
+      ...(r.inherited?.length ? { inherited: r.inherited } : {}) })
     return { ...c, sources: r.kept }
   }
 

@@ -6,8 +6,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   gatherSources, numberedTranscript, checkReport, cleanSourceNumbers, trimTitle, renderPlainText,
-  normaliseForMatch, proposalsToInsert, AS_OF_LINE, NO_SOURCE, TITLE_MAX,
+  normaliseForMatch, proposalsToInsert, checkCitations, AS_OF_LINE, NO_SOURCE, TITLE_MAX,
 } from '../../lib/summaryReport.ts'
+import { PASSAGE_SOURCES } from '../../lib/sourceTitle.ts'
 import { NO_SOURCE as WORDS_NO_SOURCE, AS_OF_LINE as WORDS_AS_OF_LINE } from '../../lib/summaryWords.ts'
 
 /*
@@ -131,6 +132,120 @@ describe('B2 — only the markers in the same paragraph of the same answer survi
     const c = checkReport(r, turns, '2026-10-03', ON)
     assert.ok(c.ok)
     assert.deepEqual(c.checks[0].kept, [3]); assert.deepEqual(c.checks[0].dropped, [2, 1])
+  })
+})
+
+/* ── E2c ITEM 2: AN ITEM THAT CITES NOTHING INHERITS WHERE ITS SENTENCE CAME FROM ─────────────── */
+
+/**
+ * *** THE MEASURED PROBLEM. *** E2b's Haiku re-summary of the Calendar permit conversation cited
+ * nothing on any of its six items, so every item read "No source cited in the conversation" about
+ * a conversation whose every answer carried two or three citations. The item's `basis` is copied
+ * out of one paragraph of one answer, the check has already FOUND that paragraph, and the
+ * paragraph's own `[n]` markers are the sources the sentence rests on. Nothing is invented: a
+ * number is inherited only from the paragraph the item's words came out of.
+ */
+describe('E2c item 2 — an item with no citation inherits its paragraph\'s', () => {
+  const basisOnly = (name: string, basis: string, sources: number[] = []) =>
+    ({ title: 'A conversation', situation: 'You make vinegar in Oregon.',
+      applies: [{ authority: 'FDA', items: [item(name, sources, basis)] }],
+      to_confirm: [] as unknown[], unanswered: [] as unknown[], facts: [] as unknown[] })
+
+  test('it inherits, the item is no longer marked, and the check says what was inherited', () => {
+    // The FDA paragraph carries [1] → global 3. The item cites nothing.
+    const c = checkReport(basisOnly('Prior notice', 'You must file Prior Notice before each shipment'),
+      turns, '2026-11-05', ON)
+    assert.ok(c.ok)
+    assert.equal(c.checks[0].found, true)
+    assert.deepEqual(c.checks[0].inherited, [3])
+    assert.deepEqual(c.report.applies[0].items[0].sources, [1])        // renumbered 3 → 1 (B4)
+    assert.ok(!c.report.applies[0].items[0].no_source)
+    // And the source it inherited is in the report's own list, so the card can draw it.
+    assert.deepEqual(c.report.sources.map((x) => x.title), ['FDA'])
+    assert.ok(!renderPlainText(c.report).toLowerCase().includes(NO_SOURCE.toLowerCase()))
+  })
+
+  test('a paragraph with two markers gives both', () => {
+    const c = checkReport(basisOnly('Excise', 'CBP collects the excise tax at entry'), turns, '2026-11-05', ON)
+    assert.ok(c.ok)
+    assert.deepEqual(c.checks[0].inherited, [1, 2])                    // TTB and CBP, that paragraph
+    assert.deepEqual(c.report.applies[0].items[0].sources, [1, 2])
+  })
+
+  test('a number the item cited WRONGLY is still reported dropped, and the right ones inherited', () => {
+    // Cites 3 (FDA, another answer); its basis is in the TTB/CBP paragraph, which carries 1 and 2.
+    const c = checkReport(basisOnly('Excise', 'CBP collects the excise tax at entry', [3]), turns, '2026-11-05', ON)
+    assert.ok(c.ok)
+    assert.deepEqual(c.checks[0].dropped, [3])
+    assert.deepEqual(c.checks[0].inherited, [1, 2])
+  })
+
+  test('an item that cited RIGHT inherits nothing — what the model said stands', () => {
+    const c = checkReport(basisOnly('Prior notice', 'You must file Prior Notice before each shipment', [3]),
+      turns, '2026-11-05', ON)
+    assert.ok(c.ok)
+    assert.equal(c.checks[0].inherited, undefined)
+    assert.deepEqual(c.checks[0].kept, [3])
+  })
+
+  test('NOTHING IS INVENTED: no basis, a basis in no answer, and a paragraph with no marker', () => {
+    const { perTurn } = gatherSources(turns, PASSAGE_SOURCES)
+    const inherit = { inherit: true }
+    // No basis at all.
+    assert.deepEqual(checkCitations({ basis: null, sources: [] }, turns, perTurn, true, inherit),
+      { found: false, kept: [], dropped: [] })
+    // A basis that is in no answer — the words are not in the conversation.
+    assert.deepEqual(checkCitations({ basis: 'a sentence nobody wrote here', sources: [2] }, turns, perTurn, true, inherit),
+      { found: false, kept: [], dropped: [2] })
+    // A paragraph that is found and carries no marker: found, and still nothing to inherit.
+    const quiet = [{ role: 'assistant', text: 'You should talk to your own broker about the tariff.' }]
+    const { perTurn: qp } = gatherSources(quiet, PASSAGE_SOURCES)
+    assert.deepEqual(checkCitations({ basis: 'talk to your own broker about the tariff', sources: [] }, quiet, qp, true, inherit),
+      { found: true, kept: [], dropped: [] })
+  })
+
+  /**
+   * *** THE REAL CASE, READ OFF STAGING (Calendar conversation `aa50ee49`). ***
+   * The basis is in the answer THREE times: a markdown table of what the permit says, which cites
+   * nothing, and two sentences that do. The original rule took the first occurrence — the table —
+   * so the item was held to a paragraph with no citation at all, and a number it cited CORRECTLY
+   * would have been dropped. The paragraph that cited the sentence is the one that decides.
+   */
+  test('the words are in the answer three times: the CITED paragraph decides, the last one', () => {
+    const quoted = [
+      { role: 'user', text: 'What dates are in my permit?' },
+      { role: 'assistant', text: '| Date | What the permit says |\n|---|---|\n| July 2 | "Renewal Application Due 60 days prior to expiration" |'
+        + '\n\nThe permit says: "Renewal Application Due 60 days prior to expiration" [1]'
+        + '\n\nAnd again, later: "Renewal Application Due 60 days prior to expiration" [2]',
+        sources: [{ n: 1, title: 'The permit', url: '', kind: 'passage', label: 'the file you attached', href: '/documents?document=660283d2-15ce-4997-b246-4a9920fab489' },
+                  { n: 2, title: 'The calendar line', url: '', kind: 'passage', label: 'your calendar', href: '/calendar?date=b58c179e-d318-4525-b78c-b0f1b12b2850' }] },
+    ]
+    const { perTurn } = gatherSources(quoted, PASSAGE_SOURCES)
+    const basis = 'Renewal Application Due 60 days prior to expiration'
+    // The summary's rule: the last paragraph that cites it — source 2.
+    assert.deepEqual(checkCitations({ basis, sources: [] }, quoted, perTurn, true, { inherit: true }),
+      { found: true, kept: [2], dropped: [], inherited: [2] })
+    // A number the model cited that IS in that paragraph stands on its own, with nothing inherited.
+    assert.deepEqual(checkCitations({ basis, sources: [2] }, quoted, perTurn, true, { inherit: true }),
+      { found: true, kept: [2], dropped: [] })
+    // Without the option the TABLE still decides, and everything is dropped — the old behaviour,
+    // which is what `lib/checklistConvert.ts` keeps.
+    assert.deepEqual(checkCitations({ basis, sources: [1, 2] }, quoted, perTurn, true),
+      { found: true, kept: [], dropped: [1, 2] })
+  })
+
+  test('WITHOUT the flag nothing is inherited — which is the checklist, deliberately', () => {
+    const { perTurn } = gatherSources(turns, PASSAGE_SOURCES)
+    const r = checkCitations({ basis: 'You must file Prior Notice before each shipment', sources: [] },
+      turns, perTurn, true)
+    assert.deepEqual(r, { found: true, kept: [], dropped: [] })
+    // `lib/checklistConvert.ts` calls it with no options on purpose: its items write
+    // `checklist_items.sources`, rows a person ticks and a later run reads.
+    const cc = readFileSync('lib/checklistConvert.ts', 'utf8')
+    assert.match(cc, /checkCitations\(\{ basis, sources: numbers \}, turns, perTurn, opts\.basisRequired\)/)
+    // …and the summary asks for it by name.
+    assert.match(readFileSync('lib/summaryReport.ts', 'utf8'),
+      /checkCitations\(c, turns, perTurn, opts\.basisRequired, \{ inherit: true \}\)/)
   })
 })
 
