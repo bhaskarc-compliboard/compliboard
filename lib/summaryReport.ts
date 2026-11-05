@@ -161,8 +161,10 @@ export interface ItemCheck {
   /** In the conversation-wide numbering, before the report's own renumbering. */
   kept: number[]
   dropped: number[]
-  /** E2c item 2: the numbers the item did not cite and inherited from the paragraph its basis sits in. */
+  /** E2c item 2: the numbers the item did not cite and inherited from where its basis sits. */
   inherited?: number[]
+  /** Which of the two it inherited from — the paragraph (E2c) or the whole answer (E2d). */
+  inheritedFrom?: 'paragraph' | 'answer'
 }
 
 type CheckResult =
@@ -243,6 +245,13 @@ function paragraphs(turn: TurnLike): Array<{ norm: string; markers: number[] }> 
  * place where it is cited, not a summary paragraph that repeats it"*). Without it, the first
  * occurrence still decides, unchanged.
  *
+ * *** AND WHEN NO PARAGRAPH THE SENTENCE IS IN CITES ANYTHING, THE ANSWER'S OWN SOURCES — E2d,
+ * 5 November 2026, the owner's call made. *** E2c measured this exact widening and left it open:
+ * on the Calendar permit conversation it is the difference between **0 of 6 items carrying a
+ * source and 3 of 6**. The item's words came out of this answer, and these are the sources this
+ * answer rested on — true, and a weaker claim than a marker in the paragraph, which is why it is
+ * the second choice and why `inheritedFrom` records which of the two it was.
+ *
  * *** THE CHECKLIST IS DELIBERATELY NOT GIVEN IT. *** `lib/checklistConvert.ts` calls this with no
  * options and keeps today's behaviour: its items write `checklist_items.sources` and `source_url`,
  * rows a person ticks and a later run reads, and E2c's brief is about the summary's items. One
@@ -253,7 +262,8 @@ function paragraphs(turn: TurnLike): Array<{ norm: string; markers: number[] }> 
  */
 export function checkCitations(item: { basis: string | null; sources: number[] }, turns: TurnLike[],
   perTurn: Array<Map<number, number>>, basisRequired: boolean,
-  opts: { inherit?: boolean } = {}): { found: boolean | null; kept: number[]; dropped: number[]; inherited?: number[] } {
+  opts: { inherit?: boolean } = {}):
+  { found: boolean | null; kept: number[]; dropped: number[]; inherited?: number[]; inheritedFrom?: 'paragraph' | 'answer' } {
   if (!basisRequired && item.basis === null) return { found: null, kept: item.sources, dropped: [] }
   const needle = item.basis ? quoteKey(item.basis) : ''
   if (needle.length >= 8) {
@@ -261,12 +271,12 @@ export function checkCitations(item: { basis: string | null; sources: number[] }
      * Every paragraph the basis appears in, in order, each as the global numbers it cites. Under
      * the original rule only the FIRST was ever looked at, and the loop stopped there.
      */
-    const hits: Array<Set<number>> = []
+    const hits: Array<{ t: number; here: Set<number> }> = []
     for (let t = 0; t < turns.length && !(hits.length && !opts.inherit); t++) {
       if (turns[t].role !== 'assistant') continue
       for (const para of paragraphs(turns[t])) {
         if (!para.norm.includes(needle)) continue
-        hits.push(new Set(para.markers.map((k) => perTurn[t].get(k)).filter((g): g is number => !!g)))
+        hits.push({ t, here: new Set(para.markers.map((k) => perTurn[t].get(k)).filter((g): g is number => !!g)) })
         if (!opts.inherit) break
       }
     }
@@ -274,12 +284,22 @@ export function checkCitations(item: { basis: string | null; sources: number[] }
       // *** WHICH OCCURRENCE DECIDES — E2c item 2. *** The paragraph that CITED the sentence, and
       // the last such paragraph, which is the latest state. Without the option, the first
       // occurrence, exactly as before.
-      const here = opts.inherit ? ([...hits].reverse().find((h) => h.size) ?? hits[0]) : hits[0]
+      const cited = [...hits].reverse().find((h) => h.here.size)
+      const here = opts.inherit ? (cited?.here ?? hits[0].here) : hits[0].here
       const kept = item.sources.filter((n) => here.has(n))
       const dropped = item.sources.filter((n) => !here.has(n))
       // *** THE ITEM THAT CITES NOTHING INHERITS WHERE ITS SENTENCE CAME FROM. ***
-      if (!kept.length && opts.inherit && here.size) {
-        return { found: true, kept: [...here], dropped, inherited: [...here] }
+      if (!kept.length && opts.inherit) {
+        if (here.size) return { found: true, kept: [...here], dropped, inherited: [...here], inheritedFrom: 'paragraph' }
+        /**
+         * *** AND WHEN NO PARAGRAPH THE SENTENCE IS IN CITES ANYTHING, THE ANSWER'S OWN — E2d. ***
+         * The sentence came out of this answer, and these are the sources this answer rested on.
+         * Weaker than a marker in the paragraph, which is why it is second and why the check says
+         * which of the two it was. The LAST answer the words are in, for the same "latest state".
+         */
+        const last = hits[hits.length - 1]
+        const mine = [...new Set(perTurn[last.t].values())]
+        if (mine.length) return { found: true, kept: mine, dropped, inherited: mine, inheritedFrom: 'answer' }
       }
       return { found: true, kept, dropped }
     }
@@ -351,7 +371,7 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
     // E2c item 2: a summary's item inherits its paragraph's sources when it cites none of its own.
     const r = checkCitations(c, turns, perTurn, opts.basisRequired, { inherit: true })
     checks.push({ where, name: c.name, basis: c.basis, found: r.found, kept: r.kept, dropped: r.dropped,
-      ...(r.inherited?.length ? { inherited: r.inherited } : {}) })
+      ...(r.inherited?.length ? { inherited: r.inherited, inheritedFrom: r.inheritedFrom } : {}) })
     return { ...c, sources: r.kept }
   }
 

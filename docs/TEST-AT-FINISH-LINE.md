@@ -171,6 +171,16 @@ every due handbook on staging. The summary button below runs the same writer; Ch
 - **The long-handbook path:** with a small `HR_HANDBOOK_BUDGET_TOKENS`, so the section-choosing call and the honest
   wait ("<n> of <m> parts done") each run once on Opus.
 - **A conversation:** a follow-up that uses the history; Stop; reopen; "Not answered." with "Ask it again".
+- **⚡ DOES THE ANSWER NAME THE DOCUMENTS IT USED, AND THE RIGHT ONES? — added at E2d, 5 November
+  2026.** Since E2d an answer that writes a packed document's **name** records it as a source
+  without quoting it, so a stronger model's answer should carry MORE sources, not fewer. Two
+  things to count on Opus, in one answer about the cabinet: **how many documents it names** (the
+  sources on the turn) and **whether every one of them is a document the answer really used** —
+  read the answer and check each card against it. On Haiku, 5 November: four named, all four
+  genuinely used, and one more missed because the answer wrote the first seven words of its name
+  and the rule wants the whole name. A FALSE name is the thing to watch for and the thing no unit
+  test can catch: the rule refuses a phrase on purpose, and a card pointing at a document the
+  answer never used is a worse lie than a missing card.
 - **⚡ DOES A STRONGER MODEL CITE ITS ITEMS? — added at E2c, 5 November 2026.** Summarise a
   conversation whose answers carry citations and **count the items that end up with a source**.
   E2c made the code supply one when the model does not — an item inherits the sources of the

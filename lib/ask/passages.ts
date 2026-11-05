@@ -46,6 +46,8 @@ export interface Passage {
   href?: string | null
   /** What this passage is called in a sentence — the date's own title. Falls back to `title`. */
   shortName?: string
+  /** The file's own name, where this passage is a document and the row carries one (E2d). */
+  fileName?: string | null
 }
 
 /**
@@ -252,8 +254,89 @@ export function replacePassageIds(text: string, passages: Passage[]): string {
 /** For a follow-up turn: each source put back behind its number, so the model sees what it cited. */
 export function appendSources(answer: string, sources?: AskSource[] | null): string {
   if (!answer) return answer
-  const list = (sources ?? []).map((s) => s.kind === 'web'
-    ? `[${s.n}] ${s.title} — ${s.url}`
-    : `[${s.n}] ${s.title} — “${s.quote}”`)
+  const list = (sources ?? []).map((s) => {
+    if (s.kind === 'web') return `[${s.n}] ${s.title} — ${s.url}`
+    // *** A SOURCE WITH NO QUOTE — E2b's attached file, and E2d's named document. ***
+    // This read `— “${s.quote}”` for every passage, and those two carry no quote at all: the
+    // next turn's history said `— “undefined”` to the model about a real file of the person's.
+    // Found at E2d by reading what E2b stored. What it IS is the true thing to say instead.
+    return s.quote ? `[${s.n}] ${s.title} — “${s.quote}”` : `[${s.n}] ${s.title} — ${s.label}`
+  })
   return list.length ? `${answer}\n\n${list.join('\n')}` : answer
+}
+
+// ---------------------------------------------------------------------------
+// *** WHEN AN ANSWER NAMES A DOCUMENT IT WAS GIVEN — E2d, 5 November 2026 (the owner).
+// ---------------------------------------------------------------------------
+
+/**
+ * *** THE THIRD WAY A SOURCE GETS RECORDED, AND THE MEASURED REASON FOR IT. ***
+ *
+ * A passage became a source only if the answer QUOTED it and the quote checked out (E2b's
+ * exception: an attached file is a source because it was attached). Read off staging, the Audits
+ * conversation "OSHA inspection readiness…": the answer is about ONE document — it names it, says
+ * its format is wrong, lists six gaps read out of it — and it stored **no sources at all**, zero
+ * `[n]` markers in 2,704 characters, because it paraphrased everywhere and quoted nowhere. Every
+ * item of every summary of it then said "No source cited in the conversation".
+ *
+ * So: **an answer that writes a packed document's own NAME records that document as a source** —
+ * no quote, no marker, the same shape E2b gives an attached file.
+ *
+ * *** THE WHOLE NAME, OR IT IS NOT A NAME. *** The match is the product's own name for the
+ * document, word for word and in order, ignoring case and punctuation, allowing at most
+ * `NAME_GAP` words inserted inside it — because a model reproducing a title writes
+ * *"Material Safety Data Sheet (old MSDS format) **for** Sulfuric Acid, 93%, MSDS No. CSC-SA-093"*
+ * where the title has an en dash. A PHRASE from a name does not count and must not: "the permit",
+ * "the safety data sheet" or "hazard communication" would name whichever document happened to be
+ * packed, and a card pointing at a document the answer never used is a worse lie than a missing
+ * card. For the same reason a name of fewer than `NAME_MIN_WORDS` words is never matched, which
+ * also disposes of the briefs' own fallbacks ("A document", "that document").
+ *
+ * *** AND IT COSTS NOTHING WHEN THE MODEL WRITES A HANDLE. *** `replacePassageIds` has already
+ * put the passage's `shortName` in place of `I3` or `R1` by the time this runs, so a handle the
+ * model wrote arrives here as the name itself, matched with no gap at all.
+ */
+export const NAME_MIN_WORDS = 4
+export const NAME_GAP = 2
+
+/** Lowercase words, punctuation gone — `SDS_Sulfuric_Acid_2019.pdf` and `CSC-SA-093` split alike. */
+function nameWords(s: string): string[] {
+  return String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+}
+
+/** Are `name`'s words in `hay`, in order, with at most `NAME_GAP` words inserted among them? */
+export function namesIt(hay: string[], name: string[]): boolean {
+  if (name.length < NAME_MIN_WORDS) return false
+  for (let start = 0; start + name.length <= hay.length + NAME_GAP; start++) {
+    if (hay[start] !== name[0]) continue
+    let i = start + 1, k = 1, gap = 0
+    while (k < name.length && i < hay.length && gap <= NAME_GAP) {
+      if (hay[i] === name[k]) { k++ } else { gap++ }
+      i++
+    }
+    if (k === name.length && gap <= NAME_GAP) return true
+  }
+  return false
+}
+
+/**
+ * Every packed passage whose document or audit the answer NAMES — by the product's own name for
+ * it, or by its file name. Only a passage that points somewhere (`href`) can become a source: a
+ * card that opens nothing is not worth a line, and the two addresses are the ones the summary and
+ * the drawer already know (`lib/sourceTitle.ts`).
+ */
+export function passagesNamed(text: string, passages: Passage[]): Passage[] {
+  const hay = nameWords(text)
+  if (!hay.length) return []
+  const out: Passage[] = []
+  const seen = new Set<string>()
+  for (const p of passages) {
+    const href = String(p.href ?? '').trim()
+    if (!href || seen.has(href)) continue
+    const names = [p.shortName ?? p.title, p.fileName ?? ''].filter(Boolean)
+    if (!names.some((n) => namesIt(hay, nameWords(n)))) continue
+    seen.add(href)
+    out.push(p)
+  }
+  return out
 }

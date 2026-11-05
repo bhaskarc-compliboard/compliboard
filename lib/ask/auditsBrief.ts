@@ -418,6 +418,8 @@ export async function packAuditsContext(db: Db, companyId: string, question: str
       id, title: `${d.title ?? d.file_name ?? 'A document'} — its line in your list`,
       label: 'your document', text: indexPlain(d),
       href: `/documents?document=${d.document_id}`, shortName: d.title ?? d.file_name ?? 'that document',
+      // E2d: the other name an answer may write for it.
+      fileName: d.file_name ?? null,
     })
     return line
   })
@@ -472,6 +474,7 @@ export async function packAuditsContext(db: Db, companyId: string, question: str
         id, title: `${d.title ?? d.file_name ?? 'A document'} — what we read in it`,
         label: 'your document', text: block,
         href: `/documents?document=${d.document_id}`, shortName: d.title ?? d.file_name ?? 'that document',
+        fileName: d.file_name ?? null,
       }),
     })
     passages.push(...packed.passages)

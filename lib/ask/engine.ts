@@ -48,7 +48,7 @@ import { PLAIN_AS_OF } from '../summaryWords.ts'
 import { loadAttachedDocument, describeAttachments, loadTopicAttachments, MAX_CARRIED_DOCUMENTS } from '../attachedDocument.ts'
 import { askPrompt } from '../../prompts/ask.ts'
 import { checkBrief, type Brief, type ContextBlock, type Db } from './brief.ts'
-import { finishAnswer, appendSources, tokensOf, ATTACHED_PREFIX, type AskSource, type Passage } from './passages.ts'
+import { finishAnswer, appendSources, passagesNamed, tokensOf, ATTACHED_PREFIX, type AskSource, type Passage } from './passages.ts'
 import { parseOffers, offerLine, type Offer } from './offers.ts'
 
 /** The workspace's own failed line, which HR copied and this copies from HR. */
@@ -530,6 +530,34 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
             n: checked.sources.length + 1, kind: 'passage', url: '',
             title: f.name ?? 'The attached file', label: 'the file you attached', href,
           } as unknown as (typeof checked.sources)[number])
+        }
+        /**
+         * *** AND A DOCUMENT THE ANSWER USED IS A SOURCE TOO — E2d, 5 November 2026. ***
+         *
+         * E2b closed this for a file the person ATTACHED. It stayed open for the cabinet: read
+         * off staging, the Audits conversation "OSHA inspection readiness…" is about one safety
+         * data sheet — it names it, says its format is wrong and lists six gaps read out of it —
+         * and it stored **no source at all**, because it paraphrased everywhere and quoted
+         * nowhere. A summary cannot be better sourced than the conversation under it, so every
+         * item of it read "No source cited in the conversation".
+         *
+         * So a packed document or audit finding the answer NAMES — the product's own name for
+         * it, whole, or its file name (`passagesNamed`) — is recorded with no quote and no
+         * marker, exactly as the attached file is. `checkQuote` is untouched and still strict:
+         * this adds a source, it never turns a refused quote into an accepted one, and the
+         * card it draws carries no quote because there is none to show.
+         *
+         * Appended after the cited sources and after the attached files, and skipped when that
+         * address is already a source, so a document the answer DID quote is never listed twice
+         * and every number the model wrote still points where it pointed.
+         */
+        for (const p of passagesNamed(checked.text, passages)) {
+          const href = String(p.href)
+          if (checked.sources.some((s) => (s as { href?: string | null }).href === href)) continue
+          checked.sources.push({
+            n: checked.sources.length + 1, kind: 'passage', url: '',
+            title: p.title, label: p.label, href, passage_id: p.id, quote: '',
+          })
         }
         let text = checked.text
         if (brief.extraStep) {

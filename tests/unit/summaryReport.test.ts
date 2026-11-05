@@ -224,7 +224,7 @@ describe('E2c item 2 — an item with no citation inherits its paragraph\'s', ()
     const basis = 'Renewal Application Due 60 days prior to expiration'
     // The summary's rule: the last paragraph that cites it — source 2.
     assert.deepEqual(checkCitations({ basis, sources: [] }, quoted, perTurn, true, { inherit: true }),
-      { found: true, kept: [2], dropped: [], inherited: [2] })
+      { found: true, kept: [2], dropped: [], inherited: [2], inheritedFrom: 'paragraph' })
     // A number the model cited that IS in that paragraph stands on its own, with nothing inherited.
     assert.deepEqual(checkCitations({ basis, sources: [2] }, quoted, perTurn, true, { inherit: true }),
       { found: true, kept: [2], dropped: [] })
@@ -232,6 +232,55 @@ describe('E2c item 2 — an item with no citation inherits its paragraph\'s', ()
     // which is what `lib/checklistConvert.ts` keeps.
     assert.deepEqual(checkCitations({ basis, sources: [1, 2] }, quoted, perTurn, true),
       { found: true, kept: [], dropped: [1, 2] })
+  })
+
+  /**
+   * *** E2d, THE OWNER'S CALL MADE: WHEN NO PARAGRAPH THE SENTENCE IS IN CITES ANYTHING. ***
+   * E2c measured this widening and left it open. The claim is weaker — the answer's sources, not
+   * the paragraph's — so the check records WHICH of the two it was, and the paragraph still wins
+   * whenever there is one.
+   */
+  test('the answer\'s own sources, and `inheritedFrom` says which', () => {
+    const paraphrased = [
+      { role: 'user', text: 'Are we ready for an inspection?' },
+      { role: 'assistant', text: 'Your safety data sheet uses the old eight-section layout.'
+        + '\n\nIt is dated August 2019 and has six gaps [1].',
+        sources: [{ n: 1, title: 'The sheet', url: '', kind: 'passage', label: 'your document', href: '/documents?document=4b4a603b-c973-4c8c-a8f9-04f49f7721d8' }] },
+    ]
+    const { perTurn } = gatherSources(paraphrased, PASSAGE_SOURCES)
+    // The basis is in the FIRST paragraph, which cites nothing; the answer cites 1.
+    const basis = 'Your safety data sheet uses the old eight-section layout'
+    assert.deepEqual(checkCitations({ basis, sources: [] }, paraphrased, perTurn, true, { inherit: true }),
+      { found: true, kept: [1], dropped: [], inherited: [1], inheritedFrom: 'answer' })
+    // The paragraph still wins when it has one of its own.
+    assert.deepEqual(checkCitations({ basis: 'It is dated August 2019 and has six gaps', sources: [] },
+      paraphrased, perTurn, true, { inherit: true }),
+      { found: true, kept: [1], dropped: [], inherited: [1], inheritedFrom: 'paragraph' })
+    // An answer that cites nothing at all still gives nothing — there is nothing to inherit.
+    const silent = [{ role: 'assistant', text: 'Your safety data sheet uses the old eight-section layout.' }]
+    const { perTurn: sp } = gatherSources(silent, PASSAGE_SOURCES)
+    assert.deepEqual(checkCitations({ basis, sources: [] }, silent, sp, true, { inherit: true }),
+      { found: true, kept: [], dropped: [] })
+  })
+
+  test('the report says so too, and the item is no longer marked', () => {
+    const paraphrased = [
+      { role: 'user', text: 'Are we ready?' },
+      { role: 'assistant', text: 'Your safety data sheet uses the old eight-section layout.'
+        + '\n\nIt has six gaps [1].',
+        sources: [{ n: 1, title: 'The sheet', url: '', kind: 'passage', label: 'your document', href: '/documents?document=4b4a603b-c973-4c8c-a8f9-04f49f7721d8' }] },
+    ]
+    const c = checkReport({ title: 'A sheet', situation: 'You blend acid.',
+      applies: [{ authority: 'OSHA', items: [item('Replace the sheet', [],
+        'Your safety data sheet uses the old eight-section layout')] }],
+      to_confirm: [], unanswered: [], facts: [] }, paraphrased as never, '2026-11-05',
+      // The option every section but HR passes, or a document source is dropped on the way in.
+      { basisRequired: true, sources: PASSAGE_SOURCES })
+    assert.ok(c.ok)
+    assert.equal(c.checks[0].inheritedFrom, 'answer')
+    assert.deepEqual(c.report.applies[0].items[0].sources, [1])
+    assert.ok(!c.report.applies[0].items[0].no_source)
+    assert.equal(c.report.sources[0].title, 'The sheet')
   })
 
   test('WITHOUT the flag nothing is inherited — which is the checklist, deliberately', () => {

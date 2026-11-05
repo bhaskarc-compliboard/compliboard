@@ -595,7 +595,24 @@ import { readdirSync, readFileSync } from 'node:fs'
 //
 //   The rest are the prompt's own words (§3.1) and the card's one door: the per-item link, or one
 //   line for the card when no item carries one, and never both.
-const FLOOR = 2610
+//
+// 2610 -> 2620, 5 November 2026 (GAPS-PLAN Part E step E2d - a document the answer used is a
+//   source). TEN, and the matcher's are RUN on the real strings read off staging: the title
+//   "Material Safety Data Sheet (old MSDS format) - Sulfuric Acid, 93%, MSDS No. CSC-SA-093"
+//   against the sentence the stored answer actually wrote, which replaces the en dash with the
+//   word "for". That one word is why the match allows two inserted words and why it is a match
+//   at all.
+//
+//   The test that matters most is the one that must FAIL to match: "You need a safety data sheet
+//   for every chemical you store", "Your hazard communication programme is out of date", "We hold
+//   a discharge permit". A phrase is not a name, and a card pointing at a document the answer
+//   never used is a worse lie than a missing card - so the rule is the whole name or nothing, and
+//   two documents whose names share an opening are told apart by it.
+//
+//   One is a defect found by reading what E2b stored rather than by a failing test: a source with
+//   no quote rendered as `- "undefined"` in the next turn's history, which is what the MODEL was
+//   then shown about a real file of the person's.
+const FLOOR = 2620
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

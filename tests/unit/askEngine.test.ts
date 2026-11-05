@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs'
 import { checkBrief, BRIEF_FIELDS, type Brief } from '../../lib/ask/brief.ts'
 import type { Offer, AddDateOffer } from '../../lib/ask/offers.ts'
 import { parseOffers, offerLine, OFFER_KINDS } from '../../lib/ask/offers.ts'
-import { finishAnswer, checkQuote, replacePassageIds, NOT_IN_WHAT_WE_HAVE, tokensOf, ATTACHED_PREFIX, type Passage } from '../../lib/ask/passages.ts'
+import { finishAnswer, checkQuote, replacePassageIds, passagesNamed, appendSources, NOT_IN_WHAT_WE_HAVE, tokensOf, ATTACHED_PREFIX, type Passage } from '../../lib/ask/passages.ts'
 import {
   answer, sectionRuns, attachedContextBlock, lastUserMessage, NO_CARRIED_FILES,
   attachedPassages, noTextNote, carriedList,
@@ -791,5 +791,114 @@ describe('the file a conversation carries is something a quote can be checked ag
     // And the record says what the file contributed, so a run can be read back afterwards.
     assert.match(engine, /attached_passages: filePassages\.length/)
     assert.match(engine, /attached_without_text: filePassages\.filter/)
+  })
+})
+
+/* ── E2d — A DOCUMENT THE ANSWER USED IS A SOURCE ─────────────────────────── */
+
+/**
+ * *** THE MEASURED CASE, READ OFF STAGING. *** The Audits conversation "OSHA inspection
+ * readiness…" is about ONE document — it names it, says its format is wrong and lists six gaps
+ * read out of it — and it stored **no source at all**: it paraphrased everywhere and quoted
+ * nowhere, so `checkQuote` had nothing to accept and the turn carried zero `[n]` markers in 2,704
+ * characters. Every item of every summary of it then said "No source cited in the conversation".
+ *
+ * The real title and the answer's real sentence are used here, including the difference that
+ * matters: the title joins with an en dash and the answer wrote "for".
+ */
+describe('an answer that NAMES a packed document records it — E2d', () => {
+  const SDS = 'Material Safety Data Sheet (old MSDS format) – Sulfuric Acid, 93%, MSDS No. CSC-SA-093'
+  const sds: Passage = {
+    id: 'I3', title: `${SDS} — its line in your list`, label: 'your document',
+    text: 'The sheet uses the old eight-section layout and is dated August 12, 2019.',
+    href: '/documents?document=4b4a603b-c973-4c8c-a8f9-04f49f7721d8',
+    shortName: SDS, fileName: 'SDS_Sulfuric_Acid_2019.pdf',
+  }
+  const permit: Passage = {
+    id: 'I7', title: 'Oregon DEQ Simple Air Contaminant Discharge Permit (ACDP) No. 03-0217-ST-01 — its line in your list',
+    label: 'your document', text: 'The permit.', href: '/documents?document=6c68a738-300a-41b4-9dd7-bd2024807797',
+    shortName: 'Oregon DEQ Simple Air Contaminant Discharge Permit (ACDP) No. 03-0217-ST-01',
+    fileName: 'Oregon_DEQ_Simple_ACDP_03-0217-ST-01.pdf',
+  }
+
+  test('⚡ the answer\'s own words, with a connector the model changed, still name it', () => {
+    const answer = 'Only one document in your list is filed under OSHA: the Material Safety Data Sheet '
+      + '(old MSDS format) for Sulfuric Acid, 93%, MSDS No. CSC-SA-093. It is dated August 12, 2019.'
+    const hit = passagesNamed(answer, [sds, permit])
+    assert.equal(hit.length, 1, 'the sheet is named, the permit is not')
+    assert.equal(hit[0].id, 'I3')
+  })
+
+  test('the file name names it too, and so does a handle, which arrives as the name itself', () => {
+    assert.equal(passagesNamed('We read SDS_Sulfuric_Acid_2019.pdf on 3 November.', [sds]).length, 1)
+    // `replacePassageIds` has already put `shortName` in place of `I3` by the time this runs.
+    assert.equal(passagesNamed(`We read ${SDS} on 3 November.`, [sds]).length, 1)
+  })
+
+  test('⚡ A PHRASE IS NOT A NAME, and that is the whole safety of it', () => {
+    for (const said of [
+      'You need a safety data sheet for every chemical you store.',
+      'Your hazard communication programme is out of date.',
+      'We hold a discharge permit.',
+      'The sheet is from 2019.',
+      '',
+    ]) {
+      assert.deepEqual(passagesNamed(said, [sds, permit]), [], said)
+    }
+    // Two documents whose names share an opening: only the one actually written is named.
+    const other = { ...sds, id: 'I4', shortName: 'Material Safety Data Sheet (16-section) – Caustic Soda, 50%',
+      href: '/documents?document=11111111-1111-1111-1111-111111111111', fileName: 'SDS_Caustic_2024.pdf' }
+    const named = passagesNamed(`We read the ${other.shortName} this week.`, [sds, other])
+    assert.equal(named.length, 1)
+    assert.equal(named[0].id, 'I4')
+  })
+
+  test('a passage with nowhere to go is never a source, however it is named', () => {
+    const nowhere: Passage = { id: 'F2', title: 'Hazard communication — the audit\'s own words',
+      label: 'an audit finding', text: 'x', href: null, shortName: 'Hazard communication programme review 2026' }
+    assert.deepEqual(passagesNamed('The Hazard communication programme review 2026 says so.', [nowhere]), [])
+  })
+
+  test('an audit finding is named the same way, with its own address', () => {
+    const finding: Passage = { id: 'F1', title: 'Sulfuric acid sheet is the old format — the audit\'s own words',
+      label: 'an audit finding', text: 'x', href: '/audits?run=ac3d6966-3d32-470c-b1dd-ce05f5b79405',
+      shortName: 'Sulfuric acid sheet is the old format' }
+    const hit = passagesNamed('The audit found that the Sulfuric acid sheet is the old format.', [finding])
+    assert.equal(hit.length, 1)
+    assert.equal(hit[0].href, '/audits?run=ac3d6966-3d32-470c-b1dd-ce05f5b79405')
+  })
+
+  test('the engine records it after the cited ones, never twice, with no quote', () => {
+    const e = readFileSync('lib/ask/engine.ts', 'utf8')
+    assert.match(e, /for \(const p of passagesNamed\(checked\.text, passages\)\)/)
+    assert.match(e, /if \(checked\.sources\.some\(\(s\) => \(s as \{ href\?: string \| null \}\)\.href === href\)\) continue/)
+    assert.match(e, /title: p\.title, label: p\.label, href, passage_id: p\.id, quote: ''/)
+    // It runs on the CHECKED text, and `checkQuote` is named in the engine only in comments: this
+    // adds a source, it never turns a refused quote into an accepted one.
+    for (const line of e.split('\n').filter((l) => l.includes('checkQuote'))) {
+      assert.match(line.trim(), /^(\*|\/\/|\/\*)/, `checkQuote is called at: ${line.trim()}`)
+    }
+  })
+
+  test('a verified quote still takes precedence — one source, with the quote on it', () => {
+    // The answer names the sheet AND quotes it: the quote's card is the source, with its words.
+    const quoted = finishAnswer(`The ${SDS} says [I3: "The sheet uses the old eight-section layout"].`,
+      [], [], [sds])
+    assert.equal(quoted.sources.length, 1)
+    assert.equal((quoted.sources[0] as { quote: string }).quote, 'The sheet uses the old eight-section layout')
+    assert.equal((quoted.sources[0] as { href: string }).href, sds.href)
+    // The name is in the text too, so the engine's loop sees the same passage — and skips it,
+    // because that address is already a source. One card, with the quote on it, never two.
+    assert.equal(passagesNamed(quoted.text, [sds])[0]?.href, sds.href)
+  })
+
+  test('a source with no quote says what it IS in the next turn\'s history, not "undefined"', () => {
+    const line = appendSources('An answer.', [{ n: 1, kind: 'passage', title: 'The sheet', url: '',
+      label: 'your document', passage_id: 'I3', quote: '', href: '/documents?document=x' }])
+    assert.match(line, /\[1\] The sheet — your document/)
+    assert.ok(!line.includes('undefined'))
+    // A quote, when there is one, still reads as it always did.
+    assert.match(appendSources('An answer.', [{ n: 1, kind: 'passage', title: 'The sheet', url: '',
+      label: 'your document', passage_id: 'I3', quote: 'the words', href: null }]), /— “the words”/)
   })
 })
