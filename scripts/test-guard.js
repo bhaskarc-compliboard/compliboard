@@ -550,7 +550,18 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   `8px 0 10px 18px` over a 1px rule and `.sr .auth` is `10px 0 6px`, so item to item is 19px and
 //   an authority row to its first item is 15px. The test reads both numbers out of the board file
 //   AND out of the component, so a change to either side fails here.
-const FLOOR = 2566
+//
+// 2566 -> 2580, 4 November 2026 (GAPS-PLAN Part E step E2a - three fixes to E2). FOURTEEN, and
+//   eight of them RUN `gatherSources` on the real stored shape rather than reading the source:
+//   a document passage is `{ kind: 'passage', href: '/documents?document=...', url: '' }`, and
+//   the test proves it survives WITH the option and is dropped WITHOUT it - which is exactly the
+//   defect E2 reported and could not fix inside its own scope. One of them pins that the same
+//   document cited three times is ONE numbered source.
+//
+//   The rest are `confirmHref`, both ways: a key gives `?key=<key>` and no key gives the page.
+//   That second case is every item on staging today, because the prompt puts a key on a FACT and
+//   not on a to_confirm item - so the test is the record of a thing that is built and waiting.
+const FLOOR = 2580
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -30,6 +30,7 @@ export { NO_SOURCE, longDate, AS_OF_LINE }
 // HR Step 7: the HR summary's pieces (its source key and list line, its turns without the grey lines, its
 // prompt). Used only when `summariseTopic` is called with kind 'hr'; the workspace path never reaches them.
 import { HR_SOURCES, hrTurns } from './hrSummary.ts'
+import { PASSAGE_SOURCES } from './sourceTitle.ts'
 import { hrSummaryPrompt } from '../prompts/hr-summary.ts'
 
 export interface TurnLike {
@@ -48,6 +49,14 @@ export interface ReportItem {
   name: string
   what_to_do: string
   sources: number[]
+  /**
+   * *** THE KEY A `to_confirm` ITEM WOULD BE SETTLED BY — E2a item 3, and NOTHING SETS IT YET. ***
+   * Company information keys every waiting question by a switch or fact key, and the summary's
+   * link to "the exact waiting question" can only be built from that key (`confirmHref`). The
+   * prompt asks for a key on a FACT, not on an item, so this is optional and absent on every
+   * stored report: an item without one links to the page. Adding it is a prompt change (§3.1).
+   */
+  key?: string
   /** Set by the check when the conversation cited nothing for this item. */
   no_source?: true
   /** The words in an answer this item rests on, as the model copied them (changed prompt only). */
@@ -442,7 +451,15 @@ export async function summariseTopic(db: Db, admin: Db, args: {
   const today = args.today ?? new Date().toISOString().slice(0, 10)
   const hr = args.kind === 'hr'
   const turns = hr ? hrTurns(args.turns) : args.turns
-  const { transcript } = numberedTranscript(turns, hr ? HR_SOURCES : undefined)
+  /**
+   * *** EVERY SECTION KEEPS A SOURCE OF ITS OWN NOW — E2a, 4 November 2026. ***
+   * It was `hr ? HR_SOURCES : undefined`, and `undefined` meant "drop every source without a URL":
+   * a document or an audit cited in the conversation never reached the summary, so decision 63's
+   * in-place swap had nothing to open. `PASSAGE_SOURCES` is HR's shape with HR's handbook rule
+   * swapped for the address rule (`lib/sourceTitle.ts`). A web source is keyed and listed exactly
+   * as it always was.
+   */
+  const { transcript } = numberedTranscript(turns, hr ? HR_SOURCES : PASSAGE_SOURCES)
   const raw = await askAIJson<unknown>(
     hr ? hrSummaryPrompt(today) : summaryReportPrompt(today),
     `Conversation title: ${args.title ?? '(none)'}\n\n${transcript}`,
@@ -451,12 +468,14 @@ export async function summariseTopic(db: Db, admin: Db, args: {
     // before `lib/ai.ts` retried it larger (run C2, Workspace Task 5).
     { maxTokens: 12000, task: 'summary', ledger: { companyId: args.companyId, task: 'summarise' } },
   )
-  const checked = checkReport(raw, turns, today, { basisRequired: SUMMARY_PROMPT_ASKS_FOR_BASIS, ...(hr ? { sources: HR_SOURCES } : {}) })
+  const checked = checkReport(raw, turns, today, { basisRequired: SUMMARY_PROMPT_ASKS_FOR_BASIS, sources: hr ? HR_SOURCES : PASSAGE_SOURCES })
   if (!checked.ok) return checked
   const { data: written, error } = await guardSummaryWrite(db.from('topics').update({
     summary_report: checked.report,
     summary: hr ? renderPlainText(checked.report, { asOf: HR_AS_OF_LINE, applies: 'What to change', sourceLine: HR_SOURCES.lineOf })
-      : renderPlainText(checked.report),
+      // The same line rule in the plain text, or a document would print as "3. Title — " with a
+      // dangling dash where a web page has its address.
+      : renderPlainText(checked.report, { sourceLine: PASSAGE_SOURCES.lineOf }),
     title: checked.report.title,
     summarised_at: new Date().toISOString(),
     summary_source: args.source,

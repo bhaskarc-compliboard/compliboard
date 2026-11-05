@@ -186,3 +186,38 @@ export function sourceTarget(src: { url?: string | null; href?: string | null })
   if (run) return { kind: 'audit', id: run[1], url: raw }
   return { kind: 'web', id: null, url: raw }
 }
+
+/**
+ * *** KEEPING A SOURCE THAT IS ONE OF OURS — E2a, decision 63 made reachable, 4 November 2026. ***
+ *
+ * `lib/summaryReport.ts` `gatherSources` keys a source by its URL and **drops any source that has
+ * none** unless the caller supplies `keyWithoutUrl`. Only HR did (a handbook passage,
+ * `lib/hrSummary.ts`), so a document or an audit cited in a Workspace, Calendar, Documents or
+ * Audits conversation — which carries its address in `href` and an EMPTY `url` — never reached a
+ * summary at all. E2 built the in-place swap for a source that could not arrive; this is the three
+ * lines that let it.
+ *
+ * **It is keyed by what it points AT**, so the same document cited three times is one numbered
+ * source, which is what a web page cited three times already is.
+ *
+ * *** AND IT CHANGES WHAT THE MODEL IS SHOWN, WHICH IS WHY IT IS THE OWNER'S CALL (§3.1). ***
+ * The summariser's numbered list now includes the company's own documents, exactly as HR's has
+ * included handbooks since Step 7. Authorised in the E2a brief.
+ */
+export function passageKey(s: Record<string, unknown>): string | null {
+  const t = sourceTarget(s as { url?: string | null; href?: string | null })
+  return t.kind === 'web' ? null : `${t.kind}:${t.id}`
+}
+
+/** The list line the model reads. A web page keeps its URL; one of ours says what it is. */
+export function passageLineOf(s: { n: number; title: string; url?: string | null; label?: unknown }): string {
+  const label = typeof s.label === 'string' && s.label.trim() ? s.label : 'your own records'
+  return s.url ? `${s.n}. ${s.title} — ${s.url}` : `${s.n}. ${s.title} — ${label}`
+}
+
+/**
+ * What every section that is not HR passes to the summariser. `keepFields` is not optional here:
+ * without it the kept source is rebuilt as `{ n, title, url }` and the `href` — the whole point —
+ * is thrown away on the way in.
+ */
+export const PASSAGE_SOURCES = { keyWithoutUrl: passageKey, keepFields: true, lineOf: passageLineOf }

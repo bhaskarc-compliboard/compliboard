@@ -50,14 +50,19 @@ export const TINT_NO_ANSWER = 'border border-dashed border-[var(--amber)] bg-whi
 /**
  * *** THE SUMMARY REPORT'S FIVE CARDS — decision 62, 4 November 2026. ***
  *
- * Each card has a coloured left edge and a tinted header, from the four tints above: *Your
- * situation* grey · *What applies* green · *Still to confirm* **amber** · *Not answered here* and
- * *Sources* a pale grey that says "this is here if you want it" rather than "look at this".
+ * Each card has a coloured left edge and a tinted header: *Your situation* grey · *What applies*
+ * green · *Still to confirm* **blue** · *Not answered here* and *Sources* a pale grey that says
+ * "this is here if you want it" rather than "look at this".
  *
- * **Board 2 draws Still to confirm in BLUE (`.s-con`, `#3B6FA6` on `#E6EFF9`) and decision 62 says
- * amber.** The brief wins where the two disagree, which is the rule written on every board file,
- * and amber is also the one the rest of the product already means by it: *something needs a
- * person*. A fifth colour would be a fifth thing to learn.
+ * *** STILL TO CONFIRM IS BLUE, AND E2 HAD IT AMBER FOR A DAY — corrected at E2a by the owner,
+ * 4 November 2026. *** E2 read decision 62's "amber" and said so out loud, because board 2 drew
+ * it blue and the rule is that the brief wins. The owner corrected the DECISION instead: **amber
+ * means a document falls short** — it is the audit report's word for *on file, gaps found* and
+ * *out of date* — and a thing the conversation could not settle is not that. It is a question,
+ * and a question is blue. `#3B6FA6` on `#E6EFF9`, which is board 2's own `.s-con`.
+ *
+ * So this is the one card whose edge is NOT `border-l-current`: the board's header text there is
+ * the ordinary dark grey, not the blue, and `currentColor` would have made the heading blue too.
  *
  * *** THE EDGE IS `border-l-current`, WHICH IS WHY THERE IS NOT ONE NEW VALUE HERE. *** The header
  * already sets its text to the tint's ink, and `currentColor` is that ink — so the left edge is
@@ -68,5 +73,5 @@ export const TINT_NO_ANSWER = 'border border-dashed border-[var(--amber)] bg-whi
  */
 export const CARD_SITUATION = `${TINT_GREY} border-l-current`
 export const CARD_APPLIES = `${TINT_GREEN} border-l-current`
-export const CARD_CONFIRM = `${TINT_AMBER} border-l-current`
+export const CARD_CONFIRM = 'bg-[#E6EFF9] text-gray-800 border-l-[#3B6FA6]'
 export const CARD_QUIET = 'bg-gray-50 text-gray-500 border-l-gray-300'

@@ -81,3 +81,42 @@ export const APPLIES_COUNT = (total: number, groups: number) =>
 /** Beside HR's own heading, which already carries its count. */
 export const GROUPS_COUNT = (groups: number) =>
   `${groups} authorit${groups === 1 ? 'y' : 'ies'}`
+
+// ---- E2a item 3 — Still to confirm leads somewhere (the owner, 4 November 2026) ----
+
+/**
+ * *** THE CARD THAT SAID "WE COULD NOT SETTLE THIS" AND OFFERED NOWHERE TO SETTLE IT. ***
+ *
+ * Company information is the page that holds the answers, and its first section is literally
+ * called *Waiting for you*. The header's line sends a person there; each item sends them to the
+ * same place, and to the exact question when it can name one.
+ */
+export const CONFIRM_LINK = 'Confirm them on Company information →'
+export const CONFIRM_ONE = 'Confirm it on Company information →'
+
+/**
+ * *** WHERE AN ITEM'S LINK GOES — matched on the PAGE'S OWN KEY, never on words. ***
+ *
+ * `/company-information` keys every waiting question by a switch or fact key —
+ * `lib/confirmationQueue.ts` builds `one:<key>`, `dis:<key>` and a document group whose members
+ * are those same keys, and `/api/to-confirm` settles a KEY. So `?key=<key>` is the only address
+ * that can name one question, and matching on an item's words would be matching on something the
+ * model wrote rather than on something the page holds.
+ *
+ * *** AND TODAY NO ITEM CARRIES A KEY, WHICH IS SAID HERE RATHER THAN WORKED AROUND. ***
+ * `prompts/summary-report.ts` asks for `to_confirm` items of `{ name, what_to_do, basis, sources }`
+ * and for `facts` of `{ key, value, quote }`; the key lives on a FACT and nothing joins a fact to
+ * an item but its wording. Read on staging: every stored `to_confirm` item is prose and the
+ * reports carrying them have no facts at all. So every item links to the page today, and the
+ * exact-question link turns on the day a `key` is added to that one prompt shape — a §3.1
+ * decision, not a display one. `ReportItem.key` is optional for exactly that reason.
+ *
+ * **The page resolves it, not the caller.** A key that is no longer waiting opens the page as it
+ * always did: asking the drawer to fetch the queue first would be a request per summary opened,
+ * for a link whose fallback is the same page.
+ */
+export const CONFIRM_HREF = '/company-information'
+export function confirmHref(key?: string | null): string {
+  const k = typeof key === 'string' ? key.trim() : ''
+  return k ? `${CONFIRM_HREF}?key=${encodeURIComponent(k)}` : CONFIRM_HREF
+}

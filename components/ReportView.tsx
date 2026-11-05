@@ -45,7 +45,8 @@ import type { ReportItem, ReportSource } from '@/lib/summaryReport'
 import {
   NO_SOURCE, NO_SITUATION, AS_OF_LINE, APPLIES_COUNT, GROUPS_COUNT, CONFIRM_COUNT,
   UNANSWERED_COUNT, UNANSWERED_LINE, CARD_SITUATION_TITLE, CARD_APPLIES_TITLE, CARD_CONFIRM_TITLE,
-  CARD_UNANSWERED_TITLE, CARD_SOURCES_TITLE,
+  CARD_UNANSWERED_TITLE, CARD_SOURCES_TITLE, CONFIRM_LINK, CONFIRM_ONE, confirmHref,
+  CONFIRM_HREF as CONFIRM_HREF_ALL,
 } from '@/lib/summaryWords'
 import { CARD_SITUATION, CARD_APPLIES, CARD_CONFIRM, CARD_QUIET } from '@/lib/reportPalette'
 import { thingsToDo } from '@/lib/checklistView'
@@ -182,7 +183,7 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
   }
 
   /* An item: the name, what to do, and its sources. The paddings are board 2's — see the header. */
-  const item = (it: ReportItem, key: string) => (
+  const item = (it: ReportItem, key: string, confirm = false) => (
     <li key={key} className="border-t border-gray-100 pb-2.5 pl-[18px] pt-2 first:border-t-0">
       <p className="text-[14px] font-medium text-gray-900">{it.name}</p>
       <p className="mt-0.5 text-[13.5px] leading-[20px] text-gray-600">{it.what_to_do}</p>
@@ -192,6 +193,15 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
           return src ? sourceLine(src) : null
         }) : <p className="text-[12px] text-gray-400">{NO_SOURCE}</p>}
       </div>
+      {/* *** AND A WAY TO SETTLE IT — E2a item 3. *** Only under Still to confirm: these are the
+          things the documents could not answer, and Company information is where a person
+          answers them. `confirmHref` names the exact question when the item carries the page's
+          own key, and the page itself when it does not. */}
+      {confirm && (
+        <a href={confirmHref(it.key)} className="no-print mt-1 inline-block text-[12px] text-[var(--green-ink)] underline underline-offset-2 hover:text-[var(--green)]">
+          {CONFIRM_ONE}
+        </a>
+      )}
     </li>
   )
 
@@ -256,8 +266,18 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
       {/* ── STILL TO CONFIRM — amber, folded, its count says what it means. ── */}
       {report.to_confirm.length > 0 && (
         <Card tint={CARD_CONFIRM} title={CARD_CONFIRM_TITLE} count={CONFIRM_COUNT(report.to_confirm.length)}
-          open={cards.confirm} onToggle={() => flip('confirm')} controls={`${uid}-con`}>
-          <ul>{report.to_confirm.map((it, i) => item(it, `c-${i}`))}</ul>
+          open={cards.confirm} onToggle={() => flip('confirm')} controls={`${uid}-con`}
+          right={
+            /* The card's own way out, on the header line. A `span` inside the header button, as
+               "Open all" is, so one control does not sit inside another. */
+            <span className="no-print ml-auto text-[12px] underline underline-offset-2"
+              role="link" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = CONFIRM_HREF_ALL } }}
+              onClick={(e) => { e.stopPropagation(); window.location.href = CONFIRM_HREF_ALL }}>
+              {CONFIRM_LINK}
+            </span>
+          }>
+          <ul>{report.to_confirm.map((it, i) => item(it, `c-${i}`, true))}</ul>
         </Card>
       )}
 

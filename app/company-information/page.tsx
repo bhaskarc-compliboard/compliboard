@@ -28,6 +28,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { authHeaders } from '@/lib/supabase'
 import AppLayout, { FACTS_CHANGED } from '@/components/AppLayout'
 // The question lines and their order, in one place, because the sidebar badge counts the same lines
@@ -268,6 +269,34 @@ function YourCompanyContent() {
 
   const visible = lines.slice(0, SHOW)
   const moreWaiting = lines.length - visible.length
+
+  /**
+   * *** `?key=<key>` — ONE WAITING QUESTION, NAMED BY THE KEY THE PAGE ALREADY KEYS IT BY. ***
+   * `docs/GAPS-PLAN.md` Part E step E2a item 3 (the owner, 4 November 2026). A summary's *Still to
+   * confirm* card sends a person here, and when the item names a key this opens that question:
+   * the group it is in if it is inside one, scrolled to, and marked for a moment so the eye finds
+   * it. **A key that is not waiting does nothing at all** — the page opens as it always has, which
+   * is why the link needs no check of its own before it is followed.
+   *
+   * It runs when the queue arrives, not on every render: `lines` is rebuilt whenever the queue is,
+   * and opening a group the person has since closed would be the page arguing with them.
+   */
+  const askedKey = useSearchParams().get('key')
+  const [highlight, setHighlight] = useState<string | null>(null)
+  useEffect(() => {
+    if (!askedKey || !lines.length) return
+    const line = lines.find((l) => (l.kind === 'document'
+      ? l.keys.some((k) => k.key === askedKey)
+      : l.k.key === askedKey))
+    if (!line) return
+    if (line.kind === 'document') setOpenQ((o) => new Set(o).add(line.id))
+    setHighlight(line.id)
+    // After the fold has opened, or the element is measured where it was.
+    const t = setTimeout(() => {
+      document.getElementById(`q-${line.id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 60)
+    return () => clearTimeout(t)
+  }, [askedKey, lines])
 
   // -------------------------------------------------------------------------
   // answering — the existing routes, unchanged
@@ -535,7 +564,8 @@ function YourCompanyContent() {
                     if (line.kind === 'document') {
                       const open = openQ.has(line.id)
                       return (
-                        <div key={line.id} className="py-4">
+                        <div key={line.id} id={`q-${line.id}`}
+                          className={`py-4 ${highlight === line.id ? 'bg-[var(--green-wash)]' : ''}`}>
                           <button onClick={() => setOpenQ((s) => {
                               const n = new Set(s); n.has(line.id) ? n.delete(line.id) : n.add(line.id); return n
                             })}
@@ -602,7 +632,8 @@ function YourCompanyContent() {
                       const k = line.k
                       const values = [...new Set(k.sources.map((s) => s.value))]
                       return (
-                        <div key={line.id} className="py-4">
+                        <div key={line.id} id={`q-${line.id}`}
+                          className={`py-4 ${highlight === line.id ? 'bg-[var(--green-wash)]' : ''}`}>
                           <p className="text-[14px] text-gray-900">
                             {keyWords(k.key)}{k.sources[0]?.site ? ` (${k.sources[0].site})` : ''} —{' '}
                             <span className="text-[var(--amber)]">
@@ -647,7 +678,8 @@ function YourCompanyContent() {
                     const k = line.k
                     const s = k.sources[0]
                     return (
-                      <div key={line.id} className="py-4">
+                      <div key={line.id} id={`q-${line.id}`}
+                        className={`py-4 ${highlight === line.id ? 'bg-[var(--green-wash)]' : ''}`}>
                         <p className="text-[14px] text-gray-900">
                           {keyWords(k.key)}{s?.site ? ` (${s.site})` : ''}:{' '}
                           <span className="font-medium">{k.value}</span>

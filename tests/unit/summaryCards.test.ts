@@ -38,7 +38,7 @@ describe('the summary is five cards, and the colours come from one palette', () 
   test('each card has its own tint, and the two quiet ones share the pale pair', () => {
     assert.match(PALETTE, /export const CARD_SITUATION = `\$\{TINT_GREY\} border-l-current`/)
     assert.match(PALETTE, /export const CARD_APPLIES = `\$\{TINT_GREEN\} border-l-current`/)
-    assert.match(PALETTE, /export const CARD_CONFIRM = `\$\{TINT_AMBER\} border-l-current`/)
+    assert.match(PALETTE, /export const CARD_CONFIRM = 'bg-\[#E6EFF9\] text-gray-800 border-l-\[#3B6FA6\]'/)
     assert.match(PALETTE, /export const CARD_QUIET = 'bg-gray-50 text-gray-500 border-l-gray-300'/)
     for (const c of ['CARD_SITUATION', 'CARD_APPLIES', 'CARD_CONFIRM', 'CARD_QUIET']) {
       assert.ok(VIEW_CODE.includes(`tint={${c}}`), `the ${c} card does not use its tint`)
@@ -47,12 +47,19 @@ describe('the summary is five cards, and the colours come from one palette', () 
     assert.equal((VIEW_CODE.match(/tint=\{CARD_QUIET\}/g) ?? []).length, 2)
   })
 
-  test('STILL TO CONFIRM IS AMBER, AND BOARD 2 DRAWS IT BLUE', () => {
-    // The brief wins where a board and a brief disagree — the rule written on every board file.
-    // Amber is also what the rest of the product already means: something needs a person.
-    assert.match(read(BOARDS), /\.sr \.s-con \.hd \{ border-left-color: #3B6FA6/)
-    assert.match(PALETTE, /CARD_CONFIRM = `\$\{TINT_AMBER\}/)
-    assert.match(read('lib/reportPalette.ts'), /\*\*Board 2 draws Still to confirm in BLUE/)
+  test('STILL TO CONFIRM IS BLUE, AND AMBER IS RESERVED — decision 62 corrected at E2a', () => {
+    /**
+     * E2 drew it amber, said out loud that board 2 drew it blue, and the owner corrected the
+     * DECISION rather than the board: amber is the audit report's word for a document that falls
+     * short ("on file, gaps found", "out of date"). A thing the conversation could not settle is
+     * a question, not a shortfall. Board 2's own `.s-con` is where both values come from.
+     */
+    assert.match(read(BOARDS), /\.sr \.s-con \.hd \{ border-left-color: #3B6FA6; background: #E6EFF9; \}/)
+    assert.match(PALETTE, /CARD_CONFIRM = 'bg-\[#E6EFF9\]/)
+    assert.ok(!/CARD_CONFIRM = `\$\{TINT_AMBER\}/.test(PALETTE), 'Still to confirm is amber again')
+    // And amber is still exactly where it was: the audit report's two words for a shortfall.
+    assert.match(code(read('lib/auditRows.ts')), /on_file_gaps: TINT_AMBER/)
+    assert.match(code(read('lib/auditRows.ts')), /stale: TINT_AMBER/)
   })
 
   test('the card headers are the only coloured thing, and they survive the printer', () => {
@@ -264,5 +271,164 @@ describe('what the five cards replaced', () => {
   test('the boards are committed beside the plan', () => {
     assert.ok(existsSync(BOARDS))
     assert.match(read('docs/GAPS-PLAN.md'), /docs\/summary-report-boards\.html/)
+  })
+})
+
+/* ── E2a: A DOCUMENT SOURCE SURVIVES INTO THE SUMMARY ─────────────────────── */
+
+/**
+ * *** THE HALF OF DECISION 63 THAT WAS MISSING, AND E2 SAID SO. ***
+ *
+ * `gatherSources` keys a source by its URL and drops one that has none unless the caller passes
+ * `keyWithoutUrl`. Only HR did, so a document or an audit cited in a Workspace, Calendar,
+ * Documents or Audits conversation never reached a summary: E2's in-place swap was built for a
+ * source that could not arrive. These run the real function on the real stored shape, read off
+ * staging — `{ kind: 'passage', label: 'your document', href: '/documents?document=…', url: '' }`.
+ */
+describe('a source of ours is kept, with its address — E2a', () => {
+  const docHref = '/documents?document=7d6a4d4f-84a5-450d-a26e-9bf47e8edd36'
+  const runHref = '/audits?run=ac3d6966-3d32-470c-b1dd-ce05f5b79405'
+  const turnWith = (sources: Array<Record<string, unknown>>) =>
+    [{ role: 'assistant', text: 'An answer [1] with a citation.', sources }] as never
+
+  test('the document passage survives, keeps its href, and is keyed by what it points at', async () => {
+    const { gatherSources } = await import('../../lib/summaryReport.ts')
+    const { PASSAGE_SOURCES } = await import('../../lib/sourceTitle.ts')
+    const src = { n: 1, kind: 'passage', label: 'your document', title: 'Spill Response Procedure — what we read in it',
+      href: docHref, url: '', quote: 'Neutralise with soda ash.' }
+    const { sources } = gatherSources(turnWith([src]), PASSAGE_SOURCES)
+    assert.equal(sources.length, 1)
+    assert.equal((sources[0] as unknown as { href: string }).href, docHref)
+    assert.equal(sources[0].title, 'Spill Response Procedure — what we read in it')
+    // And `sourceTarget` — what the drawer asks — now has something to answer with.
+    assert.equal(sourceTarget(sources[0] as unknown as { url: string; href: string }).kind, 'document')
+  })
+
+  test('…and WITHOUT the option it is dropped, which is what E2 found', async () => {
+    const { gatherSources } = await import('../../lib/summaryReport.ts')
+    const src = { n: 1, kind: 'passage', label: 'your document', title: 'A document', href: docHref, url: '' }
+    assert.equal(gatherSources(turnWith([src])).sources.length, 0)
+  })
+
+  test('the same document cited three times is ONE numbered source', async () => {
+    const { gatherSources } = await import('../../lib/summaryReport.ts')
+    const { PASSAGE_SOURCES } = await import('../../lib/sourceTitle.ts')
+    const one = (n: number, quote: string) =>
+      ({ n, kind: 'passage', label: 'your document', title: 'A document', href: docHref, url: '', quote })
+    const { sources, perTurn } = gatherSources(
+      turnWith([one(1, 'first'), one(2, 'second'), one(3, 'third')]), PASSAGE_SOURCES)
+    assert.equal(sources.length, 1)
+    // All three of the turn's own numbers map onto the one global number.
+    assert.deepEqual([...perTurn[0].values()], [1, 1, 1])
+  })
+
+  test('an audit source is kept too, and a web source is exactly as it was', async () => {
+    const { gatherSources } = await import('../../lib/summaryReport.ts')
+    const { PASSAGE_SOURCES } = await import('../../lib/sourceTitle.ts')
+    const { sources } = gatherSources(turnWith([
+      { n: 1, kind: 'passage', label: 'the audit', title: 'The Oregon DEQ audit', href: runHref, url: '' },
+      { n: 2, title: 'Air Contaminant Discharge Permits', url: 'https://www.oregon.gov/deq/aq' },
+    ]), PASSAGE_SOURCES)
+    assert.equal(sources.length, 2)
+    assert.equal(sourceTarget(sources[0] as unknown as { url: string; href: string }).kind, 'audit')
+    assert.equal(sources[1].url, 'https://www.oregon.gov/deq/aq')
+    assert.equal(sourceTarget(sources[1] as unknown as { url: string }).kind, 'web')
+  })
+
+  test('a source with neither a url nor an address of ours is still dropped', async () => {
+    const { gatherSources } = await import('../../lib/summaryReport.ts')
+    const { PASSAGE_SOURCES } = await import('../../lib/sourceTitle.ts')
+    const { sources } = gatherSources(
+      turnWith([{ n: 1, kind: 'handbook', title: 'A handbook passage', url: '' }]), PASSAGE_SOURCES)
+    assert.equal(sources.length, 0, 'only HR knows how to key a handbook passage')
+  })
+
+  test('the model\'s list line says what one of ours IS, where a web page has its address', async () => {
+    const { passageLineOf } = await import('../../lib/sourceTitle.ts')
+    assert.equal(passageLineOf({ n: 3, title: 'A document', url: '', label: 'your document' }),
+      '3. A document — your document')
+    assert.equal(passageLineOf({ n: 1, title: 'DEQ', url: 'https://oregon.gov/deq' }),
+      '1. DEQ — https://oregon.gov/deq')
+  })
+
+  test('every section that is not HR passes it, and HR is untouched', () => {
+    const sr = code(read('lib/summaryReport.ts'))
+    assert.match(sr, /numberedTranscript\(turns, hr \? HR_SOURCES : PASSAGE_SOURCES\)/)
+    assert.match(sr, /sources: hr \? HR_SOURCES : PASSAGE_SOURCES/)
+    assert.match(sr, /renderPlainText\(checked\.report, \{ sourceLine: PASSAGE_SOURCES\.lineOf \}\)/)
+    // HR's own three are unchanged, including its handbook key.
+    assert.match(code(read('lib/hrSummary.ts')),
+      /export const HR_SOURCES = \{ keyWithoutUrl: hrKeyWithoutUrl, keepFields: true, lineOf: hrLineOf \}/)
+  })
+
+  test('⚡ IT CHANGES WHAT THE MODEL IS SHOWN, AND THAT IS WRITTEN DOWN', () => {
+    // §3.1: what feeds a prompt is a decision, not a refactor. The summariser's numbered list now
+    // carries the company's own documents, exactly as HR's has carried handbooks since Step 7.
+    assert.match(read('lib/sourceTitle.ts'), /IT CHANGES WHAT THE MODEL IS SHOWN, WHICH IS WHY IT IS THE OWNER'S CALL/)
+    assert.match(read('docs/GAPS-PLAN.md'), /E2a/)
+  })
+})
+
+/* ── E2a item 3: STILL TO CONFIRM LEADS SOMEWHERE ─────────────────────────── */
+
+/**
+ * The card that says "we could not settle this from the documents" offered nowhere to settle it.
+ * Company information is that page, and its first section is called *Waiting for you*.
+ */
+describe('Still to confirm links to Company information — E2a item 3', () => {
+  test('the link goes to the exact question when the item names the page\'s own key', async () => {
+    const { confirmHref, CONFIRM_HREF } = await import('../../lib/summaryWords.ts')
+    assert.equal(confirmHref('employee_count'), '/company-information?key=employee_count')
+    assert.equal(confirmHref('hazwaste_generator_category'),
+      '/company-information?key=hazwaste_generator_category')
+    assert.equal(CONFIRM_HREF, '/company-information')
+  })
+
+  test('…and to the page itself when it does not, which is every item today', async () => {
+    const { confirmHref } = await import('../../lib/summaryWords.ts')
+    for (const k of [undefined, null, '', '   ']) {
+      assert.equal(confirmHref(k), '/company-information')
+    }
+    // `to_confirm` items are prose and carry no key: read off staging, and the prompt asks for a
+    // key on a FACT, not on an item. The exact-question link turns on with a §3.1 prompt change.
+    assert.match(read('lib/summaryWords.ts'), /TODAY NO ITEM CARRIES A KEY/)
+    assert.match(code(read('lib/summaryReport.ts')), /key\?: string/)
+  })
+
+  test('the words are in the words file, and both are the owner\'s', async () => {
+    const { CONFIRM_LINK, CONFIRM_ONE } = await import('../../lib/summaryWords.ts')
+    assert.equal(CONFIRM_LINK, 'Confirm them on Company information →')
+    assert.equal(CONFIRM_ONE, 'Confirm it on Company information →')
+    assert.ok(!VIEW_CODE.includes('Company information'), 'the component writes the words itself')
+  })
+
+  test('the header carries one link and every item carries its own', () => {
+    assert.match(VIEW_CODE, /\{CONFIRM_LINK\}/)
+    assert.match(VIEW_CODE, /href=\{confirmHref\(it\.key\)\}/)
+    assert.match(VIEW_CODE, /\{CONFIRM_ONE\}/)
+    // Only under Still to confirm: What applies' items are things to do, not things to settle.
+    assert.match(VIEW_CODE, /report\.to_confirm\.map\(\(it, i\) => item\(it, `c-\$\{i\}`, true\)\)/)
+    // What applies' items are things to do, not things to settle: they take the two-argument form.
+    assert.match(VIEW_CODE, /item\(it, `\$\{gi\}-\$\{i\}`\)/)
+  })
+
+  test('the page answers the key by the key it already keys the question by', () => {
+    // `lib/confirmationQueue.ts` builds `one:<key>`, `dis:<key>` and a document group whose
+    // members are those keys. Matching on anything else — a label, a question's words — would be
+    // matching on something the model wrote rather than on something the page holds.
+    const page = code(read('app/company-information/page.tsx'))
+    assert.match(page, /const askedKey = useSearchParams\(\)\.get\('key'\)/)
+    assert.match(page, /l\.keys\.some\(\(k\) => k\.key === askedKey\)/)
+    assert.match(page, /l\.k\.key === askedKey/)
+    // A group is opened; everything is scrolled to and marked.
+    assert.match(page, /if \(line\.kind === 'document'\) setOpenQ\(\(o\) => new Set\(o\)\.add\(line\.id\)\)/)
+    assert.match(page, /getElementById\(`q-\$\{line\.id\}`\)\?\.scrollIntoView/)
+    // All three kinds of waiting line can be landed on.
+    assert.equal((page.match(/id=\{`q-\$\{line\.id\}`\}/g) ?? []).length, 3)
+  })
+
+  test('a key that is not waiting opens the page, and nothing else happens', () => {
+    const page = code(read('app/company-information/page.tsx'))
+    assert.match(page, /if \(!line\) return/)
   })
 })
