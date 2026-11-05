@@ -3647,6 +3647,41 @@ export type Database = {
           },
         ]
       }
+      quality_reports: {
+        Row: {
+          company_id: string | null
+          counts: Json
+          created_at: string
+          date: string
+          id: string
+          rows: Json
+        }
+        Insert: {
+          company_id?: string | null
+          counts?: Json
+          created_at?: string
+          date: string
+          id?: string
+          rows?: Json
+        }
+        Update: {
+          company_id?: string | null
+          counts?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          rows?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       regulated_substances: {
         Row: {
           cas_number: string

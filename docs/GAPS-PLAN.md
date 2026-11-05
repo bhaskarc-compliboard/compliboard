@@ -22,6 +22,7 @@
 **Updated:** 4 November 2026 — **PART E STEP E0c DONE: one quote per finding** (the owner's brief called it E0b; `E0b` was already the boards row, so it is **E0c** in §5a). One sentence, in **both** shapes, counted by the test — *"One quote per finding. If two things in the document fall short, quote the one the word rests on and put the other in what_to_do, in your own words — never two quotes joined inside the quote field."* **It answers E0a's finding 4: 0 of 3 sections lost, from 3 of 6**, with `status = 'done'` and **`json_parsed = true`** read back from `audit_sections` on all three, and the regular expression that found every earlier failure matching nothing. **B2 — the line every failure happened on — now carries ONE quote**, the one the word rests on, and names the second operator in `what_to_do` in its own words; nothing was lost by quoting once. One run is not a proof and the finish line still counts it on Opus. **E0c spent $0.0824 over 4 Haiku calls.**
 **Updated:** 5 November 2026 — **E4a: the drawer's top.** Every card body is one face and one size — the gaps' — including *What it says*, which was the reading serif at 17px and the largest thing in the drawer after the title; nothing is set larger than the title now, and a test walks every size in the file. **And the top said the same things three times, which E4 is what left behind:** the Drawer's own `sub`, the filing control on a line of its own, and decision 72's status line repeating the kind, the agency and the read date. **One line now**, with *Filed in* at its right — and the two things the `sub` carried that the status word does not are kept: the site is on *What this document is*, and a re-read in flight is the first thing the line says. Photographed at 1280 against board 3: two tight rows where the agency is short, three where the label is 50 characters, which the board's own fixture never shows. `npm run check` exit 0, **2,665 tests**, floor 2663 → 2665.
 
+**Updated:** 5 November 2026 — **PART F: NIGHT WATCH, the nightly read-only finder (decision 75, the owner).** A cron at **05:30 Pacific** that counts eleven things across every company over the previous **Pacific** day, writes one row per company plus a totals row holding no ids, and mails the owner plain text with deltas and a link to `/quality`. **It calls no model, and `npm run check` proves it** — check 3's transitive closure never puts the route in the paid set, so `PAID_COUNT` stays 23. **Twelve counts were asked for and eleven were built:** the brief's "word contradicts what_to_do" matched 17 findings on staging and **16 were correct sentences** about gaps inside a document that is on file, so it was dropped for a structural test that needs no prose. **(g) was re-anchored** after the brief's five-second window paired B2's corrupt HEIC with another document's paid call: *a paid reading no reading claims* is **7 rows, $0.8170**, the three W2 readings among them. The table carries a `company_id` **because CHECK 2 keys on the column** and a tenant-less table of row ids would have survived a deletion invisibly. The gate is `QUALITY_EMAIL` + `requireOwner`, **404 on any mismatch, unset refuses everyone**, and **nobody is granted anything on the table**. **Two defects found by running it, both fixed in the same commit:** the job reported *itself* as a hanging job (`-1 min ago, 1 row left open`) in the one block that exists to say so, and `D002` — **the EPA code for corrosivity** — was being counted as a document handle; measured, 57 hits became 56 and the one that dropped is that row. **The Pacific window caught a real off-by-a-day in the map's own numbers:** eight scans dated 4 November in UTC all landed 00:00–00:40 UTC, which is 4pm Pacific on the 3rd. **(m) HR needs no change: it stores its answers in `turns` like every section, and only its refused-quote key differs** (`marked.not_found_quotes`), which count 2 now reads beside the shared one. **(n) nothing from `check:live` folds in** — its free half signs in as a fixture and writes rows, which no cron should do; what the job replaces is `RELEASE.md`'s manual "check `job_runs` the morning after". `npm run check` exit 0, **2,752 tests**, floor 2665 → 2752. §9, the names list, starts here.
 **Updated:** 5 November 2026 — **E4: the Documents list and the document drawer (decisions 70–74, boards committed) — AND PART E IS COMPLETE.** The list groups by **the day a file arrived**, newest first; the *"We've read your n documents"* banner is gone and the batch's progress is a bar on the day group's header, which is W1's eleven minutes of silence filled. **The estimate is the batch's own elapsed average, because the sweep records nothing per document — read on staging, not assumed: 0 rows of 47 still carry `reading_since`.** One **short-name** function serves all six surfaces that name a document, measured against every title on staging before it was wired to anything (40 titles, 24 shortened) — and that measurement caught two defects in the rule, both now tests: cutting at every "(" made **two different permits one name**, and the first fix cut *inside* a bracket. The drawer is **seven parts, folded**, in the summary's partition style, with the three buttons **once** at a card's foot (the owner's printed report carried twelve) and the spacing measured off the board. **One voice (74): no "ours", no "inferred", no honesty line — and `PENDING.md` D3 closes with the one note a scanned PDF carries.** Walked on Haiku, **three readings, $0.1633**. Three things the walk found are in §8, one fixed in the same commit: a batch queued on 3 November was telling Cascade it was reading. **No model call on the display, with the grep that proves it.** `npm run check` exit 0, **2,663 tests**, floor 2643 → 2663.
 
 **Updated:** 5 November 2026 — **E3: the answer and its source cards (decisions 66–69, boards committed).** One card per source — number, title, origin, and the verified quote in the reading italic when there is one — **no kind labels** (a quote means checked, no quote means the answer named it), an **amber left edge** on an audit finding, and the title opening **in place** where the section has a drawer, which until now only a summary's sources did. The refused-quote marker is **lifted out of the running text** into a grey note; **only one of decision 68's four lines could move**, and the other three are named in §8 rather than faked. The run-audit offer says **how many documents are on file** and what adding more would answer, with two buttons. **Measured under decision 66 — 36 runs on Sonnet 5.5, $3.3612: the packed context is byte-identical on all six questions and the keys match on five of six; the sixth is a key the fixture outgrew on 4 November, not a regression, and no Opus tie-break was needed.** A scorer bug of my own is recorded with it: six "must-not" hits were the model saying the opposite, and a check that cannot tell a denial from a claim fails the thing it tests. The follow-up box and action row did not move — identical measurements, 99 pixels in the paperclip's own box from a 0.4px scroll offset. `npm run check` exit 0, **2,643 tests**, floor 2625 → 2643.
@@ -487,6 +488,57 @@ words on the page; board 3 is E1's.*
     checked against the file."* *Effect: E4 — `lib/documentsWords.ts`, and `PENDING.md` D3 closes
     with it.*
 
+75. **⚡ NIGHT WATCH — THE NIGHTLY READ-ONLY FINDER** (the owner, 4 November 2026, built 5 November
+    as Part F). **Code finds, a report lands each morning, a person decides. It never calls a
+    model and it never changes anything.** A cron, `/api/jobs/quality`, SELECT-only on everything
+    but its own two tables, counting across every company the things this week found by hand —
+    and every one of those cost something while it was open: W2 three paid readings refused by a
+    CHECK ($0.4430) whose stored rows said the model had never been called, W3 a double press that
+    bought a second audit ($0.4924), W5 six of ten audit lines writing a bare handle at a person,
+    W1 nine files read in silence for eleven minutes. **None of the four was found by a test.** The
+    eight things the owner settled at the map's stop:
+
+    · **ELEVEN COUNTS, NOT TWELVE.** *(e), "a finding whose word contradicts its what_to_do", was
+      dropped after it was measured:* the brief's regex matched **17 findings on staging and 16
+      were correct sentences** about gaps inside a document that is genuinely on file (*"the log
+      covers August 17–21 with daily readings missing for all five days"*). What replaced it needs
+      no prose — **`word_against_attachments`**: a word claiming a document with none attached, a
+      quote on such a finding that failed its check, or a resolved-to-nothing handle. It reads 0,
+      and 0 is the right answer.
+    · **(g) IS "A PAID READING NO READING CLAIMS", NOT A FIVE-SECOND WINDOW.** The brief's shape
+      found 4 rows and the newest was a false positive — B2's deliberately corrupt
+      `half-sent-photo.heic`, refused before any model call, paired with a *different* document's
+      paid call inside the same five seconds. The anchor has no clock and no company in it: **7
+      rows, $0.8170**, the three W2 readings among them.
+    · **THE TABLE CARRIES A `company_id`, AND THAT COLUMN IS THE POINT.** One row per company per
+      day plus one `company_id = null` totals row holding **no ids**, `unique nulls not distinct`.
+      The first shape had no tenant column — and `scripts/check-schema-contracts.js` CHECK 2 keys
+      on the COLUMN, so a table holding row ids from every company would have been invisible to it
+      and survived a deletion the customer asked for.
+    · **THE GATE IS AN ENVIRONMENT VARIABLE, BECAUSE THE APP HAS NEVER KNOWN THE OWNER.** Read from
+      the live schema: `profiles` carries no role and no flag, and the only `role` column in the
+      whole generated schema is `turns.role`. So `QUALITY_EMAIL` + `requireOwner` in `lib/auth.ts`,
+      **404 on any mismatch** and **unset refuses everyone** (`cronVerdict`'s rule). Nobody is
+      granted anything on the table; the page's route makes one named service-role SELECT.
+      `requireCompany` is untouched.
+    · **THE EMAIL SENDS FROM THE SANDBOX ADDRESS, DELIBERATELY.** `sandboxSenderRefusal` exists to
+      stop a **customer** being mailed from `onboarding@resend.dev`; this email's only recipient is
+      the Resend account's own address, which is the one address that sender can reach
+      (`PENDING.md` H2). The guard is not called, and the reason is written at the line. It uses
+      `SANDBOX_FROM` and not a literal, so S1's one-line change reaches it — unlike four of the six.
+    · **THE DAY IS PACIFIC.** Vercel's cron is UTC, so `current_date - 1` at 13:30 UTC would mean
+      Tuesday 16:00 → Wednesday 16:00 Pacific and the email would call it Wednesday. The job
+      computes its own window and **the email's first line states it, with the date**.
+    · **(j) GAINS THE CRONS' PULSE.** `STUCK_AFTER_MS` is fifteen minutes and the sweep runs every
+      five, so a document stuck for an hour is impossible *unless the sweep has stopped*. The
+      counter is kept and the newest `job_runs` row per job is reported beside it, which is what
+      `docs/RELEASE.md`'s "the morning after a deploy" asks a person to do by hand.
+    · **THE MACHINE WORD IS `quality`; THE NAME PEOPLE SEE IS NIGHT WATCH.** The route path,
+      `job_runs.job`, the table and the page all stay `quality`, so nothing has to be renamed to
+      read a log. *Effect: Part F — `lib/quality.ts` and `lib/qualityWords.ts` (both new),
+      `app/api/jobs/quality/route.ts`, `app/api/quality/route.ts`, `app/quality/page.tsx`,
+      `lib/auth.ts`, `lib/jobAuth.ts`, `app/api/account/route.ts`, `vercel.json`, migration 095.*
+
 **And the three that were decided at E0's map, on 4 November:** decision 48 lives **in the view**, not
 in code, because *"the status the document would otherwise have"* is the six CASE arms underneath the
 one being changed and only SQL can compute them (migration 093); **a record falls to Recorded, not
@@ -683,7 +735,30 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 | E4a | **THE DRAWER'S TOP** (the owner, 5 November) — one face and one size in every card body, nothing larger than the title; **ONE line** under the title, with *Filed in* at its right; the title is the short name | `components/DocumentReport.tsx` (the `sub` is gone, `FilingLine` is inline, *What it says* is the gaps' own body text) | the **four** renderers of `DocumentReport` | **done 5 Nov** — photographed at 1280 against board 3; the line wraps to three tight rows where an agency label is 50 characters and to two where it is not, measured and said in §8. `npm run check` exit 0, **2,665 tests**, floor 2663 → 2665 |
 | E5 | ~~The Enter-after-pick notice (W3)~~ **— done at B0, `43b304e`** — and **"Audit again" on a By template row**, which still waits for the row to say whether the template file still exists | `app/audits/page.tsx`'s By template group | Audits only | not started |
 
-**⚡ PART E IS COMPLETE** — E0, E0a, E0c, E1, E1a, E2, E2a, E2b, E2c, E2d, E2f, E3 and E4 are done; E2e was cancelled. **After the rest of E: the finish line.** The Opus 5.5 against Sonnet 5.5 comparison (`docs/TEST-AT-FINISH-LINE.md`), then the gate walk — which is in §5b with the rest of the pre-release work.
+**⚡ PART E IS COMPLETE** — E0, E0a, E0c, E1, E1a, E2, E2a, E2b, E2c, E2d, E2f, E3 and E4 are done; E2e was cancelled.
+
+### Part F — NIGHT WATCH (decision 75, the owner)
+
+**Not a display step and not a chat step.** The first thing this plan has built that nobody uses:
+a job that reads rows at 05:30 Pacific and mails the owner what it found. It is here because every
+defect Part E spent a week chasing — W1, W2, W3, W5 — was found by a person reading rows days
+afterwards, and a query could have found all four overnight for nothing.
+
+| # | Step | What it is | Touches | Status |
+|---|---|---|---|---|
+| F1 | **NIGHT WATCH** — eleven counts over the previous **Pacific** day across every company, written to `quality_reports` (one row per company plus a totals row with no ids) and mailed to the owner as plain text with deltas; a `/quality` page behind `QUALITY_EMAIL` where each count expands to its row ids as links into the product | `lib/quality.ts` **(new, pure — the eleven counters)** · `lib/qualityWords.ts` **(new, imports nothing)** · `app/api/jobs/quality/route.ts` **(new)** · `app/api/quality/route.ts` **(new)** · `app/quality/page.tsx` **(new)** · `lib/auth.ts` (`requireOwner`, added; `requireCompany` untouched) · `lib/jobAuth.ts` (`JobName`) · `app/api/account/route.ts` · `vercel.json` · migration **095** | `lib/jobAuth.ts` is read by **eight** files; `lib/auth.ts` by **ten** routes. Both re-checked, both unchanged in behaviour | **done 5 Nov** — **no model call, and `npm run check` proves it**: check 3's transitive closure never puts the route in the paid set, so `PAID_COUNT` stays **23**. Run three times by hand against staging through the POST door; the third run mailed Resend `01a1ae14-76e6-7966-8dd9-e7fa9f9f6268`. **Two defects found by running it, both fixed in the same commit** (§8). `npm run check` exit 0, **2,752 tests**, floor 2665 → 2752 |
+
+**⚡ AND THE JOB IS THE PRODUCTION CHECK, which answers the brief's question (n).** The cron runs on
+Vercel, so on production it reads production's own yesterday — no `check:live` run is wanted and
+**nothing from `check:live` folds into it**. The two test different properties and only one of them
+can be a cron: `check:live`'s free half **signs in as a real fixture and writes rows** to prove that
+a person can write their own company's row and `anon` cannot. That needs a session, a password and
+a write. Night Watch has no session, holds no password and writes only its own report. Folding the
+boundary probe into a nightly job would mean a cron that writes rows on production and carries a
+fixture login — the opposite of what decision 75 is. **What it does replace is the manual routine in
+`docs/RELEASE.md`'s "the morning after a deploy", which asks a person to go and look at `job_runs`:
+the crons' pulse is now in the email every day.** Decided and recorded; nothing built for it beyond
+the pulse the owner already asked for in S-4. **After the rest of E: the finish line.** The Opus 5.5 against Sonnet 5.5 comparison (`docs/TEST-AT-FINISH-LINE.md`), then the gate walk — which is in §5b with the rest of the pre-release work.
 
 ---
 
@@ -2331,3 +2406,132 @@ Company *"Step 20 Card Walk"*, `61b26cc0-0d28-411b-b2e4-943189363b08`, on **stag
 - **⚡ The Haiku guard could pass while seeing no tiers at all — found and closed at step 1.** `scripts/haiku-names.mjs` reads the `AITask` declaration with one non-global regular expression and takes the FIRST match. Writing that declaration's opening words in a comment higher up the file therefore makes the regex match the comment, and `npm run haiku:check` printed **"0 of 0 tiers on claude-haiku-4-5" and exited 0** — a pass while seeing nothing, which would have let a build run spend Opus money with a green check beside it. It happened for real, while the hazard in the line above was being written up. The guard now refuses an empty list, and the refusal was shown to fail. **So the standing rule is wider than this file first said:** the union stays on one line AND nothing earlier in `lib/ai.ts` quotes its opening words.
 - **Two HR tests pinned the night summary's old section list** — `tests/unit/hrAnswer.test.ts:276` and `tests/unit/hrGoLive.test.ts:53` both asserted `const sections = ['workspace', 'hr']`. Neither was in step 1's map, because that map searched `app` and `lib` and not `tests`. Both now assert what they meant — that HR is never left out — rather than that the list is short. **The lesson for every later step: search `tests/` as well as `app/` and `lib/` when a line is being changed.**
 - **Supabase CLI 3.0.0 broke two of the project's own scripts, and a third is waiting.** It refuses to run a statement in an agent run unless told the statement only reads, or given `--yes`. `npm run db:migrate` therefore stopped at `db push` with *"Confirmation required… Nothing was changed"*, and `scripts/schema-doc.js` failed on every catalog query. Step 1 fixed schema-doc by passing `--read-only`, which states what that script always was. **`scripts/db-migrate.js` is NOT fixed and is the owner's call**, because that same file is the production path (`npm run db:migrate:prod`) and `CLAUDE.md` §3.7 says the production guard is never automated: any `--yes` there has to be staging-only and deliberate. Until then a staging migration is applied by hand with the staging ref printed. The CLI also deprecates `--linked` and `--project-ref` in favour of `--remote=<ref>`, so every script using them has a rename coming.
+
+---
+
+# What Part F — NIGHT WATCH — did and found (5 November 2026)
+
+Decision 75. One commit. `npm run check` exit 0, **2,752 tests**, floor 2665 → 2752,
+`check-schema-contracts: ok — 442 files, 62 relations`. Migration **095** applied to staging with
+`CHECK_LIVE_BASE_URL=http://localhost:3999 npm run db:migrate` and read back from the catalog.
+**No model call — and that is a build-time assertion, not a sentence:** `scripts/check-schema-contracts.js`
+CHECK 3 computes the transitive closure of every route's imports and `PAID_COUNT` stays **23**.
+
+## The two defects the job found in itself, both fixed in the same commit
+
+- **⚡ THE JOB REPORTED ITSELF AS A HANGING JOB, IN THE ONE BLOCK THAT EXISTS TO SAY SO.** The first
+  real run against staging mailed **"quality · last started -1 min ago · 1 row left open"**.
+  `startJobRun` opens a `job_runs` row *before* any work, so at read time the newest `quality` row
+  is this run and its `finished_at` is null; the minutes were negative because `now` is captured a
+  hair before the insert. The route already excluded its own row from the OPEN-rows read — **and
+  that was only half of it**, because the newest-per-job read picked it up anyway. Both reads now
+  carry `.neq('id', run.id)`. A permanent false alarm in a liveness report is the sort of thing
+  that teaches a person to stop reading the report, which would have cost the whole job.
+  *`app/api/jobs/quality/route.ts`; the test asserts there are exactly two exclusions, not one.*
+
+- **⚡ `D002` IS THE EPA CODE FOR CORROSIVITY, NOT A DOCUMENT HANDLE.** The first walk of `/quality`
+  expanded the handle count and showed a Cascade finding reading **"D002 corrosive waste is a
+  common waste stream at chemical plants"**. `\b(?:AF|D)\d{1,3}\b` matched it. `nextHandle()`
+  (`lib/audit.ts:244`) counts from 1 and never pads; EPA's D-codes (D001–D043) are always three
+  digits and always padded, so **one character of regex separates them completely** —
+  `\b(?:AF|D)[1-9]\d{0,2}\b`. **Measured over every finding on staging before it was changed: 57
+  hits became 56, and the single row that dropped is the D002 one.** The day's count went 2 → 1.
+  *A counter that cries wolf about chemistry is a counter nobody reads; this one was caught by
+  looking at the page rather than at the number.*
+
+Two smaller things the walk found and fixed: a missing React `key` on the table's fragment (the dev
+overlay's "1 Issue" badge in the first screenshot), and a list item that made **the whole line** the
+link — which underlined 200 characters of raw JSON in `sections_unparsed` and made the one thing a
+person is there to read unreadable. The link is now a short `Open →` beside plain text.
+
+## ⚡ What the first real report says, and it is not empty
+
+Run `399713a7-0798-478f-b087-fc193d21040a`, for the Pacific day **2026-11-04**, window
+`2026-11-04T08:00:00Z → 2026-11-05T08:00:00Z`. **Four of the eleven counts are not zero**, and all
+four match what the map measured by hand:
+
+| count | day | what it is |
+|---|---|---|
+| A handle written at a person | **1** | one audit finding, after the D002 false positive came out |
+| Audit sections lost to broken JSON | **3** | all three on the Step 20 Card Walk company |
+| A template audit that read its own template | **3** | E0's own BEFORE tree, and its `scope` string says so |
+| Audit runs started twice within a minute | **1** | E0's deliberate re-run, 46 seconds apart |
+
+**Cost: $1.5546 over 54 calls, and two tasks over twice their seven-day average** — `audit` at
+$1.3426 against $0.2350, and `summarise` at $0.1960 against $0.0083. Both are E0's measurement runs,
+which is the right answer: the job cannot tell a deliberate measurement from a defect and does not
+pretend to. It shows the ids and the `scope` string, and a person decides.
+
+**Three rows were written for the day** and read back from the database: the totals row with **0
+id-keys** (migration 095's own CHECK refuses ids on it) and two company rows whose counts sum to the
+totals exactly — handles 1 + 1, unparsed 3 + 0, template 3 + 0, duplicates 1 + 0. The job ran three
+times and the `unique nulls not distinct (date, company_id)` held: still three rows.
+
+## ⚡ The Pacific window caught a real off-by-a-day, in the map's own numbers
+
+The map grouped `document_scans` by `scanned_at::date`, which is UTC, and reported **2 failed
+readings on 4 November**. The job reported **0**, and the job is right: all eight scans with a
+4 November UTC date landed between **00:00 and 00:40 UTC — which is 4:00 to 4:40 pm Pacific on the
+3rd**. Read back directly to be sure: *scans in the 4 Nov Pacific window: 0; scans on 4 Nov by UTC
+date: 8.* Had the job used `current_date - 1` it would have labelled every report with the wrong
+day and nobody would have noticed, because the numbers would still have looked plausible.
+
+## (m) HR is watched, and nothing in HR was changed to make it so
+
+Read rather than assumed. **HR's chat stores its answers in `turns` like every other section** —
+`app/api/hr/answer/route.ts:66` opens the topic with `section: 'hr'` and `:242` saves the turn
+through `saveAssistantTurn`, and `TOPIC_SECTIONS` (`lib/topicList.ts:66`) has carried `'hr'` since
+HR Step 10. So **count 1, answers with no source, needed nothing added for HR at all.**
+
+**Count 2 did**, and that is the whole of (m)'s work: HR's own check writes a *different key*.
+`lib/hrAnswer.ts:583` stores `marked.not_found_quotes` and `dropped.handbook_quotes`, where the
+shared engine stores `quotes_found_in_nothing`. Reading only the shared key would have watched four
+sections and silently missed the fifth. `refusedOn` reads both. There are **no `hr` topics on
+staging today**, so this is proved by the unit test rather than by a row — said plainly rather than
+counted as evidence.
+
+## ⚡ And count 2 reads a NUMBER, not a sentence — with one disagreement on staging
+
+The brief asked for "the `NOT_IN_WHAT_WE_HAVE` marker count". The stored `check_record` already
+carries the same thing as an integer, and measured over every assistant turn on staging **the two
+agree on 191 of 192 answers and disagree on one**: a 16 October Calendar turn where the structured
+field says 1 and the marker is absent from the stored text. **A wording change silently zeroes a
+marker count; it cannot touch a number.** So the number leads, the marker is counted beside it, and
+a row where they disagree says so in its own words.
+
+## What is owed and was not built
+
+- **A conversation cannot be deep-linked.** Grepped before the page was written: the only
+  parameters any page reads are `?run=` (`app/audits/page.tsx:297`), `?document=`
+  (`app/documents/page.tsx:283`, `app/compliance/page.tsx:180`) and `?checklist=`
+  (`app/compliance/page.tsx:187`). **There is no `?topic=` anywhere.** So the four conversation
+  counters link to their section's page and carry the topic id in their words for a person to
+  paste. Inventing a parameter nothing reads is D15's defect, and this build would not add a ninth
+  one. **A `?topic=` parameter is owed** — it is D15's shape for conversations, and it is one
+  afternoon on five pages.
+- **The three broken-JSON sections are worth a look and were not chased.** Their stored `raw_text`
+  *begins* as well-formed JSON — ```` ```json\n{\n "lines": [\n {\n "ref": "A1", "word": "on_file" ````
+  — so the failure is further in: truncation at `max_tokens`, or an unescaped quote, which is
+  `extractJsonText`'s one unfixable case. Finding out is a model question and §3.1's, not Part F's.
+  **This is exactly what the job is for: it put three ids in front of a person on the first day.**
+- **`PENDING.md` is not touched.** Night Watch closes no row there; it makes several of them
+  visible daily instead.
+
+## Housekeeping found while reading
+
+The Supabase CLI now warns that **`--linked` and `--project-ref` are deprecated and go in v4**, in
+favour of `--remote=<ref>`. Every script and every §8 provenance line in this file uses the old
+flags. Not changed here; recorded so it is a rename somebody plans rather than a morning somebody
+loses.
+
+---
+
+## 9. The names — what a thing is called in the code, and what a person sees
+
+*Started 5 November 2026 at Part F, because the first of these appeared.* A product name and a
+machine word are allowed to differ; **two machine words are not**. When they differ, this is the
+list that says so, and the machine word is the one a program reads.
+
+| What a person sees | The machine word | Where the machine word appears |
+|---|---|---|
+| **Night Watch** — the nightly read-only finder | `quality` | `/api/jobs/quality` · `job_runs.job = 'quality'` · the `quality_reports` table · the `/quality` page · `QUALITY_EMAIL` |

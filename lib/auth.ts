@@ -112,3 +112,59 @@ export async function requireCompany(
 
   return { ok: true, auth: { userId: user.id, companyId: profile.company_id, db } }
 }
+
+/**
+ * ===========================================================================
+ * WHO MAY READ NIGHT WATCH — `docs/GAPS-PLAN.md` decision 75 (the owner, 4 November 2026).
+ * ===========================================================================
+ *
+ * *** THE APP HAS NEVER KNOWN THE OWNER, AND THIS IS THE WHOLE OF IT. *** Read from the live
+ * schema while the map was written: `profiles` carries `id, company_id, full_name, created_at,
+ * welcomed_at, calendar_email` — **no role and no flag** — and the only `role` column in the
+ * generated schema is `turns.role`, which is "user" or "assistant". So the gate is one address in
+ * the environment and nothing in the database.
+ *
+ * *** WHY AN ENVIRONMENT VARIABLE AND NOT A COLUMN. *** A boolean on a customer-facing table is a
+ * thing that can be set; `QUALITY_EMAIL` is a thing only the Vercel dashboard can set. For one
+ * person that is the smaller surface, and it needs no migration and no policy anybody can widen
+ * later by meaning well. The day a second person needs it, a column is the right answer and this
+ * function is the one place that changes.
+ *
+ * *** UNSET REFUSES EVERYONE. *** `cronVerdict`'s rule (`lib/cronSecret.ts`), for its reason: the
+ * tempting `if (want && given !== want)` opens the page to every signed-in customer on a deploy
+ * where the variable was never set, and looks exactly like a page that works.
+ *
+ * *** AND EVERY REFUSAL IS 404. *** `CLAUDE.md` §3.6, 404-not-403: a signed-in stranger must not
+ * be able to learn that this page exists, and a 403 confirms exactly that. The same answer as
+ * `lib/jobAuth.ts` gives, for the same reason.
+ *
+ * `requireCompany` above is UNTOUCHED and so is `AuthedCompany`. This is a separate function
+ * rather than a field, so none of `requireCompany`'s callers changes shape.
+ */
+export type OwnerAuth =
+  | { ok: true; email: string }
+  | { ok: false; response: NextResponse }
+
+const OWNER_NOT_FOUND = () => NextResponse.json({ error: 'Not found.' }, { status: 404 })
+
+export async function requireOwner(request: NextRequest): Promise<OwnerAuth> {
+  const want = (process.env.QUALITY_EMAIL ?? '').trim().toLowerCase()
+  if (!want) {
+    // Loud in the log, opaque to the caller — `requireCronSecret`'s shape. The operator needs to
+    // know the page is unconfigured; a caller must not learn why it refused.
+    console.error('NIGHT WATCH REFUSED: QUALITY_EMAIL is not set, so no caller can be the owner. '
+                  + 'The page is closed to everyone.')
+    return { ok: false, response: OWNER_NOT_FOUND() }
+  }
+
+  const token = (request.headers.get('authorization') || '').replace('Bearer ', '')
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) return { ok: false, response: OWNER_NOT_FOUND() }
+
+  const got = (user.email ?? '').trim().toLowerCase()
+  if (!got || got !== want) {
+    console.warn('NIGHT WATCH REFUSED: a signed-in caller who is not the owner.')
+    return { ok: false, response: OWNER_NOT_FOUND() }
+  }
+  return { ok: true, email: got }
+}

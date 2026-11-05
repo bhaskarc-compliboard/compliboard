@@ -63,7 +63,22 @@ export interface JobRecorder {
 
 type Db = { from: (t: string) => any }
 
-export async function startJobRun(admin: Db, job: 'summarise' | 'delete' | 'account_delete' | 'scan_documents' | 'audit_sections' | 'handbook_checks' | 'calendar_month'): Promise<JobRecorder> {
+/**
+ * The eight words `job_runs.job` accepts, and this list IS the type.
+ *
+ * *** IT MUST MATCH `job_runs_job_check` IN THE DATABASE, AND IT DID NOT. *** Migration 095 added
+ * `'quality'` to that CHECK because this union was about to grow and the constraint was read from
+ * the catalog first: without the migration, `startJobRun(admin, 'quality')` would have type-checked
+ * and then been refused by Postgres — **W2's exact shape**, a field the code did not hold against a
+ * list the database does. `CLAUDE.md` §3.7.
+ */
+export type JobName =
+  | 'summarise' | 'delete' | 'account_delete' | 'scan_documents'
+  | 'audit_sections' | 'handbook_checks' | 'calendar_month'
+  // Night Watch — `docs/GAPS-PLAN.md` decision 75. The machine word stays `quality`.
+  | 'quality'
+
+export async function startJobRun(admin: Db, job: JobName): Promise<JobRecorder> {
   const { data, error } = await admin.from('job_runs').insert({ job }).select('id').single()
   if (error) throw new Error(`could not open a job_runs row for ${job}: ${error.message}`)
   const id = data.id as string

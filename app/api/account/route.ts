@@ -191,6 +191,17 @@ const COMPANY_SCOPED_TABLES = [
   'documents',
   'company_folders',
   'jobs',
+  // ---- NIGHT WATCH, migration 095 (`docs/GAPS-PLAN.md` decision 75) ----
+  // One row per company per day: the counts for that company and the ids behind them. It cascades
+  // from `companies` too, and it is named here for the reason the conversation tables above are —
+  // this list is where a reviewer sees what a deletion destroys, and a cascade is invisible here.
+  //
+  // *** AND IT IS THE REASON THE TABLE HAS A `company_id` AT ALL. *** The first shape written for
+  // it was `(date, counts, rows)` with no tenant column: a table holding row ids from every
+  // company, invisible to `scripts/check-schema-contracts.js` CHECK 2 because that check keys on
+  // the COLUMN. The estate totals row (`company_id is null`) is untouched by this loop and holds
+  // no ids, which migration 095's own CHECK enforces rather than trusting.
+  'quality_reports',
   'profiles',           // NO ACTION — blocks the company delete if left. Last: everything
                         // above may reference a user, and this is what removes the people.
 ] as const

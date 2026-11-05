@@ -59,8 +59,29 @@ All three must be true:
 | `/api/jobs/handbook-queue` | `0 10 * * *` — 10:00 | HR's night queue: queues the handbook checks that are due (live since 8 October; a 404 without the cron secret) |
 | `/api/jobs/handbook-checks` | `*/5 * * * *` | HR's handbook sweep (live since 8 October; a 404 without the cron secret) |
 | `/api/jobs/calendar-month` | `0 14 1 * *` — **the 1st at 14:00** | The monthly calendar email, one per company (Calendar step 11, `DECISIONS.md` §197). **It is the only job that mails every person at every company on a schedule nobody presses**, and the only one gated on the sending domain — see the calendar routine below |
+| `/api/jobs/quality` | `30 13 * * *` — 13:30 | **Night Watch** (`docs/GAPS-PLAN.md` decision 75, added 5 November 2026). Eleven read-only counts over the previous **Pacific** day across every company, written to `quality_reports` and mailed to the owner. **It calls no model and writes nothing but its own report.** See the drift note below |
 
 The summary job and the deleter ran at 03:00 and 03:30 UTC until 8 October.
+
+> ### ⚡ 13:30 UTC IS 05:30 PACIFIC IN WINTER AND 06:30 IN SUMMER. THE FILE CANNOT SAY OTHERWISE.
+>
+> Vercel's schedules are UTC — that is what this table's heading means — and `vercel.json` has no way to
+> name a timezone. The owner asked for Night Watch at **05:30 Pacific**, so it is pinned at **13:30 UTC**,
+> which is 05:30 PST and **06:30 PDT**. It walks an hour later from the second Sunday in March to the first
+> Sunday in November, every year, and nothing can be done about that in this file.
+>
+> **The job itself does not care, and that is deliberate.** It computes its own window from `now()` in
+> `America/Los_Angeles` (`lib/quality.ts` `pacificWindow`), so it always reads the whole of the previous
+> *Pacific* day whatever hour it fires — and **the email's first line states the window it covered, with
+> the date**. Had it instead read `current_date - 1`, the report would have covered Tuesday 16:00 to
+> Wednesday 16:00 Pacific and called it Wednesday. That is not hypothetical: eight `document_scans` rows
+> dated 4 November in UTC all landed between 00:00 and 00:40 UTC, which is 4pm Pacific on the **3rd**.
+>
+> It runs three hours after the summariser and the deleter, so nothing it reads is still moving.
+
+**Since 5 November 2026 Night Watch does this check every day and mails it.** The *jobs' pulse* block in
+its email names every job, when it last started and whether it left a row open — so the routine below is
+now the thing to do when the email itself does not arrive, rather than every morning.
 
 **The morning after a deploy:** check `job_runs` — a `summarise` row started after 10:00 UTC (HR conversations
 included since HR went live), a `delete` row after 10:30 UTC, and `handbook_checks` rows from the night queue and the
@@ -793,6 +814,25 @@ For a defect found on production, code only, no migration.
 > the Task 5 paid check on production ran first on Sonnet, then on Opus 5.5. `DECISIONS.md` §154, §156.
 
 From June: `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `FEEDBACK_EMAIL`.
+
+**Added 5 November 2026 — `QUALITY_EMAIL` (Night Watch, `docs/GAPS-PLAN.md` decision 75). A RELEASE NEEDS IT.**
+One address: the only person `/quality` opens for, and the only recipient of the morning email. Set it to the
+same address `FEEDBACK_EMAIL` holds. **Unset refuses everyone** — `requireOwner` (`lib/auth.ts`) answers 404
+to every caller when it is blank, which is `cronVerdict`'s rule and is the safe reading of a missing value, so
+forgetting it closes the page rather than opening it. It is not a secret and should be saved **visible**, so
+it can be read back; `AI_EFFORT`'s hidden-and-forgotten value is why that matters.
+
+**A NEW TABLE CAME WITH IT: `quality_reports` (migration 095).** One row per company per day plus one
+`company_id = null` totals row that holds no row ids. **`anon` and `authenticated` are granted NOTHING on it**
+— revoked from both and granted to neither, read back with `has_table_privilege` for all eight rights — and
+RLS is enabled with no policy. The only reader is `app/api/quality/route.ts`, behind `QUALITY_EMAIL`, with one
+named service-role SELECT. Migration 095 also **restates `job_runs_job_check` whole** to admit the eighth job
+word, `quality`.
+
+**And its email sends from the sandbox address on purpose.** `sandboxSenderRefusal` guards the two senders
+that can reach a CUSTOMER; Night Watch's only recipient is the Resend account's own address, which is the one
+address `onboarding@resend.dev` can reach. It uses `SANDBOX_FROM`, so **S1's one-line change reaches it** —
+unlike the four senders that hold the address as a literal.
 
 Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`. *(Corrected 4 October 2026: `AI_EFFORT` was saved hidden on 23 September and its value was never recorded. On 4 October the owner re-entered it as visible `medium`; see the table above. Results on production before 4 October ran at an effort nobody can now name.)*
 

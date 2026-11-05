@@ -173,12 +173,22 @@ describe('THE QUIET RULE AT ITS EDGES (HR Step 10, decision 13; decision 23)', (
 })
 
 describe('THE CRON SCHEDULE (HR Step 10): every entry pinned', () => {
-  test('vercel.json holds exactly these seven', () => {
+  test('vercel.json holds exactly these eight', () => {
     const crons = JSON.parse(readFileSync('vercel.json', 'utf8')).crons
     // A new entry is a deliberate act, which is what this test is for. The seventh is the
     // Calendar's monthly email (step 11): the 1st of the month at 14:00 UTC, which is 7am in
     // Pacific winter and 6am in summer — before the working day, after the night's jobs, and the
     // only cron here that is not daily or five-minutely.
+    //
+    // ⚡ SEVEN -> EIGHT, 5 November 2026: NIGHT WATCH (`docs/GAPS-PLAN.md` decision 75, the
+    // owner). `/api/jobs/quality` at **13:30 UTC**, which is 05:30 Pacific in winter and 06:30 in
+    // summer — the owner's chosen hour, three hours after the summariser and the deleter so that
+    // nothing it reads is still moving. **The drift is real and is written down** here and in
+    // `docs/RELEASE.md`'s cron table: Vercel's schedules are UTC and the file cannot express a
+    // timezone, so the job walks an hour later in the Pacific summer. The job itself does not
+    // care — it computes its own Pacific window from `now()` (`lib/quality.ts` pacificWindow) —
+    // and the email's first line states the window it covered. This test earning its edit is the
+    // point: it refused the commit until somebody wrote this paragraph.
     assert.deepEqual(crons, [
       { path: '/api/jobs/summarise', schedule: '0 10 * * *' },
       { path: '/api/jobs/delete', schedule: '30 10 * * *' },
@@ -187,6 +197,7 @@ describe('THE CRON SCHEDULE (HR Step 10): every entry pinned', () => {
       { path: '/api/jobs/handbook-queue', schedule: '0 10 * * *' },
       { path: '/api/jobs/handbook-checks', schedule: '*/5 * * * *' },
       { path: '/api/jobs/calendar-month', schedule: '0 14 1 * *' },
+      { path: '/api/jobs/quality', schedule: '30 13 * * *' },
     ])
   })
   test('both HR jobs: the cron secret first (a 404 without it), no preview switch since the go-live', () => {

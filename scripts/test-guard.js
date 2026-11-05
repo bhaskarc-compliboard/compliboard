@@ -679,7 +679,44 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   a sweep is what stops the next large thing arriving rather than pinning the one that went.
 //   The other holds that the drawer passes NO `sub` and builds none: the top said the kind, the
 //   agency and the read date twice, and E4 is what left it that way.
-const FLOOR = 2665
+// 2665 -> 2754, 5 November 2026 (GAPS-PLAN Part F - NIGHT WATCH, the owner's decision 75).
+// EIGHTY-NINE, and the shape of them is the point: **every one of the eleven counters gets a row
+// that SHOULD match and a row that should NOT.** A counter with only a positive case is a counter
+// nobody has watched refuse anything; a counter with only a negative case is §9a's check that
+// cannot see a presence. Both halves, eleven times.
+//
+// And the fixtures are this week's own defects rather than invented shapes — every id, model and
+// price copied out of `docs/GAPS-PLAN.md` §8: W2's scan `c11c6f56` with `model = '(not called)'`
+// and its $0.114168 call, W3's two runs six seconds apart, W5's "D9 and D10 are blank checklist
+// templates". If the job had existed on 3 November, these are the rows it would have mailed on
+// the 4th.
+//
+// SIX of the eighty-nine are there because they caught something real. Two were written only
+// after RUNNING the job, which is the whole argument of this feature applied to itself:
+//   * the job reported ITSELF as a hanging job - startJobRun opens a job_runs row before any
+//     work, so the first real run mailed "quality - last started -1 min ago - 1 row left open"
+//     in the one block whose job is to say when something is hanging. The test asserts there
+//     are exactly TWO `.neq('id', run.id)` exclusions, because excluding it from the open-rows
+//     read alone was what the first version did.
+//   * D002 is the EPA code for corrosivity, not a document handle. The handle regex counted a
+//     Cascade finding reading "D002 corrosive waste is a common waste stream at chemical
+//     plants". nextHandle() counts from 1 and never pads; EPA's D-codes are always padded, so
+//     one character of regex separates them. Measured on staging: 57 hits became 56.
+//
+// And four were written during the build, each catching something before it shipped:
+//   · the Pacific window test, which pins 2026-11-04 midnight at 08:00 UTC and the summer day at
+//     07:00 — a UTC-day reading would have labelled the report with the wrong date all year
+//   · "the cost and the pulse NEVER count toward things to look at", whose first draft used a
+//     document_scan call and so proved counter 7 firing instead
+//   · the broken-JSON test, whose first draft used a repeating string and would have passed its
+//     200-character assertion for the wrong reason
+//   · "a handle inside a QUOTE does not count", which holds `lib/auditRun.ts`'s own rule that a
+//     quote is word for word or it is nothing
+//
+// One existing test earned its edit rather than being worked around: `topicClaim.test.ts`'s
+// "vercel.json holds exactly these seven" refused the commit until the eighth cron and its
+// PST/PDT drift were written down. That is what a pinned list is for.
+const FLOOR = 2754
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

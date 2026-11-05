@@ -28,6 +28,10 @@
     {
       "path": "/api/jobs/calendar-month",
       "schedule": "0 14 1 * *"
+    },
+    {
+      "path": "/api/jobs/quality",
+      "schedule": "30 13 * * *"
     }
   ],
   "functions": {
