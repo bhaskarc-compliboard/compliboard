@@ -7,7 +7,6 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { checkConversion, itemColumns, checkAddedLinks, NO_SOURCE_FOUND } from '../../lib/checklistConvert.ts'
 import { CONVERT_DISCUSSED, CONVERT_COMPLETE, CONVERT_DISCUSSED_ASKS_FOR_BASIS } from '../../prompts/convert.ts'
-import { NO_SOURCE } from '../../lib/summaryReport.ts'
 
 // Conversation-wide numbering: 1 TTB, 2 CBP, 3 FDA. The second answer has two paragraphs.
 const turns = [
@@ -94,7 +93,6 @@ describe('the prompts say the rules the brief names', () => {
     const lib = readFileSync('lib/checklistConvert.ts', 'utf8')
     assert.match(lib, /import \{[^}]*checkCitations[^}]*\} *\n? *from '\.\/summaryReport\.ts'/)
     assert.ok(!/function checkCitations/.test(lib))
-    assert.equal(NO_SOURCE, 'No source cited in the conversation')
   })
 })
 

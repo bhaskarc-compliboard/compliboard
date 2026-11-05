@@ -8,7 +8,6 @@
  * Checklists from Documents and Audits use the first two categories only and open in the same drawer.
  */
 import { displaySource } from './sourceTitle.ts'
-import { NO_SOURCE } from './summaryWords.ts'
 
 /**
  * *** WHERE A CHECKLIST LIVES, AND IT IS ONE STRING IN ONE PLACE — `docs/GAPS-PLAN.md` decision 8,
@@ -95,16 +94,19 @@ export function mustDoLabel(total: number, done: number): string {
   return `${done} of ${total} must-do${total === 1 ? '' : 's'} done`
 }
 
-/** `lib/summaryWords.ts` NO_SOURCE — the one copy, browser-safe; re-exported so the how-to route and
- *  `lib/checklistConvert.ts` are unchanged (HR Step 3a). */
-export { NO_SOURCE }
 /** An item "Everything on this subject" added whose link failed the search check (`checkAddedLinks`). */
 export const NO_SOURCE_FOUND = 'No source found'
-/** An item with no source and no conversation behind it: the box checklist's own items. */
+/** An item with no source: the box checklist's own items, and — since E2f — one from a conversation. */
 export const NO_SOURCE_GIVEN = 'No source given'
 
+/**
+ * *** AN ITEM FROM A CONVERSATION SAID "No source cited in the conversation" UNTIL E2f. ***
+ * It borrowed the summary's own sentence (`lib/summaryWords.ts`), and E2f removed that sentence
+ * from the product: a summary's items carry no source line at all now, and the words are gone
+ * with them. A checklist item is a different thing — a task a person ticks, which may carry a
+ * link — so it keeps a short line, and it is the one its two siblings already use.
+ */
 export function noSourceText(origin: string | null): string {
-  if (origin === 'conversation') return NO_SOURCE
   if (origin === 'added') return NO_SOURCE_FOUND
   return NO_SOURCE_GIVEN
 }

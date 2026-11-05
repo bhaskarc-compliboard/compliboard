@@ -14,8 +14,11 @@
  * approved. *** A document, an attached file, an audit finding and a date already carried a label
  * from the brief that found them; a web page carried only its URL (`lib/sourceTitle.ts`
  * `passageLineOf`). The measured problem is at the other end of it: E2b's Haiku re-summary cited
- * NOTHING on any item, so every item of a summary of a conversation about an attached permit read
- * *"No source cited in the conversation"*. Rule 4 now asks for the numbers an item rests on, says
+ * NOTHING on any item, so every item of a summary of a conversation about an attached permit said
+ * so, in a grey line under it. (E2f has since removed that line and the words with it: no item
+ * shows a source at all, and the summary's one source list is every source the conversation
+ * rested on. The rules below still stand — what an item cites is stored, and `checkReport` still
+ * drops a number the answer does not carry.) Rule 4 asks for the numbers an item rests on, says
  * an empty list should be rare, and the list the model reads says what each number is. The code
  * half of the same fix is `checkCitations`'s inheritance (E2c item 2), which needs no model at all.
  *

@@ -22,7 +22,7 @@
  * *** WORKSPACE TASK 6: `discussed` IS NOW HELD TO THE SUMMARY'S CITATION RULE, NOT THE URL RULE. ***
  * The sources are numbered by code (`numberedTranscript`), every item carries a quoted `basis`, and
  * `lib/checklistConvert.ts` runs the summary's own `checkCitations`: a basis not found clears the
- * item's sources ("No source cited in the conversation"); a basis found keeps only the markers in
+ * item's sources (the checklist then shows "No source given"); a basis found keeps only the markers in
  * that paragraph. A number outside the conversation's list cannot survive, so the old URL filter has
  * nothing left to catch — the guarantee above holds by construction, and nothing is dropped whole.
  * `complete` keeps its input and its conversation-URL rule and gains `to_confirm`; since the owner's

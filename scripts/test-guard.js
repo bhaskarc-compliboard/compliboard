@@ -612,7 +612,22 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   One is a defect found by reading what E2b stored rather than by a failing test: a source with
 //   no quote rendered as `- "undefined"` in the next turn's history, which is what the MODEL was
 //   then shown about a real file of the person's.
-const FLOOR = 2620
+//
+// 2620 -> 2625, 5 November 2026 (GAPS-PLAN Part E step E2f - the summary shows its sources once).
+//   FIVE, and the net is small because E2f DELETES: four tests that pinned the per-item source
+//   lines, the "Not answered here" card and B4's renumbering were rewritten rather than added to.
+//
+//   The one that will catch a mistake later walks app/, lib/, components/ and prompts/, strips
+//   the comments, and fails if "No source cited" is in the CODE of any file. The words were drawn
+//   under every sourceless summary item and borrowed by the checklist drawer; E2f removes them
+//   from the product and keeps the history in comments, and this is what stops them creeping
+//   back through a copy.
+//
+//   The rest pin the order (situation, What applies, Sources, Still to confirm - read out of the
+//   card JSX, not the import list), that an item draws its name and its sentence and nothing
+//   else, and that the source list is every source the CONVERSATION rested on rather than only
+//   the ones the items cited.
+const FLOOR = 2625
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

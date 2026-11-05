@@ -6,9 +6,8 @@ import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
 import {
   groupItems, madeInWorkspace, mustDoLabel, oneLineSource, shortTitle, thingsToDo, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
-  NO_SOURCE, NO_SOURCE_FOUND, HOWTO_LOCK_MS,
+  NO_SOURCE_FOUND, HOWTO_LOCK_MS,
 } from '../../lib/checklistView.ts'
-import { NO_SOURCE as REPORT_NO_SOURCE } from '../../lib/summaryReport.ts'
 
 const it = (category: string, name: string) => ({ category, name })
 
@@ -40,11 +39,13 @@ describe('the counts and the words', () => {
     assert.equal(mustDoLabel(1, 0), '0 of 1 must-do done')
     assert.equal(mustDoLabel(0, 0), 'No must-dos')
   })
-  test('no source: from the conversation, added, or neither', () => {
-    assert.equal(noSourceText('conversation'), 'No source cited in the conversation')
+  test('no source: an added item whose link failed, or any other item — E2f', () => {
+    // Until E2f an item from a conversation borrowed the summary's own sentence, "No source cited
+    // in the conversation". E2f removed that sentence from the product, so this item says what
+    // its two siblings say.
+    assert.equal(noSourceText('conversation'), 'No source given')
     assert.equal(noSourceText('added'), 'No source found')
     assert.equal(noSourceText(null), 'No source given')
-    assert.equal(NO_SOURCE, REPORT_NO_SOURCE)
     assert.equal(NO_SOURCE_FOUND, 'No source found')
   })
   test('sources: the list, else the one URL, else a Documents/Audits title with no link', () => {
@@ -157,12 +158,17 @@ describe('the summary as an accordion — the rules, wherever they live (Stage 2
   test('each authority folds, and so do the three quiet cards', () => {
     assert.match(report, /aria-expanded=\{open\.has\(gi\)\} aria-controls=\{id\}/)
     assert.match(report, /\(\) => new Set\(\[0\]\)\)/, 'the first authority must open')
-    assert.match(report, /useState\(\{ applies: true, confirm: false, unanswered: false, sources: false \}\)/)
+    assert.match(report, /useState\(\{ applies: true, sources: true, confirm: false \}\)/)
   })
-  test('the order is the one Task 5 built, with E2\'s renamed card: situation, What applies, Still to confirm, Not answered here, facts, Sources', () => {
+  test('⚡ THE ORDER, E2f\'s: situation · What applies · Sources · Still to confirm · facts', () => {
     const at = (t: string) => report.indexOf(t)
-    const order = ['words?.asOf ?? AS_OF_LINE', 'CARD_SITUATION_TITLE', 'CARD_APPLIES_TITLE', 'CARD_CONFIRM_TITLE', 'CARD_UNANSWERED_TITLE', '{factsLine}', 'CARD_SOURCES_TITLE']
+    const order = ['words?.asOf ?? AS_OF_LINE', 'CARD_SITUATION_TITLE', 'CARD_APPLIES_TITLE',
+      'CARD_SOURCES_TITLE', 'CARD_CONFIRM_TITLE', '{factsLine}']
     for (let i = 1; i < order.length; i++) assert.ok(at(order[i - 1]) < at(order[i]), `${order[i - 1]} before ${order[i]}`)
+    // The DOM order IS the paper order: print only unfolds, it never reorders (`app/globals.css`).
+    assert.ok(!/order:\s*\d/.test(report))
+    // And the card decision 65 removed is not drawn at all.
+    assert.ok(!report.includes('CARD_UNANSWERED_TITLE'))
   })
   test('rows are real buttons with aria-expanded and aria-controls', () => {
     // The card header when it folds, and every authority row. `components/FoldRow.tsx` is deleted.

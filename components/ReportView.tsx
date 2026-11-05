@@ -11,17 +11,32 @@
  * sentences, the items, the sources and the facts are exactly what the summariser stored. It
  * changed the order things open in, the words of one heading, and the partitions —
  *
- *   · **Five cards**, each with a coloured left edge and a tinted header (decision 62), from the
+ *   · **Four cards**, each with a coloured left edge and a tinted header (decision 62), from the
  *     audit report's palette read from one place (`lib/reportPalette.ts`).
  *   · **The fold is inverted.** What applies used to open with every authority FOLDED, so the
  *     thing the summary is for was a row of closed headings. It opens with the **first authority
  *     open** and the rest folded to their counts, Open all / Close all on the right.
- *   · **Still to confirm, Not answered here and Sources open FOLDED**, each with its count on its
- *     header line — and Still to confirm's count says what it means: *"3 things we could not
+ *   · **Still to confirm** opens folded, its count saying what it means — *"3 things we could not
  *     settle from the documents"*. Its header carries nothing else (E2c item 4): the way to settle
  *     them is one link inside the card, either per item or once for the card, never both.
- *   · **"Asked and not answered" is "Not answered here"**, and each question carries the line that
- *     says what happened and what to do (`lib/summaryWords.ts`).
+ *
+ * *** AND WHAT E2f CHANGED — 5 November 2026, decision 65 and the owner's own sentence: THE
+ * SUMMARY SHOWS ITS SOURCES ONCE, AND NOTHING ELSE ABOUT SOURCES. ***
+ *
+ *   · **No item carries a source line of any kind** — not a link, and not the words "No source
+ *     cited in the conversation", which are gone from the product. An item is its title and its
+ *     one sentence. E2c and E2d's per-item sourcing went three steps and ended on a card where a
+ *     forklift item listed four documents, none of them the forklift roster; **a summary proves
+ *     itself with one source list, and the ANSWER proves each sentence with its own cards**,
+ *     which is where a person reads the quote anyway. The data stays stored and unused.
+ *   · **Sources sits directly under What applies and opens by default** — everything the
+ *     conversation rested on, deduplicated: documents, attached files, audit findings, web
+ *     pages. Each opens in place (decision 63), which until now only the per-item lines did.
+ *   · **Not answered here is gone** (decision 65, the owner): a question the person moved past
+ *     is either answered in the chat or not needed. `summary_report.unanswered` is still written
+ *     and still stored.
+ *   · The order, on screen and on paper: **Your situation · What applies · Sources · Still to
+ *     confirm**, and the facts line last.
  *
  * *** THE SPACING IS BOARD 2's, AND THESE ARE ITS OWN NUMBERS. *** `.sr .item` is
  * `padding: 8px 0 10px 18px` over a 1px rule, and `.sr .auth` is `padding: 10px 0 6px`. So item to
@@ -44,22 +59,24 @@ import type React from 'react'
 import { useId, useState } from 'react'
 import type { ReportItem, ReportSource } from '@/lib/summaryReport'
 import {
-  NO_SOURCE, NO_SITUATION, AS_OF_LINE, APPLIES_COUNT, GROUPS_COUNT, CONFIRM_COUNT,
-  UNANSWERED_COUNT, UNANSWERED_LINE, CARD_SITUATION_TITLE, CARD_APPLIES_TITLE, CARD_CONFIRM_TITLE,
-  CARD_UNANSWERED_TITLE, CARD_SOURCES_TITLE, CONFIRM_ALL, CONFIRM_ONE, confirmHref,
+  NO_SITUATION, AS_OF_LINE, APPLIES_COUNT, GROUPS_COUNT, CONFIRM_COUNT,
+  CARD_SITUATION_TITLE, CARD_APPLIES_TITLE, CARD_CONFIRM_TITLE,
+  CARD_SOURCES_TITLE, CONFIRM_ALL, CONFIRM_ONE, confirmHref,
   CONFIRM_HREF as CONFIRM_HREF_ALL,
 } from '@/lib/summaryWords'
 import { CARD_SITUATION, CARD_APPLIES, CARD_CONFIRM, CARD_QUIET } from '@/lib/reportPalette'
 import { thingsToDo } from '@/lib/checklistView'
 import { displaySource, sourceTarget, type SourceTarget } from '@/lib/sourceTitle'
-import { OneLineLink } from '@/components/OneLineLink'
 import { useWaitingKeys } from '@/components/WaitingKeys'
 
-/** How one source is drawn. `n` is the number the report gave it. */
+/**
+ * How one source is drawn in the Sources list, after its number.
+ *
+ * *** IT HAD A SECOND HALF, `link`, AND E2f TOOK IT. *** That one drew a source on an ITEM's
+ * line, and no item carries a source line any more — a field nothing reads is a claim nothing
+ * checks (§9a), so it is gone from here, from `WEB_SOURCE` and from HR's shape.
+ */
 export interface SourceShape<S extends { n: number }> {
-  /** On an item's line: one source, one line. */
-  link: (src: S) => React.ReactNode
-  /** In the Sources list, after its number. */
   entry: (src: S) => React.ReactNode
 }
 
@@ -73,9 +90,8 @@ export interface ReportLike<S extends { n: number }> {
   sources: S[]
 }
 
-/** A web page, drawn exactly as the workspace always has: a one-line link, and title + host in the list. */
+/** A web page, drawn exactly as the workspace always has: title + host, in the list. */
 export const WEB_SOURCE: SourceShape<ReportSource> = {
-  link: (src) => <OneLineLink key={src.n} n={src.n} title={src.title} url={src.url} />,
   entry: (src) => {
     const shown = displaySource(src.title, src.url)
     return (
@@ -159,48 +175,44 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
    */
   onOpenSource?: (target: SourceTarget) => void
 }) {
-  const byN = new Map(report.sources.map((src) => [src.n, src]))
   const uid = useId()
   /** What Company information is waiting for, from the read the layout already makes (E2b item 1). */
   const waiting = useWaitingKeys()
   /** The first authority open, the rest folded — the inversion decision 62 asks for. */
   const [open, setOpen] = useState<Set<number>>(() => new Set([0]))
-  const [cards, setCards] = useState({ applies: true, confirm: false, unanswered: false, sources: false })
+  // E2f: Sources opens WITH the summary — it is the one place a source appears now.
+  const [cards, setCards] = useState({ applies: true, sources: true, confirm: false })
   const flip = (k: keyof typeof cards) => setCards((c) => ({ ...c, [k]: !c[k] }))
   const total = report.applies.reduce((n, g) => n + g.items.length, 0)
   const allOpen = report.applies.length > 0 && open.size === report.applies.length
   const toggle = (gi: number) => setOpen((o) => { const n = new Set(o); if (n.has(gi)) n.delete(gi); else n.add(gi); return n })
 
   /**
-   * One source on an item's line. A source of ours goes to the host when there is one; everything
-   * else — and everything, when there is no host — is the section's own shape, unchanged.
+   * *** ONE SOURCE IN THE SOURCES LIST — decision 63, moved here at E2f. ***
+   * A source of ours opens in place when the page passes a handler; everything else — and
+   * everything, when there is no handler (HR) — is the section's own shape, unchanged. This was
+   * the per-item line until E2f, where the only place a source appears is this list.
    */
-  const sourceLine = (src: S) => {
+  const sourceEntry = (src: S) => {
     const t = sourceTarget(src as unknown as { url?: string; href?: string })
-    if (!onOpenSource || t.kind === 'web') return sourceShape.link(src)
+    if (!onOpenSource || t.kind === 'web') return sourceShape.entry(src)
     const title = String((src as unknown as { title?: string }).title ?? '')
     const label = t.kind === 'document' ? 'your document'
       : t.kind === 'audit' ? 'the audit'
       : 'your calendar'
     return (
-      <button key={src.n} type="button" onClick={() => onOpenSource(t)}
-        className="block max-w-full truncate text-left text-[12px] text-[var(--green-ink)] underline underline-offset-2 hover:text-[var(--green)]">
-        {title} · {label}
+      <button type="button" onClick={() => onOpenSource(t)}
+        className="block min-w-0 flex-1 text-left text-[12.5px] leading-[18px] text-[var(--green-ink)] underline underline-offset-2 hover:text-[var(--green)]">
+        {title} <span className="text-gray-400 no-underline">· {label}</span>
       </button>
     )
   }
 
-  /* An item: the name, what to do, and its sources. The paddings are board 2's — see the header. */
+  /* An item: the name and the one sentence. No source line of any kind (E2f). */
   const item = (it: ReportItem, key: string, confirm = false) => (
     <li key={key} className="border-t border-gray-100 pb-2.5 pl-[18px] pt-2 first:border-t-0">
       <p className="text-[14px] font-medium text-gray-900">{it.name}</p>
       <p className="mt-0.5 text-[13.5px] leading-[20px] text-gray-600">{it.what_to_do}</p>
-      <div className="mt-0.5 space-y-0.5">
-        {it.sources.length ? it.sources.map((n) => {
-          const src = byN.get(n)
-          return src ? sourceLine(src) : null
-        }) : <p className="text-[12px] text-gray-400">{NO_SOURCE}</p>}
-      </div>
       {/* *** A WAY TO SETTLE THIS ONE — E2a item 3, narrowed at E2b item 1. ***
           It was on every item, said the same words as the card's own header link three or four
           times down one card, and every copy went to the same page. It is drawn now only when the
@@ -272,6 +284,23 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
         </Card>
       )}
 
+      {/* ── SOURCES — pale, OPEN, directly under What applies (E2f). ───────
+          Everything the conversation rested on, deduplicated by the writer: a document, a file
+          the person attached, an audit finding, a web page. One list, in one place. */}
+      {report.sources.length > 0 && (
+        <Card tint={CARD_QUIET} title={CARD_SOURCES_TITLE} count={String(report.sources.length)}
+          open={cards.sources} onToggle={() => flip('sources')} controls={`${uid}-src`}>
+          <ol className="space-y-1.5 py-1">
+            {report.sources.map((src) => (
+              <li key={src.n} className="flex gap-2 text-[12.5px] leading-[18px]">
+                <span className="shrink-0 text-gray-400">{src.n}.</span>
+                {sourceEntry(src)}
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
+
       {/* ── STILL TO CONFIRM — blue, folded, its count says what it means. ────
           *** ONE DOOR, NEVER TWO — E2c item 4. *** The header is title and count on one line and
           nothing else, so this card's header is the shape the other four are. The way out is a
@@ -292,34 +321,11 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
         </Card>
       )}
 
-      {/* ── NOT ANSWERED HERE — pale, folded, and polite. ──────────────────── */}
-      {report.unanswered.length > 0 && (
-        <Card tint={CARD_QUIET} title={CARD_UNANSWERED_TITLE} count={UNANSWERED_COUNT(report.unanswered.length)}
-          open={cards.unanswered} onToggle={() => flip('unanswered')} controls={`${uid}-una`}>
-          <ul className="list-disc space-y-1.5 py-1 pl-[26px] text-[13.5px] leading-[20px] text-gray-700">
-            {report.unanswered.map((q, i) => (
-              <li key={i}>{q} — <span className="text-gray-500">{UNANSWERED_LINE}</span></li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
+      {/* The facts waiting on Company information, where a section passes a line. Last, with
+          Still to confirm, which sends a person to the same page. */}
       {factsLine}
 
-      {/* ── SOURCES — pale, folded, the full titles. ───────────────────────── */}
-      {report.sources.length > 0 && (
-        <Card tint={CARD_QUIET} title={CARD_SOURCES_TITLE} count={String(report.sources.length)}
-          open={cards.sources} onToggle={() => flip('sources')} controls={`${uid}-src`}>
-          <ol className="space-y-1.5 py-1">
-            {report.sources.map((src) => (
-              <li key={src.n} className="flex gap-2 text-[12.5px] leading-[18px]">
-                <span className="shrink-0 text-gray-400">{src.n}.</span>
-                {sourceShape.entry(src)}
-              </li>
-            ))}
-          </ol>
-        </Card>
-      )}
+
     </div>
   )
 }

@@ -13,12 +13,12 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 
 import { sourceTarget } from '../../lib/sourceTitle.ts'
 import {
-  CARD_SITUATION_TITLE, CARD_APPLIES_TITLE, CARD_CONFIRM_TITLE, CARD_UNANSWERED_TITLE,
-  CARD_SOURCES_TITLE, CONFIRM_COUNT, UNANSWERED_COUNT, UNANSWERED_LINE, APPLIES_COUNT, GROUPS_COUNT,
+  CARD_SITUATION_TITLE, CARD_APPLIES_TITLE, CARD_CONFIRM_TITLE,
+  CARD_SOURCES_TITLE, CONFIRM_COUNT, APPLIES_COUNT, GROUPS_COUNT,
 } from '../../lib/summaryWords.ts'
 
 const read = (p: string) => readFileSync(p, 'utf8')
@@ -43,8 +43,8 @@ describe('the summary is five cards, and the colours come from one palette', () 
     for (const c of ['CARD_SITUATION', 'CARD_APPLIES', 'CARD_CONFIRM', 'CARD_QUIET']) {
       assert.ok(VIEW_CODE.includes(`tint={${c}}`), `the ${c} card does not use its tint`)
     }
-    // CARD_QUIET twice: Not answered here and Sources are the same pale card.
-    assert.equal((VIEW_CODE.match(/tint=\{CARD_QUIET\}/g) ?? []).length, 2)
+    // CARD_QUIET once since E2f: Sources is the only pale card left (decision 65 took the other).
+    assert.equal((VIEW_CODE.match(/tint=\{CARD_QUIET\}/g) ?? []).length, 1)
   })
 
   test('STILL TO CONFIRM IS BLUE, AND AMBER IS RESERVED — decision 62 corrected at E2a', () => {
@@ -74,12 +74,12 @@ describe('the summary is five cards, and the colours come from one palette', () 
 describe('what is open when a summary opens', () => {
   test('What applies opens, with the FIRST authority open and the rest folded', () => {
     assert.match(VIEW_CODE, /useState<Set<number>>\(\(\) => new Set\(\[0\]\)\)/)
-    assert.match(VIEW_CODE, /useState\(\{ applies: true, confirm: false, unanswered: false, sources: false \}\)/)
+    // E2f: and Sources opens with it, because it is the one place a source appears now.
+    assert.match(VIEW_CODE, /useState\(\{ applies: true, sources: true, confirm: false \}\)/)
   })
 
-  test('the other three cards open folded, each with its count on the header line', () => {
+  test('Still to confirm opens folded; both it and Sources carry a count', () => {
     assert.match(VIEW_CODE, /title=\{CARD_CONFIRM_TITLE\} count=\{CONFIRM_COUNT\(report\.to_confirm\.length\)\}/)
-    assert.match(VIEW_CODE, /title=\{CARD_UNANSWERED_TITLE\} count=\{UNANSWERED_COUNT\(report\.unanswered\.length\)\}/)
     assert.match(VIEW_CODE, /title=\{CARD_SOURCES_TITLE\} count=\{String\(report\.sources\.length\)\}/)
   })
 
@@ -99,29 +99,20 @@ describe('what is open when a summary opens', () => {
 /* ── THE WORDS — decision 62 ──────────────────────────────────────────────── */
 
 describe('the words on the cards', () => {
-  test('the five titles, and the renamed one', () => {
+  test('the four titles, in the order they are drawn', () => {
     assert.equal(CARD_SITUATION_TITLE, 'Your situation')
     assert.equal(CARD_APPLIES_TITLE, 'What applies')
-    assert.equal(CARD_CONFIRM_TITLE, 'Still to confirm')
-    assert.equal(CARD_UNANSWERED_TITLE, 'Not answered here')
     assert.equal(CARD_SOURCES_TITLE, 'Sources')
-    // "Asked and not answered" is gone from the one file that drew it.
+    assert.equal(CARD_CONFIRM_TITLE, 'Still to confirm')
     assert.ok(!VIEW_CODE.includes('Asked and not answered'))
   })
 
   test('Still to confirm\'s count says what it MEANS, and the others count plainly', () => {
     assert.equal(CONFIRM_COUNT(3), '3 things we could not settle from the documents')
     assert.equal(CONFIRM_COUNT(1), '1 thing we could not settle from the documents')
-    assert.equal(UNANSWERED_COUNT(1), '1 question')
     assert.equal(APPLIES_COUNT(6, 3), '6 things to do · 3 authorities')
     assert.equal(APPLIES_COUNT(1, 1), '1 thing to do · 1 authority')
     assert.equal(GROUPS_COUNT(2), '2 authorities')
-  })
-
-  test('every unanswered question carries the owner\'s line, and it is polite', () => {
-    assert.equal(UNANSWERED_LINE,
-      'this came up and the conversation did not settle it. Ask it on its own and we will answer.')
-    assert.match(VIEW_CODE, /\{UNANSWERED_LINE\}/)
   })
 
   test('HR\'s own words still win, and are not said twice', () => {
@@ -186,9 +177,12 @@ describe('which address opens what — run, not read', () => {
 })
 
 describe('the swap, where there is a drawer to swap', () => {
-  test('ReportView asks the host, and only for a source of ours', () => {
+  test('ReportView asks the host, and only for a source of ours — in the Sources list (E2f)', () => {
     assert.match(VIEW_CODE, /onOpenSource\?: \(target: SourceTarget\) => void/)
-    assert.match(VIEW_CODE, /if \(!onOpenSource \|\| t\.kind === 'web'\) return sourceShape\.link\(src\)/)
+    assert.match(VIEW_CODE, /if \(!onOpenSource \|\| t\.kind === 'web'\) return sourceShape\.entry\(src\)/)
+    // It is the Sources list that opens in place now: no item draws a source at all.
+    assert.match(VIEW_CODE, /\{sourceEntry\(src\)\}/)
+    assert.ok(!VIEW_CODE.includes('sourceShape.link'), 'the shape\'s item half is gone')
   })
 
   test('the shared drawer forwards it and does nothing else with it', () => {
@@ -228,7 +222,7 @@ describe('the swap, where there is a drawer to swap', () => {
     // because there is no reading of a handbook to open — so there is nothing to swap to.
     const hr = read('app/hr/HrWorkspace.tsx')
     assert.ok(!code(hr).includes('onOpenSource'))
-    assert.match(hr, /kind !== 'handbook' \? WEB_SOURCE\.link\(src\)/)
+    assert.match(hr, /kind !== 'handbook' \? WEB_SOURCE\.entry\(src\)/)
     assert.match(read('app/compliance/page.tsx'), /HR does not, and that is not an omission/)
   })
 })
@@ -658,5 +652,77 @@ describe('Still to confirm has exactly one door — E2c item 4', () => {
       const at = VIEW_CODE.indexOf(m)
       assert.ok(VIEW_CODE.slice(Math.max(0, at - 400), at).includes('no-print'), `${m} prints`)
     }
+  })
+})
+
+/* ── E2f — THE SUMMARY SHOWS ITS SOURCES ONCE ─────────────────────────────── */
+
+/**
+ * *** THE OWNER, 5 NOVEMBER 2026, AND DECISION 65. ***
+ *
+ * E2c and E2d spent three steps trying to put the right source under every item and ended on a
+ * card where a forklift item listed four documents, none of them the forklift roster. The
+ * conclusion is the other way round: **a summary proves itself with ONE source list, and the
+ * ANSWER proves each sentence with its own cards**, which is where a person reads the quote. So
+ * no item carries a source line of any kind, the words that said it had none are gone from the
+ * product, and the Sources card sits under What applies and opens with the summary.
+ */
+describe('no item says anything about sources — E2f', () => {
+  test('⚡ "No source cited in the conversation" IS NOWHERE IN app/, lib/ OR components/', () => {
+    const files: string[] = []
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        if (e.name === 'node_modules' || e.name.startsWith('.')) continue
+        const p = `${dir}/${e.name}`
+        if (e.isDirectory()) walk(p)
+        else if (/\.(ts|tsx|css)$/.test(e.name)) files.push(p)
+      }
+    }
+    for (const d of ['app', 'lib', 'components', 'prompts']) walk(d)
+    // Nowhere in CODE: not a constant, not a literal, not drawn. Where the words still appear it
+    // is inside a comment saying why they went, which is the record and not the product.
+    const left = files.filter((f) => code(read(f)).includes('No source cited'))
+    assert.deepEqual(left, [], `the words are still in the code of: ${left.join(', ')}`)
+    assert.ok(!read('lib/summaryWords.ts').includes("= 'No source cited"))
+  })
+
+  test('an item is its name and its sentence, and nothing else', () => {
+    const itemFn = VIEW_CODE.slice(VIEW_CODE.indexOf('const item = (it: ReportItem'),
+      VIEW_CODE.indexOf('return (\n    <div className="space-y-3.5">'))
+    assert.match(itemFn, /\{it\.name\}/)
+    assert.match(itemFn, /\{it\.what_to_do\}/)
+    assert.ok(!itemFn.includes('it.sources'), 'the item still reads its sources')
+    assert.ok(!itemFn.includes('sourceEntry'), 'the item still draws a source')
+    // The one link that is NOT about sources stays: the way to settle a waiting question (E2c).
+    assert.match(itemFn, /\{CONFIRM_ONE\}/)
+  })
+
+  test('the Sources card sits under What applies, opens, and opens its own in place', () => {
+    // By the card's own JSX, not by the import list at the top of the file.
+    const at = (t: string) => VIEW_CODE.indexOf(`title={${t}}`)
+    assert.ok(at('CARD_SITUATION_TITLE') < VIEW_CODE.indexOf('CARD_APPLIES_TITLE}'))
+    assert.ok(VIEW_CODE.indexOf('CARD_APPLIES_TITLE}') < at('CARD_SOURCES_TITLE'), 'Sources is above What applies')
+    assert.ok(at('CARD_SOURCES_TITLE') < at('CARD_CONFIRM_TITLE'), 'Sources is below Still to confirm')
+    assert.match(VIEW_CODE, /useState\(\{ applies: true, sources: true, confirm: false \}\)/)
+    assert.match(VIEW_CODE, /count=\{String\(report\.sources\.length\)\}/)
+    // Decision 63, in the one place a source now appears.
+    const entry = VIEW_CODE.slice(VIEW_CODE.indexOf('const sourceEntry ='), VIEW_CODE.indexOf('const item ='))
+    assert.match(entry, /onClick=\{\(\) => onOpenSource\(t\)\}/)
+    assert.match(entry, /t\.kind === 'document' \? 'your document'/)
+  })
+
+  test('the card decision 65 removed is gone, and its DATA is not', () => {
+    assert.ok(!VIEW_CODE.includes('CARD_UNANSWERED_TITLE'), 'the card is still drawn')
+    assert.ok(!VIEW_CODE.includes('report.unanswered.map'), 'its questions are still drawn')
+    // The report still carries it, and the check still validates it.
+    assert.match(code(read('lib/summaryReport.ts')), /unanswered: string\[\]/)
+    assert.match(code(read('lib/summaryReport.ts')), /an unanswered question that is not text/)
+    assert.match(read('prompts/summary-report.ts'), /"unanswered"/)
+  })
+
+  test('the list is everything the conversation rested on, not only what items cited', () => {
+    const sr = code(read('lib/summaryReport.ts'))
+    assert.match(sr, /sources: all,/)
+    assert.ok(!sr.includes('order.map((n, i) => ({ ...all[n - 1], n: i + 1 }))'))
   })
 })

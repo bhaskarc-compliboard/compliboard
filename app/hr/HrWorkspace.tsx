@@ -57,17 +57,13 @@ import PausedNote from '@/components/PausedNote'
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
 /**
- * HR'S SOURCE SHAPE for the summary drawer (Step 7): a handbook passage is "<handbook> — <section>, page <p> · your
- * handbook" with no link, and in Sources the same line with its quote under it, as the answer's cards show it.
- * On paper the line prints whole. A web page is drawn exactly as the workspace draws it (`WEB_SOURCE`).
+ * HR'S SOURCE SHAPE for the summary drawer (Step 7): in Sources, a handbook passage is
+ * "<handbook> — <section>, page <p> · your handbook" with no link, with its quote under it, as the answer's
+ * cards show it. On paper the line prints whole. A web page is drawn exactly as the workspace draws it
+ * (`WEB_SOURCE`). HR passes no `onOpenSource`, so E2f's in-place opening never applies to it.
  */
 const HR_SOURCE: SourceShape<HrReportSource> = {
-  link: (src) => src.kind !== 'handbook' ? WEB_SOURCE.link(src) : (
-    <span key={src.n} className="flex min-w-0 items-baseline text-[12.5px] text-gray-600">
-      <span className="screen-only block truncate">[{src.n}] {src.title} · your handbook</span>
-      <span className="print-only">[{src.n}] {src.title} · your handbook</span>
-    </span>
-  ),
+  // E2f: `link` (a source on an ITEM's line) is gone from the shape — no item carries one now.
   entry: (src) => src.kind !== 'handbook' ? WEB_SOURCE.entry(src) : (
     <span>
       <span className="text-gray-900">{src.title}</span>{' '}<span className="text-gray-400">· your handbook</span>

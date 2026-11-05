@@ -25,8 +25,8 @@ import { summaryReportPrompt, SUMMARY_PROMPT_ASKS_FOR_BASIS } from '../prompts/s
 import { guardSummaryWrite, CLAIM_COLUMN } from './topicClaim.ts'
 // The three display words live in a browser-safe file the summary drawer can import (HR Step 3a);
 // re-exported here so every existing caller is unchanged.
-import { NO_SOURCE, longDate, AS_OF_LINE, HR_AS_OF_LINE, NO_SITUATION } from './summaryWords.ts'
-export { NO_SOURCE, longDate, AS_OF_LINE }
+import { longDate, AS_OF_LINE, HR_AS_OF_LINE, NO_SITUATION } from './summaryWords.ts'
+export { longDate, AS_OF_LINE }
 // HR Step 7: the HR summary's pieces (its source key and list line, its turns without the grey lines, its
 // prompt). Used only when `summariseTopic` is called with kind 'hr'; the workspace path never reaches them.
 import { HR_SOURCES, hrTurns } from './hrSummary.ts'
@@ -338,8 +338,10 @@ export function trimTitle(title: string, max = TITLE_MAX): string {
  *     item 2); one that still has none keeps its place, marked "No source cited in the conversation".
  *   · B3: a fact whose quote is not, word for word, in one of the PERSON's messages is dropped, and
  *     the report records how many and why (`facts_dropped`).
- *   · B4: the report's source list holds only the sources its items cite, renumbered 1..k in order
- *     of first appearance in the report, every item rewritten to match.
+ *   · B4, as E2f rewrote it: the report's source list is EVERY source the conversation rested on,
+ *     deduplicated and numbered in order of first appearance — not only the ones its items cite,
+ *     because no item shows a source any more and this one list is the whole of what a summary
+ *     says about where it stands.
  *   · The title is trimmed; `as_of` is the date the code passes.
  */
 export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
@@ -419,13 +421,23 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
     facts.push({ key: key.slice(0, 120), value: value.slice(0, 500), quote: (quote as string).slice(0, 2000) })
   }
 
-  // B4 — only the sources the report cites, renumbered 1..k in order of first appearance.
-  const order: number[] = []
-  for (const it of [...applies.flatMap((g) => g.items), ...confirm]) for (const n of it.sources) if (!order.includes(n)) order.push(n)
-  const to = new Map(order.map((n, i) => [n, i + 1]))
+  /**
+   * *** B4, REPLACED AT E2f: THE LIST IS EVERYTHING THE CONVERSATION RESTED ON. ***
+   *
+   * It was "only the sources the report cites, renumbered 1..k". That was right while every item
+   * carried its own source line: the list was the key to the lines. E2f takes the lines away —
+   * **a summary proves itself with ONE source list** — and a list built from what the items
+   * happened to cite is then the wrong list: the Calendar permit conversation rested on four
+   * documents and dates, its items cited none, and its summary would show no sources at all
+   * about a conversation with four.
+   *
+   * So the list is `all` — every source of every turn, deduplicated and numbered by
+   * `gatherSources` in order of first appearance. An item's own numbers are left pointing at that
+   * same numbering (they are stored and unused; nothing renumbers behind them).
+   */
   const allowed = new Set(opts.allowedKeys ?? [])
   const finish = (it: DraftItem): ReportItem => {
-    const nums = it.sources.map((n) => to.get(n) as number)
+    const nums = it.sources
     const out: ReportItem = { name: it.name, what_to_do: it.what_to_do, sources: nums }
     if (it.basis) out.basis = it.basis
     // Only a key the page is actually waiting on survives (E2b item 2).
@@ -442,18 +454,21 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
       applies: applies.map((g) => ({ authority: g.authority, items: g.items.map(finish) })),
       to_confirm: confirm.map(finish), unanswered, facts,
       ...(facts_dropped.length ? { facts_dropped } : {}),
-      sources: order.map((n, i) => ({ ...all[n - 1], n: i + 1 })),
+      sources: all,
     },
   }
 }
 
-const cites = (it: ReportItem) => (it.sources.length
-  ? ` (${it.sources.length === 1 ? 'source' : 'sources'} ${it.sources.join(', ')})` : ` (${NO_SOURCE.toLowerCase()})`)
-
 /**
- * THE PLAIN-TEXT RENDERING, for `topics.summary`, which every older reader reads. Source numbers are
- * written as "(source 1)" or "(sources 1, 3)", not "[1]": the drawer renders a summary's text through `AnswerBody`,
- * which turns "[1]" into a citation marker, and a text summary carries no source list for it.
+ * THE PLAIN-TEXT RENDERING, for `topics.summary`, which every older reader reads.
+ *
+ * *** E2f: IT IS THE SAME FOUR SECTIONS, IN THE SAME ORDER, AS THE CARDS. *** It used to write a
+ * source list after every item — "(source 1)", or "(no source cited in the conversation)" — and
+ * the whole of E2f is that a summary says where it stands ONCE, in one list, and nothing else
+ * about sources. So an item is its name and its sentence here too, Sources follows What applies,
+ * and "Asked and not answered" is gone with its card (decision 65). `summary_report` still holds
+ * `unanswered` and still holds each item's own `sources`; nothing is lost, and only this
+ * rendering changed.
  */
 /** HR Step 7, additive: the plain text's words and source line. With none, the workspace's, exactly as before. */
 export interface PlainTextWords {
@@ -468,20 +483,16 @@ export function renderPlainText(r: SummaryReport, words?: PlainTextWords): strin
     out.push('', words?.applies ?? 'What applies')
     for (const g of r.applies) {
       out.push('', g.authority)
-      for (const it of g.items) out.push(`- ${it.name}: ${it.what_to_do}${cites(it)}`)
+      for (const it of g.items) out.push(`- ${it.name}: ${it.what_to_do}`)
     }
-  }
-  if (r.to_confirm.length) {
-    out.push('', 'Still to confirm')
-    for (const it of r.to_confirm) out.push(`- ${it.name}: ${it.what_to_do}${cites(it)}`)
-  }
-  if (r.unanswered.length) {
-    out.push('', 'Asked and not answered')
-    for (const q of r.unanswered) out.push(`- ${q}`)
   }
   if (r.sources.length) {
     out.push('', 'Sources')
     for (const s of r.sources) out.push(words?.sourceLine ? words.sourceLine(s as ReportSource & Record<string, unknown>) : `${s.n}. ${s.title} — ${s.url}`)
+  }
+  if (r.to_confirm.length) {
+    out.push('', 'Still to confirm')
+    for (const it of r.to_confirm) out.push(`- ${it.name}: ${it.what_to_do}`)
   }
   return out.join('\n')
 }

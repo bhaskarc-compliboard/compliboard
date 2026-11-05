@@ -6,10 +6,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   gatherSources, numberedTranscript, checkReport, cleanSourceNumbers, trimTitle, renderPlainText,
-  normaliseForMatch, proposalsToInsert, checkCitations, AS_OF_LINE, NO_SOURCE, TITLE_MAX,
+  normaliseForMatch, proposalsToInsert, checkCitations, AS_OF_LINE, TITLE_MAX,
 } from '../../lib/summaryReport.ts'
 import { PASSAGE_SOURCES } from '../../lib/sourceTitle.ts'
-import { NO_SOURCE as WORDS_NO_SOURCE, AS_OF_LINE as WORDS_AS_OF_LINE } from '../../lib/summaryWords.ts'
+import { AS_OF_LINE as WORDS_AS_OF_LINE } from '../../lib/summaryWords.ts'
 
 /*
  * Conversation-wide numbering of these turns: 1 TTB, 2 CBP, 3 FDA (CBP's second URL is the same page).
@@ -95,7 +95,7 @@ describe('B1 — the basis must be in an answer, or the item has no source', () 
     const c = checkReport(good(), turns, '2026-10-03', ON)
     assert.ok(c.ok)
     assert.equal(c.checks[0].found, true)
-    assert.deepEqual(c.report.applies[0].items[0].sources, [1])          // renumbered: 3 → 1 (B4)
+    assert.deepEqual(c.report.applies[0].items[0].sources, [3])          // the conversation's own numbering (E2f)
     assert.ok(!c.report.applies[0].items[0].no_source)
   })
   test('found through markdown: a basis copied without the asterisks still matches', () => {
@@ -110,7 +110,8 @@ describe('B1 — the basis must be in an answer, or the item has no source', () 
     assert.equal(c.checks[0].found, false); assert.deepEqual(c.checks[0].dropped, [1, 3])
     assert.equal(c.report.applies[0].items[0].name, 'Invented')
     assert.equal(c.report.applies[0].items[0].no_source, true)
-    assert.match(renderPlainText(c.report), new RegExp(NO_SOURCE.toLowerCase()))
+    // E2f: the item keeps its place and says nothing about sources — not in the text either.
+    assert.ok(!renderPlainText(c.report).toLowerCase().includes('no source'))
   })
   test('a missing basis, when the prompt asks for one, counts as not found', () => {
     const r = good(); r.applies[0].items = [item('No basis', [3])]
@@ -121,7 +122,7 @@ describe('B1 — the basis must be in an answer, or the item has no source', () 
     const r = good(); r.applies[0].items = [item('Prior notice', [3, 2])]
     const c = checkReport(r, turns, '2026-10-03', { basisRequired: false })
     assert.ok(c.ok); assert.equal(c.checks[0].found, null)
-    assert.deepEqual(c.report.applies[0].items[0].sources, [1, 2])
+    assert.deepEqual(c.report.applies[0].items[0].sources, [3, 2])
   })
 })
 
@@ -158,11 +159,10 @@ describe('E2c item 2 — an item with no citation inherits its paragraph\'s', ()
     assert.ok(c.ok)
     assert.equal(c.checks[0].found, true)
     assert.deepEqual(c.checks[0].inherited, [3])
-    assert.deepEqual(c.report.applies[0].items[0].sources, [1])        // renumbered 3 → 1 (B4)
+    assert.deepEqual(c.report.applies[0].items[0].sources, [3])        // the conversation's own numbering
     assert.ok(!c.report.applies[0].items[0].no_source)
-    // And the source it inherited is in the report's own list, so the card can draw it.
-    assert.deepEqual(c.report.sources.map((x) => x.title), ['FDA'])
-    assert.ok(!renderPlainText(c.report).toLowerCase().includes(NO_SOURCE.toLowerCase()))
+    // E2f: the list is every source the CONVERSATION rested on, not only the cited ones.
+    assert.deepEqual(c.report.sources.map((x) => x.title), ['TTB', 'CBP', 'FDA'])
   })
 
   test('a paragraph with two markers gives both', () => {
@@ -281,6 +281,7 @@ describe('E2c item 2 — an item with no citation inherits its paragraph\'s', ()
     assert.deepEqual(c.report.applies[0].items[0].sources, [1])
     assert.ok(!c.report.applies[0].items[0].no_source)
     assert.equal(c.report.sources[0].title, 'The sheet')
+    // Stored and unused: no item draws a source line since E2f (`components/ReportView.tsx`).
   })
 
   test('WITHOUT the flag nothing is inherited — which is the checklist, deliberately', () => {
@@ -317,8 +318,16 @@ describe("B3 — a fact stands only on the person's own words", () => {
   })
 })
 
-describe('B4 — the report lists only the sources it cites, renumbered 1..k', () => {
-  test('in order of first appearance in the report, every item rewritten to match', () => {
+/**
+ * *** B4 WAS "ONLY THE SOURCES IT CITES, RENUMBERED 1..k", AND E2f REPLACED IT. ***
+ * That was right while every item drew its own source line: the list was the key to the lines.
+ * E2f takes the lines away — a summary proves itself with ONE list — and a list built from what
+ * the items happened to cite is then the wrong list. The Calendar permit conversation rested on
+ * four documents and dates, its items cited none, and its summary would have shown no sources at
+ * all about a conversation with four.
+ */
+describe('B4, as E2f rewrote it — the list is everything the conversation rested on', () => {
+  test('every source of every turn, in order of first appearance, cited or not', () => {
     const r = good()
     r.applies = [
       { authority: 'CBP', items: [item('Broker', [2], 'The tariff question is for your broker')] },
@@ -327,14 +336,25 @@ describe('B4 — the report lists only the sources it cites, renumbered 1..k', (
     r.to_confirm = [item('Tariff again', [2], 'The tariff question is for your broker')]
     const c = checkReport(r, turns, '2026-10-03', ON)
     assert.ok(c.ok)
-    assert.deepEqual(c.report.sources.map((s) => `${s.n} ${s.title}`), ['1 CBP', '2 FDA'])   // TTB, never cited, is gone
-    assert.deepEqual(c.report.applies.map((g) => g.items[0].sources), [[1], [2]])
-    assert.deepEqual(c.report.to_confirm[0].sources, [1])
+    // TTB is in the list although no item cites it: the conversation rested on it.
+    assert.deepEqual(c.report.sources.map((s) => `${s.n} ${s.title}`), ['1 TTB', '2 CBP', '3 FDA'])
+    // And an item's own numbers point at that same numbering — stored, and drawn nowhere.
+    assert.deepEqual(c.report.applies.map((g) => g.items[0].sources), [[2], [3]])
+    assert.deepEqual(c.report.to_confirm[0].sources, [2])
+  })
+
+  test('a conversation whose items cite nothing still shows what it rested on', () => {
+    const r = good()
+    r.applies = [{ authority: 'FDA', items: [item('Prior notice', [], 'a sentence nobody wrote here')] }]
+    const c = checkReport(r, turns, '2026-10-03', ON)
+    assert.ok(c.ok)
+    assert.equal(c.report.applies[0].items[0].no_source, true)
+    assert.equal(c.report.sources.length, 3)
   })
 })
 
-describe('B5 — the plain text follows the same numbering', () => {
-  test('every section, "(source n)" rather than [n], and the renumbered list', () => {
+describe('B5, as E2f rewrote it — the plain text is the cards, in the cards\' order', () => {
+  test('four sections, no source line under an item, and Sources after What applies', () => {
     const r = good()
     r.to_confirm = [item('Tariff', [2], 'The tariff question is for your broker')]
     r.unanswered = ['How many litres?']
@@ -342,10 +362,18 @@ describe('B5 — the plain text follows the same numbering', () => {
     assert.ok(c.ok)
     const t = renderPlainText(c.report)
     for (const s of ['What applies to you as of 3 October 2026', 'Your situation', 'What applies', 'FDA',
-      '- Prior notice: Do it. (source 1)', 'Still to confirm', '- Tariff: Do it. (source 2)',
-      'Asked and not answered', 'How many litres?', 'Sources', '1. FDA — https://fda.gov/c', '2. CBP — https://cbp.gov/b/']) {
+      '- Prior notice: Do it.', 'Sources', '1. TTB — https://ttb.gov/a', 'Still to confirm', '- Tariff: Do it.']) {
       assert.ok(t.includes(s), s)
     }
+    // By LINE, because the as-of line begins "What applies to you as of…" before any heading.
+    const lines = t.split('\n')
+    const at = (x: string) => lines.indexOf(x)
+    assert.deepEqual(['Your situation', 'What applies', 'Sources', 'Still to confirm'].map(at)
+      .every((n, i, a) => n >= 0 && (i === 0 || a[i - 1] < n)), true, 'the order is the cards\' order')
+    // Nothing about sources under an item, and decision 65's section is gone with its card.
+    assert.ok(!/\(sources? \d/.test(t), 'no per-item source numbers')
+    assert.ok(!t.toLowerCase().includes('no source'))
+    assert.ok(!t.includes('Asked and not answered') && !t.includes('How many litres?'))
     assert.ok(!/\[\d+\]/.test(t), 'no [n] markers in the text')
   })
 })
@@ -383,9 +411,11 @@ describe('the display words have one home, and the drawer reads them there (HR S
   // them, so its callers are unchanged. The "nothing server-only reaches a client file" guarantee
   // these tests used to give for the page alone is now `tests/unit/clientImports.test.ts`, for every
   // client file.
-  test('NO_SOURCE is the same words, and the same export, from both files', () => {
-    assert.equal(NO_SOURCE, 'No source cited in the conversation')
-    assert.equal(NO_SOURCE, WORDS_NO_SOURCE)
+  test('⚡ "No source cited in the conversation" IS NOWHERE IN THE PRODUCT — E2f', () => {
+    // The words are not exported, not drawn, and not left behind in a comment that would read as
+    // current. `tests/unit/summaryCards.test.ts` sweeps the whole of app/, lib/ and components/.
+    assert.ok(!readFileSync('lib/summaryWords.ts', 'utf8').includes("= 'No source cited"))
+    assert.ok(!readFileSync('lib/summaryReport.ts', 'utf8').includes('NO_SOURCE'))
   })
   test('the as-of line is the same sentence', () => {
     assert.equal(AS_OF_LINE('2026-10-04'),
@@ -397,7 +427,7 @@ describe('the display words have one home, and the drawer reads them there (HR S
     // E2's five cards take their titles and counts from the same file (decision 62), so the
     // import is a block now; what this test is about — WHERE the words come from — is unchanged.
     assert.match(view, /from '@\/lib\/summaryWords'/)
-    for (const w of ['NO_SOURCE', 'NO_SITUATION', 'AS_OF_LINE', 'CARD_UNANSWERED_TITLE', 'UNANSWERED_LINE']) {
+    for (const w of ['NO_SITUATION', 'AS_OF_LINE', 'CARD_SOURCES_TITLE', 'CONFIRM_COUNT']) {
       assert.ok(view.includes(w), `ReportView does not read ${w} from lib/summaryWords.ts`)
     }
     assert.ok(!/^import \{[^}]*\} from '@\/lib\/summaryReport'/m.test(view), 'only `import type` from lib/summaryReport')

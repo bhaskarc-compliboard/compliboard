@@ -22,10 +22,11 @@ describe('the stages say what is true, in board 3\'s words', () => {
 describe('the summary report draws every source through its source shape', () => {
   const view = readFileSync('components/ReportView.tsx', 'utf8')
   const body = view.slice(view.indexOf('export function ReportView<'))
-  test('an item line and a Sources entry both come from the shape — never from a field of the source', () => {
-    assert.match(body, /return src \? sourceLine\(src\) : null/)
-    assert.match(body, /\{sourceShape\.entry\(src\)\}/)
-    assert.match(body, /if \(!onOpenSource \|\| t\.kind === 'web'\) return sourceShape\.link\(src\)/)
+  test('a Sources entry comes from the shape — never from a field of the source', () => {
+    // E2f: the Sources list is the only place a source is drawn, and `sourceEntry` is the one
+    // function that draws it — the section's own shape, or the host's swap for a source of ours.
+    assert.match(body, /\{sourceEntry\(src\)\}/)
+    assert.match(body, /if \(!onOpenSource \|\| t\.kind === 'web'\) return sourceShape\.entry\(src\)/)
     /**
      * *** AND THE ONE EXCEPTION E2 ADDED, WHICH IS NOT A FIELD OF A WEB SOURCE (decision 63). ***
      * A source that points INSIDE the product — `/documents?document=…` or `/audits?run=…` — is
@@ -35,12 +36,13 @@ describe('the summary report draws every source through its source shape', () =>
      * else still goes through the section's own shape, untouched.
      */
     assert.ok(!/src\.url\b/.test(body), 'ReportView itself must not read src.url')
-    const ours = body.slice(body.indexOf('const sourceLine ='), body.indexOf('const item ='))
+    const ours = body.slice(body.indexOf('const sourceEntry ='), body.indexOf('const item ='))
     assert.match(ours, /sourceTarget\(src as unknown as \{ url\?: string; href\?: string \}\)/)
   })
-  test('the web shape draws a web page exactly as the workspace did: a one-line link, and title + host', () => {
+  test('the web shape draws a web page exactly as the workspace did: title + host', () => {
     const web = view.slice(view.indexOf('export const WEB_SOURCE'), view.indexOf('export function ReportView<'))
-    assert.match(web, /link: \(src\) => <OneLineLink key=\{src\.n\} n=\{src\.n\} title=\{src\.title\} url=\{src\.url\} \/>/)
+    // E2f: its `link` half — a source on an item's line — is gone, with the lines it drew.
+    assert.ok(!web.includes('link:'))
     assert.match(web, /const shown = displaySource\(src\.title, src\.url\)/)
     assert.match(web, /\{shown\.title\}<\/a>\s*\{' '\}<span className="text-gray-400">\{shown\.host\}<\/span>/)
   })
