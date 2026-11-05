@@ -81,16 +81,27 @@ describe('the words (the owner\'s, Step 7)', () => {
     assert.match(rv, /\(words\?\.perGroup \?\? thingsToDo\)\(g\.items\.length\)/)
     assert.match(rv, /\{\(words\?\.asOf \?\? AS_OF_LINE\)\(report\.as_of\)\}/)
   })
-  test('the prompt is the design\'s draft, plus the workspace\'s situation rule and facts paragraph COPIED WORD FOR WORD', async () => {
+  test('the prompt is the design\'s draft, plus the facts paragraph COPIED WORD FOR WORD', async () => {
+    /**
+     * *** THE SITUATION RULE WAS COPIED WORD FOR WORD UNTIL E2b, AND NOW IT IS NOT. ***
+     * Item 6 (§3.1, approved) gave Documents, Audits and the Calendar the company block their own
+     * answers already receive, so the WORKSPACE's rule 7 grew a clause about it. **HR's did not**,
+     * and that is the point of the divergence: an HR summary is about handbooks, and HR's prompt
+     * is the one file in this product that says what HR's summary reads. The facts paragraph is
+     * still shared, still byte-for-byte, and still the end of HR's prompt.
+     */
     const { hrSummaryPrompt } = await import('../../prompts/hr-summary.ts')
     const { summaryReportPrompt } = await import('../../prompts/summary-report.ts')
     const p = hrSummaryPrompt('2026-10-08')
     const ws = summaryReportPrompt('2026-10-08').split('\n')
-    const situation = ws.find((l) => l.startsWith('7. "situation"'))!.slice('7. '.length)
     const facts = ws.find((l) => l.startsWith('About the facts:'))!
     assert.ok(p.startsWith("You are writing the record of one conversation about a company's employee handbooks, after the fact, for the owner or manager who had it."))
-    assert.ok(p.includes('if they said none, return an empty list.\n\n' + situation + '\n\n' + facts))
+    assert.ok(p.includes('if they said none, return an empty list.'))
+    assert.ok(p.includes(facts), 'the facts paragraph is no longer the workspace\'s own words')
     assert.ok(p.endsWith(facts))
+    // HR's situation rule is the one the workspace had before E2b, and HR keeps it.
+    assert.ok(p.includes('"situation" holds only facts the person stated about their business.'))
+    assert.ok(!summaryReportPrompt('x').includes('"situation" holds only facts the person stated'))
   })
 })
 
@@ -119,9 +130,23 @@ describe('an empty situation (the owner, 7 October): polite, the same in both pr
   const { hrSummaryPrompt } = await import('../../prompts/hr-summary.ts')
   const { NO_SITUATION } = await import('../../lib/summaryWords.ts')
   const SENT = ' If the person stated nothing about their business, "situation" is an empty string; put missing details that would change the answer under to_confirm, as plain questions that say why they matter.'
-  test('the same sentence, next to the situation rule, in both prompts', () => {
-    assert.ok(summaryReportPrompt('x').includes('Not what the answer concluded.' + SENT))
+  /**
+   * *** THE WORKSPACE'S RULE GREW A CLAUSE AT E2b (item 6, §3.1, approved), AND HR'S DID NOT. ***
+   * Documents, Audits and the Calendar are now shown the company block their own answers already
+   * get, so "Your situation" on their summaries stops reading "No details about your business came
+   * up" about a company whose cabinet the product has read. The EMPTY case — the sentence this
+   * test is about — is unchanged in both prompts, and HR's prompt is untouched entirely.
+   */
+  test('both prompts still answer the empty case the same way', () => {
+    // HR's sentence is unchanged, word for word. The workspace's says the same thing about a
+    // company block as well, because three sections are now given one.
     assert.ok(hrSummaryPrompt('x').includes('Not what the answer concluded.' + SENT))
+    assert.match(summaryReportPrompt('x'),
+      /If neither the conversation nor a company block says anything about the business, "situation" is an empty string; put missing details that would change the answer under to_confirm, as plain questions that say why they matter\./)
+  })
+  test('only the workspace prompt learned about a company block, and HR did not', () => {
+    assert.match(summaryReportPrompt('x'), /when a block "About the company" is given below/)
+    assert.ok(!hrSummaryPrompt('x').includes('About the company'))
   })
   test('an empty situation is accepted, and the plain text and the drawer say the fixed sentence', () => {
     const r = checkReport({ title: 't', situation: '', applies: [] }, [{ role: 'user', text: 'q' }], '2026-10-08')

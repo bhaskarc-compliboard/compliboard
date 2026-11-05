@@ -52,6 +52,7 @@ import { CARD_SITUATION, CARD_APPLIES, CARD_CONFIRM, CARD_QUIET } from '@/lib/re
 import { thingsToDo } from '@/lib/checklistView'
 import { displaySource, sourceTarget, type SourceTarget } from '@/lib/sourceTitle'
 import { OneLineLink } from '@/components/OneLineLink'
+import { useWaitingKeys } from '@/components/WaitingKeys'
 
 /** How one source is drawn. `n` is the number the report gave it. */
 export interface SourceShape<S extends { n: number }> {
@@ -118,8 +119,10 @@ function Card({ tint, title, count, right, open, onToggle, controls, children }:
           <path d="m9 6 6 6-6 6" />
         </svg>
       )}
-      <span className="text-[12px] font-semibold uppercase tracking-[0.05em]">{title}</span>
-      {count && <span className="text-[12px] font-normal opacity-80">{count}</span>}
+      {/* The title never breaks: photographed at E2b as "STILL TO / CONFIRM" once the header
+          carried a long count and a link as well. The COUNT is prose and may wrap. */}
+      <span className="shrink-0 whitespace-nowrap text-[12px] font-semibold uppercase tracking-[0.05em]">{title}</span>
+      {count && <span className="min-w-0 text-[12px] font-normal opacity-80">{count}</span>}
       {right}
     </>
   )
@@ -157,6 +160,8 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
 }) {
   const byN = new Map(report.sources.map((src) => [src.n, src]))
   const uid = useId()
+  /** What Company information is waiting for, from the read the layout already makes (E2b item 1). */
+  const waiting = useWaitingKeys()
   /** The first authority open, the rest folded — the inversion decision 62 asks for. */
   const [open, setOpen] = useState<Set<number>>(() => new Set([0]))
   const [cards, setCards] = useState({ applies: true, confirm: false, unanswered: false, sources: false })
@@ -173,7 +178,9 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
     const t = sourceTarget(src as unknown as { url?: string; href?: string })
     if (!onOpenSource || t.kind === 'web') return sourceShape.link(src)
     const title = String((src as unknown as { title?: string }).title ?? '')
-    const label = t.kind === 'document' ? 'your document' : 'the audit'
+    const label = t.kind === 'document' ? 'your document'
+      : t.kind === 'audit' ? 'the audit'
+      : 'your calendar'
     return (
       <button key={src.n} type="button" onClick={() => onOpenSource(t)}
         className="block max-w-full truncate text-left text-[12px] text-[var(--green-ink)] underline underline-offset-2 hover:text-[var(--green)]">
@@ -193,11 +200,12 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
           return src ? sourceLine(src) : null
         }) : <p className="text-[12px] text-gray-400">{NO_SOURCE}</p>}
       </div>
-      {/* *** AND A WAY TO SETTLE IT — E2a item 3. *** Only under Still to confirm: these are the
-          things the documents could not answer, and Company information is where a person
-          answers them. `confirmHref` names the exact question when the item carries the page's
-          own key, and the page itself when it does not. */}
-      {confirm && (
+      {/* *** A WAY TO SETTLE THIS ONE — E2a item 3, narrowed at E2b item 1. ***
+          It was on every item, said the same words as the card's own header link three or four
+          times down one card, and every copy went to the same page. It is drawn now only when the
+          item names a key AND that key is still waiting — the one case where it says something
+          the header does not: THIS question, not the page. */}
+      {confirm && it.key && waiting.has(it.key) && (
         <a href={confirmHref(it.key)} className="no-print mt-1 inline-block text-[12px] text-[var(--green-ink)] underline underline-offset-2 hover:text-[var(--green)]">
           {CONFIRM_ONE}
         </a>
@@ -270,7 +278,7 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
           right={
             /* The card's own way out, on the header line. A `span` inside the header button, as
                "Open all" is, so one control does not sit inside another. */
-            <span className="no-print ml-auto text-[12px] underline underline-offset-2"
+            <span className="no-print ml-auto whitespace-nowrap text-[12px] underline underline-offset-2"
               role="link" tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = CONFIRM_HREF_ALL } }}
               onClick={(e) => { e.stopPropagation(); window.location.href = CONFIRM_HREF_ALL }}>

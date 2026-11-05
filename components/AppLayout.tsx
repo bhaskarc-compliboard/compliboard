@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { WaitingKeysProvider } from '@/components/WaitingKeys'
 import { bannerFromRow, type BillingRow } from '@/lib/billing'
 import ReadOnlyBanner from '@/components/ReadOnlyBanner'
 import { useRouter, usePathname } from 'next/navigation'
@@ -110,6 +111,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   const [billing, setBilling] = useState<BillingRow | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [toConfirm, setToConfirm] = useState<number | null>(null)
+  const [waitingKeys, setWaitingKeys] = useState<ReadonlySet<string>>(() => new Set())
   const [calendarDates, setCalendarDates] = useState<number | null>(null)
 
   // Read once per page load, AND ONCE MORE WHENEVER THE PAGE SAYS THE ANSWER CHANGED.
@@ -148,6 +150,11 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
       // route and the page build those lines with the same function (`lib/confirmationQueue.ts`), so
       // the two cannot drift. `count` is kept as an alias for the same number.
       setToConfirm(j.question_lines ?? j.count ?? 0)
+      // *** AND THE KEYS THEMSELVES, FOR THE SUMMARY'S LINKS — E2b item 1. *** The same response,
+      // no second request: `keys` is what this route has always returned, and a summary's "Still
+      // to confirm" item links to one question only when its key is in it.
+      setWaitingKeys(new Set(((j.keys ?? []) as Array<{ key?: string }>)
+        .map((k) => String(k?.key ?? '')).filter(Boolean)))
     } catch { /* the nav must render whether or not this answers */ }
   }, [supabase])
 
@@ -328,6 +335,9 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   )
 
   return (
+    /* The keys the summary's "Still to confirm" links read — the same response the badge above
+       counts, provided rather than fetched again (`components/WaitingKeys.tsx`, E2b item 1). */
+    <WaitingKeysProvider value={waitingKeys}>
     <div className="min-h-screen bg-gray-50 flex flex-col">
 
       {/* The read-only band — ABOVE the top bar (board 8), and the only thing step 18 adds to this
@@ -570,6 +580,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
       )}
 
     </div>
+    </WaitingKeysProvider>
   )
 }
 

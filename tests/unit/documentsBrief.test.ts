@@ -96,9 +96,11 @@ describe('the brief is a brief', () => {
    * with `searches=0`, and the one sentence the person was owed withdrawn because it was written
    * before the first search. The failures are the ENGINE's, so the lessons are every section's.
    */
-  test('its sentences are the drafted ones, and there are fourteen', () => {
+  test('its sentences are the drafted ones, and there are fifteen', () => {
+    // 14 → 15 at E2b item 6 (§3.1, approved): `QUOTE_EXACTLY`, measured into existence by a
+    // conversation where "before" for "prior to" cost the person the source of their own permit.
     assert.deepEqual(documentsBrief.promptSentences, DOCUMENTS_SENTENCES)
-    assert.equal(DOCUMENTS_SENTENCES.length, 14)
+    assert.equal(DOCUMENTS_SENTENCES.length, 15)
     for (const s of DOCUMENTS_SENTENCES) assert.ok(s.trim().length > 0)
   })
 

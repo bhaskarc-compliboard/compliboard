@@ -35,6 +35,7 @@ import { Empty } from '@/components/Empty'
 import { ConversationList } from '@/components/ConversationList'
 import { ConversationDrawer } from '@/components/ConversationDrawer'
 import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import { PLAIN_AS_OF } from '@/lib/summaryWords'
 import { AskScreen, useAskConversations, type Exchange } from '@/components/AskScreen'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
 import { AUDITS_EXAMPLE_QUESTIONS } from '@/config/examples'
@@ -1261,6 +1262,9 @@ function Audits() {
           paused={paused}
           notSummarisedLine={AUDITS_NOT_SUMMARISED}
           sourceShape={WEB_SOURCE as unknown as SourceShape<{ n: number; title: string; url: string }>}
+          /* E2b item 6: the Workspace's as-of line mentions tariffs and stays the Workspace's;
+             these three get the plain one, the same line their stored plain text now carries. */
+          reportWords={{ asOf: PLAIN_AS_OF }}
           factsLine={null}
           onClose={() => conv.setConvDrawer(null)}
           onOpen={async (t) => { if (await conv.openConversation(t)) selectTab('ask') }}
@@ -1271,6 +1275,8 @@ function Audits() {
             if (t.kind === 'document') { setDocFrom('summary'); setFromAudit(null); setOpenDoc(t.id) }
             // An audit is a PAGE (decision 55), so it is a navigation and not a swap.
             else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+            // A date lives on the Calendar, which opens it from the address (E2b item 4).
+            else if (t.kind === 'date') window.location.href = `/calendar?date=${t.id}`
           }}
         />
         </div>

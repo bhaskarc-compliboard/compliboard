@@ -30,6 +30,20 @@ export function longDate(iso: string): string {
 export const AS_OF_LINE = (asOf: string) =>
   `What applies to you as of ${longDate(asOf)}, from this conversation. Rules and tariffs change. Check before you act.`
 
+/**
+ * *** THE PLAIN AS-OF LINE — E2b item 6, 4 November 2026 (the owner). ***
+ *
+ * The line above is the WORKSPACE's and stays the Workspace's: that section researches rules and
+ * tariffs, and its summary has been measured saying so. Documents, Audits and the Calendar ask
+ * about a cabinet, an audit and a diary, where "Rules and tariffs change" is a sentence about
+ * somebody else's problem. Same promise, fewer words.
+ *
+ * It lives here and not in `lib/ask/engine.ts` because three client pages pass it to the drawer,
+ * and `tests/unit/clientImports.test.ts` fails any client file that can reach `lib/ai.ts`.
+ */
+export const PLAIN_AS_OF = (asOf: string) =>
+  `What applies to you as of ${longDate(asOf)}, from this conversation. Check before you act.`
+
 // ---- HR Step 7 — HR's summary words, beside the workspace's (the owner's, from the Step 7 design) ----
 
 /** HR's as-of line. The workspace's mentions tariffs; HR's is about the handbooks. */

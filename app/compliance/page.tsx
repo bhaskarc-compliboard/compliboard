@@ -1519,6 +1519,8 @@ export default function CompliancePage() {
               onOpenSource={(t) => {
                 if (t.kind === 'document') { setDocFromSummary(true); setReportDoc(t.id) }
                 else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+                // A date lives on the Calendar, which opens it from the address (E2b item 4).
+                else if (t.kind === 'date') window.location.href = `/calendar?date=${t.id}`
               }} />
           ) : summaryDrawer.summary ? (
             <AnswerBody text={summaryDrawer.summary} sources={[]} />

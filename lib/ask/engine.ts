@@ -44,6 +44,7 @@ import {
   titleFromQuestion, bumpCounter,
 } from '../conversation.ts'
 import { summariseTopic } from '../summaryReport.ts'
+import { PLAIN_AS_OF } from '../summaryWords.ts'
 import { loadAttachedDocument, describeAttachments, loadTopicAttachments, MAX_CARRIED_DOCUMENTS } from '../attachedDocument.ts'
 import { askPrompt } from '../../prompts/ask.ts'
 import { checkBrief, type Brief, type ContextBlock, type Db } from './brief.ts'
@@ -496,6 +497,40 @@ export async function* answer(brief: Brief, ctx: AskContext): AsyncGenerator<Ask
         const parsed = parseOffers(ev.answer.text, brief.offers, ev.searched)
         const checked = finishAnswer(parsed.text, ev.answer.sources as Source[], ev.searched,
           passages, ev.cited as CitedPassage[])
+        /**
+         * *** AN ATTACHED FILE IS A SOURCE BECAUSE IT WAS ATTACHED — E2b item 5, decision 62. ***
+         *
+         * Until now a file became a source only if the answer QUOTED it and the quote checked out.
+         * The E2b-check read the cost of that: a person attached an air permit, the answer was
+         * about nothing else, and the answer's only source was a web page — because the model
+         * wrote *"due 60 days before expiration"* where the permit says *"prior to"*, and
+         * `checkQuote` refused the paraphrase. Correctly: the check stays strict (E2b, item 5).
+         * What was wrong was the conclusion drawn from it — that the file was not a source at all.
+         *
+         * So every file this turn CARRIES is recorded as a source whether or not a quote survived:
+         * no marker points at it, it carries no quote, and it is drawn as a card that says what it
+         * is (`components/AnswerBody.tsx`, the `isOurs` branch).
+         *
+         * *** CARRIED, NOT "ATTACHED ON THIS TURN", AND THE WALK IS WHY. *** The first build read
+         * `files.attached`, which is only the file attached on the turn being answered. In the
+         * conversation this was all measured on, the permit was attached on turn 1 and the
+         * question that needed it was turn 3 — so the answer that used the permit recorded
+         * nothing, which is the defect over again one turn later. `carriedList` is attached plus
+         * the files the conversation carries, capped by `MAX_CARRIED_DOCUMENTS`, and every one of
+         * them is a file this person put in this conversation.
+         *
+         * Appended AFTER the cited sources, so every number the model wrote still points where it
+         * pointed, and skipped when the answer did cite the file, so it is never listed twice.
+         */
+        for (const f of carriedList(files)) {
+          if (!f.id) continue
+          const href = `/documents?document=${f.id}`
+          if (checked.sources.some((s) => (s as { href?: string | null }).href === href)) continue
+          checked.sources.push({
+            n: checked.sources.length + 1, kind: 'passage', url: '',
+            title: f.name ?? 'The attached file', label: 'the file you attached', href,
+          } as unknown as (typeof checked.sources)[number])
+        }
         let text = checked.text
         if (brief.extraStep) {
           // HR's agency check, when HR moves over. Calendar passes none.
@@ -570,6 +605,18 @@ export function summaryKindFor(section: Brief['section']): 'hr' | undefined {
   return section === 'hr' ? 'hr' : undefined
 }
 
+/**
+ * *** THE SECTIONS WHOSE SUMMARY IS SHOWN THE COMPANY — E2b item 6, §3.1, approved. ***
+ *
+ * The Workspace is left exactly as it was: its conversations are research about a business the
+ * person describes IN them, its as-of line mentions tariffs, and its summary has been measured in
+ * that shape (`tests/golden`). HR has its own prompt and its own words. The other three ask about
+ * documents, audits and dates the product already holds — and their summaries were saying *"No
+ * details about your business came up in this conversation"* about a company whose cabinet the
+ * product has read.
+ */
+const SHOWN_THE_COMPANY: ReadonlyArray<Brief['section']> = ['documents', 'audits_chat', 'calendar']
+
 export async function summarise(db: Db, admin: Db, args: {
   section: Brief['section']
   topicId: string; companyId: string; title: string | null
@@ -577,10 +624,51 @@ export async function summarise(db: Db, admin: Db, args: {
   source: 'user' | 'nightly'
   guard: { claimedAt: string; summarisedAt: string | null }
 }) {
+  const shown = SHOWN_THE_COMPANY.includes(args.section)
+  /**
+   * The SAME block the section's brief sends to the answer — one function, so a summary and the
+   * answers it summarises cannot describe the business differently. Each read is wrapped: a
+   * summary must not fail because one of these could not be read.
+   */
+  let about: string | null = null
+  let waiting: Array<{ key: string; question: string }> = []
+  if (shown) {
+    try { about = (await companyBlock(db, args.companyId)).text } catch (e) {
+      console.error(`summarise(${args.section}): the company block could not be read (the summary stands):`, e)
+    }
+    try { waiting = await waitingQuestions(db, args.companyId) } catch (e) {
+      console.error(`summarise(${args.section}): the waiting questions could not be read (the summary stands):`, e)
+    }
+  }
   return summariseTopic(db, admin, {
     topicId: args.topicId, companyId: args.companyId, title: args.title, turns: args.turns,
     source: args.source, guard: args.guard, kind: summaryKindFor(args.section),
+    about, waiting, ...(shown ? { asOfLine: PLAIN_AS_OF } : {}),
   })
+}
+
+/**
+ * *** WHAT COMPANY INFORMATION IS WAITING FOR, AS KEYS — E2b item 2. ***
+ *
+ * Read the same way `/api/to-confirm` reads it: the pending proposals, one entry per KEY, which is
+ * what that page keys a question by and what `POST /api/to-confirm` settles. The words are the
+ * key's own, spaced — `app/company-information/page.tsx`'s `keyWords` — because the model needs to
+ * recognise the question, not to render it.
+ */
+async function waitingQuestions(db: Db, companyId: string): Promise<Array<{ key: string; question: string }>> {
+  const { data, error } = await db.from('fact_proposals')
+    .select('switch_key, proposed_value')
+    .eq('company_id', companyId).eq('status', 'proposed').limit(200)
+  if (error) throw new Error(error.message)
+  const seen = new Set<string>()
+  const out: Array<{ key: string; question: string }> = []
+  for (const r of (data ?? []) as Array<{ switch_key: string; proposed_value: string | null }>) {
+    const key = String(r.switch_key ?? '').trim()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push({ key, question: `${key.replace(/_/g, ' ')} — proposed: ${String(r.proposed_value ?? '').slice(0, 80)}` })
+  }
+  return out
 }
 
 /** The company block every section's chat sends, in the three parts HR sends. */

@@ -561,7 +561,25 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   The rest are `confirmHref`, both ways: a key gives `?key=<key>` and no key gives the page.
 //   That second case is every item on staging today, because the prompt puts a key on a FACT and
 //   not on a to_confirm item - so the test is the record of a thing that is built and waiting.
-const FLOOR = 2580
+//
+// 2580 -> 2598, 4 November 2026 (GAPS-PLAN Part E step E2b - six fixes, from the E2b-check).
+//   EIGHTEEN. The ones that matter are not shape tests:
+//
+//   `checkReport` is RUN with an `allowedKeys` list, and a key the model invented is dropped while
+//   a waiting one survives. That is the whole of item 2's safety: a to_confirm item's key is what
+//   sends a person straight to one question on Company information, and a wrong key sends them to
+//   the wrong question, which is worse than sending them to the page.
+//
+//   `sourceTarget` and `gatherSources` are run on the THIRD address shape, `/calendar?date=<uuid>`,
+//   read off the conversation the E2b-check examined - where a Calendar answer cited a date, E2a's
+//   rule knew two shapes out of three, and the summary of a conversation about dates carried no
+//   date at all.
+//
+//   And one test records a walk's correction rather than a decision: the attached-file source is
+//   every file the turn CARRIES, not the one attached on it. The first build read `files.attached`
+//   and the walk found the permit was attached on turn 1 while the question that needed it was
+//   turn 3 - the same defect, one turn later.
+const FLOOR = 2598
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -90,10 +90,15 @@ export const CALENDAR_OFFERS =
   + 'the rule applies to one named site; source_url, the page you read the rule on; and source_line, the '
   + "sentence on that page that sets the date."
 
+import { QUOTE_EXACTLY } from './documents-answer.ts'
+
 /** The sentences, in the order they are added after the shared prompt. */
 export const CALENDAR_SENTENCES: string[] = [
   CALENDAR_GIVEN,
   CALENDAR_NOT_ON_IT,
+  // E2b item 6: one sentence, written once in `prompts/documents-answer.ts`, because the cost of
+  // a paraphrased quote is the same in all three sections — a source the person never gets.
+  QUOTE_EXACTLY,
   CALENDAR_WORDS,
   CALENDAR_IDS,
   CALENDAR_RULE_NUMBERS,

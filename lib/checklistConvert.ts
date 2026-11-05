@@ -14,6 +14,7 @@
  * An item keeps its place either way. Dropping it would hide something the conversation may well
  * have said; showing it without a source is the honest middle.
  */
+import { PASSAGE_SOURCES } from './sourceTitle.ts'
 import { gatherSources, checkCitations, cleanSourceNumbers, type TurnLike, type ReportSource }
   from './summaryReport.ts'
 import { findReturned, labelFor, type SourceLabel } from './howTo.ts'
@@ -59,7 +60,13 @@ export function checkConversion(raw: unknown, turns: TurnLike[],
   for (const g of GROUPS) {
     if (raw[g] !== undefined && !Array.isArray(raw[g])) return { ok: false, error: `${g} is not a list` }
   }
-  const { sources: all, perTurn } = gatherSources(turns)
+  /**
+   * *** THE SAME SOURCE RULE AS A SUMMARY — E2b item 3, 4 November 2026. ***
+   * This called `gatherSources(turns)` with no options, which drops every source that has no URL:
+   * a checklist made from a conversation lost exactly the sources a summary of the same
+   * conversation keeps — the company's own documents, audits and dates. One option, the same one.
+   */
+  const { sources: all, perTurn } = gatherSources(turns, PASSAGE_SOURCES)
   const items: ConvertedItem[] = []
   const checks: ConvertCheck[] = []
   for (const category of GROUPS) {

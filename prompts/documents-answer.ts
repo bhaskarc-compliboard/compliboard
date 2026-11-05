@@ -104,6 +104,23 @@ export const DOCUMENTS_QUEUED =
   'A file attached to this conversation is in the message and you can read it. Its line in the '
   + 'list may still say Queued; that says nothing about whether you can read it.'
 
+/**
+ * *** QUOTE AN ATTACHED FILE CHARACTER FOR CHARACTER — E2b item 6, §3.1, approved. ***
+ *
+ * Measured, not supposed. The E2b-check read one conversation where a person attached an air
+ * permit, the answer was about nothing but that permit, and the answer's only source was a web
+ * page: the permit says *"Renewal Application Due 60 days prior to expiration"* and the answer
+ * wrote *"due 60 days before expiration"*. `checkQuote` is a containment match and refused the
+ * paraphrase — correctly; it stays strict — so the quote was marked, the source was never
+ * recorded, and the summary of that conversation cited nothing from the document it was about.
+ *
+ * The cost of a synonym is therefore not a style note, and the sentence says what the cost is.
+ */
+export const QUOTE_EXACTLY =
+  "Quote an attached file's own words character for character — 'prior to' where it says "
+  + "'prior to' — never a synonym; a quote that is not the file's exact words will be refused and "
+  + 'lose its source.'
+
 /** The product's words. The standing ban on "AI" and on calling anybody compliant. */
 export const DOCUMENTS_WORDS =
   'Never say "AI", and never call this company or anything it holds compliant or non-compliant: '
@@ -192,6 +209,7 @@ export const DOCUMENTS_SENTENCES: string[] = [
   DOCUMENTS_OLD_READING,
   DOCUMENTS_NO_TEXT,
   DOCUMENTS_QUEUED,
+  QUOTE_EXACTLY,
   DOCUMENTS_WORDS,
   DOCUMENTS_IDS,
   DOCUMENTS_RULE_NUMBERS,

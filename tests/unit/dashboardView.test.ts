@@ -367,7 +367,14 @@ const NAV = LAYOUT.slice(LAYOUT.indexOf('const NAV_ITEMS = ['), LAYOUT.indexOf('
  * are. A check scoped to a file when the rule is about a component finds the component's green in
  * three other people's buttons.
  */
-const NAVBLOCK = LAYOUT.slice(LAYOUT.indexOf('const SidebarContent'), LAYOUT.indexOf('  return (\n    <div className="min-h-screen'))
+/**
+ * The sidebar's own markup, from its component to the layout's own return. The end marker moved at
+ * E2b item 1, when the layout gained a provider above its root `<div>` — and the slice failed
+ * SILENTLY: `indexOf` returned -1, the block became the whole file, and three assertions about
+ * what is NOT in the nav started reading the feedback dialog as well. The marker is the provider
+ * now, and the length check below is what caught it.
+ */
+const NAVBLOCK = LAYOUT.slice(LAYOUT.indexOf('const SidebarContent'), LAYOUT.indexOf('<WaitingKeysProvider'))
 
 describe('the sidebar — the owner\'s order, and the hrefs that did not move', () => {
   test('the eight items are in decision 12\'s order', () => {

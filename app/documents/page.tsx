@@ -65,6 +65,7 @@ import { Tabs } from '@/components/Tabs'
 import { Empty } from '@/components/Empty'
 import { ConversationList } from '@/components/ConversationList'
 import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import { PLAIN_AS_OF } from '@/lib/summaryWords'
 import { AskScreen, useAskConversations } from '@/components/AskScreen'
 import { ConversationDrawer } from '@/components/ConversationDrawer'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
@@ -1371,6 +1372,9 @@ function DocumentsPageContent() {
           paused={paused}
           notSummarisedLine={DOCUMENTS_NOT_SUMMARISED}
           sourceShape={WEB_SOURCE as unknown as SourceShape<{ n: number; title: string; url: string }>}
+          /* E2b item 6: the Workspace's as-of line mentions tariffs and stays the Workspace's;
+             these three get the plain one, the same line their stored plain text now carries. */
+          reportWords={{ asOf: PLAIN_AS_OF }}
           factsLine={null}
           onClose={() => conv.setConvDrawer(null)}
           onOpen={async (t) => { if (await conv.openConversation(t)) selectTab('ask') }}
@@ -1380,6 +1384,8 @@ function DocumentsPageContent() {
           onOpenSource={(t) => {
             if (t.kind === 'document') { setDocFromSummary(true); setOpenDoc(t.id) }
             else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+            // A date lives on the Calendar, which opens it from the address (E2b item 4).
+            else if (t.kind === 'date') window.location.href = `/calendar?date=${t.id}`
           }}
         />
         </div>

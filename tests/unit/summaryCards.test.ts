@@ -355,7 +355,8 @@ describe('a source of ours is kept, with its address — E2a', () => {
     const sr = code(read('lib/summaryReport.ts'))
     assert.match(sr, /numberedTranscript\(turns, hr \? HR_SOURCES : PASSAGE_SOURCES\)/)
     assert.match(sr, /sources: hr \? HR_SOURCES : PASSAGE_SOURCES/)
-    assert.match(sr, /renderPlainText\(checked\.report, \{ sourceLine: PASSAGE_SOURCES\.lineOf \}\)/)
+    // E2b item 6 added the section's own as-of line beside it, where a section has one.
+    assert.match(sr, /renderPlainText\(checked\.report,\s*\{ sourceLine: PASSAGE_SOURCES\.lineOf/)
     // HR's own three are unchanged, including its handbook key.
     assert.match(code(read('lib/hrSummary.ts')),
       /export const HR_SOURCES = \{ keyWithoutUrl: hrKeyWithoutUrl, keepFields: true, lineOf: hrLineOf \}/)
@@ -430,5 +431,169 @@ describe('Still to confirm links to Company information — E2a item 3', () => {
   test('a key that is not waiting opens the page, and nothing else happens', () => {
     const page = code(read('app/company-information/page.tsx'))
     assert.match(page, /if \(!line\) return/)
+  })
+})
+
+/* ── E2b: THE SIX FIXES ───────────────────────────────────────────────────── */
+
+describe('a date is the third address, and it opens where dates live — E2b item 4', () => {
+  test('sourceTarget knows it, and still refuses anything else', async () => {
+    const { sourceTarget } = await import('../../lib/sourceTitle.ts')
+    const d = '/calendar?date=b58c179e-d318-4525-b78c-b0f1b12b2850'
+    assert.deepEqual(sourceTarget({ href: d, url: '' }),
+      { kind: 'date', id: 'b58c179e-d318-4525-b78c-b0f1b12b2850', url: d })
+    for (const u of ['/calendar', '/calendar?date=nope', '/calendar?finding=b58c179e-d318-4525-b78c-b0f1b12b2850']) {
+      assert.equal(sourceTarget({ url: u }).kind, 'web', `${u} should be left alone`)
+    }
+  })
+
+  test('…and `passageKey` keeps it, which is what E2a dropped', async () => {
+    const { gatherSources } = await import('../../lib/summaryReport.ts')
+    const { PASSAGE_SOURCES } = await import('../../lib/sourceTitle.ts')
+    // The real stored shape, read off the Calendar permit conversation at the E2b-check.
+    const src = { n: 1, kind: 'passage', label: 'your calendar', title: 'Annual emission inventory report',
+      href: '/calendar?date=b58c179e-d318-4525-b78c-b0f1b12b2850', url: '' }
+    const { sources } = gatherSources(
+      [{ role: 'assistant', text: 'An answer [1].', sources: [src] }] as never, PASSAGE_SOURCES)
+    assert.equal(sources.length, 1)
+    assert.equal(sourceTarget(sources[0] as unknown as { href: string; url: string }).kind, 'date')
+  })
+
+  test('the Calendar opens its own drawer; the other three go to the Calendar', () => {
+    assert.match(code(read('app/calendar/page.tsx')), /else if \(t\.kind === 'date'\) openDate\(t\.id\)/)
+    for (const f of ['app/documents/page.tsx', 'app/audits/page.tsx', 'app/compliance/page.tsx']) {
+      assert.match(code(read(f)), /t\.kind === 'date'\) window\.location\.href = `\/calendar\?date=\$\{t\.id\}`/, f)
+    }
+    assert.match(VIEW_CODE, /t\.kind === 'audit' \? 'the audit'\s*\n?\s*: 'your calendar'/)
+  })
+})
+
+describe('an attached file is a source because it was attached — E2b item 5', () => {
+  test('the turn records it, after the cited ones, and never twice', () => {
+    const e = code(read('lib/ask/engine.ts'))
+    assert.match(e, /for \(const f of carriedList\(files\)\)/)
+    assert.match(e, /href = `\/documents\?document=\$\{f\.id\}`/)
+    assert.match(e, /label: 'the file you attached'/)
+    // Appended, so every number the model wrote still points where it pointed.
+    assert.match(e, /n: checked\.sources\.length \+ 1/)
+    // And skipped when the answer did cite the file.
+    assert.match(e, /if \(checked\.sources\.some\(\(s\) => \(s as \{ href\?: string \| null \}\)\.href === href\)\) continue/)
+  })
+
+  test('⚡ IT IS EVERY FILE THE TURN CARRIES, AND THE WALK IS WHY', () => {
+    /**
+     * The first build read `files.attached` — only the file attached on the turn being answered.
+     * In the conversation this was measured on, the permit was attached on turn 1 and the question
+     * that needed it was turn 3, so the answer that used the permit recorded nothing: the same
+     * defect, one turn later. `carriedList` is attached plus what the conversation carries.
+     */
+    const e = code(read('lib/ask/engine.ts'))
+    const block = e.slice(e.indexOf('for (const f of carriedList(files))'), e.indexOf('let text = checked.text'))
+    assert.match(block, /if \(!f\.id\) continue/)
+    assert.match(e, /export const carriedList = \(c: CarriedFiles\): CarriedFile\[\] =>/)
+  })
+
+  test('the card is drawn with no quote, by the branch that already draws ours', () => {
+    const body = code(read('components/AnswerBody.tsx'))
+    assert.match(body, /const isOurs = \(s\?: AnswerSource\) => s\?\.kind === 'handbook' \|\| s\?\.kind === 'passage'/)
+    assert.match(body, /\{s\.quote && <span/, 'a source with no quote must still draw')
+  })
+
+  test('checkQuote is untouched: a paraphrase is still refused', () => {
+    const p = code(read('lib/ask/passages.ts'))
+    assert.match(p, /if \(!p\.text\) continue/)
+    assert.match(p, /normaliseForQuote/)
+    assert.match(read('prompts/documents-answer.ts'), /QUOTE_EXACTLY/)
+  })
+})
+
+describe('what the summariser is shown — E2b items 2 and 6', () => {
+  test('three sections are shown the company and the waiting questions; two are not', () => {
+    const e = code(read('lib/ask/engine.ts'))
+    assert.match(e, /const SHOWN_THE_COMPANY: ReadonlyArray<Brief\['section'\]> = \['documents', 'audits_chat', 'calendar'\]/)
+    assert.match(e, /about = \(await companyBlock\(db, args\.companyId\)\)\.text/)
+    assert.match(e, /waiting = await waitingQuestions\(db, args\.companyId\)/)
+    // The Workspace and HR pass neither, so their input is byte-for-byte what it was.
+    assert.match(e, /const shown = SHOWN_THE_COMPANY\.includes\(args\.section\)/)
+  })
+
+  test('the waiting list is read the way /api/to-confirm reads it', () => {
+    const e = code(read('lib/ask/engine.ts'))
+    assert.match(e, /\.from\('fact_proposals'\)/)
+    assert.match(e, /\.eq\('status', 'proposed'\)/)
+    assert.match(code(read('app/api/to-confirm/route.ts')), /\.eq\('status', 'proposed'\)/)
+  })
+
+  test('a key the model invents is dropped; only a waiting one survives', async () => {
+    const { checkReport } = await import('../../lib/summaryReport.ts')
+    const turns = [{ role: 'assistant', text: 'Check the headcount.' }] as never
+    const raw = {
+      title: 'T', situation: '', applies: [],
+      to_confirm: [
+        { name: 'How many work in Oregon', what_to_do: 'count them', key: 'employee_count', sources: [] },
+        { name: 'Something else', what_to_do: 'ask', key: 'not_a_real_key', sources: [] },
+        { name: 'A third', what_to_do: 'ask', sources: [] },
+      ],
+    }
+    const r = checkReport(raw, turns, '2026-11-05', { basisRequired: false, allowedKeys: ['employee_count'] })
+    assert.ok(r.ok); if (!r.ok) return
+    assert.deepEqual(r.report.to_confirm.map((i) => i.key), ['employee_count', undefined, undefined])
+  })
+
+  test('with no waiting list at all, no item keeps a key', async () => {
+    const { checkReport } = await import('../../lib/summaryReport.ts')
+    const raw = { title: 'T', situation: '', applies: [],
+      to_confirm: [{ name: 'n', what_to_do: 'w', key: 'employee_count', sources: [] }] }
+    const r = checkReport(raw, [{ role: 'assistant', text: 'x' }] as never, '2026-11-05', { basisRequired: false })
+    assert.ok(r.ok); if (!r.ok) return
+    assert.equal(r.report.to_confirm[0].key, undefined)
+  })
+
+  test('the prompt asks for the key, and says never to invent one', async () => {
+    const { summaryReportPrompt } = await import('../../prompts/summary-report.ts')
+    const p = summaryReportPrompt('2026-11-05')
+    assert.match(p, /"key": "the snake_case switch key this would settle if it is one of the keys listed below, otherwise null"/)
+    assert.match(p, /Never invent a key, never guess one, and never use a key that is not in that list/)
+    assert.match(p, /When no list is given, every key is null\./)
+  })
+
+  test('the as-of line: the Workspace keeps tariffs, the other three do not', async () => {
+    const { AS_OF_LINE, PLAIN_AS_OF } = await import('../../lib/summaryWords.ts')
+    assert.match(AS_OF_LINE('2026-11-05'), /Rules and tariffs change/)
+    assert.equal(PLAIN_AS_OF('2026-11-05'),
+      'What applies to you as of 5 November 2026, from this conversation. Check before you act.')
+    for (const f of ['app/calendar/page.tsx', 'app/documents/page.tsx', 'app/audits/page.tsx']) {
+      assert.match(code(read(f)), /reportWords=\{\{ asOf: PLAIN_AS_OF \}\}/, f)
+    }
+    // The Workspace's own drawer passes no words and keeps its own line.
+    assert.ok(!code(read('app/compliance/page.tsx')).includes('PLAIN_AS_OF'))
+  })
+})
+
+describe('the per-item link, narrowed — E2b item 1', () => {
+  test('it needs a key AND that key waiting; the header link never wraps', () => {
+    assert.match(VIEW_CODE, /\{confirm && it\.key && waiting\.has\(it\.key\) && \(/)
+    assert.match(VIEW_CODE, /const waiting = useWaitingKeys\(\)/)
+    assert.match(VIEW_CODE, /ml-auto whitespace-nowrap text-\[12px\] underline/)
+  })
+
+  test('the keys come from the read the layout already makes — no second request', () => {
+    const layout = code(read('components/AppLayout.tsx'))
+    assert.match(layout, /setWaitingKeys\(new Set\(\(\(j\.keys \?\? \[\]\)/)
+    assert.match(layout, /<WaitingKeysProvider value=\{waitingKeys\}>/)
+    // One fetch of /api/to-confirm in the layout, which is the one it already had for the badge.
+    assert.equal((layout.match(/fetch\('\/api\/to-confirm'/g) ?? []).length, 1)
+  })
+
+  test('outside a layout the set is empty, so no per-item link is drawn', () => {
+    assert.match(code(read('components/WaitingKeys.tsx')),
+      /createContext<ReadonlySet<string>>\(new Set\(\)\)/)
+  })
+})
+
+describe('a checklist keeps the same sources as a summary — E2b item 3', () => {
+  test('one option, both places', () => {
+    assert.match(code(read('lib/checklistConvert.ts')), /gatherSources\(turns, PASSAGE_SOURCES\)/)
+    assert.match(code(read('lib/summaryReport.ts')), /sources: hr \? HR_SOURCES : PASSAGE_SOURCES/)
   })
 })

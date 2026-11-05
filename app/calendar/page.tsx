@@ -73,6 +73,7 @@ import {
 import { AskScreen, useAskConversations } from '@/components/AskScreen'
 import { ConversationDrawer } from '@/components/ConversationDrawer'
 import { WEB_SOURCE, type SourceShape } from '@/components/ReportView'
+import { PLAIN_AS_OF } from '@/lib/summaryWords'
 import { ConversationList } from '@/components/ConversationList'
 import { type DocumentHead, NEEDS_WHEN_ID } from '@/lib/calendarQueue'
 import { SendCalendarSheet } from '@/components/SendCalendarSheet'
@@ -890,6 +891,9 @@ function Calendar() {
           paused={paused}
           notSummarisedLine={NOT_SUMMARISED}
           sourceShape={WEB_SOURCE as unknown as SourceShape<{ n: number; title: string; url: string }>}
+          /* E2b item 6: the Workspace's as-of line mentions tariffs and stays the Workspace's;
+             these three get the plain one, the same line their stored plain text now carries. */
+          reportWords={{ asOf: PLAIN_AS_OF }}
           factsLine={null}
           onClose={() => conv.setConvDrawer(null)}
           onOpen={async (t) => { if (await conv.openConversation(t)) selectTab('ask') }}
@@ -899,6 +903,9 @@ function Calendar() {
           onOpenSource={(t) => {
             if (t.kind === 'document') { setDocFromSummary(true); setOpenDocId(t.id) }
             else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+            // A DATE opens this page's own drawer — `openDate` is the one way in, so a source
+            // and a click on the month grid land in exactly the same state (E2b item 4).
+            else if (t.kind === 'date') openDate(t.id)
           }}
         />
         </div>

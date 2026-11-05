@@ -171,6 +171,15 @@ every due handbook on staging. The summary button below runs the same writer; Ch
 - **The long-handbook path:** with a small `HR_HANDBOOK_BUDGET_TOKENS`, so the section-choosing call and the honest
   wait ("<n> of <m> parts done") each run once on Opus.
 - **A conversation:** a follow-up that uses the history; Stop; reopen; "Not answered." with "Ask it again".
+- **⚡ THE PARAPHRASE CHECK, ON OPUS — added at E2b, 4 November 2026.** Attach a document with a
+  distinctive phrase in it (the fixture permit says *"Renewal Application Due 60 days prior to
+  expiration"*), ask a question that needs that line, and **read the answer's sources**. On Haiku
+  the old answer wrote *"60 days before expiration"*, `checkQuote` refused the paraphrase, and the
+  attached permit was never a source — every item of the summary then said *"No source cited"*.
+  E2b added one prompt sentence against it and made the file a source regardless; **what is not
+  settled is whether the model then CITES it**, which only a real model shows. Count: refused
+  quotes in the answer (`"we could not find these words"`), and items in the summary carrying a
+  source. Haiku after E2b: 0 refused, 0 items citing.
 - **The summary:** "Summarise this conversation" — **and since E2 (4 November 2026, decision 62) the
   thing to look at when it comes back is the FIVE CARDS**: What applies open with the first authority
   open and the rest folded, Still to confirm · Not answered here · Sources folded with their counts.

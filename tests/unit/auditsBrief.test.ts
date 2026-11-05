@@ -115,8 +115,10 @@ describe('the brief is a brief', () => {
     assert.deepEqual(auditsBrief.words.examples, AUDITS_EXAMPLE_QUESTIONS.map((e) => e.question))
   })
 
-  test('nineteen prompt sentences, and no extra step', () => {
-    assert.equal(AUDITS_SENTENCES.length, 19)
+  test('twenty prompt sentences, and no extra step', () => {
+    // 19 → 20 at E2b item 6 (§3.1, approved): `QUOTE_EXACTLY`, one sentence shared by all three
+    // sections that read an attached file. It is written once, in `prompts/documents-answer.ts`.
+    assert.equal(AUDITS_SENTENCES.length, 20)
     assert.equal(auditsBrief.promptSentences, AUDITS_SENTENCES)
     assert.equal(auditsBrief.extraStep, undefined)
   })

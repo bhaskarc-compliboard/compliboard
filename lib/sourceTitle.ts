@@ -163,6 +163,12 @@ export function displaySource(rawTitle: string, url: string): { title: string; h
  *
  *   `/documents?document=<uuid>`  `lib/ask/documentsBrief.ts:331` and `lib/ask/auditsBrief.ts:420`
  *   `/audits?run=<uuid>`          `lib/ask/auditsBrief.ts:326` and `:390`
+ *   `/calendar?date=<uuid>`       `lib/ask/calendarBrief.ts:141`
+ *
+ * *** THE THIRD SHAPE ARRIVED AT E2b, AND ITS ABSENCE HAD A COST. *** E2a knew two, and the
+ * E2b-check found the one conversation that used the third: a Calendar answer cited a date it had
+ * read, `passageKey` called it a web page with no url, and `gatherSources` dropped it — so the
+ * summary of a conversation about dates carried no date.
  *
  * **A stored source carries the address in one of two fields**, and both are read: `url` is the
  * web one, and `href` is what a passage carries — read off staging, a document passage in a turn
@@ -174,6 +180,7 @@ export function displaySource(rawTitle: string, url: string): { title: string; h
 export type SourceTarget =
   | { kind: 'document'; id: string; url: string }
   | { kind: 'audit'; id: string; url: string }
+  | { kind: 'date'; id: string; url: string }
   | { kind: 'web'; id: null; url: string }
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
@@ -184,6 +191,8 @@ export function sourceTarget(src: { url?: string | null; href?: string | null })
   if (doc) return { kind: 'document', id: doc[1], url: raw }
   const run = new RegExp(`^/audits\\?run=(${UUID})$`, 'i').exec(raw)
   if (run) return { kind: 'audit', id: run[1], url: raw }
+  const date = new RegExp(`^/calendar\\?date=(${UUID})$`, 'i').exec(raw)
+  if (date) return { kind: 'date', id: date[1], url: raw }
   return { kind: 'web', id: null, url: raw }
 }
 

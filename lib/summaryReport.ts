@@ -149,7 +149,7 @@ export function numberedTranscript(turns: TurnLike[], opts?: SourceOptions): { t
 }
 
 /** An item as the model returned it, before its citations are settled. */
-type DraftItem = Omit<ReportItem, 'basis'> & { basis: string | null }
+type DraftItem = Omit<ReportItem, 'basis' | 'key'> & { basis: string | null; key: string | null }
 
 /** What the check did to one item's citations — returned beside the report for the person reviewing it. */
 export interface ItemCheck {
@@ -240,7 +240,9 @@ function cleanItem(v: unknown, count: number): (DraftItem) | 'bad' {
   if (name === null || what === null) return 'bad'
   if (!Array.isArray(v.sources ?? [])) return 'bad'
   if (v.basis !== undefined && v.basis !== null && typeof v.basis !== 'string') return 'bad'
-  return { name, what_to_do: what, sources: cleanSourceNumbers(v.sources ?? [], count), basis: str(v.basis) }
+  return { name, what_to_do: what, sources: cleanSourceNumbers(v.sources ?? [], count), basis: str(v.basis),
+    // E2b item 2: the switch key this item would settle, checked against the waiting list below.
+    key: str(v.key) }
 }
 
 /** Trim to the limit at a word where one is near, and never end on a full stop. */
@@ -266,7 +268,17 @@ export function trimTitle(title: string, max = TITLE_MAX): string {
  *   · The title is trimmed; `as_of` is the date the code passes.
  */
 export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
-  opts: { basisRequired: boolean; sources?: SourceOptions } = { basisRequired: false }): CheckResult {
+  opts: {
+    basisRequired: boolean; sources?: SourceOptions
+    /**
+     * *** E2b item 2: THE ONLY KEYS AN ITEM MAY CARRY. *** The keys this company has waiting, as
+     * `/api/to-confirm` returns them. A key the model wrote that is not in this list is dropped,
+     * not kept: the key is what sends a person straight to one question, and a wrong one sends
+     * them to the wrong question — which is worse than sending them to the page. Absent (the
+     * nightly job, a section with nothing waiting) means every key is dropped.
+     */
+    allowedKeys?: readonly string[]
+  } = { basisRequired: false }): CheckResult {
   const refuse = (why: string): CheckResult => ({ ok: false, error: `The summary came back in a shape we could not use (${why}).` })
   if (!isObj(raw)) return refuse('not an object')
   const title = str(raw.title)
@@ -334,10 +346,13 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
   const order: number[] = []
   for (const it of [...applies.flatMap((g) => g.items), ...confirm]) for (const n of it.sources) if (!order.includes(n)) order.push(n)
   const to = new Map(order.map((n, i) => [n, i + 1]))
+  const allowed = new Set(opts.allowedKeys ?? [])
   const finish = (it: DraftItem): ReportItem => {
     const nums = it.sources.map((n) => to.get(n) as number)
     const out: ReportItem = { name: it.name, what_to_do: it.what_to_do, sources: nums }
     if (it.basis) out.basis = it.basis
+    // Only a key the page is actually waiting on survives (E2b item 2).
+    if (it.key && allowed.has(it.key)) out.key = it.key
     if (!nums.length) out.no_source = true
     return out
   }
@@ -446,6 +461,27 @@ export async function summariseTopic(db: Db, admin: Db, args: {
    * written, no fact is proposed, and `skipped` says why.
    */
   guard: { claimedAt: string; summarisedAt: string | null }
+  /**
+   * *** WHAT THE SUMMARISER IS SHOWN BESIDES THE CONVERSATION — E2b item 6, §3.1, approved. ***
+   *
+   * `about` is the company block the section's own brief already sends to the ANSWER
+   * (`lib/ask/engine.ts` `companyBlock`): the same text, so a summary and the answers it
+   * summarises are working from one description of the business. It fills "Your situation" on a
+   * Documents, Audits or Calendar summary, where the person rarely states their headcount in the
+   * conversation because the product already knows it — and where the card therefore used to read
+   * *"No details about your business came up in this conversation."* about a company the product
+   * has read nineteen documents of.
+   *
+   * `waiting` is what Company information has waiting, keys and all, so a `to_confirm` item can
+   * name the question it would settle. The model may use no other key, and `checkReport` drops one
+   * that is not in this list.
+   *
+   * Both are absent for the Workspace and for HR, which are byte-for-byte unchanged.
+   */
+  about?: string | null
+  waiting?: ReadonlyArray<{ key: string; question: string }>
+  /** The section's own as-of line for the stored plain text (E2b item 6). */
+  asOfLine?: (asOf: string) => string
 }): Promise<{ ok: true; report: SummaryReport; checks: ItemCheck[]; proposed: number }
   | { ok: false; error: string; skipped?: true }> {
   const today = args.today ?? new Date().toISOString().slice(0, 10)
@@ -460,22 +496,38 @@ export async function summariseTopic(db: Db, admin: Db, args: {
    * as it always was.
    */
   const { transcript } = numberedTranscript(turns, hr ? HR_SOURCES : PASSAGE_SOURCES)
+  /**
+   * The two blocks E2b item 6 adds, each only when the caller has one. Written out here rather
+   * than inside the prompt so `ASK_DUMP_DIR` shows exactly what the model was handed.
+   */
+  const about = args.about?.trim()
+    ? `About the company (what the product already holds about this business):\n${args.about.trim()}\n\n`
+    : ''
+  const waiting = args.waiting?.length
+    ? 'Questions already waiting on Company information, with the key that settles each:\n'
+      + args.waiting.map((w) => `- ${w.key}: ${w.question}`).join('\n') + '\n\n'
+    : ''
   const raw = await askAIJson<unknown>(
     hr ? hrSummaryPrompt(today) : summaryReportPrompt(today),
-    `Conversation title: ${args.title ?? '(none)'}\n\n${transcript}`,
+    `Conversation title: ${args.title ?? '(none)'}\n\n${about}${waiting}${transcript}`,
     // 12,000, not 4,000 — the owner's decision of 4 October 2026 (CLAUDE.md §3.1). With a "basis" on
     // every item the report is long, and at 4,000 an Opus run paid for a truncated first attempt
     // before `lib/ai.ts` retried it larger (run C2, Workspace Task 5).
     { maxTokens: 12000, task: 'summary', ledger: { companyId: args.companyId, task: 'summarise' } },
   )
-  const checked = checkReport(raw, turns, today, { basisRequired: SUMMARY_PROMPT_ASKS_FOR_BASIS, sources: hr ? HR_SOURCES : PASSAGE_SOURCES })
+  const checked = checkReport(raw, turns, today, {
+    basisRequired: SUMMARY_PROMPT_ASKS_FOR_BASIS,
+    sources: hr ? HR_SOURCES : PASSAGE_SOURCES,
+    allowedKeys: (args.waiting ?? []).map((w) => w.key),
+  })
   if (!checked.ok) return checked
   const { data: written, error } = await guardSummaryWrite(db.from('topics').update({
     summary_report: checked.report,
     summary: hr ? renderPlainText(checked.report, { asOf: HR_AS_OF_LINE, applies: 'What to change', sourceLine: HR_SOURCES.lineOf })
       // The same line rule in the plain text, or a document would print as "3. Title — " with a
       // dangling dash where a web page has its address.
-      : renderPlainText(checked.report, { sourceLine: PASSAGE_SOURCES.lineOf }),
+      : renderPlainText(checked.report,
+          { sourceLine: PASSAGE_SOURCES.lineOf, ...(args.asOfLine ? { asOf: args.asOfLine } : {}) }),
     title: checked.report.title,
     summarised_at: new Date().toISOString(),
     summary_source: args.source,

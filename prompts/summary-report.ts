@@ -46,7 +46,7 @@ You are given the conversation, and one numbered list of the sources it used. Re
     }
   ],
   "to_confirm": [
-    { "name": "something the conversation said to check or confirm", "what_to_do": "what to check, and with whom", "basis": "6 to 20 words copied exactly from the answer that says to check it", "sources": [2] }
+    { "name": "something the conversation said to check or confirm", "what_to_do": "what to check, and with whom", "key": "the snake_case switch key this would settle if it is one of the keys listed below, otherwise null", "basis": "6 to 20 words copied exactly from the answer that says to check it", "sources": [2] }
   ],
   "unanswered": ["a question the answer asked the person that the person did not answer"],
   "facts": [
@@ -68,7 +68,7 @@ The rules.
 
 6. Put the groups in "applies" in the order the person would act on them. Put the items inside each group in the same order.
 
-7. "situation" holds only facts the person stated about their business. No sentence about what they want to know. Not what the answer concluded. If the person stated nothing about their business, "situation" is an empty string; put missing details that would change the answer under to_confirm, as plain questions that say why they matter.
+7. "situation" holds what is known about this business: the facts the person stated in the conversation, and — when a block "About the company" is given below — what that block records. No sentence about what they want to know. Not what the answer concluded. Two or three short sentences. If neither the conversation nor a company block says anything about the business, "situation" is an empty string; put missing details that would change the answer under to_confirm, as plain questions that say why they matter.
 
 8. If the conversation said a point was unverified, or should be confirmed, keep that in what_to_do, or put the point under to_confirm. Never state it more firmly than the conversation did. If an item depends on something listed under to_confirm, say so in that item, in plain words (for example: "You may recover most of it through drawback, once TTB confirms drawback applies to imported alcohol."). Never state such an item as settled.
 
@@ -81,6 +81,8 @@ The rules.
 12. Write to the person as "you". Never refer to a third party — no "the specialist", no "the assistant". Never call anything "AI", and never name the model or the product.
 
 About the facts: include only things the PERSON stated about their own business — their state, their headcount, what they store, what they make, what equipment they run, what they already hold a permit for. Every fact's "quote" must be copied exactly from one of the PERSON's own messages — never from an answer. Do NOT include anything the answer asserted or inferred, anything hypothetical or asked as a "what if", or general facts about regulations. If the person stated nothing about their own business, return an empty facts array. An empty array is a correct answer and is better than a guess.
+
+About a to_confirm item's "key": the questions this company already has waiting are listed below under "Questions already waiting", each with its key. If an item is the same question as one of those, copy that key exactly. If it is not, use null. Never invent a key, never guess one, and never use a key that is not in that list: the key is what sends a person straight to the question, and a wrong one sends them to the wrong place. When no list is given, every key is null.
 
 If a list has nothing in it, return an empty array.`
 }
