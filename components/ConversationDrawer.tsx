@@ -39,6 +39,7 @@ import { Drawer, printDrawer } from '@/components/Drawer'
 import { printDate } from '@/components/Drawer'
 import { Sheet } from '@/components/Sheet'
 import { ReportView, type SourceShape, type ReportLike } from '@/components/ReportView'
+import type { SourceTarget } from '@/lib/sourceTitle'
 import { AnswerBody } from '@/components/AnswerBody'
 import { displayTitle } from '@/lib/listWords'
 import { conversationStatus, friendlyDate } from '@/lib/conversationStatus'
@@ -69,7 +70,7 @@ export const DRAWER_WORDS = {
 
 export function ConversationDrawer({
   topic, companyName, paused, notSummarisedLine, sourceShape, reportWords,
-  factsLine = null, onClose, onOpen, onSummarise, summaryRunning, onDeleted,
+  factsLine = null, onClose, onOpen, onSummarise, summaryRunning, onDeleted, onOpenSource,
 }: {
   topic: TopicRow
   companyName: string | null
@@ -85,6 +86,15 @@ export function ConversationDrawer({
   reportWords?: any
   /** The line above a report saying facts are waiting. Null where a section has none. */
   factsLine?: React.ReactNode
+  /**
+   * *** A SOURCE THAT POINTS INSIDE THE PRODUCT — decision 63, 4 November 2026. ***
+   *
+   * Forwarded straight to `ReportView` and nothing more, because the swap belongs to the PAGE:
+   * a document's reading needs the folder list and the move handler, which every page that mounts
+   * this drawer already holds for its own document drawer, and which this component would
+   * otherwise have to be handed three times over. A page that passes nothing keeps today's links.
+   */
+  onOpenSource?: (target: SourceTarget) => void
   onClose: () => void
   onOpen: (t: TopicRow) => void
   onSummarise: (topicId: string) => void
@@ -168,7 +178,8 @@ export function ConversationDrawer({
             ? <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
             : mine?.report
             ? <ReportView key={topic.id} report={mine.report as ReportLike<never>}
-                factsLine={factsLine} sourceShape={sourceShape} words={reportWords} />
+                factsLine={factsLine} sourceShape={sourceShape} words={reportWords}
+                onOpenSource={onOpenSource} />
             : topic.summary
             ? <AnswerBody text={topic.summary} sources={[]} />
             : <p className="text-[14px] leading-relaxed text-gray-600">{notSummarisedLine}</p>}

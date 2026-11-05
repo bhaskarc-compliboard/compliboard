@@ -372,6 +372,12 @@ function Audits() {
    */
   const [openDoc, setOpenDoc] = useState<string | null>(null)
   const [fromAudit, setFromAudit] = useState<string | null>(null)
+  /**
+   * Where a document's reading was opened FROM, for the one line that goes back. A third origin
+   * arrived with decision 63 — a source inside a summary — and the audit's own `fromAudit` cannot
+   * say it: that one carries a run id and a summary has none.
+   */
+  const [docFrom, setDocFrom] = useState<'audit' | 'summary' | null>(null)
   const [site, setSite] = useState('all')
   const [groupBy, setGroupBy] = useState<'agency' | 'subject' | 'site'>('agency')
   /** Agency rows whose "Earlier audits" list has been opened out. */
@@ -1195,7 +1201,7 @@ function Audits() {
             <AuditReport runId={openRun} focusWord={drawerWord} paused={paused} chrome="page"
               onClose={() => { setParam('run', null); setDrawerWord(null) }}
               onChanged={load}
-              onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }}
+              onOpenDoc={(d) => { setFromAudit(openRun); setDocFrom('audit'); setOpenDoc(d) }}
               onPrintBinder={() => setParam('binder', '1')}
               companyName={companyName} />
           )}
@@ -1206,20 +1212,21 @@ function Audits() {
       {openDoc && (
         <>
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/30"
-            onClick={() => { setOpenDoc(null); setFromAudit(null) }} />
+            onClick={() => { setOpenDoc(null); setFromAudit(null); setDocFrom(null) }} />
           <DocumentReport
             paused={paused}
               documentId={openDoc}
               companyName={companyName}
-              onClose={() => { setOpenDoc(null); setFromAudit(null) }}
+              onClose={() => { setOpenDoc(null); setFromAudit(null); setDocFrom(null) }}
               onChanged={load}
               folders={idx.folders ?? []}
               /* The way back, in the header's own flow above the title rather than as an overlay
                  pinned to the top with nothing under it (§147). `Drawer`'s `topLine` slot. */
               topLine={
-                <button onClick={() => { setOpenDoc(null) }}
+                <button onClick={() => { setOpenDoc(null); setDocFrom(null) }}
                   className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
-                  ← {fromAudit ? 'Back to the audit' : 'Back to Audits'}
+                  ← {docFrom === 'summary' ? 'Back to the summary'
+                     : fromAudit ? 'Back to the audit' : 'Back to Audits'}
                 </button>
               }
               onMove={async (documentId, folderId) => {
@@ -1241,7 +1248,13 @@ function Audits() {
       {/* ================= THE CONVERSATION DRAWER — `components/ConversationDrawer.tsx` =================
           The shared one, with Delete, and the workspace's report shape (`WEB_SOURCE`): an Audits
           answer's sources are web pages and passage quotes, which is what that shape draws. */}
+      {/* *** A SOURCE OPENS IN PLACE — decision 63, 4 November 2026. ***
+          Hidden, not unmounted, while a document's reading is over it: closing the reading comes
+          back to the summary at the scroll position it was left at, which is the whole of what
+          "in place" means. The Calendar has swapped its date drawer for a reading this way since
+          step 8b, and this is that shape. Never a drawer inside a drawer (decision 55). */}
       {conv.convDrawer && (
+        <div className={docFrom === 'summary' && openDoc ? 'hidden' : ''}>
         <ConversationDrawer
           topic={conv.convDrawer}
           companyName={companyName}
@@ -1254,7 +1267,13 @@ function Audits() {
           onSummarise={conv.summarise}
           summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
           onDeleted={() => { conv.setConvDrawer(null); void reloadTopics() }}
+          onOpenSource={(t) => {
+            if (t.kind === 'document') { setDocFrom('summary'); setFromAudit(null); setOpenDoc(t.id) }
+            // An audit is a PAGE (decision 55), so it is a navigation and not a swap.
+            else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+          }}
         />
+        </div>
       )}
     </AppLayout>
   )

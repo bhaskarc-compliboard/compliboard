@@ -31,6 +31,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { printDrawer, printDate } from '@/components/Drawer'
+import { PREPARED_LINE } from '@/lib/printFrame'
 import { authHeaders, createClient } from '@/lib/supabase'
 import {
   WORD_LABEL, WORD_ORDER, WORD_TINT, TINT_GREY, TINT_NO_ANSWER,
@@ -370,10 +371,11 @@ export default function AuditBinder({ runId, companyName, onBack }: {
             saying so.
           </p>
         )}
-        <p className="mt-5 max-w-[620px] font-serif text-[14px] leading-relaxed text-gray-700">
-          Prepared with CompliBoard. Every line points at a document, or says what we do not see.
-          None of it is a verdict on whether the company complies.
-        </p>
+        {/* *** THE COVER CARRIES NOTHING IN OUR OWN VOICE — decision 64, 4 November 2026. ***
+            It said "Prepared with CompliBoard. Every line points at a document…" here, and the
+            printed footer said "Prepared with CompliBoard" again at the foot of all 19 pages. The
+            whole sentence is in the footer now (`PREPARED_LINE`, `lib/printFrame.ts`), so a person
+            meets it once per page and the cover is the audit's own facts. */}
       </div>
 
       {/* ── THE REPORT, ROW BY ROW IN THE AUDITOR'S ORDER ─────────────────── */}
@@ -457,6 +459,12 @@ export default function AuditBinder({ runId, companyName, onBack }: {
           ))}
         </div>
       ))}
+
+      {/* Decision 64: on paper this is the running footer of every page (`lib/printFrame.ts`);
+          on screen the binder says it once, at its foot. */}
+      <p className="no-print mt-8 border-t border-gray-200 pt-3 text-[12px] leading-relaxed text-gray-400">
+        {PREPARED_LINE}
+      </p>
 
       {/* ── WHAT THE AUDIT READ AND NO ROW CITES ──────────────────────────── */}
       {alsoRead.length > 0 && (

@@ -153,3 +153,36 @@ export function displaySource(rawTitle: string, url: string): { title: string; h
 
   return { title: host || given || 'Source', host, derived: true }
 }
+
+/**
+ * *** WHAT A SUMMARY'S SOURCE POINTS AT — `docs/GAPS-PLAN.md` Part E step E2, decision 63. ***
+ *
+ * A source inside a summary opens IN PLACE: a document's reading swaps the drawer, an audit opens
+ * its report page, a web page opens a new tab as it always has. Which of the three it is can only
+ * be told from the address, and the two shapes are written by the briefs, not guessed here:
+ *
+ *   `/documents?document=<uuid>`  `lib/ask/documentsBrief.ts:331` and `lib/ask/auditsBrief.ts:420`
+ *   `/audits?run=<uuid>`          `lib/ask/auditsBrief.ts:326` and `:390`
+ *
+ * **A stored source carries the address in one of two fields**, and both are read: `url` is the
+ * web one, and `href` is what a passage carries — read off staging, a document passage in a turn
+ * is `{ kind: 'passage', label: 'your document', href: '/documents?document=…', url: '' }`.
+ *
+ * Anything else — including anything that is not ours and anything malformed — is `web`, which is
+ * the safe answer: it opens in a new tab and nothing in the app is swapped for it.
+ */
+export type SourceTarget =
+  | { kind: 'document'; id: string; url: string }
+  | { kind: 'audit'; id: string; url: string }
+  | { kind: 'web'; id: null; url: string }
+
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+export function sourceTarget(src: { url?: string | null; href?: string | null }): SourceTarget {
+  const raw = String(src?.href || src?.url || '').trim()
+  const doc = new RegExp(`^/documents\\?document=(${UUID})$`, 'i').exec(raw)
+  if (doc) return { kind: 'document', id: doc[1], url: raw }
+  const run = new RegExp(`^/audits\\?run=(${UUID})$`, 'i').exec(raw)
+  if (run) return { kind: 'audit', id: run[1], url: raw }
+  return { kind: 'web', id: null, url: raw }
+}

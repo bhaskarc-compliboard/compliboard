@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The summary report — boards</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Canvas chrome and the app tokens are docs/calendar-boards.html's, unchanged, except the sidebar:
+   it is drawn as the app has it since the Dashboard's decision 12 (components/AppLayout.tsx NAV_ITEMS:
+   the owner's order, a hairline before Company information, the active page underlined, no green box).
+   This CSS is a mock-up and is never a source for the product's spacing, type or colour. */
+:root {
+  --desk: #E9EBEE; --desk-fg: #14171A; --desk-muted: #6B7280; --desk-faint: #9CA3AF; --desk-line: #D6D9DE; --desk-surface: #FFFFFF;
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  --ink: #14171A; --heading: #111827; --text-strong: #1F2937; --text: #4B5563; --text-nav: #5B6470; --text-muted: #6B7280; --text-faint: #9CA3AF;
+  --group-heading: #374151; --dot: #D1D5DB; --line: #E5E7EB; --line-faint: #F0F1F3; --page: #F7F8FA; --surface: #FFFFFF; --panel: #F9FAFB; --bubble: #E5E7EB; --scrim: rgba(20,23,26,0.4);
+  --brand: #2F7D52; --brand-strong: #256541; --brand-tint: #EAF3ED; --warning: #B7791F; --danger: #B42318; --orange: #F94300;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--desk-fg); font-family: var(--font-ui); }
+.cv-top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 16px; background: var(--desk-surface); border-bottom: 1px solid var(--desk-line); }
+.cv-top h1 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cv-top .sp { flex: 1; }
+.cv-top select, .cv-top button { font-family: inherit; font-size: 13px; height: 30px; padding: 0 10px; border: 1px solid var(--desk-line); border-radius: 6px; background: var(--desk-surface); color: var(--desk-fg); cursor: pointer; }
+.cv-top button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-strong); }
+.cv-intro { max-width: 900px; padding: 28px 16px 8px; }
+.cv-intro h2 { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; line-height: 1.2; }
+.cv-intro p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--desk-muted); max-width: 76ch; }
+.cv-band { padding: 28px 16px 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.cv-frame { padding: 12px 16px 24px; }
+.cv-label { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; font-size: 13px; color: var(--desk-muted); }
+.cv-label .t { font-weight: 500; color: var(--desk-fg); }
+.cv-label .s { font-size: 11px; color: var(--desk-faint); white-space: nowrap; }
+.cv-note { margin: 0 0 8px; font-size: 13px; line-height: 20px; color: var(--desk-muted); max-width: 86ch; }
+.cv-note b { color: var(--desk-fg); font-weight: 600; }
+.cv-ask { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--warning); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-ask b { font-weight: 600; }
+.cv-dec { margin: 0 0 10px; padding: 10px 12px; max-width: 86ch; border-left: 3px solid var(--brand); background: var(--desk-surface); font-size: 13px; line-height: 20px; color: var(--desk-fg); }
+.cv-dec b { font-weight: 600; }
+.scaler { position: relative; width: 100%; overflow: hidden; }
+.board { position: relative; width: 1280px; transform-origin: 0 0; background: var(--page); color: var(--ink); font-family: var(--font-ui); box-shadow: 0 1px 3px rgba(20,23,26,0.12), 0 8px 24px rgba(20,23,26,0.06); overflow: hidden; }
+.board a { color: var(--brand-strong); }
+.board button { font-family: inherit; }
+
+/* the app frame */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { height: 57px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .name { font-size: 14px; font-weight: 600; }
+.topbar .org { font-size: 13px; color: var(--text-nav); }
+.bodyrow { display: flex; flex: 1; min-height: 0; }
+.sidebar { width: 224px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 16px 12px; background: var(--surface); border-right: 1px solid var(--line); }
+.board .nav { display: flex; justify-content: space-between; padding: 10px 12px; font-size: 14px; color: var(--text-nav); text-decoration: none; }
+.nav .badge { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.board .nav.active { font-weight: 500; color: var(--brand-strong); }
+.nav.active .l { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.nav-rule { height: 1px; margin: 14px 12px; background: var(--line); }
+.main { flex: 1; display: flex; justify-content: center; padding: 24px 24px 64px; min-width: 0; }
+.column { width: 852px; max-width: 100%; display: flex; flex-direction: column; }
+.page-title { margin: 0; font-family: var(--font-reading); font-size: 28px; font-weight: 400; }
+.lede { margin: 4px 0 0; font-size: 14px; color: var(--text-muted); }
+.tabs { display: flex; align-items: center; gap: 24px; margin: 20px 0; border-bottom: 1px solid var(--line); }
+.tab { padding: 8px 0 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--brand-strong); border-bottom-color: var(--brand); }
+.tabs .spacer { flex: 1; }
+.tabs .side-link { padding: 8px 0 12px; font-size: 14px; color: var(--text-muted); text-decoration: none; }
+.btn-primary { font-size: 14px; font-weight: 500; padding: 8px 16px; color: #fff; background: var(--brand); border: 0; border-radius: 6px; }
+.btn-text { font-size: 14px; padding: 0; color: var(--text); background: transparent; border: 0; }
+.btn-text.strong { font-weight: 500; color: var(--brand-strong); }
+.attach { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0; background: none; border: 0; font-size: 12px; color: var(--text-muted); }
+.attach span { text-decoration: underline; }
+.send { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--brand); border: 0; border-radius: 8px; color: #fff; }
+.askbox { min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.askbox .inner { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.askbox .example { margin: 0; font-size: 14px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.askbox-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 10px; }
+.thread { display: flex; flex-direction: column; gap: 20px; margin-bottom: 28px; }
+.bubble-row { display: flex; justify-content: flex-end; }
+.bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; background: var(--bubble); font-size: 16px; line-height: 24px; }
+.bubble .chip { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; color: var(--text); }
+.answer { display: flex; flex-direction: column; gap: 14px; }
+.answer h3 { margin: 8px 0 0; font-family: var(--font-reading); font-size: 19px; font-weight: 600; }
+.answer p, .answer li { margin: 0; font-family: var(--font-reading); font-size: 17px; line-height: 28px; }
+.answer ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+.answer .note { font-family: var(--font-ui); font-size: 13px; line-height: 19px; color: var(--text-faint); }
+.cite { margin: 0 2px; padding: 0 4px; border-radius: 4px; background: var(--brand-tint); font-family: var(--font-ui); font-size: 10px; font-weight: 600; color: var(--brand); vertical-align: super; }
+.sources { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sources .label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.source { display: flex; gap: 8px; font-size: 13px; line-height: 18px; }
+.source .n, .source .origin { color: var(--text-faint); }
+.source .quote { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.composer { display: flex; flex-direction: column; padding: 14px 16px 10px; min-height: 104px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.composer .ph { flex: 1; font-size: 16px; line-height: 24px; color: var(--text-faint); }
+.composer .bar { display: flex; justify-content: flex-end; }
+.actions { display: flex; align-items: center; gap: 20px; margin-top: 12px; }
+.actions .q { outline: 2px dashed var(--warning); outline-offset: 4px; border-radius: 2px; }
+.hint { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+/* conversations */
+.day { margin: 4px 0 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.convs { border-top: 1px solid var(--line-faint); border-bottom: 1px solid var(--line-faint); margin-bottom: 24px; }
+.conv { padding: 10px 0; border-top: 1px solid var(--line-faint); }
+.conv:first-child { border-top: 0; }
+.conv .t { font-size: 13px; color: var(--ink); }
+.conv .m { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px; font-size: 12px; color: var(--text-muted); }
+.conv .m .file { display: inline-flex; align-items: center; gap: 4px; }
+
+/* documents tab, today's page */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.ctl { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 14px; color: var(--text-strong); }
+.lbl { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-muted); }
+.toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.btn-add { padding: 10px 20px; border-radius: 6px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 500; }
+.under { font-size: 14px; color: var(--text); text-decoration: underline; }
+.grp { margin-top: 22px; }
+.grp h4 { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--group-heading); }
+.grp h4 span { color: var(--text-faint); font-weight: 400; }
+table.docs { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.docs td:nth-child(2) { width: 11%; } table.docs td:nth-child(3) { width: 19%; } table.docs td:nth-child(4) { width: 12%; } table.docs td:nth-child(5) { width: 12%; }
+table.docs td { padding: 10px 0; border-bottom: 1px solid var(--line-faint); font-size: 12px; color: var(--text); vertical-align: top; }
+table.docs td.doc { font-size: 13px; color: var(--ink); width: 46%; }
+table.docs td.doc span { display: block; font-size: 12px; color: var(--text-muted); }
+table.docs td.st { font-size: 13px; color: var(--text-muted); text-align: right; }
+table.docs td.st.amber { color: var(--warning); }
+
+/* audits: where you stand */
+.arow { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line-faint); }
+.arow .chev { width: 12px; color: var(--text-faint); font-size: 12px; margin-top: 2px; }
+.arow .body { flex: 1; min-width: 0; }
+.arow .t { font-size: 14px; color: var(--ink); }
+.arow .m { margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.arow .act { flex-shrink: 0; font-size: 14px; color: var(--brand-strong); }
+.auditbox { position: relative; min-height: 122px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.auditbox .example { margin: 0 0 12px; font-size: 14px; color: var(--text-faint); }
+.auditbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-top: 12px; }
+.auditbar .links { font-size: 12px; color: var(--text-muted); }
+.auditbar .links span { text-decoration: underline; }
+.note { margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+.grp { margin: 22px 0 2px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.arow .sub { margin-top: 8px; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+/* report page */
+.rp-title { margin: 0; font-family: var(--font-reading); font-size: 24px; font-weight: 400; line-height: 32px; }
+.rp-meta { margin: 6px 0 0; font-size: 13px; color: var(--text-muted); }
+.rp-back { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; display: block; }
+.strip { display: flex; gap: 4px; margin: 18px 0 6px; }
+.strip .cell { flex: 1; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+.c-green { background: #DCEFE3; color: #1F5A3A; } .c-amber { background: #FCEBC6; color: #7A4F0F; } .c-red { background: #F8D7D3; color: #7A1F17; } .c-grey { background: #E9EBEF; color: #4B5563; }
+.counts { display: flex; gap: 18px; font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+.counts b { color: var(--ink); font-weight: 600; }
+.sec { margin: 22px 0 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.frow { display: grid; grid-template-columns: 10px 132px 26px 1fr 260px; column-gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--line-faint); }
+.frow .pill { margin-top: 1px; width: 132px; box-sizing: border-box; font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 3px 8px; border-radius: 999px; text-align: center; }
+.frow .ln { font-size: 13px; font-weight: 600; color: var(--text-strong); line-height: 20px; }
+.frow .req { font-size: 14px; line-height: 20px; color: var(--ink); }
+.frow .docl { font-size: 13px; line-height: 20px; color: var(--brand-strong); text-decoration: underline; text-align: right; }
+.frow .chev { color: var(--text-faint); font-size: 12px; line-height: 20px; }
+.fopen { padding: 6px 0 16px 180px; border-bottom: 1px solid var(--line-faint); }
+.fopen .lab { margin: 12px 0 3px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.fopen p { margin: 0; font-size: 14px; line-height: 21px; color: var(--ink); }
+.fopen .q { font-family: var(--font-reading); font-style: italic; color: var(--text-strong); }
+.fopen .src { font-size: 13px; color: var(--text-muted); }
+.fopen .src a { color: var(--brand-strong); }
+.fopen .fold { margin-top: 12px; font-size: 13px; color: var(--text-muted); }
+.fopen .fold span { text-decoration: underline; }
+.rp-foot { display: flex; align-items: center; gap: 18px; white-space: nowrap; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.rp-foot .meta { margin-left: auto; font-size: 12px; color: var(--text-faint); }
+.sugg { margin-top: 18px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line-faint); border-radius: 8px; font-size: 13px; color: var(--text-muted); }
+.sugg b { color: var(--text-strong); font-weight: 500; }
+/* auditor checklists tab */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+.card .t { margin: 0; font-size: 16px; color: var(--ink); }
+.card .m { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); }
+.card .tools { display: flex; gap: 18px; margin-top: 12px; font-size: 13px; }
+.card .tools a { color: var(--brand-strong); }
+table.runs { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+table.runs th { white-space: nowrap; text-align: left; font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); padding: 0 10px 8px 0; border-bottom: 1px solid var(--line); }
+table.runs th.n, table.runs td.n { text-align: center; width: 78px; }
+table.runs th.run, table.runs td.run { width: 126px; }
+table.runs th.since, table.runs td.since { width: 150px; }
+table.runs td { white-space: nowrap; padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line-faint); vertical-align: middle; color: var(--ink); }
+table.runs tr:last-child td { border-bottom: 0; }
+table.runs td.n span { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 999px; font-weight: 600; font-size: 12px; }
+table.runs td.act { width: 236px; padding-right: 0; }
+table.runs td.act .acts { display: grid; grid-template-columns: 112px 1fr; column-gap: 10px; }
+table.runs td.act a { color: var(--brand-strong); }
+table.runs td.act a.b { font-weight: 500; }
+table.runs td.closed { color: var(--text-muted); font-size: 12px; white-space: normal; }
+.trow { padding: 14px 0; border-bottom: 1px solid var(--line-faint); }
+.trow .t { font-size: 15px; color: var(--ink); }
+.trow .m { margin-top: 3px; font-size: 12px; color: var(--text-muted); }
+.trow .runs { margin: 10px 0 0 22px; }
+.trow .run { display: flex; align-items: center; gap: 14px; padding: 7px 0; font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--line-faint); }
+.trow .run .d { width: 150px; color: var(--ink); }
+.trow .run .a { margin-left: auto; color: var(--brand-strong); text-decoration: underline; }
+.trow .run .b { color: var(--brand-strong); font-weight: 500; }
+/* documents row */
+.drow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line-faint); }
+.drow .l { flex: 1; } .drow .l .t { font-size: 14px; color: var(--ink); } .drow .l .m { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.drow .ag { width: 150px; font-size: 12px; color: var(--text-muted); }
+.drow .st { display: grid; grid-template-columns: 92px 56px; column-gap: 8px; width: 190px; font-size: 13px; }
+.drow .st .w { font-weight: 500; text-align: left; } .drow .st .d { grid-column: 1 / 3; font-size: 12px; color: var(--text-muted); margin-top: 2px; text-align: left; white-space: nowrap; }
+.drow .st .notes { grid-column: 2; justify-self: start; }
+.st-work .w { color: var(--warning); } .st-cur .w { color: var(--brand-strong); } .st-exp .w { color: var(--danger); }
+.drow .st .notes { display: inline-block; padding: 1px 7px; border-radius: 999px; background: var(--line-faint); color: var(--text-muted); font-size: 11px; text-decoration: underline; }
+/* the drawer over the page */
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.drw { position: absolute; top: 0; right: 0; bottom: 0; width: 720px; background: var(--surface); box-shadow: -8px 0 24px rgba(20,23,26,.12); padding: 28px 32px; }
+.drw h2 { margin: 0; font-family: var(--font-reading); font-size: 20px; font-weight: 400; line-height: 28px; }
+.drw .m { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+.drw .lab { margin: 22px 0 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.drw p { margin: 0 0 6px; font-size: 14px; line-height: 21px; }
+.drw .foot { position: absolute; left: 32px; right: 32px; bottom: 24px; display: flex; gap: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px; color: var(--brand-strong); }
+.drw .x { position: absolute; top: 22px; right: 24px; color: var(--text-faint); font-size: 18px; }
+
+/* summary report */
+.sr { font-size: 14px; }
+.sr .asof { font-size: 12px; color: var(--text-faint); margin: 0 0 14px; }
+.sr .srs { margin: 0 0 14px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.sr .srs .hd { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-left: 4px solid var(--line); }
+.sr .srs .hd .t { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-strong); }
+.sr .srs .hd .n { font-size: 12px; color: var(--text-muted); }
+.sr .srs .hd .r { margin-left: auto; font-size: 12px; color: var(--brand-strong); }
+.sr .srs .hd .chev { color: var(--text-faint); font-size: 11px; }
+.sr .srs .bd { padding: 4px 14px 10px 18px; }
+.sr .s-sit .hd { border-left-color: #9CA3AF; background: #F3F4F6; }
+.sr .s-app .hd { border-left-color: #2F7D52; background: #EAF3ED; }
+.sr .s-con .hd { border-left-color: #3B6FA6; background: #E6EFF9; }
+.sr .s-una .hd { border-left-color: #D1D5DB; background: #F9FAFB; }
+.sr .s-src .hd { border-left-color: #D1D5DB; background: #F9FAFB; }
+.sr .sit { margin: 10px 0 4px; font-size: 14.5px; line-height: 22px; color: var(--ink); }
+.sr .auth { display: flex; align-items: center; gap: 8px; padding: 10px 0 6px; border-top: 1px solid var(--line-faint); }
+.sr .auth:first-child { border-top: 0; }
+.sr .auth .chev { width: 10px; color: var(--text-faint); font-size: 11px; }
+.sr .auth .a { font-size: 14px; font-weight: 500; color: var(--ink); }
+.sr .auth .c { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.sr .item { padding: 8px 0 10px 18px; border-top: 1px solid var(--line-faint); }
+.sr .item .ti { font-size: 14px; color: var(--ink); font-weight: 500; }
+.sr .item .wd { margin-top: 2px; font-size: 13.5px; line-height: 20px; color: var(--text); }
+.sr .item .so { margin-top: 3px; font-size: 12px; color: var(--brand-strong); text-decoration: underline; }
+.sr .item .so.none { color: var(--text-faint); text-decoration: none; }
+.sr .folded { padding: 0; }
+.sr .una { margin: 10px 0 4px; font-size: 13.5px; line-height: 20px; color: var(--text-muted); }
+.sr .una li { margin-left: 18px; }
+.sr .src { margin: 8px 0 2px; font-size: 12.5px; line-height: 18px; color: var(--text); }
+.sr .src .n { color: var(--text-faint); margin-right: 6px; }
+.drw2 { position: absolute; top: 0; right: 0; bottom: 0; width: 760px; background: var(--page); box-shadow: -8px 0 24px rgba(20,23,26,.12); padding: 24px 28px; overflow: hidden; }
+.drw2 h2 { margin: 0; font-family: var(--font-reading); font-size: 20px; font-weight: 400; line-height: 28px; }
+.drw2 .m { margin: 4px 0 14px; font-size: 12px; color: var(--text-muted); }
+.drw2 .x { position: absolute; top: 18px; right: 22px; color: var(--text-faint); font-size: 18px; }
+.drw2 .dtabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.drw2 .dtabs span { padding: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+.drw2 .dtabs span.on { color: var(--brand-strong); border-bottom: 2px solid var(--brand); margin-bottom: -1px; }
+.drw2 .foot { position: absolute; left: 28px; right: 28px; bottom: 18px; display: flex; gap: 18px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--brand-strong); }
+/* the notes band at the end */
+.notes { max-width: 900px; padding: 0 16px 48px; }
+.notes h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 600; }
+.notes p, .notes li { font-size: 14px; line-height: 22px; color: var(--desk-fg); }
+.notes ul { margin: 0; padding-left: 20px; }
+.notes code { font-size: 12.5px; background: var(--desk-surface); padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="cv-top">
+  <h1>CompliBoard — the summary report, boards</h1>
+  <span class="sp"></span>
+  <select id="goto" aria-label="Go to a board"><option value="">Go to a board…</option></select>
+  <button type="button" id="z-fit" aria-pressed="true">Fit</button>
+  <button type="button" id="z-75" aria-pressed="false">75%</button>
+  <button type="button" id="z-100" aria-pressed="false">100%</button>
+</div>
+
+<div class="cv-intro">
+  <h2>The summary report — partitions and a little colour</h2>
+  <p><strong>Draft 2, 4 November 2026 — Still to confirm in blue, the owner's call.</strong> The report a person gets from "Summarise this conversation", the same component in six places: the Workspace, HR, the Calendar, Documents, Audits and the conversation drawer. Drawn here in the drawer over the Audits Conversations tab, on a Clackamas conversation about the air permit. Two boards: as it opens, and with everything opened.</p>
+  <p>The rule: <b>What applies</b> is the report — it opens first with the first authority open and the rest folded; everything else is one counted row until asked for. Each section is its own card with a coloured left edge and a tinted header, so the eye finds the partitions before it reads a word: grey for your situation, green for what applies, <b>blue for still to confirm</b> — the colour of "tell us", not of a fault, so amber keeps meaning one thing everywhere — and pale grey for the rest.</p>
+</div>
+
+<div class="cv-band">As it opens</div>
+
+<section class="cv-frame" id="b1">
+  <div class="cv-label"><span class="t">1 · The summary as it opens — What applies first, the first authority open</span><span class="s">1280 × 1120</span></div>
+  <p class="cv-note">Five cards. <b>Your situation</b> in two sentences, grey. <b>What applies · 6 things to do · 3 authorities</b>, green, open: Oregon DEQ's three things visible — each a title, one sentence of what to do, and the source as a link — and Oregon OSHA and EPA folded to "2 things to do" / "1 thing to do", with Open all on the right. <b>Still to confirm</b>, blue, folded to its count and one honest line. <b>Not answered here</b> — the owner's words on the old heading: "either goes away or gets extra polite" — folded, one question. <b>Sources</b> folded with its count. The footer: Download the summary · Turn this into a checklist · Delete.</p>
+  <div class="cv-dec"><b>Decided 2–4 November.</b> What applies opens first with the first authority open and the rest folded (Open all); Still to confirm folds to a counted row; Asked and not answered becomes "Not answered here", folded and polite; an attached file counts as a source; Your situation carries the company facts from the conversation; a little colour per section. Six renderers, one file.</div>
+  <div class="cv-ask"><b>Your reading.</b> The words "Not answered here" and its line "this came up and the conversation did not settle it. Ask it on its own and we will answer." — keep, soften, or drop the section. And the colour: enough, or more?</div>
+  <div class="scaler"><div class="board" style="height:1120px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Clackamas Blending &amp; Supply LLC</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav active" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Audits</h1>
+          <p class="lede">Where you stand with each agency, from the documents you have given us. Every line points at a document, or at something we do not see.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab" aria-selected="true">Conversations</div><div class="tab">Agency audits</div><div class="tab">Auditor checklists</div></div>
+          <p class="day">Today</p>
+          <div class="convs"><div class="conv"><div class="t">What does our air permit require, and are we meeting it?</div><div class="m">11:02 am · 3 questions · Summary ready</div></div></div>
+        </div></main>
+      </div>
+    </div><div class="scrim"></div><div class="drw2"><span class="x">✕</span>
+    <h2>What does our air permit require, and are we meeting it?</h2>
+    <p class="m">Audits · 4 November 2026 · 3 questions · summarised 4 November</p>
+    <div class="dtabs"><span class="on">Summary</span><span>The conversation</span></div>
+    <div class="sr">
+  <p class="asof">As of 4 November 2026, from the documents on file and the sources cited below.</p>
+  <div class="srs s-sit"><div class="hd"><span class="t">Your situation</span></div><div class="bd"><p class="sit">A solvent and acid blending plant in Clackamas, Oregon, with a Simple ACDP air permit, a wet scrubber on the acid line and a carbon unit on the solvent line, filling drums and totes. A small quantity generator of hazardous waste with about 14 employees on site.</p></div></div>
+  <div class="srs s-app"><div class="hd"><span class="chev">▾</span><span class="t">What applies</span><span class="n">6 things to do · 3 authorities</span><span class="r">Open all</span></div><div class="bd"><div class="auth"><span class="chev">▾</span><span class="a">Oregon DEQ</span><span class="c">3 things to do</span></div><div class="item"><p class="ti">Record the scrubber liquor pH once per operating day</p><p class="wd">The permit asks for a daily pH reading on scrubber S-1. The only log on file covers August to October 2026; add the earlier months or say where they are kept.</p><p class="so">Oregon DEQ Simple ACDP 03-0217-ST-01, condition 2.1 · your document</p></div><div class="item"><p class="ti">Check carbon breakthrough at the C-1 outlet once a month</p><p class="wd">Condition 2.2 asks for a monthly detector-tube reading and carbon replacement within 7 days of a reading above 50 ppm. No breakthrough record is on file.</p><p class="so">Oregon DEQ Simple ACDP 03-0217-ST-01, condition 2.2 · your document</p></div><div class="item"><p class="ti">File the annual report by 15 February</p><p class="wd">Condition 3.1. The 2025 report is on file; the 2026 one is due 15 February 2027 and is on your calendar.</p><p class="so">Oregon DEQ Simple ACDP 03-0217-ST-01, condition 3.1 · your document</p></div><div class="auth"><span class="chev">▸</span><span class="a">Oregon OSHA</span><span class="c">2 things to do</span></div><div class="auth"><span class="chev">▸</span><span class="a">EPA · hazardous waste</span><span class="c">1 thing to do</span></div></div></div>
+  <div class="srs s-con"><div class="hd"><span class="chev">▸</span><span class="t">Still to confirm</span><span class="n">3 things we could not settle from the documents</span></div></div>
+  <div class="srs s-una"><div class="hd"><span class="chev">▸</span><span class="t">Not answered here</span><span class="n">1 question</span></div></div>
+  <div class="srs s-src"><div class="hd"><span class="chev">▸</span><span class="t">Sources</span><span class="n">8</span></div></div>
+</div>
+    <div class="foot"><span>Download the summary</span><span>Turn this into a checklist</span><span>Delete</span></div>
+  </div>
+  </div></div>
+</section>
+
+<div class="cv-band">Everything opened</div>
+
+<section class="cv-frame" id="b2">
+  <div class="cv-label"><span class="t">2 · The same summary, every card opened</span><span class="s">1280 × 2200</span></div>
+  <p class="cv-note">What a person sees after Open all and opening the three folded cards: all six things under their authorities, the three things to confirm each with what would settle it, the one unanswered question with its polite line, and the eight sources in full. The partitions hold at full length — the coloured edges run the height of each card so a long report still reads as five things, not one column.</p>
+  <div class="scaler"><div class="board" style="height:2200px">
+    <div class="app">
+      <div class="topbar"><div class="name">CompliBoard</div><div class="org">Clackamas Blending &amp; Supply LLC</div></div>
+      <div class="bodyrow">
+        <nav class="sidebar"><a class="nav" href="#"><span class="l">Dashboard</span></a><a class="nav" href="#"><span class="l">Compliance Workspace</span></a><a class="nav active" href="#"><span class="l">Audit Workspace</span></a><a class="nav" href="#"><span class="l">HR Workspace</span></a><a class="nav" href="#"><span class="l">Calendar</span><span class="badge">14</span></a><a class="nav" href="#"><span class="l">Documents</span></a><div class="nav-rule"></div><a class="nav" href="#"><span class="l">Company information</span><span class="badge">3</span></a><a class="nav" href="#"><span class="l">My Account</span></a></nav>
+        <main class="main"><div class="column">
+          <h1 class="page-title">Audits</h1>
+          <p class="lede">Where you stand with each agency, from the documents you have given us. Every line points at a document, or at something we do not see.</p>
+          <div class="tabs"><div class="tab">Ask a question</div><div class="tab" aria-selected="true">Conversations</div><div class="tab">Agency audits</div><div class="tab">Auditor checklists</div></div>
+          <p class="day">Today</p>
+          <div class="convs"><div class="conv"><div class="t">What does our air permit require, and are we meeting it?</div><div class="m">11:02 am · 3 questions · Summary ready</div></div></div>
+        </div></main>
+      </div>
+    </div><div class="scrim"></div><div class="drw2"><span class="x">✕</span>
+    <h2>What does our air permit require, and are we meeting it?</h2>
+    <p class="m">Audits · 4 November 2026 · 3 questions · summarised 4 November</p>
+    <div class="dtabs"><span class="on">Summary</span><span>The conversation</span></div>
+    <div class="sr">
+  <p class="asof">As of 4 November 2026, from the documents on file and the sources cited below.</p>
+  <div class="srs s-sit"><div class="hd"><span class="t">Your situation</span></div><div class="bd"><p class="sit">A solvent and acid blending plant in Clackamas, Oregon, with a Simple ACDP air permit, a wet scrubber on the acid line and a carbon unit on the solvent line, filling drums and totes. A small quantity generator of hazardous waste with about 14 employees on site.</p></div></div>
+  <div class="srs s-app"><div class="hd"><span class="chev">▾</span><span class="t">What applies</span><span class="n">6 things to do · 3 authorities</span><span class="r">Close all</span></div><div class="bd"><div class="auth"><span class="chev">▾</span><span class="a">Oregon DEQ</span><span class="c">3 things to do</span></div><div class="item"><p class="ti">Record the scrubber liquor pH once per operating day</p><p class="wd">The permit asks for a daily pH reading on scrubber S-1. The only log on file covers August to October 2026; add the earlier months or say where they are kept.</p><p class="so">Oregon DEQ Simple ACDP 03-0217-ST-01, condition 2.1 · your document</p></div><div class="item"><p class="ti">Check carbon breakthrough at the C-1 outlet once a month</p><p class="wd">Condition 2.2 asks for a monthly detector-tube reading and carbon replacement within 7 days of a reading above 50 ppm. No breakthrough record is on file.</p><p class="so">Oregon DEQ Simple ACDP 03-0217-ST-01, condition 2.2 · your document</p></div><div class="item"><p class="ti">File the annual report by 15 February</p><p class="wd">Condition 3.1. The 2025 report is on file; the 2026 one is due 15 February 2027 and is on your calendar.</p><p class="so">Oregon DEQ Simple ACDP 03-0217-ST-01, condition 3.1 · your document</p></div><div class="auth"><span class="chev">▾</span><span class="a">Oregon OSHA</span><span class="c">2 things to do</span></div><div class="item"><p class="ti">Re-evaluate two forklift operators</p><p class="wd">Patel and Reed are past the three-year evaluation; one evaluation per truck type, then reissue the roster.</p><p class="so">Forklift operator certifications, 2026 · your document</p></div><div class="item"><p class="ti">Put an SDS on file for every product on the HazCom inventory</p><p class="wd">The program lists twelve products with SDS dates; only one safety sheet is on file, and it is the 2019 format.</p><p class="so">Hazard Communication Program, Rev 6 · your document</p></div><div class="auth"><span class="chev">▾</span><span class="a">EPA · hazardous waste</span><span class="c">1 thing to do</span></div><div class="item"><p class="ti">Keep the weekly accumulation-area inspection going</p><p class="wd">The log is complete for the last twelve weeks; the week of 2 November is due by 8 November.</p><p class="so">Weekly container inspection log, Aug–Oct 2026 · your document</p></div></div></div>
+  <div class="srs s-con"><div class="hd"><span class="chev">▾</span><span class="t">Still to confirm</span><span class="n">3 things we could not settle from the documents</span></div><div class="bd"><div class="item"><p class="ti">Whether tanks T-3 to T-6 ran more than 2,000 hours this year</p><p class="wd">It decides the permit fee tier. The permit does not say and no log on file counts hours. Tell us, or add the run-hour log.</p><p class="so none">No source cited in the conversation</p></div><div class="item"><p class="ti">Whether the company ships hazardous materials</p><p class="wd">If it does, DOT hazmat training and shipping papers apply; nothing on file says either way.</p><p class="so">Hazard Communication Program, Rev 6 · your document</p></div><div class="item"><p class="ti">How many of the 14 employees work in Oregon</p><p class="wd">Oregon sick-time rules change at 10 Oregon employees; the count on file is for the site, not the state.</p><p class="so">Respirator fit test records, June 2026 · your document</p></div></div></div>
+  <div class="srs s-una"><div class="hd"><span class="chev">▾</span><span class="t">Not answered here</span><span class="n">1 question</span></div><div class="bd"><ul class="una"><li>What a DEQ inspection visit usually looks like — this came up and the conversation did not settle it. Ask it on its own and we will answer.</li></ul></div></div>
+  <div class="srs s-src"><div class="hd"><span class="chev">▾</span><span class="t">Sources</span><span class="n">8</span></div><div class="bd"><p class="src"><span class="n">1.</span>Oregon DEQ Simple Air Contaminant Discharge Permit (ACDP) No. 03-0217-ST-01 · your document</p><p class="src"><span class="n">2.</span>Hazard Communication Program, Revision 6 · your document</p><p class="src"><span class="n">3.</span>Powered Industrial Truck Operator Certifications, 2026 · your document</p><p class="src"><span class="n">4.</span>Weekly container inspection log, Aug–Oct 2026 · your document</p><p class="src"><span class="n">5.</span>Respirator fit test records, June 2026 · your document</p><p class="src"><span class="n">6.</span>OAR 340-216 — Air Contaminant Discharge Permits · oregon.gov/deq</p><p class="src"><span class="n">7.</span>1910.178(l) — Powered industrial trucks, operator training · osha.gov</p><p class="src"><span class="n">8.</span>40 CFR 262.16 — Conditions for exemption for a small quantity generator · ecfr.gov</p></div></div>
+</div>
+    <div class="foot"><span>Download the summary</span><span>Turn this into a checklist</span><span>Delete</span></div>
+  </div>
+  </div></div>
+</section>
+
+<div class="notes">
+  <h3>What this does not change</h3>
+  <p>What the summary says — the model's sentences, the sources it cites, the facts it captured — is untouched. E2 changes the order things open in, the words of one heading, and the partitions. The same file draws the summary in all six places, so every section gets this at once and every section is walked.</p>
+</div>
+
+<script>
+(function () {
+  var sel = document.getElementById('goto');
+  document.querySelectorAll('.cv-frame').forEach(function (f) {
+    var t = f.querySelector('.cv-label .t'); var o = document.createElement('option'); o.value = f.id; o.textContent = t ? t.textContent : f.id; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { if (sel.value) { var el = document.getElementById(sel.value); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); sel.value = ''; } });
+  var mode = 'fit';
+  function layout() {
+    document.querySelectorAll('.scaler').forEach(function (s) {
+      var b = s.firstElementChild; var w = b.offsetWidth; var h = parseFloat(b.style.height) || b.offsetHeight;
+      var avail = s.clientWidth; var scale = mode === 'fit' ? Math.min(1, avail / w) : mode === '75' ? Math.min(0.75, avail / w) : 1;
+      b.style.transform = 'scale(' + scale + ')';
+      s.style.height = Math.ceil(h * scale) + 'px';
+      s.style.overflowX = (scale === 1 && avail < w) ? 'auto' : 'hidden';
+    });
+  }
+  ['fit', '75', '100'].forEach(function (m) {
+    document.getElementById('z-' + m).addEventListener('click', function () {
+      mode = m; ['fit', '75', '100'].forEach(function (x) { document.getElementById('z-' + x).setAttribute('aria-pressed', x === m ? 'true' : 'false'); }); layout();
+    });
+  });
+  window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  layout();
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href="#"]'); if (a) e.preventDefault(); });
+})();
+</script>
+</body>
+</html>

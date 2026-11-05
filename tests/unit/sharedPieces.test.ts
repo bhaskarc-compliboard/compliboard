@@ -23,10 +23,20 @@ describe('the summary report draws every source through its source shape', () =>
   const view = readFileSync('components/ReportView.tsx', 'utf8')
   const body = view.slice(view.indexOf('export function ReportView<'))
   test('an item line and a Sources entry both come from the shape — never from a field of the source', () => {
-    assert.match(body, /return src \? sourceShape\.link\(src\) : null/)
+    assert.match(body, /return src \? sourceLine\(src\) : null/)
     assert.match(body, /\{sourceShape\.entry\(src\)\}/)
-    // A handbook passage has no `url` and no `title` of a web page; the report must not reach for them.
-    assert.ok(!/src\.(url|title)\b/.test(body), 'ReportView itself must not read src.url or src.title')
+    assert.match(body, /if \(!onOpenSource \|\| t\.kind === 'web'\) return sourceShape\.link\(src\)/)
+    /**
+     * *** AND THE ONE EXCEPTION E2 ADDED, WHICH IS NOT A FIELD OF A WEB SOURCE (decision 63). ***
+     * A source that points INSIDE the product — `/documents?document=…` or `/audits?run=…` — is
+     * drawn by this file as a button, so the host can swap the drawer for that document's reading.
+     * It reads `title` only there, and only after `sourceTarget` has said the source is ours; a
+     * handbook passage, which has no url and no web title, never reaches that branch. Everything
+     * else still goes through the section's own shape, untouched.
+     */
+    assert.ok(!/src\.url\b/.test(body), 'ReportView itself must not read src.url')
+    const ours = body.slice(body.indexOf('const sourceLine ='), body.indexOf('const item ='))
+    assert.match(ours, /sourceTarget\(src as unknown as \{ url\?: string; href\?: string \}\)/)
   })
   test('the web shape draws a web page exactly as the workspace did: a one-line link, and title + host', () => {
     const web = view.slice(view.indexOf('export const WEB_SOURCE'), view.indexOf('export function ReportView<'))
@@ -36,6 +46,8 @@ describe('the summary report draws every source through its source shape', () =>
   })
   test('the workspace passes the web shape', () => {
     const page = readFileSync('app/compliance/page.tsx', 'utf8')
-    assert.match(page, /<ReportView key=\{summaryDrawer\.id\} report=\{drawerReport\} factsLine=\{factsLine\} sourceShape=\{WEB_SOURCE\} \/>/)
+    // E2 added one prop after `sourceShape` (decision 63), so the element is no longer one line.
+    assert.match(page, /<ReportView key=\{summaryDrawer\.id\} report=\{drawerReport\} factsLine=\{factsLine\} sourceShape=\{WEB_SOURCE\}/)
+    assert.match(page, /onOpenSource=\{\(t\) => \{/)
   })
 })

@@ -233,6 +233,14 @@ export default function CompliancePage() {
    * which this page does not otherwise hold, so it is read when the report opens.
    */
   const [reportDoc, setReportDoc] = useState<string | null>(null)
+  /**
+   * *** AND SINCE E2 IT ALSO OPENS FROM A SUMMARY'S SOURCE — decision 63, 4 November 2026. ***
+   * The Workspace has a reading drawer already, so it gets the swap the three shared-drawer
+   * sections get: the summary is hidden rather than unmounted, and the way back says where it
+   * goes. (HR does not, and that is not an omission: an HR summary's own sources are handbook
+   * passages, which have no reading to open — `HR_SOURCE` draws them with no link at all.)
+   */
+  const [docFromSummary, setDocFromSummary] = useState(false)
   const [reportFolders, setReportFolders] = useState<Array<{ id: string; name: string }>>([])
   /**
    * WHAT IS BEING DELETED, IN THE PAGE'S OWN CONFIRMATION — Workspace Task 3, board 7. It was the
@@ -1460,7 +1468,10 @@ export default function CompliancePage() {
           onClick={() => { setSummaryDrawer(null); setListDrawer(null) }} />
       )}
 
+      {/* Hidden, not unmounted, while a reading from one of its sources is over it (decision 63):
+          closing that reading comes back to the summary at the place it was left. */}
       {summaryDrawer && (
+        <div className={docFromSummary && reportDoc ? 'hidden' : ''}>
         <Drawer title={displayTitle(summaryDrawer.title) ?? 'Conversation'}
           sub={`${friendlyDate(summaryDrawer.last_turn_at ?? summaryDrawer.created_at)} · ${conversationStatus(summaryDrawer, summaryDrawer.turnCount > 0).label}`}
           company={companyName}
@@ -1504,7 +1515,11 @@ export default function CompliancePage() {
             <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
           ) : drawerReport ? (
             // Keyed by the topic: a new drawer is a new mount, so every open starts folded (Stage 2).
-            <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} sourceShape={WEB_SOURCE} />
+            <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} sourceShape={WEB_SOURCE}
+              onOpenSource={(t) => {
+                if (t.kind === 'document') { setDocFromSummary(true); setReportDoc(t.id) }
+                else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+              }} />
           ) : summaryDrawer.summary ? (
             <AnswerBody text={summaryDrawer.summary} sources={[]} />
           ) : (
@@ -1527,6 +1542,7 @@ export default function CompliancePage() {
           {!drawerReport && factsLine && <div className="mt-auto">{factsLine}</div>}
           </div>
         </Drawer>
+        </div>
       )}
 
       {listDrawer && (
@@ -1655,13 +1671,20 @@ export default function CompliancePage() {
           "Add it again" and "Add the log" stage a file in this box instead. */}
       {reportDoc && (
         <>
-          <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setReportDoc(null)} />
+          <div className="no-print fixed inset-0 z-[45] bg-gray-900/30"
+            onClick={() => { setReportDoc(null); setDocFromSummary(false) }} />
           <DocumentReport
             paused={paused}
             documentId={reportDoc}
             companyName={companyName}
-            onClose={() => setReportDoc(null)}
+            onClose={() => { setReportDoc(null); setDocFromSummary(false) }}
             onChanged={loadChecklists}
+            topLine={docFromSummary ? (
+              <button onClick={() => { setReportDoc(null); setDocFromSummary(false) }}
+                className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
+                ← Back to the summary
+              </button>
+            ) : undefined}
             folders={reportFolders}
             onMove={moveDocument}
             onPickFile={(versionOf) => {

@@ -291,6 +291,12 @@ function DocumentsPageContent() {
   // placeholder while the report had nowhere to live; a report is read, and reading happens in
   // the drawer at 720 (`DESIGN.md` §4), over the page rather than inside the list.
   const [openDoc, setOpenDoc] = useState<string | null>(null)
+  /**
+   * *** A SOURCE INSIDE A SUMMARY OPENS IN PLACE — decision 63, 4 November 2026. ***
+   * True when this reading was opened from a conversation's summary rather than from the list, so
+   * the way back says where it goes and the summary underneath is hidden rather than unmounted.
+   */
+  const [docFromSummary, setDocFromSummary] = useState(false)
   const [companyName, setCompanyName] = useState<string | null>(null)
   // Step 18: four more columns on a read this page already made. `paused` is null when access is
   // full, so a paying company's screen is exactly what it was.
@@ -1327,12 +1333,19 @@ function DocumentsPageContent() {
       {/* z-[45] scrim, then the drawer at z-50 — the order AppLayout's sticky header needs. */}
       {openDoc && (
         <>
-          <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setOpenDoc(null)} />
+          <div className="no-print fixed inset-0 z-[45] bg-gray-900/30"
+            onClick={() => { setOpenDoc(null); setDocFromSummary(false) }} />
           <DocumentReport
             paused={paused}
             documentId={openDoc}
             companyName={companyName}
-            onClose={() => setOpenDoc(null)}
+            onClose={() => { setOpenDoc(null); setDocFromSummary(false) }}
+            topLine={docFromSummary ? (
+              <button onClick={() => { setOpenDoc(null); setDocFromSummary(false) }}
+                className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
+                ← Back to the summary
+              </button>
+            ) : undefined}
             onChanged={load}
             // Filing moved off the row and into the drawer (Run 6 addendum). The list and the
             // action both already live here, so the drawer is handed them rather than fetching
@@ -1349,6 +1362,9 @@ function DocumentsPageContent() {
           answer's sources are web pages and passage quotes, which is what that shape draws. HR
           passes its own because its report has handbook headings; this section has none. */}
       {conv.convDrawer && (
+        /* Hidden, not unmounted, while a reading from one of its sources is over it: closing that
+           reading returns to the summary where it was (decision 63). */
+        <div className={docFromSummary && openDoc ? 'hidden' : ''}>
         <ConversationDrawer
           topic={conv.convDrawer}
           companyName={companyName}
@@ -1361,7 +1377,12 @@ function DocumentsPageContent() {
           onSummarise={conv.summarise}
           summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
           onDeleted={() => { conv.setConvDrawer(null); void reloadTopics() }}
+          onOpenSource={(t) => {
+            if (t.kind === 'document') { setDocFromSummary(true); setOpenDoc(t.id) }
+            else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+          }}
         />
+        </div>
       )}
     </AppLayout>
   )

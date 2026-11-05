@@ -43,6 +43,14 @@ const REPORT_CODE = code(REPORT)
  */
 const ROWS = read('lib/auditRows.ts')
 const ROWS_CODE = code(ROWS)
+/**
+ * *** AND THE PALETTE MOVED AGAIN AT E2 — to `lib/reportPalette.ts`. *** The summary report's five
+ * cards are coloured from the same four tints (decision 62), and three readers in three sections
+ * is the moment a palette stops being one report's business. The assertions are unchanged; only
+ * the file they read has moved, which is the whole point of there being one.
+ */
+const PALETTE = read('lib/reportPalette.ts')
+const PALETTE_CODE = code(PALETTE)
 const BINDER = read('components/AuditBinder.tsx')
 const BINDER_CODE = code(BINDER)
 const PAGE = read('app/audits/page.tsx')
@@ -223,7 +231,7 @@ describe('the strip is the checklist\'s picture, and agency runs have none', () 
   })
 
   test('a line with no answer is a hole, not a sixth colour', () => {
-    assert.match(ROWS_CODE, /border border-dashed border-\[var\(--amber\)\] bg-white/)
+    assert.match(PALETTE_CODE, /border border-dashed border-\[var\(--amber\)\] bg-white/)
     // The strip and the binder both draw it from the one constant.
     assert.match(REPORT_CODE, /: TINT_NO_ANSWER\}`\}/)
     assert.match(BINDER_CODE, /TINT_NO_ANSWER/)
@@ -287,10 +295,10 @@ describe('the five words have one palette — E1a item 2', () => {
   test('each value appears in exactly ONE file, and that file is the palette', () => {
     const files = execSync("grep -rl -- '#DCEFE3\\|#FCEBC6\\|#F8D7D3\\|#E9EBEF' app lib components || true",
       { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
-    assert.deepEqual(files, ['lib/auditRows.ts'],
+    assert.deepEqual(files, ['lib/reportPalette.ts'],
       'a second file carries the tints and the two will drift')
     for (const hex of TINTS) {
-      assert.equal((ROWS_CODE.match(new RegExp(hex, 'g')) ?? []).length, 1,
+      assert.equal((PALETTE_CODE.match(new RegExp(hex, 'g')) ?? []).length, 1,
         `${hex} is written more than once inside the palette's own file`)
     }
   })
@@ -309,12 +317,16 @@ describe('the five words have one palette — E1a item 2', () => {
     // And the binder's pill is the fourth reader of the same map — Part C, decision 61.
     assert.match(BINDER_CODE, /WORD_TINT\[f\.word\] \?\? TINT_GREY/)
     assert.match(ROWS_CODE, /export const WORD_TINT: Record<string, string> = \{/)
+    // And the summary's five cards are built from the same four tints — decision 62.
+    // `border-l-current` and not a second copy of the hex: the header's text IS the ink.
+    assert.match(PALETTE_CODE, /export const CARD_APPLIES = `\$\{TINT_GREEN\} border-l-current`/)
+    assert.match(code(read('components/ReportView.tsx')), /from '@\/lib\/reportPalette'/)
     // nothing_on_file is the PINK in all three, because all three read one map.
     assert.match(ROWS_CODE, /nothing_on_file: TINT_PINK/)
     assert.match(ROWS_CODE, /nothing_on_file: INK_PINK/)
     // The ink map is built FROM the same four values, not written out again: `TINT_PINK` is
     // `bg-[#F8D7D3] ${INK_PINK}`, so there is one place to change a colour and not two.
-    assert.match(ROWS_CODE, /export const TINT_PINK = `bg-\[#F8D7D3\] \$\{INK_PINK\}`/)
+    assert.match(PALETTE_CODE, /export const TINT_PINK = `bg-\[#F8D7D3\] \$\{INK_PINK\}`/)
     assert.match(ROWS_CODE, /not_a_document_question: TINT_GREY/)
     assert.match(ROWS_CODE, /on_file: TINT_GREEN/)
     assert.match(ROWS_CODE, /on_file_gaps: TINT_AMBER/)
@@ -645,16 +657,25 @@ describe('the rows are written once, and the binder reads them — decision 61',
   test('the module stays pure, so the binder never counts as a paid route', () => {
     // `scripts/check-schema-contracts.js` makes any route that can REACH lib/ai.ts call
     // requireAccess (PAID_COUNT). The binder calls no model; an import is how that would change.
-    assert.ok(!/^import /m.test(ROWS_CODE.replace(/^\s*$/gm, '')),
-      'lib/auditRows.ts imports something; it must import nothing at all')
+    // Since E2 it imports ONE thing: the palette, which itself imports nothing (asserted below).
+    // That is the whole allowance — anything else reopens the question the closure test answers.
+    const imports = [...ROWS_CODE.matchAll(/\bfrom '([^']+)'/g)].map((m) => m[1])
+    assert.deepEqual([...new Set(imports)], ['./reportPalette.ts'],
+      'lib/auditRows.ts may import the palette and nothing else')
+    assert.ok(!/^import /m.test(PALETTE_CODE), 'lib/reportPalette.ts must import nothing at all')
   })
 })
 
 describe('what the binder lays out — decision 61 and the Part C map\'s words', () => {
   test('the cover says who, what, when, how many, and who prepared it', () => {
     assert.match(BINDER_CODE, /Audited \{auditedOn\} · Printed \{printDate\(new Date\(\)\)\}/)
-    assert.match(BINDER_CODE, /Prepared with CompliBoard\./)
-    assert.match(BINDER_CODE, /None of it is a verdict on whether the company complies\./)
+    // *** DECISION 64, 4 November: the cover carries NOTHING in CompliBoard's voice. *** It said
+    // "Prepared with CompliBoard. Every line points at a document…" and the printed footer said
+    // "Prepared with CompliBoard" again at the foot of all nineteen pages. One sentence now, in
+    // the one place a printed page always has: `PREPARED_LINE`, in the page margin.
+    assert.ok(!/Prepared with CompliBoard\. Every line/.test(BINDER_CODE))
+    assert.match(code(read('lib/printFrame.ts')), /export const PREPARED_LINE =/)
+    assert.match(BINDER_CODE, /\{PREPARED_LINE\}/)
     // The auditor's own title, whole — decision 57, and the same expression the report uses.
     assert.match(BINDER_CODE, /rep\.documents\?\.\[run\.template_document_id \?\? ''\]\?\.title/)
   })

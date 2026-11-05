@@ -15,8 +15,15 @@ describe('the frame on every printed page', () => {
       assert.match(css, new RegExp(`@${box} \\{[^}]*border-bottom: 0\\.5pt solid`))
     }
   })
-  test('"Prepared with CompliBoard" bottom left; "Page n of N" bottom right, from the browser\'s own counters', () => {
-    assert.match(css, /@bottom-left \{ content: "Prepared with CompliBoard";/)
+  test('the ONE sentence bottom left; "Page n of N" bottom right, from the browser\'s own counters', () => {
+    /**
+     * *** DECISION 64, 4 November 2026: the three sentences became one, at the foot. ***
+     * This box said "Prepared with CompliBoard" and the report's lede and the binder's cover each
+     * said the rest of it above the first row. One sentence now, in the one place every printed
+     * page has, and `PREPARED_LINE` is the only copy of it in the repository.
+     */
+    assert.match(css, /@bottom-left \{ content: "Prepared with CompliBoard\. Every line points at a document/)
+    assert.match(css, /it is not legal advice; check before you act\.";/)
     assert.match(css, /@bottom-right \{ content: "Page " counter\(page\) " of " counter\(pages\);/)
     for (const box of ['bottom-left', 'bottom-center', 'bottom-right']) {
       assert.match(css, new RegExp(`@${box} \\{[^}]*border-top: 0\\.5pt solid`))

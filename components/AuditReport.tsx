@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Drawer, printDrawer, printDate } from '@/components/Drawer'
+import { PREPARED_LINE } from '@/lib/printFrame'
 import { authHeaders } from '@/lib/supabase'
 import {
   WORD_LABEL, WORD_ORDER, WORD_TINT, WORD_INK, TINT_GREY, INK_GREY, TINT_NO_ANSWER,
@@ -206,8 +207,12 @@ function Shell({ chrome, title, sub, children, footer, onClose, company, topLine
       </div>
       <div className="mt-4">{children}</div>
       {footer && (
-        <footer className="no-print mt-8 flex items-center gap-4 border-t border-gray-200 pt-4">
-          {footer}
+        <footer className="no-print mt-8 border-t border-gray-200 pt-4">
+          <div className="flex items-center gap-4">{footer}</div>
+          {/* *** THE ONE SENTENCE, AT THE FOOT — decision 64. *** On paper it is the running
+              footer that `lib/printFrame.ts` draws in the page margin of EVERY page, so this copy
+              is `no-print`: the screen has no page margins and would otherwise never say it. */}
+          <p className="mt-3 text-[12px] leading-relaxed text-gray-400">{PREPARED_LINE}</p>
         </footer>
       )}
     </section>
@@ -1124,9 +1129,12 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             two together are board 1's answer to "what shape is this report" (E1a items 2 and 3). */}
         <Counts counts={tCounts} value={wordFilter} onChange={setWordFilter} right={tRight} />
         <WordCountsPrint counts={tCounts} right={tRight} />
+        {/* *** THE LEDE SAYS WHAT THE PAGE IS, AND NOTHING IN OUR OWN VOICE — decision 64. ***
+            It used to carry "None of it is a verdict on whether the company complies", which the
+            agency report said too and the binder's cover said a third time. That promise is at the
+            foot of every page now, once (`PREPARED_LINE`). What is left is a fact about the run. */}
         <p className="mt-3 font-serif text-[15px] leading-relaxed text-gray-800">
-          Every line below is a line of your checklist, answered against the documents you have given
-          us. None of it is a verdict on whether the company complies.
+          Every line below is a line of your checklist, answered against the documents you have given us.
         </p>
         {/* The sentence about the form itself: what we noticed before answering a single line
             (Run 5a, item 6). Under the lede, because both are about the whole report. */}
@@ -1353,9 +1361,9 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
         <p className="mt-1 text-[12px] text-gray-500">
           Company information as of {fmt(run.readings_as_of ?? run.created_at)}
         </p>
+        {/* Decision 64: the verdict sentence moved to the one footer line, said once. */}
         <p className="mt-3 font-serif text-[15px] leading-relaxed text-gray-800">
-          Every line below points at a document, or says what we do not see. None of it is a verdict
-          on whether the company complies.
+          Every line below points at a document, or says what we do not see.
         </p>
       </Section_>
 

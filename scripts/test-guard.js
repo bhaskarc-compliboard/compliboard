@@ -536,7 +536,21 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   tasks</h1><p>" to an inspector. `plainTextOf` converts it - never renders it, because that
 //   would put a customer's own markup into the page - and `&amp;` is decoded LAST, or an entity
 //   that spells a tag would become one.
-const FLOOR = 2540
+//
+// 2540 -> 2566, 4 November 2026 (GAPS-PLAN Part E step E2 - the summary report, decisions 62-64).
+//   TWENTY-SIX, most of them in a new file, tests/unit/summaryCards.test.ts. Two earn their place
+//   beyond the shape they pin:
+//
+//   `sourceTarget` is PURE, so which address opens what is checked by CALLING it - including the
+//   case read off staging, where a document passage carries its address in `href` and its `url` is
+//   the empty string. A rule that read only `url` would call every document a web page, and the
+//   swap decision 63 asks for would silently never happen.
+//
+//   And the SPACING is arithmetic now rather than taste: board 2's `.sr .item` is
+//   `8px 0 10px 18px` over a 1px rule and `.sr .auth` is `10px 0 6px`, so item to item is 19px and
+//   an authority row to its first item is 15px. The test reads both numbers out of the board file
+//   AND out of the component, so a change to either side fails here.
+const FLOOR = 2566
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

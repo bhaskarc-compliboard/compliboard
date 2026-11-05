@@ -171,7 +171,10 @@ every due handbook on staging. The summary button below runs the same writer; Ch
 - **The long-handbook path:** with a small `HR_HANDBOOK_BUDGET_TOKENS`, so the section-choosing call and the honest
   wait ("<n> of <m> parts done") each run once on Opus.
 - **A conversation:** a follow-up that uses the history; Stop; reopen; "Not answered." with "Ask it again".
-- **The summary:** "Summarise this conversation".
+- **The summary:** "Summarise this conversation" — **and since E2 (4 November 2026, decision 62) the
+  thing to look at when it comes back is the FIVE CARDS**: What applies open with the first authority
+  open and the rest folded, Still to confirm · Not answered here · Sources folded with their counts.
+  One file draws it in six places, so a wrong reading here is wrong in all six.
 - **The handbook check:** Check now; a check in parts (small budget); the progress line; a part that fails (forced
   from a script, as in §174's proof d); the email when a check someone pressed finishes.
 - **The five controls the click-through could not reach:** `docs/TESTING.md` V-1 to V-5 (Stop, Try again, Ask it

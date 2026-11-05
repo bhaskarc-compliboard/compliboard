@@ -73,8 +73,12 @@ describe('the words (the owner\'s, Step 7)', () => {
   })
   test('ReportView draws the workspace\'s words unless HR\'s are passed', () => {
     const rv = readFileSync('components/ReportView.tsx', 'utf8')
-    assert.match(rv, /\{words\?\.heading \? words\.heading\(total\) : <>What applies · \{thingsToDo\(total\)\}<\/>\}/)
-    assert.match(rv, /right=\{\(words\?\.perGroup \?\? thingsToDo\)\(g\.items\.length\)\}/)
+    // *** E2 PUT THE HEADING ON A CARD, AND HR'S WORDS SURVIVED IT UNCHANGED (decision 62). ***
+    // The card's title is HR's whole sentence when HR passes one ("What to change · 3 things"),
+    // and then the count beside it is only the authorities, so HR does not say "3 things" twice.
+    assert.match(rv, /title=\{words\?\.heading \? words\.heading\(total\) : CARD_APPLIES_TITLE\}/)
+    assert.match(rv, /count=\{words\?\.heading \? GROUPS_COUNT\(report\.applies\.length\)/)
+    assert.match(rv, /\(words\?\.perGroup \?\? thingsToDo\)\(g\.items\.length\)/)
     assert.match(rv, /\{\(words\?\.asOf \?\? AS_OF_LINE\)\(report\.as_of\)\}/)
   })
   test('the prompt is the design\'s draft, plus the workspace\'s situation rule and facts paragraph COPIED WORD FOR WORD', async () => {
@@ -125,6 +129,10 @@ describe('an empty situation (the owner, 7 October): polite, the same in both pr
     assert.equal(r.report.situation, '')
     assert.ok(renderPlainText(r.report).includes('Your situation\n' + NO_SITUATION))
     assert.equal(NO_SITUATION, 'No details about your business came up in this conversation.')
-    assert.match(readFileSync('components/ReportView.tsx', 'utf8'), /\{report\.situation\.trim\(\)\s*\? <p className="text-\[15px\] leading-relaxed text-gray-800">\{report\.situation\}<\/p>\s*: <p className="rounded-lg bg-gray-50 px-3 py-2 text-\[12\.5px\] text-gray-500">\{NO_SITUATION\}<\/p>\}/)
+    // The same rule inside E2's grey card: the person's own sentences, or the fixed one.
+    const rv = readFileSync('components/ReportView.tsx', 'utf8')
+    assert.match(rv, /\{report\.situation\.trim\(\)/)
+    assert.match(rv, /\{report\.situation\}<\/p>/)
+    assert.match(rv, /\{NO_SITUATION\}<\/p>/)
   })
 })

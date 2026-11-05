@@ -230,7 +230,12 @@ describe('the display words have one home, and the drawer reads them there (HR S
   })
   test('the summary drawer takes its words from lib/summaryWords.ts, never this lib', () => {
     const view = readFileSync('components/ReportView.tsx', 'utf8')
-    assert.match(view, /^import \{ NO_SOURCE, NO_SITUATION, AS_OF_LINE \} from '@\/lib\/summaryWords'/m)
+    // E2's five cards take their titles and counts from the same file (decision 62), so the
+    // import is a block now; what this test is about — WHERE the words come from — is unchanged.
+    assert.match(view, /from '@\/lib\/summaryWords'/)
+    for (const w of ['NO_SOURCE', 'NO_SITUATION', 'AS_OF_LINE', 'CARD_UNANSWERED_TITLE', 'UNANSWERED_LINE']) {
+      assert.ok(view.includes(w), `ReportView does not read ${w} from lib/summaryWords.ts`)
+    }
     assert.ok(!/^import \{[^}]*\} from '@\/lib\/summaryReport'/m.test(view), 'only `import type` from lib/summaryReport')
   })
 })

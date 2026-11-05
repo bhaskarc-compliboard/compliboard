@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 23 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 25 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -20,6 +20,8 @@
 **Updated:** 4 November 2026 — **PART E STEP E0 DONE: the audit's words (decisions 47–49, 55–60 and W5).** **The audit has five words.** `on_file_gaps` — *"On file, gaps found"* — means a document answers the line AND what the document itself shows does not meet it in full; the four old words keep their meanings exactly. **The defect was never a wrong answer:** `prompts/audit-agency.ts` told the model *"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART"*, so four greens over four lists of gaps were the only honest thing it could say. **Measured, the owner's own checklist run on two trees on Haiku: 5 of 10 lines moved from `on_file` to `on_file_gaps` — A3, B2, B3 and B4 are exactly the four W4 named — and the run's sentence went from "4 things that need you" to "9 things that need you".** `documents_read` **12 → 11** (decision 49: a template run no longer reads its own template, excluded from BOTH lists); **handles at the person 1 → 0** (W5: `nameDocumentHandles` at save time, on `title`, `locator` and `what_to_do` and **never on `quote`**, tested on the six real leaking lines). **Decision 48 lives in the VIEW** — migration **093**, because *"the status the document would otherwise have"* is the six CASE arms underneath and only SQL can compute them — with `inferred_gap_count` appended last, since `calendar_v` depends on that view; migration **094** restates `audit_findings_word_check` whole. Both applied to staging and read back from the catalog. **It moves exactly one row on all of staging** (17 of 18 `gaps_found` scans have a gap read from the page) and nothing at all on the Clackamas company. `npm run check` exit 0, **2,460 tests**, floor 2414 → 2460; **46 new**. **Three things found and NOT fixed, because each needs one prompt sentence and that is the owner's (§3.1):** a permit expiring in 2028 now reads *"out of date"* (stable over two runs), the same pull puts the fifth word on a practice question, and one golden key is now out of date rather than wrong. §8 has all nine findings with their evidence. **E0 spent $0.9710 over 30 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0a DONE: the three sentences E0 found and did not make.** All three in, and the measurement says **two of three worked.** ⚡ **E0's own diagnosis was wrong, and that is the finding worth keeping:** `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]` and **never includes `SHAPE`**, so E0 named a sentence the model had never been shown as the cause of its own defect. Every rule about the five words has to be written **twice**; both shapes now carry both sentences, the file says so at `prompts/audit-agency.ts:303`–`:317`, and the test counts the copies. **The "out of date" regression is closed** — A1 is no longer `stale` in either run — but it lands on **`on_file`** with `what_to_do: null`, not `on_file_gaps`: whether *"with the renewal application due date noted"* is being under-read is a question about the line, not the word. **`cascade-template-12` 12/17 → 14/17 must**: the widened A5 key passes and C2 and C3 moved, **C1 — the line sentence (2) names — did not**. ⚡ **And the run found something neither of us was looking for: 3 of 6 sections were lost to broken JSON**, every one the same shape on the same line — two quotes joined with `and` inside one `"quote"` field, on B2, which is the fifth word's own two-shortfall case. The product says so honestly and throws a paid section away. Not fixed: a repair in `extractJsonText` or a prompt line about one quote per line are both §3.1. **E0a spent $0.2846 over 12 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0c DONE: one quote per finding** (the owner's brief called it E0b; `E0b` was already the boards row, so it is **E0c** in §5a). One sentence, in **both** shapes, counted by the test — *"One quote per finding. If two things in the document fall short, quote the one the word rests on and put the other in what_to_do, in your own words — never two quotes joined inside the quote field."* **It answers E0a's finding 4: 0 of 3 sections lost, from 3 of 6**, with `status = 'done'` and **`json_parsed = true`** read back from `audit_sections` on all three, and the regular expression that found every earlier failure matching nothing. **B2 — the line every failure happened on — now carries ONE quote**, the one the word rests on, and names the second operator in `what_to_do` in its own words; nothing was lost by quoting once. One run is not a proof and the finish line still counts it on Opus. **E0c spent $0.0824 over 4 Haiku calls.**
+**Updated:** 4 November 2026 — **PART E STEP E2 DONE: the summary report is five cards, and the fold turns the right way up** (decisions 62–64). One file draws it in **six** places. *What applies* opens with the **first authority open** and the rest folded to their counts; *Still to confirm* (amber), *Not answered here* and *Sources* open folded with theirs, and Still to confirm's says what it means. **"Asked and not answered" is "Not answered here"**, each question carrying the owner's line. The colours are the audit report's palette, which moved to **`lib/reportPalette.ts`** — three readers in three sections. **The spacing is board 2's own arithmetic**, measured in both files: an item is `8px 0 10px 18px` over a 1px rule and an authority row is `10px 0 6px`, so item to item is **19px** and an authority row to its first item is **15px**. A source that points inside the product **opens in place** (decision 63): the four sections that own a reading drawer swap it with *"← Back to the summary"* and hide the summary rather than unmount it; HR does not, because a handbook passage has no reading to open. And the product **says it once, at the foot** (decision 64): the lede and the binder's cover carry nothing in CompliBoard's voice, and `PREPARED_LINE` is the one copy. **⚡ What the walk found that no reading would have: a document source cannot reach a summary at all today** — `gatherSources` keys on `url`, a document passage carries its address in `href` with `url: ''`, and only HR passes the option that keeps such a source, so four of the six sections drop them before a summary is written. The display is built and tested for the day that changes; the change itself is to what a summary CONTAINS and is §7's, not E2's. `npm run check` exit 0, **2,566 tests**, floor 2540 → 2566. **No model call: $0.0000.** `components/FoldRow.tsx` deleted.
+
 **Updated:** 4 November 2026 — **PART C DONE: THE BINDER, and it is printed by the browser (decision 61).** `/audits?run=<id>&binder=1` — the cover, the report's rows each citing *"Document n, page p"*, then every cited document once, numbered by first citation, behind a header sheet: **PDFs drawn page by page with `pdfjs-dist` in the browser**, images and B2's converted copies inline, text-bearing originals as the stored `extracted_text`, a file that cannot be fetched as a page saying so and counted on the cover. **`lib/auditRows.ts` is the one source of the rows, the order and the numbering** — the report, its strip and the binder all read it, and the zip's hand-copy of `citationOrder` went with the zip. **No server build, no stored file, no migration, and no model call: $0.0000.** Measured on the isolated Haiku server: the Clackamas binder **19 printed pages, 1.36 MB, 9 seconds** to prepare 8 documents; the Cascade DEQ agency binder **27 pages, 2.96 MB, 9 seconds**. **Three things the walk found that no reading would have:** `/api/document-actions` wants `document_id` and the binder sent `documentId`, so **every** document came back as the missing-file page — honest sentence, wrong cause; a Word document's stored text is **mammoth's HTML**, so the binder printed `</p><h1>7. Non-routine tasks</h1>` to an inspector; and the card's control keyed on the top row, which on staging is a queued run, so it never appeared. `npm run check` exit 0, **2,540 tests**, floor 2513 → 2540. **PENDING F4 is CLOSED** and GATE F4 is off both homepage panels.
 
 **Updated:** 4 November 2026 — **PART E STEP E1a DONE: the report page is board 1's LAYOUT, not only its colours** (commit below). Display only, no model, no stored word. **One named palette** (`WORD_TINT` / `WORD_INK`, the board's own eight hex values) read by the **strip**, the **counts** and the **row pill** — three copies of a colour was three copies that drift. The strip's cells **stretch the full width**; the counts sit **directly under it**, numbers bold in the word's ink, with *"10 lines · 3 sections · 11 documents read"* at the right-hand end, and the **"all" chip is gone** (pressing the one that is on shows them all). **One meta line** under the title, with *"you asked"* in it. Each row is board 1's **four fixed columns** — chevron · a tinted **132px pill** · the reference · the requirement whole · the document, right-aligned — **measured: one distinct column set across all ten rows, at 1280 and again at 700**. The open part is indented 192px, 24px left of the requirement as the board draws it; the suggestions are **one folded grey line** at the foot; the footer is the board's order with **"Download the files"** and *"Every audit is kept…"*. **`print-color-adjust: exact` is the only reason any of it reaches paper** — proved with `printToPDF` and **`printBackground: false`**, which is the printer with background graphics OFF: the pills still came out coloured. **Four display defects found by the same reading:** the read-only note was drawn **twice** on the checklist report and **not at all** on the agency one (commit `10786ee` put both copies in one branch); **"Not right" on the run had nowhere to put the answer** on the checklist report; the footer **broke four of its five actions mid-phrase** in the Calendar's 720px drawer, photographed; and the document column held all 260px while the requirement was squeezed to 149 at a narrow width. `npm run check` exit 0, **2,513 tests**, floor 2487 → 2513. **No model call: $0.0000.**
@@ -324,6 +326,38 @@ words on the page; board 3 is E1's.*
     and `BinderPanel.tsx` (GATE F4 off both), `app/globals.css`. The zip route and its button are
     **deleted**.*
 
+62. **THE SUMMARY REPORT IS FIVE CARDS, AND THE FOLD TURNS THE RIGHT WAY UP** (the owner,
+    4 November 2026; `docs/summary-report-boards.html`). Each card has a coloured left edge and a
+    tinted header, from the audit report's palette read from one place: *Your situation* grey ·
+    *What applies* green · *Still to confirm* **amber** · *Not answered here* and *Sources* pale.
+    **What applies opens first with the FIRST authority open** and the rest folded to *"n things to
+    do"*, Open all / Close all on the right; the other three open **folded**, each with its count on
+    its header line, and Still to confirm's reads *"n things we could not settle from the
+    documents"*. **"Asked and not answered" becomes "Not answered here"**, and every question under
+    it carries *"this came up and the conversation did not settle it. Ask it on its own and we will
+    answer."* Your situation carries the company facts the conversation gave; an attached file is a
+    source like a document. *Effect: E2 — `components/ReportView.tsx` (ONE file, six renderers),
+    `lib/summaryWords.ts`, `lib/reportPalette.ts`.*
+
+63. **A SOURCE INSIDE A SUMMARY OPENS IN PLACE** (the owner, 4 November 2026). A **document**
+    source swaps the drawer for that document's reading, with *"← Back to the summary"* at the top
+    and the summary hidden beneath rather than unmounted, so closing it returns to where the
+    person was — the Calendar's drawer-for-a-drawer swap, **never one inside the other**. An
+    **audit** source opens the report page. A **web** source opens a new tab, as today. Nobody
+    leaves the page. *Effect: E2 — `components/ReportView.tsx` (`onOpenSource`),
+    `lib/sourceTitle.ts` (`sourceTarget`), `components/ConversationDrawer.tsx` (forwards it), and
+    the four pages that own a reading drawer. **HR does not**, and that is a reason: its summary's
+    sources are handbook passages, which have no reading to open.*
+
+64. **THE PRODUCT SAYS IT ONCE, AT THE FOOT** (the owner, 4 November 2026). The audit report page's
+    lede and the binder's cover each carried *"None of it is a verdict on whether the company
+    complies"*, and the printed footer said *"Prepared with CompliBoard"* a third time. One
+    sentence now, on every printed page and at the foot of the page on screen: *"Prepared with
+    CompliBoard. Every line points at a document, or says what we do not see. It is not a verdict
+    on whether the company complies, and it is not legal advice; check before you act."* **The
+    cover and the lede carry nothing in CompliBoard's voice.** *Effect: E2 —
+    `lib/printFrame.ts` (`PREPARED_LINE`), `components/AuditReport.tsx`, `components/AuditBinder.tsx`.*
+
 **And the three that were decided at E0's map, on 4 November:** decision 48 lives **in the view**, not
 in code, because *"the status the document would otherwise have"* is the six CASE arms underneath the
 one being changed and only SQL can compute them (migration 093); **a record falls to Recorded, not
@@ -353,6 +387,19 @@ order, and is the source for 6a's brief.
 
 **Three example lines** (`config/examples.ts`, the owner's, 3 November): "Audit us against the attached template" ·
 "Audit us against an agency, like Oregon DEQ" · "Ask anything about whether you are audit ready".
+
+### `docs/summary-report-boards.html` — the summary report (4 November 2026)
+
+**Two boards, in the same frame, drawn on an Audits conversation's summary.** **1** the summary as
+it opens — five cards, *What applies* first with the **first authority open** and the rest folded
+to their counts, *Still to confirm* · *Not answered here* · *Sources* folded with theirs; **2** the
+same summary with **every card opened**, which is the layout and the spacing reference. Its two
+notes carry the owner's questions on the words and the colour. **Its CSS is a mock-up and is never
+a source for the product's type or colour — with one exception, named in the brief: the SPACING of
+an item and of an authority row, which E2 copied as arithmetic** (`.sr .item` is `8px 0 10px 18px`
+and `.sr .auth` is `10px 0 6px`, so item to item is 19px and an authority row to its first item is
+15px). **Where the board and decision 62 disagree, the brief won:** the board draws *Still to
+confirm* blue and the decision says amber.
 
 ### `docs/audit-report-boards.html` — the audit report (draft 2, 4 November 2026)
 
@@ -462,7 +509,7 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 
 | # | Step | The shared files it touches | The sections that render them, from `grep` | Status |
 |---|---|---|---|---|
-| E2 | **The summary report** — What applies first and **open**, the rest folded with counts, a little colour | `components/ReportView.tsx` (176 lines; the fold is `:14`–`:16`, the heading `:123`). It folds *What applies* on first view today — this inverts that | **five renderers**: `app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `app/documents/page.tsx`, plus `components/ConversationDrawer.tsx` | not started |
+| E2 | **THE SUMMARY REPORT: five cards, the fold the right way up, and a source that opens in place** (decisions 62–64) | `components/ReportView.tsx` **rewritten** — five cards, the first authority open, the counts on the header lines, board 2's own paddings; `lib/summaryWords.ts` (the renamed card and its line); `lib/reportPalette.ts` **(new — the palette moved out of `lib/auditRows.ts`, three readers now)**; `lib/sourceTitle.ts` `sourceTarget`; `components/ConversationDrawer.tsx` forwards `onOpenSource`; `lib/printFrame.ts` `PREPARED_LINE`; `components/FoldRow.tsx` **deleted** | **six renderers**: `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/ConversationDrawer.tsx` and the three pages that mount it — `app/calendar/page.tsx`, `app/documents/page.tsx`, `app/audits/page.tsx` | **done 4 Nov** — the item and authority paddings are board 2's own, measured in both (`8px 0 10px 18px` / `10px 0 6px`, so 19px and 15px); walked on the Workspace and the Calendar with real summaries; `npm run check` exit 0, **2,566 tests**, floor 2540 → 2566. **No model call: $0.0000** |
 | E3 | **The answer body and the source cards** | `components/AnswerBody.tsx`, `lib/ask/passages.ts` | `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/ConversationDrawer.tsx`, `components/AskScreen.tsx` — **and through AskScreen, the Calendar, Documents and Audits**. Seven surfaces in all | not started |
 | E4 | **The document report drawer and the Documents page** — W1's progress line included | `components/DocumentReport.tsx`, `app/documents/page.tsx` (the banner `:979`–`:1017`, the controls `:1019`, the row words `lib/documentStatus.ts:86`–`:95`) | `DocumentReport` is rendered by **`app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx` and `app/documents/page.tsx`** | not started |
 | E5 | ~~The Enter-after-pick notice (W3)~~ **— done at B0, `43b304e`** — and **"Audit again" on a By template row**, which still waits for the row to say whether the template file still exists | `app/audits/page.tsx`'s By template group | Audits only | not started |
@@ -658,6 +705,48 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### ⚡ What Part E step E2 found (4 November 2026) — THE SUMMARY REPORT
+
+**1. ⚡ A DOCUMENT SOURCE CANNOT REACH A SUMMARY TODAY, SO DECISION 63 HAS NOTHING TO ACT ON YET.**
+Read off staging, not assumed. A Documents answer's own source is
+`{ kind: 'passage', label: 'your document', href: '/documents?document=<id>', url: '' }` — the
+address is in **`href`**, and `url` is empty. `lib/summaryReport.ts` `gatherSources` keys a source
+by `url` and falls back to `opts.keyWithoutUrl`, **which only `lib/hrSummary.ts` passes**; the
+Workspace, the Calendar, Documents and Audits pass nothing, so a source with no `url` is dropped
+before the summary is written. Counted on staging: of every stored summary, **0 sources are a
+document or an audit** and every one is a web page; of every stored turn, 0 document passages have
+survived into a summary. **So the swap is built, tested and unreachable by a customer**, and that
+is said here rather than left to be discovered. Making it real is one option passed in three
+places — a change to what a summary CONTAINS, not to how it is drawn, which is why E2 did not make
+it. `sourceTarget` reads **both** fields already, so the day it changes, nothing else has to.
+
+**2. The page number broke across two lines on the binder's cover.** Decision 64's sentence is
+long, and a CSS margin box takes its share of the page width from its neighbours: *"Page 1 of /
+24"*. Photographed, then fixed with `white-space: nowrap` on the one box that must stay one line.
+**And the sentence itself fits** — it wraps to two lines at the bottom left and is readable, proved
+with `printToPDF` on the 24-page binder.
+
+**3. `components/FoldRow.tsx` had one caller, and E2 took it.** The card header and the authority
+row each carry their own chevron now. It is deleted rather than left: a shared component with no
+caller is a claim nothing checks (§9a), and `docs/HANDOFF-WORKSPACE.md` and
+`docs/DASHBOARD-MACHINERY.md` both still name it as a shared piece — recorded here rather than
+rewritten, because those files describe what the workspace was handed, not what it is today.
+
+**What E2 deliberately did not do:** it did not change a word the model wrote (the sentences, the
+items, the sources and the facts are the summariser's own); it did not touch HR's words, which
+still win through `ReportWords`; and it gave HR no in-place swap, because an HR source is a
+handbook passage that `HR_SOURCE` draws with no link at all — there is nothing to open.
+
+**Where the board and the brief disagreed, the brief won:** board 2 draws *Still to confirm* in
+blue (`#3B6FA6` on `#E6EFF9`) and decision 62 says amber. Amber is what the rest of the product
+already means by *something needs a person*, and a fifth colour would be a fifth thing to learn.
+
+**And one thing the boards are a source for, which no board file has been before:** the SPACING.
+The brief asked for the gaps to match board 2, so `.sr .item`'s `8px 0 10px 18px` and `.sr .auth`'s
+`10px 0 6px` were copied as arithmetic — 19px between two items, 15px between an authority row and
+its first item — and both files' computed paddings were measured to prove it. Everything else in
+that CSS remains a mock-up and no source for the product's type or colour.
 
 ### ⚡ What Part C found (4 November 2026) — THE BINDER, AND THREE THINGS THE WALK CAUGHT
 

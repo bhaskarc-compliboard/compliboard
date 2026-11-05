@@ -41,34 +41,23 @@ export const WORD_LABEL: Record<string, string> = {
 export const WORD_ORDER = ['nothing_on_file', 'on_file_gaps', 'stale', 'on_file', 'not_a_document_question']
 
 /**
- * *** THE PALETTE — ONE NAMED SET OF TINTS, READ OFF BOARD 1 — E1a, 4 November 2026. ***
- *
- * A word is drawn THREE times on this page: in the strip, in the counts under it, and as the row's
- * own pill. Three copies of a colour is three copies that drift, and the one that drifts is always
- * the one nobody is looking at — `components/Drawer.tsx`'s own header says the same thing about
- * copying a drawer. So the tints are defined once, here, and all three read them.
- *
- * The values are `docs/audit-report-boards.html:149` — `.c-green`, `.c-amber`, `.c-red`, `.c-grey`
- * — copied out of the file rather than matched by eye. They are SOFT grounds with DARK text, which
- * is the change: the strip was five saturated blocks with white text, and the row's word was
- * coloured text that made "on file" and "not a document question" look like the same thing to
- * anybody skimming the left edge.
- *
- * *** AND NOTHING ON FILE IS A PINK, NOT A RED — the owner, 4 November. *** `#F8D7D3` behind
- * `#7A1F17`. It is the strongest of the five words and it is still not an alarm: a report somebody
- * has to act on is not improved by a stop sign.
- *
- * `print-tint` (`app/globals.css`) is not decoration either: a browser drops background colours on
- * paper by default, so without it the five words print as five identical white capsules.
+ * *** THE PALETTE LIVES IN `lib/reportPalette.ts` SINCE E2 — 4 November 2026. ***
+ * The summary report draws the same tints on its five cards (decision 62: "the colours are the
+ * audit report's palette, read from one place"), and a palette inside a file called `auditRows`
+ * is not a place a summary would look. The values, the board they were read off and the reason
+ * they are soft grounds with dark text all moved together; the WORD maps below stayed, because
+ * which word gets which colour is an audit's rule and not a colour.
  */
-export const INK_GREEN = 'text-[#1F5A3A]'
-export const INK_AMBER = 'text-[#7A4F0F]'
-export const INK_PINK = 'text-[#7A1F17]'
-export const INK_GREY = 'text-[#4B5563]'
-export const TINT_GREEN = `bg-[#DCEFE3] ${INK_GREEN}`
-export const TINT_AMBER = `bg-[#FCEBC6] ${INK_AMBER}`
-export const TINT_PINK = `bg-[#F8D7D3] ${INK_PINK}`
-export const TINT_GREY = `bg-[#E9EBEF] ${INK_GREY}`
+import {
+  INK_GREEN, INK_AMBER, INK_PINK, INK_GREY, TINT_GREEN, TINT_AMBER, TINT_PINK, TINT_GREY,
+} from './reportPalette.ts'
+
+export {
+  INK_GREEN, INK_AMBER, INK_PINK, INK_GREY, TINT_GREEN, TINT_AMBER, TINT_PINK, TINT_GREY,
+  TINT_NO_ANSWER,
+} from './reportPalette.ts'
+
+
 /** The ground and the ink together: the strip's cells and the row's pill. */
 export const WORD_TINT: Record<string, string> = {
   on_file: TINT_GREEN,
@@ -92,11 +81,6 @@ export const WORD_INK: Record<string, string> = {
   nothing_on_file: INK_PINK,
   not_a_document_question: INK_GREY,
 }
-/**
- * A line nobody answered is not a sixth word: it is the absence of one, so it is an outline and
- * not a tint — a hole in the row rather than a verdict. The strip has drawn it this way since E1.
- */
-export const TINT_NO_ANSWER = 'border border-dashed border-[var(--amber)] bg-white text-[var(--amber)]'
 
 /** As much of an `audit_findings` row as ordering and citing it needs. */
 export interface RowFinding {

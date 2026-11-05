@@ -36,6 +36,37 @@ export function cssString(s: string): string {
  * It is written at print time, because a margin box can only hold literal text and the company
  * differs per user; `printDrawer` adds it before the dialog and removes it after.
  */
+/**
+ * *** THE ONE SENTENCE AT THE FOOT OF EVERY PAGE — decision 64, 4 November 2026. ***
+ *
+ * It was three sentences in three places: the report page's lede said *"Every line below points at
+ * a document, or says what we do not see. None of it is a verdict on whether the company
+ * complies."*, the binder's cover said *"Prepared with CompliBoard. …"* over again, and the
+ * printed footer said *"Prepared with CompliBoard"* on its own. A reader met the same promise
+ * twice before the first row and a third time at the bottom of every sheet.
+ *
+ * So it is said ONCE, where it belongs: at the foot, on every page, in the one place the product
+ * speaks in its own voice about what the page is. **The cover and the lede now carry nothing in
+ * CompliBoard's voice at all** — they carry the auditor's title, the dates and the counts, which
+ * are facts about the audit.
+ *
+ * "and it is not legal advice; check before you act" is the app's own standing line
+ * (`components/AppLayout.tsx`), brought onto the paper, where the footer is the only thing a
+ * printed page has.
+ */
+export const PREPARED_LINE =
+  'Prepared with CompliBoard. Every line points at a document, or says what we do not see. '
+  + 'It is not a verdict on whether the company complies, and it is not legal advice; check before you act.'
+
+/**
+ * *** `white-space: nowrap` ON THE PAGE NUMBER, AND WHY IT IS THERE. ***
+ * Decision 64's sentence is long, and a CSS margin box takes its share of the page width from its
+ * neighbours: the first capture of the 24-page binder printed *"Page 1 of / 24"* across two lines
+ * at the bottom right. The sentence itself fits — it wraps to two lines at the bottom left and
+ * reads fine — but the page number is the one thing on a printed sheet that must stay on one.
+ * (This note is out here because the CSS below is a template literal: a backtick inside it ends
+ * the string, and every word of it would be shipped in the stylesheet of every printed page.)
+ */
 export function printFrameCss({ company, type }: { company: string; type: string }): string {
   const box = "font-family: plexSans, 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif; color: #6B7280;"
   const top = `${box} font-size: 10px; vertical-align: bottom; padding-bottom: 6px; border-bottom: 0.5pt solid #D1D5DB;`
@@ -46,9 +77,9 @@ export function printFrameCss({ company, type }: { company: string; type: string
     @top-left { content: ${cssString(company)}; ${top} text-transform: uppercase; letter-spacing: 0.06em; text-align: left; }
     @top-center { content: ""; ${top} }
     @top-right { content: ${cssString(type)}; ${top} text-align: right; }
-    @bottom-left { content: "Prepared with CompliBoard"; ${bottom} text-align: left; }
+    @bottom-left { content: ${cssString(PREPARED_LINE)}; ${bottom} text-align: left; }
     @bottom-center { content: ""; ${bottom} }
-    @bottom-right { content: "Page " counter(page) " of " counter(pages); ${bottom} text-align: right; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); ${bottom} text-align: right; white-space: nowrap; }
   }
 }`
 }

@@ -3,7 +3,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import {
   groupItems, madeInWorkspace, mustDoLabel, oneLineSource, shortTitle, thingsToDo, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
   NO_SOURCE, NO_SOURCE_FOUND, HOWTO_LOCK_MS,
@@ -146,20 +146,29 @@ describe('the summary as an accordion — the rules, wherever they live (Stage 2
   const view = readFileSync('components/ReportView.tsx', 'utf8')
   const report = view.slice(view.indexOf('export function ReportView<'))
   const css = readFileSync('app/globals.css', 'utf8')
-  test('each authority and Sources fold; Still to confirm has no fold', () => {
-    assert.match(report, /aria-expanded=\{expanded\}|<FoldRow label=\{g\.authority\}/)
-    const confirm = report.slice(report.indexOf('Still to confirm'), report.indexOf('Asked and not answered'))
-    assert.ok(!/fold-closed|FoldRow/.test(confirm), 'Still to confirm must never fold')
-    assert.match(report, /<FoldRow label="Sources"/)
+  /**
+   * *** THE FOLD TURNED THE RIGHT WAY UP AT E2 — decision 62, 4 November 2026. ***
+   * Stage 2 folded every authority and left Still to confirm always open, which put the thing the
+   * summary is FOR behind a row of closed headings. Now: What applies opens with the first
+   * authority open, and Still to confirm, Not answered here and Sources are the folded ones, each
+   * with its count on the header. `FoldRow` is gone with it — the card header and the authority
+   * row each carry their own chevron, and a component with no caller is a claim nothing checks.
+   */
+  test('each authority folds, and so do the three quiet cards', () => {
+    assert.match(report, /aria-expanded=\{open\.has\(gi\)\} aria-controls=\{id\}/)
+    assert.match(report, /\(\) => new Set\(\[0\]\)\)/, 'the first authority must open')
+    assert.match(report, /useState\(\{ applies: true, confirm: false, unanswered: false, sources: false \}\)/)
   })
-  test('the order is the one Task 5 built: situation, What applies, Still to confirm, Asked, facts, Sources', () => {
+  test('the order is the one Task 5 built, with E2\'s renamed card: situation, What applies, Still to confirm, Not answered here, facts, Sources', () => {
     const at = (t: string) => report.indexOf(t)
-    const order = ['AS_OF_LINE(report.as_of)', 'Your situation', 'What applies ·', 'Still to confirm', 'Asked and not answered', '{factsLine}', 'label="Sources"']
+    const order = ['words?.asOf ?? AS_OF_LINE', 'CARD_SITUATION_TITLE', 'CARD_APPLIES_TITLE', 'CARD_CONFIRM_TITLE', 'CARD_UNANSWERED_TITLE', '{factsLine}', 'CARD_SOURCES_TITLE']
     for (let i = 1; i < order.length; i++) assert.ok(at(order[i - 1]) < at(order[i]), `${order[i - 1]} before ${order[i]}`)
   })
   test('rows are real buttons with aria-expanded and aria-controls', () => {
-    const row = readFileSync('components/FoldRow.tsx', 'utf8')
-    assert.match(row, /<button type="button" onClick=\{onClick\} aria-expanded=\{expanded\} aria-controls=\{controls\}/)
+    // The card header when it folds, and every authority row. `components/FoldRow.tsx` is deleted.
+    // `Card` is above the slice this block reads, so this one looks at the whole file.
+    assert.match(view, /<button type="button" onClick=\{onToggle\} aria-expanded=\{open\} aria-controls=\{controls\}/)
+    assert.ok(!existsSync('components/FoldRow.tsx'))
   })
   test('print opens every fold and prints full links, by CSS — not by changing state', () => {
     assert.match(css, /\.fold-closed \{ display: none; \}/)

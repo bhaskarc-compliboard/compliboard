@@ -211,6 +211,13 @@ function Calendar() {
   const [report, setReport] = useState<{ kind: 'document' | 'audit'; id: string } | null>(null)
   /** A document opened FROM an audit report, as Audits does it — the third level. */
   const [openDocId, setOpenDocId] = useState<string | null>(null)
+  /**
+   * *** AND A THIRD PLACE A READING CAN BE OPENED FROM — decision 63, 4 November 2026. ***
+   * This page already swaps its date drawer for a document's reading (step 8b) and for an audit's
+   * report; a source inside a conversation's SUMMARY is the same move from a third drawer, so the
+   * only new thing is which way back to offer.
+   */
+  const [docFromSummary, setDocFromSummary] = useState(false)
   const [extra, setExtra] = useState<{ id: string; document: DocumentFacts | null; finding: FindingFacts | null } | null>(null)
   /**
    * *** NOTHING IS CLAIMED BEFORE THE READ ANSWERS. *** "No dates yet" drawn while the query is in
@@ -874,6 +881,9 @@ function Calendar() {
           shared drawer cannot have it in one section and not another. The report read moved with
           it, which is why this page now names six relations and not seven. */}
       {conv.convDrawer && (
+        /* Hidden, not unmounted, while a reading from one of its sources is over it (decision 63):
+           the same rule this page already follows for its date drawer at `:806`. */
+        <div className={docFromSummary && openDocId ? 'hidden' : ''}>
         <ConversationDrawer
           topic={conv.convDrawer}
           companyName={companyName}
@@ -886,7 +896,12 @@ function Calendar() {
           onSummarise={conv.summarise}
           summaryRunning={conv.summaryRunning(conv.convDrawer.id)}
           onDeleted={() => { conv.setConvDrawer(null); void refresh() }}
+          onOpenSource={(t) => {
+            if (t.kind === 'document') { setDocFromSummary(true); setOpenDocId(t.id) }
+            else if (t.kind === 'audit') window.location.href = `/audits?run=${t.id}`
+          }}
         />
+        </div>
       )}
 
       {/* SEND TO YOUR CALENDAR — board 11. It is handed `rows`, not `shownRows`: a subscription is
@@ -911,7 +926,7 @@ function Calendar() {
       {/* A document opened FROM the audit report — Audits' third level, and the same way back. */}
       {openDocId && (
         <DocumentReport documentId={openDocId} companyName={companyName} folders={folders} paused={paused}
-          onClose={() => setOpenDocId(null)} onChanged={() => { void refresh() }}
+          onClose={() => { setOpenDocId(null); setDocFromSummary(false) }} onChanged={() => { void refresh() }}
           onMove={async (documentId, folderId) => {
             await fetch('/api/documents', {
               method: 'PATCH',
@@ -922,9 +937,9 @@ function Calendar() {
           }}
           onPickFile={() => { window.location.href = '/documents?add=a+clearer+copy' }}
           topLine={
-            <button onClick={() => setOpenDocId(null)}
+            <button onClick={() => { setOpenDocId(null); setDocFromSummary(false) }}
               className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
-              ← Back to the audit
+              ← {docFromSummary ? 'Back to the summary' : 'Back to the audit'}
             </button>
           } />
       )}
