@@ -67,6 +67,7 @@ import {
 import { CARD_SITUATION, CARD_APPLIES, CARD_CONFIRM, CARD_QUIET } from '@/lib/reportPalette'
 import { thingsToDo } from '@/lib/checklistView'
 import { displaySource, sourceTarget, type SourceTarget } from '@/lib/sourceTitle'
+import { sourceCardName } from '@/lib/documentName'
 import { useWaitingKeys } from '@/components/WaitingKeys'
 
 /**
@@ -196,7 +197,9 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
   const sourceEntry = (src: S) => {
     const t = sourceTarget(src as unknown as { url?: string; href?: string })
     if (!onOpenSource || t.kind === 'web') return sourceShape.entry(src)
-    const title = String((src as unknown as { title?: string }).title ?? '')
+    // ONE NAME EVERYWHERE — decision 71. The card's own suffix ("— what we read in it") stays;
+    // the document's name inside it is cut to its first clause, as the list cuts it.
+    const title = sourceCardName(String((src as unknown as { title?: string }).title ?? ''))
     const label = t.kind === 'document' ? 'your document'
       : t.kind === 'audit' ? 'the audit'
       : 'your calendar'

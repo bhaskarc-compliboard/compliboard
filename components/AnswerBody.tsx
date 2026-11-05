@@ -25,6 +25,7 @@ import { displaySource, sourceTarget, type SourceTarget } from '@/lib/sourceTitl
 import { markCitations, citationNumber } from '@/lib/citations'
 import { OTHER_SOURCE_LINE, hostOf } from '@/lib/howTo'
 import { splitHonesty, REFUSED_NOTE } from '@/lib/askWords'
+import { sourceCardName } from '@/lib/documentName'
 
 /**
  * `kind`, `label` and `quote` are HR's (Step 6a), and ADDITIVE: a workspace source carries none of them, so
@@ -228,7 +229,8 @@ export function SourceList({ sources, onOpenSource }: {
           const ours = isOurs(s)
           const target = ours ? sourceTarget(s) : null
           const swaps = Boolean(onOpenSource && target && target.kind !== 'web')
-          const title = ours ? s.title : shown.title
+          // ONE NAME EVERYWHERE — decision 71; the brief's suffix on the card stays.
+          const title = ours ? sourceCardName(s.title) : shown.title
           const origin = ours ? s.label : shown.host
           return (
             <div key={s.n}

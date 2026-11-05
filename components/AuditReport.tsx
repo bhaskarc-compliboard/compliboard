@@ -29,6 +29,7 @@ import {
 
 import type { Banner } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
+import { documentName } from '@/lib/documentName'
 interface DocRef { title: string; file_name: string; kind?: string | null; display_status?: string | null }
 
 /** Documents' own words for a status, so the audit does not invent a second vocabulary for them. */
@@ -465,7 +466,7 @@ function DocGroup({ doc, docId, children, onOpenDoc, off }: {
       <div className="flex items-baseline gap-2 border-b border-gray-200 pb-0.5">
         {doc && docId ? (
           <button onClick={() => onOpenDoc(docId)} title={doc.title} className={`min-w-0 flex-1 ${TITLE_LINE}`}>
-            {doc.title}
+            {documentName(doc.title)}
           </button>
         ) : (
           <p className="min-w-0 flex-1 text-left text-[13px] text-gray-500">Not tied to one document</p>
@@ -827,10 +828,17 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     .filter((id) => !docsRead.includes(id))
   // The route's own map first; the findings are the fallback for an older response shape. A
   // document the run read and no finding cites has a title here and had none before.
-  const titleOf = (id: string) =>
-    rep.documents?.[id]?.title
-    ?? findings.find((f) => f.document_id === id)?.document?.title
-    ?? findings.find((f) => f.document_b_id === id)?.document_b?.title ?? null
+  /**
+   * *** THE ONE PLACE THIS REPORT NAMES A DOCUMENT — and since decision 71 it is the same name
+   * the list, the drawer, a summary's sources and an answer's cards use. *** E4's brief pointed
+   * at `lib/auditRows.ts` for this; the naming is here, which is what the grep found.
+   */
+  const titleOf = (id: string) => {
+    const t = rep.documents?.[id]?.title
+      ?? findings.find((f) => f.document_id === id)?.document?.title
+      ?? findings.find((f) => f.document_b_id === id)?.document_b?.title ?? null
+    return t ? documentName(t) : null
+  }
 
   async function dismiss(id: string, reason: string) {
     setBusy(true)
@@ -1546,13 +1554,13 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
               <p className="mt-1 text-[13px] text-gray-700">
                 <button onClick={() => f.document_id && onOpenDoc(f.document_id)}
                   title={f.document?.title ?? undefined}
-                  className="cursor-pointer hover:underline hover:text-gray-900">{f.document?.title ?? 'one document'}</button>
+                  className="cursor-pointer hover:underline hover:text-gray-900">{f.document?.title ? documentName(f.document.title) : 'one document'}</button>
                 {' says '}<span className="text-gray-900">{f.value_a}</span>
               </p>
               <p className="mt-0.5 text-[13px] text-gray-700">
                 <button onClick={() => f.document_b_id && onOpenDoc(f.document_b_id)}
                   title={f.document_b?.title ?? undefined}
-                  className="cursor-pointer hover:underline hover:text-gray-900">{f.document_b?.title ?? 'the other'}</button>
+                  className="cursor-pointer hover:underline hover:text-gray-900">{f.document_b?.title ? documentName(f.document_b.title) : 'the other'}</button>
                 {' says '}<span className="text-gray-900">{f.value_b}</span>
               </p>
               <p className="mt-1 text-[12px] text-gray-500">The audit shows both and does not pick one.</p>

@@ -79,6 +79,8 @@ import {
   ADD_FOLDER_HINT,
 } from '@/lib/documentsWords'
 import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord, notesWord } from '@/lib/documentStatus'
+import { dayGroup, filesWord, readingProgress, READING_IN_BACKGROUND } from '@/lib/documentList'
+import { documentName } from '@/lib/documentName'
 import { ACCEPTED_FILE_TYPES, refusalFor, skippedLine, skippedSentences } from '@/lib/acceptedFiles'
 import DocumentReport from '@/components/DocumentReport'
 import { LIVE_SCAN_MAX } from '@/lib/documentBatch'
@@ -121,7 +123,7 @@ interface Site { id: string; name: string; is_primary: boolean }
 interface ExpectedRow { document_id: string; expected_missing: unknown }
 /** One upload, however many files were in it — Run 7. `summary` is `BatchSummary`. */
 interface BatchRow {
-  id: string; status: string; file_count: number; done_count: number
+  id: string; status: string; file_count: number; done_count: number; created_at: string
   notified_at: string | null; dismissed_at: string | null
   summary: {
     total: number; read: number; needs_work: number; expiring: number; expired: number
@@ -131,7 +133,7 @@ interface BatchRow {
   } | null
 }
 
-type GroupBy = 'status' | 'agency' | 'subject' | 'kind' | 'site' | 'folder' | 'none'
+type GroupBy = 'date' | 'status' | 'agency' | 'subject' | 'kind' | 'site' | 'folder' | 'none'
 
 /**
  * *** THE THREE TABS — `docs/GAPS-PLAN.md` Part A step 4b, decision 5. ***
@@ -185,6 +187,7 @@ const KIND_LABEL: Record<string, string> = {
 }
 
 const EMPTY_GROUP: Record<GroupBy, string> = {
+  date: 'Date unknown',
   status: 'No status yet',
   agency: 'No agency yet',
   subject: 'No subject yet',
@@ -287,6 +290,9 @@ function DocumentsPageContent() {
   const [expected, setExpected] = useState<ExpectedRow[]>([])
   /** The finished upload nobody has dismissed, and whether anything is still being read. */
   const [banner, setBanner] = useState<BatchRow | null>(null)
+  /** The batches still reading — `/api/documents/index` has returned these all along (`working`)
+   *  and nothing drew them until decision 70 put the progress on the group header. */
+  const [working, setWorking] = useState<BatchRow[]>([])
   const [inFlight, setInFlight] = useState(0)
   /** Agency groups whose expected-and-don't-see line has been opened out. */
   const [expandedExpected, setExpandedExpected] = useState<Set<string>>(new Set())
@@ -294,7 +300,13 @@ function DocumentsPageContent() {
   const [error, setError] = useState('')
 
   const [folderFilter, setFolderFilter] = useState<string>('all')
-  const [groupBy, setGroupBy] = useState<GroupBy>('status')
+  /**
+   * *** THE DEFAULT IS THE DAY A FILE ARRIVED — decision 70, 5 November 2026. ***
+   * It was Status. Status answers "what needs work"; this list is also where somebody stands a
+   * minute after dropping a folder in, and grouped by day a batch lands together under one
+   * heading with its progress on it (W1). Status is one choice away and unchanged.
+   */
+  const [groupBy, setGroupBy] = useState<GroupBy>('date')
   const [siteFilter, setSiteFilter] = useState<string>('all')
 
   const [folderMenuOpen, setFolderMenuOpen] = useState(false)
@@ -325,6 +337,14 @@ function DocumentsPageContent() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState('')
   /**
+   * *** THE LIVE PATH COUNTS TOO — decision 70, and it had to, or the bar would be blind to the
+   * commonest case. *** Three files or fewer are read in this browser one after another
+   * (`LIVE_SCAN_MAX`); `done_count` on the batch row is written only by the SWEEP, so a folder
+   * of three would have shown the day group with no bar at all. This is the same two numbers,
+   * from the loop that is doing the reading.
+   */
+  const [liveRead, setLiveRead] = useState<{ done: number; total: number } | null>(null)
+  /**
    * WHAT THE LAST PICK SKIPPED, AND WHY — B1, decision 51. Its own state and not `progress`,
    * because `progress` is cleared in the upload's `finally` and this has to stay on the screen
    * after the upload has finished: it is the answer to "where are my other three files". Cleared
@@ -352,6 +372,7 @@ function DocumentsPageContent() {
       setSites(json.sites ?? [])
       setExpected(json.expected ?? [])
       setBanner(json.banner ?? null)
+      setWorking((json.working ?? []) as BatchRow[])
       setInFlight(Number(json.in_flight ?? 0))
       setError('')
     } catch {
@@ -611,6 +632,7 @@ function DocumentsPageContent() {
       for (let i = 0; i < ids.length; i++) {
         const id = ids[i]
         setReadingIds((s) => new Set(s).add(id))
+        setLiveRead({ done: i, total: ids.length })
         setProgress(`Reading ${i + 1} of ${ids.length}: ${files[i]?.name ?? ''}`)
         try {
           await fetch('/api/document-scan', {
@@ -622,9 +644,11 @@ function DocumentsPageContent() {
           console.error('document-scan:', e)
         } finally {
           setReadingIds((s) => { const n = new Set(s); n.delete(id); return n })
+          setLiveRead({ done: i + 1, total: ids.length })
         }
         await load()
       }
+      setLiveRead(null)
 
       // The batch is finished by the server, which computes the summary from the index — the
       // same function the sweep calls, so the banner says the same thing either way. No email:
@@ -728,8 +752,13 @@ function DocumentsPageContent() {
     const map = new Map<string, IndexRow[]>()
     const push = (k: string, r: IndexRow) => { if (!map.has(k)) map.set(k, []); map.get(k)!.push(r) }
 
+    const labels = new Map<string, string>()
     for (const r of filtered) {
-      if (groupBy === 'status') push(r.display_status, r)
+      if (groupBy === 'date') {
+        const g = dayGroup(r.uploaded_at)
+        labels.set(g.key, g.label)
+        push(g.key, r)
+      } else if (groupBy === 'status') push(r.display_status, r)
       else if (groupBy === 'agency') {
         if (r.agencies.length) r.agencies.forEach((a) => push(a, r)); else push('', r)
       } else if (groupBy === 'subject') {
@@ -740,14 +769,47 @@ function DocumentsPageContent() {
     }
 
     const entries = [...map.entries()]
+    if (groupBy === 'date') {
+      // Newest first: the key is `YYYY-MM-DD` for a day and `YYYY-MM` for a month, and both sort
+      // as text — a month's key is a prefix of its days', so October sits after 31 October.
+      entries.sort((a, b) => b[0].localeCompare(a[0]))
+      return entries.map(([k, v]) => ({ key: k, label: labels.get(k) ?? k, rows: v, files: true }))
+    }
     if (groupBy === 'status') {
       entries.sort((a, b) => STATUS_ORDER.indexOf(a[0]) - STATUS_ORDER.indexOf(b[0]))
-      return entries.map(([k, v]) => ({ key: k, label: STATUS_GROUP_LABEL[k] ?? k, rows: v }))
+      return entries.map(([k, v]) => ({ key: k, label: STATUS_GROUP_LABEL[k] ?? k, rows: v, files: false }))
     }
     // Named groups alphabetically; the empty one always last, never dropped.
     entries.sort((a, b) => (a[0] === '' ? 1 : b[0] === '' ? -1 : a[0].localeCompare(b[0])))
-    return entries.map(([k, v]) => ({ key: k || '__none__', label: k || EMPTY_GROUP[groupBy], rows: v }))
+    return entries.map(([k, v]) => ({ key: k || '__none__', label: k || EMPTY_GROUP[groupBy], rows: v, files: false }))
   }, [filtered, groupBy])
+
+  /**
+   * *** THE NEWEST BATCH THAT IS STILL READING, AS A LINE AND A BAR (decision 70). ***
+   * One batch: two folders going at once is not a thing a person does, and two bars on one
+   * header would be a design for a case nobody is in. `readingProgress` returns null once the
+   * batch is done, which is what takes the line off the screen.
+   */
+  const batchProgress = useMemo(() => {
+    if (liveRead) {
+      return {
+        done: liveRead.done, total: liveRead.total,
+        fraction: liveRead.total ? liveRead.done / liveRead.total : 0,
+        line: `${READING_IN_BACKGROUND} · ${liveRead.done} of ${liveRead.total} done`,
+      }
+    }
+    /**
+     * *** AND NOTHING IS DRAWN UNLESS SOMETHING IS ACTUALLY IN FLIGHT. ***
+     * Photographed on the walk: Cascade's list said "Reading in the background · 0 of 1 done"
+     * above a batch created on 3 November that had been `queued` ever since — a sentence in the
+     * present tense about a thing that stopped two days ago. `in_flight` is the page's own count
+     * of rows saying uploaded or reading, from the same read; the line claims the present only
+     * when the present is true (§5.1).
+     */
+    if (inFlight === 0) return null
+    const b = [...working].sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)))[0]
+    return b ? readingProgress(b) : null
+  }, [working, liveRead, inFlight])
 
   const flat = useMemo(() => {
     if (groupBy !== 'none') return []
@@ -818,7 +880,7 @@ function DocumentsPageContent() {
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
-  function Row({ r }: { r: IndexRow }) {
+  function Row({ r, shade }: { r: IndexRow; shade?: boolean }) {
     const amber = isAmber(r)
     const older = olderVersionCount[r.document_id] ?? 0
     const dateLabel = r.significant_date_kind
@@ -830,11 +892,16 @@ function DocumentsPageContent() {
       older ? `${older} older version${older === 1 ? '' : 's'}` : null,
     ].filter(Boolean).join(' · ')
     return (
-      <div className="border-b border-gray-100 last:border-b-0">
+      /* ALTERNATE ROWS SHADED — decision 71, board 1: white and the page's own grey, so the eye
+         keeps its place across four columns without a rule under every row. */
+      <div className={`border-b border-gray-100 last:border-b-0 ${shade ? 'bg-white/70' : ''}`}>
         <div onClick={() => setOpenDoc(r.document_id)}
           className="group -mx-3 flex cursor-pointer items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-white">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{r.title}</p>
+            {/* THE SHORT NAME LEADS — decision 71. One rule, six surfaces (`lib/documentName.ts`);
+                the file name is underneath, which is also what tells two near-duplicate readings
+                apart when their first clauses are the same. */}
+            <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{documentName(r.title)}</p>
             <p className="mt-0.5 truncate text-[12px] text-gray-500">{meta}</p>
             {/* WHAT TO DO ABOUT IT, ON THE ROW. An empty state is a message (§5.1) and
                 "Not read yet" on its own leaves somebody waiting for something that is not
@@ -1061,58 +1128,17 @@ function DocumentsPageContent() {
         {tab === 'documents' && (<>
 
         {/*
-          *** WHAT THAT UPLOAD CAME TO, ANSWERED ONCE — Run 7. ***
+          *** THE "WE'VE READ YOUR n DOCUMENTS" BANNER IS GONE — decision 70, 5 November 2026. ***
 
-          The same summary the email carries, computed by the same function off the same index
-          rows, so the two cannot disagree. It shows for a background batch and for a live one;
-          only the email is different, because somebody who watched three files go in does not
-          need to be told by email that they went in.
+          It was a receipt in a box above the list: what the batch came to, its counts, the titles
+          behind them. Everything it said is in the list itself — the rows it names are the rows
+          under it, each with its own status word — and while a batch was still READING it said
+          nothing at all, which is the eleven minutes of silence W1 records. The group header
+          says it now, in place: "Today · 8 files" with the progress line under it.
 
-          It stays until dismissed and the dismissal is a row, not a piece of browser state: a
-          banner that comes back on the next device is worse than one that never appeared.
-
-          Grey, not amber. The wash is attention and this is a receipt — the counts inside it
-          say whether anything needs attention, and three of the five usually say no.
+          `banner` is still read (the route returns it) and still dismissed, because the row is
+          what stops the EMAIL being sent twice; nothing draws it.
         */}
-        {banner?.summary && (
-          <div className="no-print mt-5 rounded-lg border border-gray-200 bg-white px-4 py-3">
-            <div className="flex items-start gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] text-gray-900">
-                  We&rsquo;ve read your {banner.summary.total} document{banner.summary.total === 1 ? '' : 's'}
-                  {(() => {
-                    const s = banner.summary!
-                    const bits: string[] = []
-                    if (s.needs_work) bits.push(`${s.needs_work} need${s.needs_work === 1 ? 's' : ''} work`)
-                    if (s.expiring) bits.push(`${s.expiring} ${s.expiring === 1 ? 'is' : 'are'} expiring`)
-                    if (s.expired) bits.push(`${s.expired} ${s.expired === 1 ? 'has' : 'have'} expired`)
-                    if (s.could_not_read) bits.push(`${s.could_not_read} we couldn\u2019t read`)
-                    return bits.length ? `: ${bits.join(', ')}.` : '. Nothing needs attention.'
-                  })()}
-                </p>
-                {/* THE TITLES BEHIND THE COUNTS. A number with nothing under it is a claim a
-                    person cannot check, and "3 need work" without saying which three sends
-                    them hunting through the list for them. */}
-                {banner.summary.attention.length > 0 && (
-                  <ul className="mt-1.5 space-y-0.5">
-                    {banner.summary.attention.map((a) => (
-                      <li key={a.title} className="text-[12px] text-gray-600">
-                        <span className="text-gray-800">{a.title}</span>
-                        {' — '}{STATUS_WORD[a.status] ?? a.status}
-                        {a.reason ? `. ${a.reason}` : ''}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {banner.notified_at && (
-                  <p className="mt-1.5 text-[12px] text-gray-400">We emailed you this.</p>
-                )}
-              </div>
-              <button onClick={() => dismissBanner(banner.id)}
-                className="shrink-0 text-[12px] text-gray-400 hover:text-gray-700">Dismiss</button>
-            </div>
-          </div>
-        )}
 
         {/* CONTROLS. Folder narrows, Group by arranges, and the two never mix in one list. */}
         <div className="no-print mt-5 flex flex-wrap items-center gap-3 border-b border-gray-200 pb-4">
@@ -1174,6 +1200,7 @@ function DocumentsPageContent() {
             <select value={groupBy}
               onChange={(e) => { setGroupBy(e.target.value as GroupBy); setShowAll(new Set()) }}
               className={controlClass}>
+              <option value="date">Date added</option>
               <option value="status">Status</option>
               <option value="agency">Agency</option>
               <option value="subject">Subject</option>
@@ -1273,7 +1300,7 @@ function DocumentsPageContent() {
               {flat.map((r) => (
                 <tr key={r.document_id} className="border-b border-gray-100 hover:bg-white">
                   <td className="py-2.5 text-[13px] text-gray-900">
-                    <button onClick={() => setOpenDoc(r.document_id)} className="text-left hover:text-[var(--green)]">{r.title}</button>
+                    <button onClick={() => setOpenDoc(r.document_id)} className="text-left hover:text-[var(--green)]">{documentName(r.title)}</button>
                     <span className="block text-[12px] text-gray-500">{r.file_name}</span>
                   </td>
                   <td className="py-2.5 text-[12px] text-gray-600">{r.kind ? (KIND_LABEL[r.kind] ?? r.kind) : '—'}</td>
@@ -1304,8 +1331,24 @@ function DocumentsPageContent() {
                       is weight, not a second heading style. `DESIGN.md` §4. */}
                   <h2 className={`mb-1.5 text-[12px] font-medium uppercase tracking-wide ${
                     groupBy === 'status' ? 'text-gray-400' : 'text-gray-700'}`}>
-                    {g.label} <span className="ml-1 font-normal text-gray-300">{g.rows.length}</span>
+                    {g.label}{' '}
+                    <span className="ml-1 font-normal text-gray-300">
+                      {g.files ? `· ${filesWord(g.rows.length)}` : g.rows.length}
+                    </span>
                   </h2>
+                  {/* *** THE BATCH'S PROGRESS, ON THE DAY IT LANDED — decision 70, W1. ***
+                      Only on the newest day group, and only while a batch of that day is still
+                      reading: a bar and a line that says how many are done and roughly how long
+                      is left. The arithmetic is `lib/documentList.ts`, where it is tested. */}
+                  {g.key === groups[0]?.key && batchProgress && (
+                    <div className="no-print mb-2.5">
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
+                        <div className="h-full rounded-full bg-[var(--green)] transition-all"
+                          style={{ width: `${Math.round(batchProgress.fraction * 100)}%` }} />
+                      </div>
+                      <p className="mt-1 text-[12px] text-gray-500">{batchProgress.line}</p>
+                    </div>
+                  )}
                   {missing.length > 0 && (() => {
                     // The amber wash, not amber text: this asks for attention without claiming
                     // anything is wrong. Amber is attention and never information (`DESIGN.md`
@@ -1349,7 +1392,7 @@ function DocumentsPageContent() {
                       </p>
                     )
                   })()}
-                  <div>{visible.map((r) => <Row key={`${g.key}-${r.document_id}`} r={r} />)}</div>
+                  <div>{visible.map((r, i) => <Row key={`${g.key}-${r.document_id}`} r={r} shade={i % 2 === 1} />)}</div>
                   {g.rows.length > COLLAPSE_AT && !opened && (
                     <button onClick={() => setShowAll((s) => new Set(s).add(g.key))}
                       className="mt-1.5 text-[12px] text-gray-600 underline hover:text-gray-900">

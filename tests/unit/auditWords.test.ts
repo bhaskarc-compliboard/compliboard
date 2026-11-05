@@ -466,8 +466,12 @@ describe('needs work only on a gap read from the page — decision 48', () => {
     const src = code(read('components/DocumentReport.tsx'))
     assert.match(src, /const readGaps = openGaps\.filter\(\(g\) => g\.basis !== 'inferred'\)/)
     assert.match(src, /const noteGaps = openGaps\.filter\(\(g\) => g\.basis === 'inferred'\)/)
-    assert.match(src, /title="Gaps read from the page"/)
-    assert.match(src, /<Section title="Notes">/)
+    // E4 made every part of the drawer a folded Card with its words in `lib/documentsWords.ts`;
+    // the SPLIT this test is about is unchanged, and so is which gap goes where.
+    assert.match(src, /title=\{DOC_CARD_GAPS\}/)
+    assert.match(src, /title=\{DOC_CARD_NOTES\}/)
+    assert.match(read('lib/documentsWords.ts'), /DOC_CARD_GAPS = 'Gaps read from the page'/)
+    assert.match(read('lib/documentsWords.ts'), /DOC_CARD_NOTES = 'Notes'/)
     assert.match(src, /\{hasFindings && \(/)
     assert.doesNotMatch(src, /\{isProgram && \(openGaps\.length > 0/,
       'the gap list is still gated on the document being a program')

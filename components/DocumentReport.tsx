@@ -22,6 +22,7 @@
  * blank sections, which would assert that we looked and found nothing. `CLAUDE.md` §5.1.
  */
 
+import type React from 'react'
 import { useState, useEffect, useCallback } from 'react'
 import { authHeaders } from '@/lib/supabase'
 import { Drawer, printDrawer } from '@/components/Drawer'
@@ -29,6 +30,13 @@ import { DRAFT_NOTICE } from '@/prompts/document-draft'
 
 import type { Banner } from '@/lib/billing'
 import PausedNote from '@/components/PausedNote'
+import { CARD_SITUATION, CARD_APPLIES, CARD_CONFIRM, CARD_QUIET, TINT_AMBER } from '@/lib/reportPalette'
+import { documentName } from '@/lib/documentName'
+import {
+  DOC_CARD_SAYS, DOC_CARD_GAPS, DOC_CARD_NOTES, DOC_CARD_DATES, DOC_CARD_WHAT, DOC_CARD_FACTS,
+  DOC_CARD_CONDITIONS, DOC_CARD_VERSIONS, notesNoticed, factsWaiting, datesSummary, whatItIsSummary,
+  SCANNED_PAGES, CHANGE_WHAT_THIS_IS, CONFIRM_ON_COMPANY,
+} from '@/lib/documentsWords'
 /* ── the shapes, as the report route returns them ─────────────────────────── */
 interface Row {
   document_id: string; title: string; file_name: string; kind: string | null
@@ -79,6 +87,8 @@ interface Scan {
   page_refs: Record<string, string> | null; jurisdiction: string[] | null
   model: string | null; searches: number | null; cited_sources: number | null
   scanned_at: string; confidence_notes: string | null
+  /** D3: both already arrive — `/api/documents/report` selects `*` from `document_scans`. */
+  quotes_checked: number | null; extracted_text: string | null
 }
 interface Report {
   row: Row; scan: Scan | null; gaps: Gap[]; conditions: Condition[]; deadlines: Deadline[]
@@ -129,20 +139,52 @@ const isPast = (iso: string | null) => !!iso && iso < new Date().toISOString().s
  * So the naming ones take the darker grey of body text and the state ones stay light. Same
  * 12px uppercase either way: this is weight, not a second heading style. `DESIGN.md` §4.
  */
-function Section({ title, children, tone = 'name' }: {
-  title: string; children: React.ReactNode; tone?: 'name' | 'state'
+/**
+ * *** ONE CARD OF THE READING — decision 72, 5 November 2026; `docs/documents-boards.html`. ***
+ *
+ * The same partition the summary report uses (`components/ReportView.tsx`, decision 62): a
+ * coloured left edge, a tinted header, a one-line summary ON the header so a folded card still
+ * says what is inside it, and a body that folds. The reading was nine sections stacked flat and
+ * three printed pages; it is six cards now, two of them open.
+ *
+ * *** PRINT OPENS EVERYTHING. *** A folded body carries `fold-closed`, which the print rule in
+ * `app/globals.css` shows — the same mechanism the summary uses, so paper and screen cannot
+ * drift apart.
+ */
+function Card({ tint, title, summary, open, onToggle, controls, children }: {
+  tint: string; title: string; summary?: React.ReactNode
+  open: boolean; onToggle?: () => void; controls: string; children: React.ReactNode
 }) {
+  const head = (
+    <>
+      {onToggle && (
+        <svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          className={`no-print shrink-0 opacity-60 transition-transform ${open ? 'rotate-90' : ''}`}>
+          <path d="m9 6 6 6-6 6" />
+        </svg>
+      )}
+      <span className="shrink-0 whitespace-nowrap text-[12px] font-semibold uppercase tracking-[0.05em]">{title}</span>
+      {summary && <span className="min-w-0 text-[12px] font-normal opacity-80">{summary}</span>}
+    </>
+  )
   return (
-    <section className="mt-6 border-t border-gray-100 pt-4 first:mt-0 first:border-t-0 first:pt-0">
-      <h3 className={`mb-2 text-[12px] font-medium uppercase tracking-wide ${
-        tone === 'state' ? 'text-gray-400' : 'text-gray-700'}`}>{title}</h3>
-      {children}
+    <section className="mt-3.5 overflow-hidden rounded-[10px] border border-gray-200 bg-white first:mt-0">
+      {onToggle ? (
+        <button type="button" onClick={onToggle} aria-expanded={open} aria-controls={controls}
+          className={`print-tint flex w-full items-center gap-2.5 border-l-4 px-3.5 py-2.5 text-left ${tint}`}>
+          {head}
+        </button>
+      ) : (
+        <div className={`print-tint flex items-center gap-2.5 border-l-4 px-3.5 py-2.5 ${tint}`}>{head}</div>
+      )}
+      <div id={controls} className={`px-3.5 pb-3 pt-2 ${open ? '' : 'fold-closed'}`}>{children}</div>
     </section>
   )
 }
-/** "inferred" after a title, so a worked-out finding never reads as a quoted one. */
-const Inferred = ({ basis }: { basis: string }) =>
-  basis === 'inferred' ? <span className="ml-1.5 text-[12px] font-normal text-gray-400">inferred</span> : null
+
+/* `Section` — the flat heading this drawer used for every part — is gone with decision 72:
+   every part is a `Card` now, folded or open, in the summary report's own partition style. */
 
 function ReasonBox({ label, onCancel, onSave }: {
   label: string; onCancel: () => void; onSave: (reason: string) => void
@@ -238,6 +280,18 @@ export default function DocumentReport({
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [reasonFor, setReasonFor] = useState<string | null>(null)
+  /** Which card's "Not right" is asking which item it is about (decision 72). */
+  const [picking, setPicking] = useState<'gaps' | 'notes' | null>(null)
+  /**
+   * *** WHAT IS OPEN WHEN THE DRAWER OPENS — decision 72. *** What it says and the gaps read
+   * from the page; everything else folded to a header that says what is inside it. The owner's
+   * own printed report was three pages because all nine sections were flat.
+   */
+  const [cards, setCards] = useState({
+    says: true, gaps: true, notes: false, dates: false, what: false, facts: false,
+    conditions: false, versions: false,
+  })
+  const flip = (k: keyof typeof cards) => setCards((c) => ({ ...c, [k]: !c[k] }))
   const [edit, setEdit] = useState<{ kind: string; agencies: string; subjects: string; site: string; doc_date: string }>(
     { kind: '', agencies: '', subjects: '', site: '', doc_date: '' })
   /** The gap a model call is running for, so only that row says "Working…". */
@@ -382,6 +436,14 @@ export default function DocumentReport({
 
   const { row, scan } = r
   const kind = row.kind
+  /**
+   * *** A SCANNED PDF, AND HOW THAT IS KNOWN — PENDING D3. ***
+   * The reading got no text out of the file AND checked no quote against it. Both halves
+   * matter: a reading that simply quoted nothing also has `quotes_checked = 0`, and saying "this
+   * is a scan" about it would be a claim about the file nobody made. Read on staging: 10 of 47
+   * current readings have no extracted text, and all 10 have `quotes_checked = 0`.
+   */
+  const isScan = Boolean(scan) && !((scan?.extracted_text ?? '').trim()) && (scan?.quotes_checked ?? 0) === 0
   const isProgram = kind === 'program' || kind === 'policy'
   const isPermit = kind === 'permit' || kind === 'certificate'
   const openGaps = r.gaps.filter((g) => g.status !== 'dismissed')
@@ -443,14 +505,25 @@ export default function DocumentReport({
    * `<Inferred>` is gone from the title: the section heading says what every item in it is, and
    * the badge on every line of a list called Notes is noise. The badge is still used on facts.
    */
+  /**
+   * *** BREATHING ROOM IS A RULE — decision 73, 5 November 2026 (the owner: this is the demo
+   * report). *** Inside every card an item is
+   *
+   *     title · 8px · the reason · 12px · Fix (the word in weight) · 10px · the rule, small grey
+   *
+   * with **14px above and 16px below** each item and a hairline between blocks. Those are the
+   * board's own numbers, measured off it at 1280, and they are written as `pt-3.5 pb-4`,
+   * `mt-2`, `mt-3` and `mt-2.5` below rather than left to a `space-y`: the gap a reader sees is
+   * the sum of two paddings and a rule, and nothing else should be guessing at it.
+   */
   const gapItem = (g: Gap, i: number) => (
-  <li key={g.id}>
+  <li key={g.id} className="border-t border-gray-100 pb-4 pt-3.5 first:border-t-0 first:pt-1">
     <p className="text-[14px] font-medium text-gray-900">
       {i + 1}. {g.title}
     </p>
-    {g.description && <p className="mt-0.5 text-[13px] leading-relaxed text-gray-700">{g.description}</p>}
-    {g.fix && <p className="mt-1 text-[13px] leading-relaxed text-gray-700"><span className="text-gray-400">Fix. </span>{g.fix}</p>}
-    <p className="mt-1 text-[12px] text-gray-500">
+    {g.description && <p className="mt-2 text-[13px] leading-relaxed text-gray-700">{g.description}</p>}
+    {g.fix && <p className="mt-3 text-[13px] leading-relaxed text-gray-700"><span className="font-semibold text-gray-900">Fix. </span>{g.fix}</p>}
+    <p className="mt-2.5 text-[12px] text-gray-500">
       {g.citation && (g.citation_url
         ? <a href={g.citation_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">{g.citation}</a>
         : <span>{g.citation}</span>)}
@@ -482,31 +555,65 @@ export default function DocumentReport({
       <ReasonBox label="Why is this not right?" onCancel={() => setReasonFor(null)}
         onSave={async (reason) => { await act({ action: 'dismiss_gap', gap_id: g.id, reason }); setReasonFor(null) }} />
     ) : (
-      <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px]">
-        {/* E in the design puts the actions under the gap they belong to. */}
-        <button disabled={!!working || Boolean(paused)} onClick={() => runChecklist({ gap_id: g.id })}
-          className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
-          {working === g.id ? 'Working…' : 'Make a checklist'}
-        </button>
-        {/* ONLY WHEN THE SCAN SAID THE TEXT COULD BE WRITTEN. A gap needing their
-            floor plan is not one we can draft, and offering it would be a promise
-            the route then refuses. */}
+      /* *** THE THREE BUTTONS ARE NOT HERE ANY MORE — decision 72. *** They were under every
+         gap: the owner's own printed report carried TWELVE of them. They sit once, at the foot
+         of the card, and act on the item a person picks there. Only "Draft this section" stays
+         per item, because it is offered on some gaps and not others and the card's foot cannot
+         say which. */
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px]">
+        {/* ONLY WHEN THE SCAN SAID THE TEXT COULD BE WRITTEN. A gap needing their floor plan is
+            not one we can draft, and offering it would be a promise the route then refuses.
+            It stays PER ITEM because it is offered on some and not others, and the card's foot
+            cannot say which. */}
         {g.draftable && (
           <button disabled={!!working || Boolean(paused)} onClick={() => runDraft(g.id)}
             className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
             {working === `draft-${g.id}` ? 'Writing…' : (g.draft_text ? 'Draft it again' : 'Draft this section')}
           </button>
         )}
-        <button onClick={() => {
-          const q = [g.title, g.fix].filter(Boolean).join('. ')
-          window.location.href = `/compliance?ask=${encodeURIComponent(q)}&document=${documentId}`
-        }} className="text-gray-600 underline hover:text-gray-900">Research this</button>
-        <button onClick={() => setReasonFor(g.id)}
-          className="text-gray-500 underline hover:text-gray-800">Not right</button>
       </div>
     )}
   </li>
   )
+
+  /**
+   * *** THE THREE BUTTONS, ONCE, AT THE FOOT OF THE CARD — decision 72. ***
+   *
+   * `Make a checklist` and `Research this` act on the card's items together, which is what a
+   * person pressing a button at the foot of a list means. `Not right` cannot: it is one
+   * person's verdict on one finding. So it asks which — the items by number, in one line — and
+   * then opens that item's own reason box where the item is. One row of controls, and nothing
+   * the per-item row could do is lost.
+   */
+  const cardFoot = (items: Gap[], what: 'gaps' | 'notes') => {
+    if (!items.length) return null
+    const q = items.map((g) => [g.title, g.fix].filter(Boolean).join('. ')).join(' ')
+    return (
+      <div className="no-print mt-3 border-t border-gray-100 pt-3">
+        <div className="flex flex-wrap items-center gap-4 text-[12px]">
+          <button disabled={!!working || Boolean(paused)}
+            onClick={() => runChecklist(items.length === 1 ? { gap_id: items[0].id } : { all: true })}
+            className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+            {working === 'all' || (items.length === 1 && working === items[0].id) ? 'Working…' : 'Make a checklist'}
+          </button>
+          <button onClick={() => {
+            window.location.href = `/compliance?ask=${encodeURIComponent(q)}&document=${documentId}`
+          }} className="text-gray-600 underline hover:text-gray-900">Research this</button>
+          <button onClick={() => setPicking(picking === what ? null : what)}
+            className="text-gray-500 underline hover:text-gray-800">Not right</button>
+        </div>
+        {picking === what && (
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px] text-gray-500">
+            <span>Which one is not right?</span>
+            {items.map((g, i) => (
+              <button key={g.id} onClick={() => { setReasonFor(g.id); setPicking(null) }}
+                className="underline hover:text-gray-900">{i + 1}</button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const footer = (
     <>
@@ -529,6 +636,14 @@ export default function DocumentReport({
           exactly as they left it. `/api/document-rescan` puts the document back in the queue and
           hands it to the sweep, and returns in a few hundred milliseconds. The reading now happens
           on the server whatever the browser does. `DECISIONS.md` §138. */}
+      {/* *** NOT OFFERED WHILE IT IS QUEUED OR BEING READ — W1, closed here. ***
+          The owner watched a folder of nine files for eleven minutes with nothing on the screen
+          moving, and pressed "Read it again" on a file that was simply waiting its turn — the
+          sweep reads one document at a time and was working the whole while. The list says
+          Queued or Reading… on the row now and this button is not drawn at all: a control that
+          starts the thing that is already happening is a control that cannot help. The progress
+          line on the day group (decision 70) is the other half of the same fix. */}
+      {row.document_status !== 'uploaded' && row.document_status !== 'reading' && (
       <button disabled={busy || rereading || Boolean(paused)} onClick={async () => {
         setBusy(true)
         try {
@@ -551,11 +666,28 @@ export default function DocumentReport({
       }} className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
         {busy ? 'Queueing…' : rereading ? 'Reading…' : 'Read it again'}
       </button>
+      )}
+      {/* *** "Print", NOT "Download" — decision 73's footer: Open the file · Read it again ·
+          Print · Not right. *** The control opens the browser's print dialogue, which is where
+          a PDF comes from; calling it Download described the one thing a person might do with
+          the dialogue rather than the thing the button does. */}
       <button onClick={printDrawer}
-        className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Download</button>
+        className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Print</button>
       {/* DESTRUCTIVE, AND IT LOOKS IT — 12px and faint (`DESIGN.md` §1, §4). It is the only
           irreversible action in the product's reading surface, so it is the quietest thing in
           the footer and it asks first. */}
+      {/* *** "Not right" IN THE FOOTER OPENS WHAT THIS DOCUMENT IS — decision 73's footer, and
+          it writes nothing new. *** The per-item "Not right" says one finding is wrong. This one
+          is the whole document being the wrong KIND of thing — filed under the wrong agency,
+          dated wrong, taken for a permit when it is a certificate — which is exactly what the
+          correction editor already does (`document_corrections`, the next reading is shown
+          them). So it opens that card and that editor rather than inventing a second way to
+          disagree. E4 is display and words: no new write, no new route. */}
+      <button onClick={() => {
+        setCards((c) => ({ ...c, what: true }))
+        setEditing(true)
+        setTimeout(() => document.getElementById('cb-doc-what')?.scrollIntoView({ block: 'center' }), 0)
+      }} className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Not right</button>
       <button onClick={() => setConfirmDelete(true)}
         className="text-[12px] text-gray-400 hover:text-gray-700 hover:underline">Delete this file</button>
     </>
@@ -615,7 +747,7 @@ export default function DocumentReport({
   /* ── a document we could not read: the reason, the way forward, nothing else ── */
   if (row.display_status === 'could_not_read') {
     return (
-      <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}
+      <Drawer title={documentName(row.title)} sub={sub} company={companyName} onClose={onClose} footer={footer}
         printType="Document report" printDates={printDates}
         topLine={topLine}>
         {deletePanel}
@@ -655,7 +787,7 @@ export default function DocumentReport({
   ]
 
   return (
-    <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}
+    <Drawer title={documentName(row.title)} sub={sub} company={companyName} onClose={onClose} footer={footer}
         printType="Document report" printDates={printDates}
         topLine={topLine}>
       {deletePanel}
@@ -670,31 +802,39 @@ export default function DocumentReport({
           is the person's choice rather than the reading's finding. */}
       <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
 
-      {/* 1 ── status and the date that matters, on one line */}
-      <Section title="Status" tone="state">
-        <p className="text-[14px]">
-          <span className={AMBER.has(row.display_status) ? 'text-[var(--amber)]' : 'text-gray-700'}>
-            {STATUS_WORD[row.display_status] ?? row.display_status}
+      {/* *** 1 ── THE TITLE LINE — decision 72. The old Status card is gone: its word, the two
+             counts, the kind, the agency and the dates are one line under the title. *** */}
+      <p className="mb-1 text-[13px] leading-relaxed">
+        <span className={AMBER.has(row.display_status) ? 'text-[var(--amber)]' : 'text-gray-700'}>
+          {STATUS_WORD[row.display_status] ?? row.display_status}
+        </span>
+        {readGaps.length > 0 && (
+          <span className="text-gray-500"> · {readGaps.length} gap{readGaps.length === 1 ? '' : 's'} read from the page</span>
+        )}
+        {noteGaps.length > 0 && (
+          <span className="text-gray-500"> · {noteGaps.length} note{noteGaps.length === 1 ? '' : 's'}</span>
+        )}
+        {kind && <span className="text-gray-500"> · {KIND_LABEL[kind] ?? kind}</span>}
+        {row.agencies?.length ? <span className="text-gray-500"> · {row.agencies.join(' · ')}</span> : null}
+        {row.significant_date && (
+          <span className="text-gray-500">
+            {' '}· {((row.significant_date_kind && DATE_LABEL[row.significant_date_kind]) ?? 'Date').toLowerCase()} {fmt(row.significant_date)}
           </span>
-          {readGaps.length > 0 && (
-            <span className="text-gray-500"> · {readGaps.length} gap{readGaps.length === 1 ? '' : 's'} read from the page</span>
-          )}
-          {noteGaps.length > 0 && (
-            <span className="text-gray-500"> · {noteGaps.length} note{noteGaps.length === 1 ? '' : 's'}</span>
-          )}
-          {row.significant_date && (
-            <span className="text-gray-500">
-              {' '}· {(row.significant_date_kind && DATE_LABEL[row.significant_date_kind]) ?? 'Date'} {fmt(row.significant_date)}
-            </span>
-          )}
-        </p>
-      </Section>
+        )}
+        {row.scanned_at && <span className="text-gray-500"> · read {fmt(row.scanned_at)}</span>}
+      </p>
 
-      {/* 2 ── the summary, in the serif, because it is read rather than scanned */}
+      {/* *** THE ONE NOTE A SCANNED PDF CARRIES — PENDING D3, closed here. *** No text came out
+          of the file, so nothing in this reading was checked against it. Said on the one kind of
+          document it is true of, and nowhere else (decision 74). */}
+      {isScan && <p className="mb-3 text-[13px] text-gray-500">{SCANNED_PAGES}</p>}
+
+      {/* 2 ── WHAT IT SAYS — open, grey, and in the serif because it is read rather than scanned. */}
       {row.summary && (
-        <Section title="What this says">
-          <p className="font-serif text-[17px] leading-relaxed text-gray-800">{row.summary}</p>
-        </Section>
+        <Card tint={CARD_SITUATION} title={DOC_CARD_SAYS} open={cards.says}
+          onToggle={() => flip('says')} controls="cb-doc-says">
+          <p className="py-1 font-serif text-[17px] leading-relaxed text-gray-800">{row.summary}</p>
+        </Card>
       )}
 
       {/* 3 ── the nudge. Amber wash, and always with the way forward. */}
@@ -720,8 +860,178 @@ export default function DocumentReport({
         </div>
       )}
 
-      {/* 4 ── what this document is, and the one link that lets a person disagree */}
-      <Section title="What this document is">
+      {/* 3 ── GAPS READ FROM THE PAGE — open, amber. Decision 48 split this from Notes; decision
+             72 makes it a card and puts its three buttons once at the foot. */}
+      {hasFindings && (
+        <Card tint={`${TINT_AMBER} border-l-current`} title={DOC_CARD_GAPS}
+          summary={String(readGaps.length)}
+          open={cards.gaps} onToggle={() => flip('gaps')} controls="cb-doc-gaps">
+          {readGaps.length > 0 ? (
+            <ol>
+              {readGaps.map((g, i) => gapItem(g, i))}
+            </ol>
+          ) : (
+            /* AN EMPTY STATE IS A MESSAGE, AND THIS ONE IS A CLAIM — §5.1. This section only
+               renders because the reading DID find things; printing nothing here would read as a
+               list that failed to load. What is true is that none of them is quoted. */
+            <p className="text-[13px] text-gray-600">
+              Nothing in this reading is quoted from the document itself.
+              {noteGaps.length > 0 ? ' What it found is under Notes, in its own words.' : ''}
+            </p>
+          )}
+          {/* A GAP FROM AN EARLIER READING THAT STILL CARRIES WORK. The new scan did not raise
+              it — the model changed its mind, or renamed it past matching — and the checklist
+              somebody has been working through does not vanish because of that. */}
+          {(r.earlierGaps ?? []).length > 0 && (
+            <div className="mt-5">
+              <h4 className="text-[12px] font-medium uppercase tracking-wide text-gray-400">From earlier readings</h4>
+              <ul className="mt-2 space-y-2">
+                {r.earlierGaps.map((g) => (
+                  <li key={g.id}>
+                    <p className="text-[13px] text-gray-600">{g.title}</p>
+                    {r.checklists.filter((c) => c.document_gap_id === g.id).map((c) => (
+                      <p key={c.id} className="text-[12px] text-gray-500">
+                        <a href={`/compliance?checklist=${c.id}`} className="underline hover:text-gray-800">{c.title}</a>
+                        {' '}· checklist made {fmt(c.created_at)} · {c.done} of {c.total} done
+                      </p>
+                    ))}
+                    {/* *** STILL OPEN, AND SAID SO — Run 7. ***
+                        Two different things share this list and they must not read the same.
+                        A superseded gap was answered by the next reading and is here only
+                        because somebody's checklist is attached to it. One still `open` with
+                        `not_seen_at` is a finding the latest reading passed over in silence,
+                        and it is STILL OPEN: nothing closes a gap without a person. */}
+                    {g.status === 'open' && g.not_seen_at ? (
+                      <p className="text-[12px] text-[var(--amber)]">
+                        Not seen in the latest reading. Still open — we do not close a finding
+                        because a reading stopped mentioning it.
+                      </p>
+                    ) : (
+                      <p className="text-[12px] text-gray-400">The latest reading did not raise this.</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {dismissed.length > 0 && (
+            // CLOSED, NEVER DELETED, WITH THE REASON. The next scan is shown these so it does
+            // not raise them again, and a person can see what was decided and why.
+            <div className="mt-5">
+              <h4 className="text-[12px] font-medium uppercase tracking-wide text-gray-400">Dismissed</h4>
+              <ul className="mt-2 space-y-2">
+                {dismissed.map((g) => (
+                  <li key={g.id}>
+                    <p className="text-[13px] text-gray-500 line-through">{g.title}</p>
+                    {g.dismissed_reason && <p className="text-[12px] text-gray-500">You said: {g.dismissed_reason}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {cardFoot(readGaps, 'gaps')}
+        </Card>
+      )}
+
+      {/* 4 ── NOTES — folded, blue, and its header says what is in it. Decision 48 made these a
+             list of their own; decision 74 takes the explanation off the top of it: the heading
+             and the count are the distinction, and "nobody has checked them" is not a sentence
+             to read on your own document. */}
+      {noteGaps.length > 0 && (
+        <Card tint={CARD_CONFIRM} title={DOC_CARD_NOTES} summary={notesNoticed(noteGaps.length)}
+          open={cards.notes} onToggle={() => flip('notes')} controls="cb-doc-notes">
+          <ol>
+            {noteGaps.map((g, i) => gapItem(g, i))}
+          </ol>
+          {cardFoot(noteGaps, 'notes')}
+        </Card>
+      )}
+
+      {/* 5 ── DATES THIS DOCUMENT SETS — folded, green; the header counts them and says whether
+             they are on the calendar. */}
+      {r.deadlines.length > 0 && (
+        <Card tint={CARD_APPLIES} title={DOC_CARD_DATES}
+          summary={datesSummary(
+            r.deadlines.length,
+            r.deadlines.filter((d) => !d.recurs && isPast(d.due_on)).length,
+            r.deadlines.filter((d) => d.calendar_events && d.calendar_events.status !== 'withdrawn').length,
+          )}
+          open={cards.dates} onToggle={() => flip('dates')} controls="cb-doc-dates">
+          <ul className="space-y-3 py-1">
+            {r.deadlines.map((d) => {
+              const past = !d.recurs && isPast(d.due_on)
+              return (
+                <li key={d.id}>
+                  <p className="text-[13px] text-gray-900">
+                    {d.title}
+                    {d.due_on && <span className="text-gray-500"> · {fmt(d.due_on)}</span>}
+                    {d.recurs && <span className="text-gray-400"> · repeats</span>}
+                    {past && <span className="text-[var(--amber)]"> · Passed</span>}
+                  </p>
+                  {d.source_line && <p className="mt-0.5 text-[12px] text-gray-500">{d.source_line}</p>}
+                  {/**
+                    * *** DOCUMENTS STOPS ASKING — Calendar step 6, decision 7. ***
+                    *
+                    * There was an "Add to calendar" button here, and it was the wrong shape twice
+                    * over: it asked a person to do what the product already knew — it had read the
+                    * permit's renewal date and was keeping it to itself until somebody found this
+                    * drawer — and it meant a calendar whose completeness depended on who clicked.
+                    * The scan files every date as it finds them now (`lib/documentScan.ts`), so
+                    * this is a STATEMENT, not a request.
+                    *
+                    * An HREF AND NOT A BUTTON, deliberately. `/calendar?date=<id>` opens nothing
+                    * until step 8 builds the parameter, and a link to a page that does not read it
+                    * yet starts working the moment it does — a button would need its handler
+                    * written twice. `docs/HANDOFF-CODE.md` §7 records it as expected on staging.
+                    */}
+                  {/* *** AND A FOURTH WORDING, WITH NO LINK — Calendar step 6b, decision 29. ***
+                    * This drawer lists EVERY reading's deadline rows, not just the newest
+                    * (`app/api/documents/report/route.ts` filters on `document_id` alone), so an
+                    * older reading's date whose row the newest reading withdrew lands here. The
+                    * three wordings below would have called it "On your calendar — waiting for
+                    * your confirmation", which is the product asserting a date no reading of this
+                    * file currently says.
+                    *
+                    * NO LINK, and that is not an omission: `calendar_v` does not return a
+                    * withdrawn row (migration 075), so `/calendar?date=<id>` would open a page
+                    * that cannot find it. A sentence with nowhere to go is better than a link to
+                    * nothing. Decision 30: when the product does not know something it says so.
+                    */}
+                  {d.calendar_events
+                    ? d.calendar_events.status === 'withdrawn'
+                    ? <p className="mt-0.5 text-[12px] text-gray-400">Not in the latest reading of this file</p>
+                    : <p className="mt-0.5 text-[12px] text-gray-400">
+                        <a href={`/calendar?date=${d.calendar_events.id}`} className="underline hover:text-gray-600">
+                          {d.calendar_events.status === 'confirmed' ? 'On your calendar'
+                            : d.calendar_events.status === 'dismissed' ? 'Removed from your calendar'
+                            : 'On your calendar — waiting for your confirmation'}
+                        </a>
+                      </p>
+                    /* An undated one-off is not on the calendar and cannot be: 073's
+                       `calendar_events_date_or_recurs` refuses a date with no day that does not
+                       recur, and an invented day would be a deadline nobody set (migration 060's
+                       rule). It keeps the words it has always had, which are just the title and
+                       the source line above. */
+                    : null}
+                </li>
+              )
+            })}
+          </ul>
+        </Card>
+      )}
+
+      {/* 6 ── WHAT THIS DOCUMENT IS — folded; its header says the six fields' headline and
+             offers the way to disagree (decision 72). It is drawn here, after the dates, by the
+             order of the cards in the markup. */}
+      <Card tint={CARD_QUIET} title={DOC_CARD_WHAT}
+        summary={whatItIsSummary([
+          kind ? (KIND_LABEL[kind] ?? kind) : null,
+          row.agencies?.join(' · ') || null,
+          row.site_name ?? 'Company-wide',
+          ...(scan?.jurisdiction ?? []),
+        ])}
+        open={cards.what} onToggle={() => flip('what')} controls="cb-doc-what">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2">
           {identity.map(([label, value, page]) => (
             <div key={label}>
@@ -736,7 +1046,7 @@ export default function DocumentReport({
         {r.corrections.length > 0 && (
           <p className="mt-2 text-[12px] text-gray-500">
             {r.corrections.length} of these {r.corrections.length === 1 ? 'was' : 'were'} corrected by
-            somebody here; the scan said otherwise.
+            somebody here; the reading said otherwise.
           </p>
         )}
         {!editing ? (
@@ -810,165 +1120,16 @@ export default function DocumentReport({
             </div>
           </div>
         )}
-      </Section>
+      </Card>
 
-      {/* 5 ── WHAT THE READING FOUND, IN TWO LISTS — decision 48, 4 November 2026 (board 2).
-             There is no kind gate any more: `hasFindings` above says why that gate was a defect. */}
-      {hasFindings && (
-        <Section title="Gaps read from the page">
-          {readGaps.length > 0 ? (
-            <ol className="space-y-4">
-              {readGaps.map((g, i) => gapItem(g, i))}
-            </ol>
-          ) : (
-            /* AN EMPTY STATE IS A MESSAGE, AND THIS ONE IS A CLAIM — §5.1. This section only
-               renders because the reading DID find things; printing nothing here would read as a
-               list that failed to load. What is true is that none of them is quoted. */
-            <p className="text-[13px] text-gray-600">
-              Nothing in this reading is quoted from the document itself.
-              {noteGaps.length > 0 ? ' What it found is under Notes, in its own words.' : ''}
-            </p>
-          )}
-          {/* A GAP FROM AN EARLIER READING THAT STILL CARRIES WORK. The new scan did not raise
-              it — the model changed its mind, or renamed it past matching — and the checklist
-              somebody has been working through does not vanish because of that. */}
-          {(r.earlierGaps ?? []).length > 0 && (
-            <div className="mt-5">
-              <h4 className="text-[12px] font-medium uppercase tracking-wide text-gray-400">From earlier readings</h4>
-              <ul className="mt-2 space-y-2">
-                {r.earlierGaps.map((g) => (
-                  <li key={g.id}>
-                    <p className="text-[13px] text-gray-600">{g.title}</p>
-                    {r.checklists.filter((c) => c.document_gap_id === g.id).map((c) => (
-                      <p key={c.id} className="text-[12px] text-gray-500">
-                        <a href={`/compliance?checklist=${c.id}`} className="underline hover:text-gray-800">{c.title}</a>
-                        {' '}· checklist made {fmt(c.created_at)} · {c.done} of {c.total} done
-                      </p>
-                    ))}
-                    {/* *** STILL OPEN, AND SAID SO — Run 7. ***
-                        Two different things share this list and they must not read the same.
-                        A superseded gap was answered by the next reading and is here only
-                        because somebody's checklist is attached to it. One still `open` with
-                        `not_seen_at` is a finding the latest reading passed over in silence,
-                        and it is STILL OPEN: nothing closes a gap without a person. */}
-                    {g.status === 'open' && g.not_seen_at ? (
-                      <p className="text-[12px] text-[var(--amber)]">
-                        Not seen in the latest reading. Still open — we do not close a finding
-                        because a reading stopped mentioning it.
-                      </p>
-                    ) : (
-                      <p className="text-[12px] text-gray-400">The latest reading did not raise this.</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {dismissed.length > 0 && (
-            // CLOSED, NEVER DELETED, WITH THE REASON. The next scan is shown these so it does
-            // not raise them again, and a person can see what was decided and why.
-            <div className="mt-5">
-              <h4 className="text-[12px] font-medium uppercase tracking-wide text-gray-400">Dismissed</h4>
-              <ul className="mt-2 space-y-2">
-                {dismissed.map((g) => (
-                  <li key={g.id}>
-                    <p className="text-[13px] text-gray-500 line-through">{g.title}</p>
-                    {g.dismissed_reason && <p className="text-[12px] text-gray-500">You said: {g.dismissed_reason}</p>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Section>
-      )}
-
-      {/* 5b ── NOTES: WHAT THE READING WORKED OUT — decision 48, 4 November 2026 (board 2).
-             The reader's own hedged guesses, in its own words. They no longer turn a clean record
-             red (migration 093) and nothing is hidden: they are here, counted on the row, and
-             every action a gap has they have too — a note can still be worth a checklist. */}
-      {noteGaps.length > 0 && (
-        <Section title="Notes">
-          <p className="text-[13px] text-gray-600">
-            These are things the reading worked out rather than read off the page. They may be
-            right; nobody has checked them against the document.
-          </p>
-          <ol className="mt-3 space-y-4">
-            {noteGaps.map((g, i) => gapItem(g, i))}
-          </ol>
-        </Section>
-      )}
-
-      {/* 6 ── the dates this document sets */}
-      {r.deadlines.length > 0 && (
-        <Section title="Dates this document sets">
-          <ul className="space-y-3">
-            {r.deadlines.map((d) => {
-              const past = !d.recurs && isPast(d.due_on)
-              return (
-                <li key={d.id}>
-                  <p className="text-[13px] text-gray-900">
-                    {d.title}
-                    {d.due_on && <span className="text-gray-500"> · {fmt(d.due_on)}</span>}
-                    {d.recurs && <span className="text-gray-400"> · repeats</span>}
-                    {past && <span className="text-[var(--amber)]"> · Passed</span>}
-                  </p>
-                  {d.source_line && <p className="mt-0.5 text-[12px] text-gray-500">{d.source_line}</p>}
-                  {/**
-                    * *** DOCUMENTS STOPS ASKING — Calendar step 6, decision 7. ***
-                    *
-                    * There was an "Add to calendar" button here, and it was the wrong shape twice
-                    * over: it asked a person to do what the product already knew — it had read the
-                    * permit's renewal date and was keeping it to itself until somebody found this
-                    * drawer — and it meant a calendar whose completeness depended on who clicked.
-                    * The scan files every date as it finds them now (`lib/documentScan.ts`), so
-                    * this is a STATEMENT, not a request.
-                    *
-                    * An HREF AND NOT A BUTTON, deliberately. `/calendar?date=<id>` opens nothing
-                    * until step 8 builds the parameter, and a link to a page that does not read it
-                    * yet starts working the moment it does — a button would need its handler
-                    * written twice. `docs/HANDOFF-CODE.md` §7 records it as expected on staging.
-                    */}
-                  {/* *** AND A FOURTH WORDING, WITH NO LINK — Calendar step 6b, decision 29. ***
-                    * This drawer lists EVERY reading's deadline rows, not just the newest
-                    * (`app/api/documents/report/route.ts` filters on `document_id` alone), so an
-                    * older reading's date whose row the newest reading withdrew lands here. The
-                    * three wordings below would have called it "On your calendar — waiting for
-                    * your confirmation", which is the product asserting a date no reading of this
-                    * file currently says.
-                    *
-                    * NO LINK, and that is not an omission: `calendar_v` does not return a
-                    * withdrawn row (migration 075), so `/calendar?date=<id>` would open a page
-                    * that cannot find it. A sentence with nowhere to go is better than a link to
-                    * nothing. Decision 30: when the product does not know something it says so.
-                    */}
-                  {d.calendar_events
-                    ? d.calendar_events.status === 'withdrawn'
-                    ? <p className="mt-0.5 text-[12px] text-gray-400">Not in the latest reading of this file</p>
-                    : <p className="mt-0.5 text-[12px] text-gray-400">
-                        <a href={`/calendar?date=${d.calendar_events.id}`} className="underline hover:text-gray-600">
-                          {d.calendar_events.status === 'confirmed' ? 'On your calendar'
-                            : d.calendar_events.status === 'dismissed' ? 'Removed from your calendar'
-                            : 'On your calendar — waiting for your confirmation'}
-                        </a>
-                      </p>
-                    /* An undated one-off is not on the calendar and cannot be: 073's
-                       `calendar_events_date_or_recurs` refuses a date with no day that does not
-                       recur, and an invented day would be a deadline nobody set (migration 060's
-                       rule). It keeps the words it has always had, which are just the title and
-                       the source line above. */
-                    : null}
-                </li>
-              )
-            })}
-          </ul>
-        </Section>
-      )}
-
-      {/* 7 ── conditions, for permits and certificates */}
+      {/* ── CONDITIONS TO KEEP — a permit's own, folded. Decision 72 names seven parts and this
+             is not one of them; it is not dropped for that, because a permit's conditions are
+             the thing its evidence is judged against. Folded, after the seven, and said in the
+             step's report. */}
       {isPermit && r.conditions.length > 0 && (
-        <Section title="Conditions to keep">
-          <ul className="space-y-3">
+        <Card tint={CARD_QUIET} title={DOC_CARD_CONDITIONS} summary={String(r.conditions.length)}
+          open={cards.conditions} onToggle={() => flip('conditions')} controls="cb-doc-cond">
+          <ul className="space-y-3 py-1">
             {r.conditions.map((c) => (
               <li key={c.id}>
                 <p className="text-[13px] text-gray-900">
@@ -983,17 +1144,26 @@ export default function DocumentReport({
               </li>
             ))}
           </ul>
-        </Section>
+        </Card>
       )}
 
-      {/* 8 ── facts, proposed and never written silently (§108) */}
+      {/* 7 ── THINGS WE THINK ARE TRUE ABOUT YOU — folded, grey, and its header carries the
+             count and the way to settle them (decision 72). Proposed, never written silently
+             (§108). The heading was "Facts we found, please confirm". */}
       {r.facts.length > 0 && (
-        <Section title="Facts we found, please confirm">
-          <ul className="space-y-3">
+        <Card tint={CARD_QUIET} title={DOC_CARD_FACTS} summary={factsWaiting(r.facts.length)}
+          open={cards.facts} onToggle={() => flip('facts')} controls="cb-doc-facts">
+          <ul className="space-y-3 py-1">
             {r.facts.map((f) => (
               <li key={f.id}>
                 <p className="text-[13px] text-gray-900">
-                  {f.switch_key.replace(/_/g, ' ')}: {f.proposed_value}<Inferred basis={f.basis} />
+                  {/* *** THE "inferred" BADGE IS GONE — decision 74: not a word on a customer's
+                      screen. *** It said a worked-out fact was worked out, which the card's own
+                      heading ("Things we think are true about you") now says of every line in
+                      it, in words a person uses. The quote under the line is the other half:
+                      a fact with the file's own words under it is a different thing from one
+                      without, and that difference is visible without a label. */}
+                  {f.switch_key.replace(/_/g, ' ')}: {f.proposed_value}
                 </p>
                 {f.quote && (
                   <p className="mt-0.5 text-[12px] italic text-gray-500">
@@ -1057,13 +1227,15 @@ export default function DocumentReport({
               </li>
             ))}
           </ul>
-        </Section>
+        </Card>
       )}
 
-      {/* 9 ── versions */}
+      {/* ── VERSIONS — folded, and the same case as Conditions: not one of decision 72's seven,
+             and not dropped, because it is how somebody sees which copy they are reading. */}
       {r.versions.length > 1 && (
-        <Section title="Versions">
-          <ul className="space-y-2">
+        <Card tint={CARD_QUIET} title={DOC_CARD_VERSIONS} summary={String(r.versions.length)}
+          open={cards.versions} onToggle={() => flip('versions')} controls="cb-doc-vers">
+          <ul className="space-y-2 py-1">
             {r.versions.map((v) => (
               <li key={v.document_id} className="text-[13px] text-gray-800">
                 {v.title}
@@ -1083,16 +1255,19 @@ export default function DocumentReport({
                 className="text-[12px] text-gray-500 underline hover:text-gray-800">Not the same document?</button>
             </div>
           )}
-        </Section>
+        </Card>
       )}
 
-      {/* 10 ── the quiet last line */}
-      <p className="mt-8 border-t border-gray-100 pt-3 text-[12px] leading-relaxed text-gray-400">
-        Read on {fmt(row.scanned_at)}. Quotes are word for word from the document and anything we
-        worked out is marked inferred.{' '}
-        {scan?.searches != null ? `${scan.searches} source${scan.searches === 1 ? '' : 's'} looked up. ` : ''}
-        Read by {scan?.model ?? 'a model'}. Not legal advice.
-      </p>
+      {/* *** THE QUIET LAST LINE IS GONE — decision 74, amended by the owner, 5 November 2026. ***
+          It read: "Read on 3 November. Quotes are word for word from the document and anything we
+          worked out is marked inferred. Read by claude-opus-5-5. Not legal advice." Four things
+          were wrong with it on the customer's own page: "we" and "ours" put the product on the
+          other side of the table; "inferred" is a word for a developer; the quote claim was
+          UNQUALIFIED and simply untrue on a scanned PDF (`PENDING.md` D3); and the model's name
+          is not something a person reading their forklift roster has any use for. What the line
+          was protecting is kept where it belongs — the two card headings, and the scan note
+          under the title. The app's own standing line still sits at the foot of every page
+          (`components/AppLayout.tsx`), and the printed frame carries decision 64's sentence. */}
     </Drawer>
   )
 }

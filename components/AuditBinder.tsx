@@ -33,6 +33,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { printDrawer, printDate } from '@/components/Drawer'
 import { PREPARED_LINE } from '@/lib/printFrame'
 import { authHeaders, createClient } from '@/lib/supabase'
+import { documentName } from '@/lib/documentName'
 import {
   WORD_LABEL, WORD_ORDER, WORD_TINT, TINT_GREY, TINT_NO_ANSWER,
   citationOrder, citedDocumentIds, citeLabel, documentNumbers, orderedRows, plainTextOf,
@@ -320,6 +321,10 @@ export default function AuditBinder({ runId, companyName, onBack }: {
   const docsRead = [...new Set(sections.flatMap((s) => s.documents_read ?? []))]
   const auditedOn = fmt(run.finished_at ?? run.created_at)
   const title = run.kind === 'template'
+    /* *** NOT SHORTENED, AND A TEST CAUGHT IT. *** Decision 71 names "the binder's tab sheets"
+       as a caller of `documentName`, and the first pass applied it to the COVER too — where
+       decision 57 says the binder carries "the auditor's own title", whole. The tab sheets are
+       shortened; the cover is the auditor's words. */
     ? (rep.documents?.[run.template_document_id ?? '']?.title ?? 'Against your checklist')
     : `${run.section_count > 1 ? 'Audit of everything' : (run.agency_label ?? 'All agencies')}, ${auditedOn}`
   const counts = WORD_ORDER
@@ -429,7 +434,7 @@ export default function AuditBinder({ runId, companyName, onBack }: {
           <div className="binder-sheet mt-10 border-t border-gray-300 pt-6" style={{ breakBefore: 'page' }}>
             <p className="text-[12px] font-medium uppercase tracking-wide text-gray-500">Document {t.n}</p>
             <h2 className="mt-1 font-serif text-[18px] leading-snug text-gray-900">
-              {t.doc?.title ?? 'a document that is no longer on file'}
+              {t.doc?.title ? documentName(t.doc.title) : 'a document that is no longer on file'}
             </h2>
             <p className="mt-1 text-[12px] text-gray-600">
               {t.doc?.kind ? `${KIND_LABEL[t.doc.kind] ?? t.doc.kind} · ` : ''}
@@ -478,7 +483,7 @@ export default function AuditBinder({ runId, companyName, onBack }: {
           <ol className="mt-2 space-y-1">
             {alsoRead.map((id) => (
               <li key={id} className="text-[12.5px] text-gray-700">
-                {rep.documents?.[id]?.title ?? 'a document that is no longer on file'}
+                {rep.documents?.[id] ? documentName(rep.documents[id].title) : 'a document that is no longer on file'}
               </li>
             ))}
           </ol>

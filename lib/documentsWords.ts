@@ -99,3 +99,64 @@ export const documentsThinkingLine = (x: Exchange): string =>
  * gesture and a `.click()` on mount is refused by the browser (`app/documents/page.tsx`).
  */
 export const ADD_FOLDER_HINT = 'Add the folder for your audit — press "Add a folder".'
+
+// ---------------------------------------------------------------------------
+// THE DOCUMENT DRAWER — decisions 72 and 74, 5 November 2026 (the owner).
+// ---------------------------------------------------------------------------
+
+/**
+ * *** THE DRAWER SPEAKS AS THE CUSTOMER'S OWN EMPLOYEE — decision 74, amended by the owner,
+ * 5 November 2026. ***
+ *
+ * One voice, and never a word that puts the product on the other side of the table: no "ours",
+ * no "our reading", no "CompliBoard says". The reading is this company's own work, written up.
+ *
+ * **The distinction that matters is kept, and it is two headings rather than a disclaimer:**
+ * *Gaps read from the page* is what the document itself says, and *Notes · n things we noticed*
+ * is what was worked out around it. That is the whole of it. The footer carries no honesty line
+ * at all — the sentence that used to sit there (*"Quotes are word for word from the document and
+ * anything we worked out is marked inferred"*) was the product explaining itself, and on a
+ * scanned PDF it was also untrue (`PENDING.md` D3).
+ *
+ * **And "inferred" is not a word on a customer's screen** (decision 74): it is the kind of word
+ * that tells somebody they are reading a machine. The count says "n things we noticed".
+ */
+export const DOC_CARD_SAYS = 'What it says'
+export const DOC_CARD_GAPS = 'Gaps read from the page'
+export const DOC_CARD_NOTES = 'Notes'
+export const DOC_CARD_DATES = 'Dates this document sets'
+export const DOC_CARD_WHAT = 'What this document is'
+export const DOC_CARD_FACTS = 'Things we think are true about you'
+export const DOC_CARD_CONDITIONS = 'Conditions to keep'
+export const DOC_CARD_VERSIONS = 'Versions'
+
+/** "2 things we noticed" — on the Notes header, so a folded card still says what is in it. */
+export const notesNoticed = (n: number) => `${n} thing${n === 1 ? '' : 's'} we noticed`
+
+/** "4 — please confirm on Company information →" */
+export const CONFIRM_ON_COMPANY = 'please confirm on Company information →'
+export const factsWaiting = (n: number) => `${n} — ${CONFIRM_ON_COMPANY}`
+
+/** "4, two overdue · on your calendar" — the dates card's one line. */
+export function datesSummary(total: number, overdue: number, onCalendar: number): string {
+  const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+  const over = overdue > 0 ? `, ${words[overdue - 1] ?? overdue} overdue` : ''
+  return `${total}${over}${onCalendar > 0 ? ' · on your calendar' : ''}`
+}
+
+/** "Record · OSHA · Company-wide · Oregon · federal — not right? change it" */
+export const CHANGE_WHAT_THIS_IS = 'not right? change it'
+export const whatItIsSummary = (parts: Array<string | null>) =>
+  `${parts.filter(Boolean).join(' · ')} — ${CHANGE_WHAT_THIS_IS}`
+
+/**
+ * *** THE ONE NOTE A SCANNED PDF CARRIES — PENDING D3, closed at E4, 5 November 2026. ***
+ *
+ * A photographed or scanned PDF yields no text, so `verifyQuote` returns null and nothing in the
+ * reading was ever checked against the file — while the drawer's old last line said *"Quotes are
+ * word for word from the document"*, unqualified, on exactly those documents. The claim is gone
+ * (decision 74) and this is said where it belongs: under the title, on the one kind of document
+ * it is true of. Read on staging: **10 of 47 current readings have no extracted text, and all 10
+ * have `quotes_checked = 0`** — which is what the two together mean.
+ */
+export const SCANNED_PAGES = 'These pages are a scan, so the quotes could not be checked against the file.'

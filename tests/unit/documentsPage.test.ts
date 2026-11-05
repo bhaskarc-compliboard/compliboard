@@ -205,7 +205,9 @@ describe('THE CONVERSATIONS TAB', () => {
 describe('THE DOCUMENTS TAB — today\'s page, with nothing moved', () => {
   test('everything that was on the page is inside the tab body', () => {
     const body = CODE.slice(CODE.indexOf("{tab === 'documents' && (<>"), CODE.indexOf('</>)}'))
-    for (const piece of ['banner?.summary', 'setFolderMenuOpen', 'Group by', '<PausedNote banner={paused} />',
+    // `banner?.summary` went at E4 with decision 70: the receipt box is gone and the day group's
+    // header says it in place. Everything else that was in the tab is still in the tab.
+    for (const piece of ['setFolderMenuOpen', 'Group by', '<PausedNote banner={paused} />',
       '{error &&', 'Nothing here yet. Add a file']) {
       assert.ok(body.includes(piece), `${piece} is not inside the Documents tab`)
     }

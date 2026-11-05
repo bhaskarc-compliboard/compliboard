@@ -647,7 +647,32 @@ import { readdirSync, readFileSync } from 'node:fs'
 //   took them off and a copy would put one back), and "Add a folder first" CANNOT open the
 //   picker - the page says in its own comment that a file dialog needs a user gesture, and the
 //   test holds that sentence there so nobody replaces it with a .click() that silently fails.
-const FLOOR = 2643
+//
+// 2643 -> 2663, 5 November 2026 (GAPS-PLAN Part E step E4 - the Documents list and the document
+//   drawer). TWENTY, in a new file, and the ones that earn their place are RUN on real strings
+//   and real arithmetic:
+//
+//   THE SHORT NAME, on the shapes that decide it, each a title read off document_index_v. Two
+//   of them are the rule's own history: the five-word floor (without it every safety data sheet
+//   becomes "Material"), and the bracket rule (cutting at every " (" made two DIFFERENT permits
+//   one name - "(ACDP) No. 03-0217-ST-01" and "(ACDP) No. ACDP 26-0192-ST" - and the number is
+//   what tells them apart). A third holds that a cut never lands inside a bracket, which left an
+//   unclosed "(" on the screen the first time.
+//
+//   THE PROGRESS LINE's arithmetic, to the word the board draws: "Reading in the background ·
+//   5 of 8 done · about 3 minutes left", nothing claimed before the first document lands, and
+//   the line gone when the batch is done. W1 is eleven minutes of silence; this is what fills
+//   it, and an estimate that cannot be checked is worse than none.
+//
+//   And the sweep records NO per-document timing - checked on staging, not assumed - so the
+//   estimate is the batch's own elapsed average. One test pins that sentence in the file.
+//
+//   The read tests hold the card ORDER and the default folds (decision 72), the spacing numbers
+//   (73), that the three buttons sit at the card's foot and not on every item (the owner's own
+//   printed report carried twelve), that "Read it again" is not offered while a document is
+//   queued or reading (W1), and decision 74's one voice: no "ours", no "inferred", no honesty
+//   line in the footer, and the scan note on the one kind of document it is true of (D3).
+const FLOOR = 2663
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

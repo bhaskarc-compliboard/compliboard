@@ -1,6 +1,6 @@
 # Closing the gaps — the plan
 
-**Version:** 31 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 32 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
@@ -20,6 +20,8 @@
 **Updated:** 4 November 2026 — **PART E STEP E0 DONE: the audit's words (decisions 47–49, 55–60 and W5).** **The audit has five words.** `on_file_gaps` — *"On file, gaps found"* — means a document answers the line AND what the document itself shows does not meet it in full; the four old words keep their meanings exactly. **The defect was never a wrong answer:** `prompts/audit-agency.ts` told the model *"ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART"*, so four greens over four lists of gaps were the only honest thing it could say. **Measured, the owner's own checklist run on two trees on Haiku: 5 of 10 lines moved from `on_file` to `on_file_gaps` — A3, B2, B3 and B4 are exactly the four W4 named — and the run's sentence went from "4 things that need you" to "9 things that need you".** `documents_read` **12 → 11** (decision 49: a template run no longer reads its own template, excluded from BOTH lists); **handles at the person 1 → 0** (W5: `nameDocumentHandles` at save time, on `title`, `locator` and `what_to_do` and **never on `quote`**, tested on the six real leaking lines). **Decision 48 lives in the VIEW** — migration **093**, because *"the status the document would otherwise have"* is the six CASE arms underneath and only SQL can compute them — with `inferred_gap_count` appended last, since `calendar_v` depends on that view; migration **094** restates `audit_findings_word_check` whole. Both applied to staging and read back from the catalog. **It moves exactly one row on all of staging** (17 of 18 `gaps_found` scans have a gap read from the page) and nothing at all on the Clackamas company. `npm run check` exit 0, **2,460 tests**, floor 2414 → 2460; **46 new**. **Three things found and NOT fixed, because each needs one prompt sentence and that is the owner's (§3.1):** a permit expiring in 2028 now reads *"out of date"* (stable over two runs), the same pull puts the fifth word on a practice question, and one golden key is now out of date rather than wrong. §8 has all nine findings with their evidence. **E0 spent $0.9710 over 30 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0a DONE: the three sentences E0 found and did not make.** All three in, and the measurement says **two of three worked.** ⚡ **E0's own diagnosis was wrong, and that is the finding worth keeping:** `auditTemplatePrompt` returns `[ROLE, HONESTY, SHAPE_T]` and **never includes `SHAPE`**, so E0 named a sentence the model had never been shown as the cause of its own defect. Every rule about the five words has to be written **twice**; both shapes now carry both sentences, the file says so at `prompts/audit-agency.ts:303`–`:317`, and the test counts the copies. **The "out of date" regression is closed** — A1 is no longer `stale` in either run — but it lands on **`on_file`** with `what_to_do: null`, not `on_file_gaps`: whether *"with the renewal application due date noted"* is being under-read is a question about the line, not the word. **`cascade-template-12` 12/17 → 14/17 must**: the widened A5 key passes and C2 and C3 moved, **C1 — the line sentence (2) names — did not**. ⚡ **And the run found something neither of us was looking for: 3 of 6 sections were lost to broken JSON**, every one the same shape on the same line — two quotes joined with `and` inside one `"quote"` field, on B2, which is the fifth word's own two-shortfall case. The product says so honestly and throws a paid section away. Not fixed: a repair in `extractJsonText` or a prompt line about one quote per line are both §3.1. **E0a spent $0.2846 over 12 Haiku calls.**
 **Updated:** 4 November 2026 — **PART E STEP E0c DONE: one quote per finding** (the owner's brief called it E0b; `E0b` was already the boards row, so it is **E0c** in §5a). One sentence, in **both** shapes, counted by the test — *"One quote per finding. If two things in the document fall short, quote the one the word rests on and put the other in what_to_do, in your own words — never two quotes joined inside the quote field."* **It answers E0a's finding 4: 0 of 3 sections lost, from 3 of 6**, with `status = 'done'` and **`json_parsed = true`** read back from `audit_sections` on all three, and the regular expression that found every earlier failure matching nothing. **B2 — the line every failure happened on — now carries ONE quote**, the one the word rests on, and names the second operator in `what_to_do` in its own words; nothing was lost by quoting once. One run is not a proof and the finish line still counts it on Opus. **E0c spent $0.0824 over 4 Haiku calls.**
+**Updated:** 5 November 2026 — **E4: the Documents list and the document drawer (decisions 70–74, boards committed) — AND PART E IS COMPLETE.** The list groups by **the day a file arrived**, newest first; the *"We've read your n documents"* banner is gone and the batch's progress is a bar on the day group's header, which is W1's eleven minutes of silence filled. **The estimate is the batch's own elapsed average, because the sweep records nothing per document — read on staging, not assumed: 0 rows of 47 still carry `reading_since`.** One **short-name** function serves all six surfaces that name a document, measured against every title on staging before it was wired to anything (40 titles, 24 shortened) — and that measurement caught two defects in the rule, both now tests: cutting at every "(" made **two different permits one name**, and the first fix cut *inside* a bracket. The drawer is **seven parts, folded**, in the summary's partition style, with the three buttons **once** at a card's foot (the owner's printed report carried twelve) and the spacing measured off the board. **One voice (74): no "ours", no "inferred", no honesty line — and `PENDING.md` D3 closes with the one note a scanned PDF carries.** Walked on Haiku, **three readings, $0.1633**. Three things the walk found are in §8, one fixed in the same commit: a batch queued on 3 November was telling Cascade it was reading. **No model call on the display, with the grep that proves it.** `npm run check` exit 0, **2,663 tests**, floor 2643 → 2663.
+
 **Updated:** 5 November 2026 — **E3: the answer and its source cards (decisions 66–69, boards committed).** One card per source — number, title, origin, and the verified quote in the reading italic when there is one — **no kind labels** (a quote means checked, no quote means the answer named it), an **amber left edge** on an audit finding, and the title opening **in place** where the section has a drawer, which until now only a summary's sources did. The refused-quote marker is **lifted out of the running text** into a grey note; **only one of decision 68's four lines could move**, and the other three are named in §8 rather than faked. The run-audit offer says **how many documents are on file** and what adding more would answer, with two buttons. **Measured under decision 66 — 36 runs on Sonnet 5.5, $3.3612: the packed context is byte-identical on all six questions and the keys match on five of six; the sixth is a key the fixture outgrew on 4 November, not a regression, and no Opus tie-break was needed.** A scorer bug of my own is recorded with it: six "must-not" hits were the model saying the opposite, and a check that cannot tell a denial from a claim fails the thing it tests. The follow-up box and action row did not move — identical measurements, 99 pixels in the paperclip's own box from a 0.4px scroll offset. `npm run check` exit 0, **2,643 tests**, floor 2625 → 2643.
 
 **Updated:** 5 November 2026 — **E2f: the summary shows its sources once, and nothing else about sources (decision 65).** No item in *What applies* or *Still to confirm* carries a source line of any kind, and the words *"No source cited in the conversation"* are removed from the product — a test strips the comments and fails if they are in the code of any file in `app/`, `lib/`, `components/` or `prompts/`. **Sources moves directly under What applies and opens with the summary**, each entry opening in place under decision 63 — which until now only the per-item lines did, so a source in that list could not be clicked into the product at all. *Not answered here* is removed, its data still stored. The order on screen and on paper is **Your situation · What applies · Sources · Still to confirm**. **It retires E2c and E2d's per-item sourcing and cancels E2e:** a summary proves itself with one source list; the ANSWER proves each sentence with its own cards. Three effects nothing asked for are in §8 — the source list is now everything the conversation rested on (the one non-display change, and the reason: a conversation whose items cite nothing would otherwise show no sources at all), the checklist drawer lost the words it borrowed, and `SourceShape` lost its dead `link` half. Walked with no model on all four sections that hold a summary, and a document source clicked and brought back. `npm run check` exit 0, **2,625 tests**, floor 2620 → 2625.
@@ -441,6 +443,48 @@ words on the page; board 3 is E1's.*
     file. *Effect: E3 — `lib/auditsWords.ts` (`runAuditOffer`, `AGENCY_ASKS`, `ADD_A_FOLDER_HREF`),
     `app/audits/page.tsx`, `app/documents/page.tsx` + `lib/documentsWords.ts` (`?add=folder`).*
 
+70. **THE DOCUMENTS LIST IS GROUPED BY THE DAY A FILE ARRIVED** (the owner, 5 November 2026).
+    Newest first — *"Today · 8 files"*, *"2 November · 2 files"*, then by month. **Status stays as
+    the other choice**, its groups in the order Needs work · Current · Expired · Recorded ·
+    Queued. The *"We've read your n documents"* banner is **removed**; a batch's progress sits on
+    its day group's header — a small bar and *"Reading in the background · 5 of 8 done · about 3
+    minutes left"*. A row that is **Queued or Reading…** shows that word and does not offer *"Read
+    it again"* (W1). *Effect: E4 — `app/documents/page.tsx`, `lib/documentList.ts` (new, pure).*
+
+71. **A ROW LEADS WITH THE SHORT NAME, AND ONE FUNCTION DECIDES IT** (the owner, 5 November
+    2026). The reading's title cut to its **first clause** — never the address, never the company
+    name the reader appended — with the file name small beneath, the agency and kind in their own
+    column, and status · date · notes in fixed columns (59). **`lib/documentName.ts` is used by
+    all six surfaces that name a document**: the list, the drawer's title, a summary's Sources, an
+    answer's source cards, the audit report's document column and the binder's tab sheets.
+    Alternate rows shaded. *Effect: E4 — and the binder's COVER is the exception, because
+    decision 57 carries the auditor's own title whole.*
+
+72. **THE DRAWER IS SEVEN PARTS, FOLDED** (the owner, 5 November 2026; boards 3 and 4). The title
+    line carries status · counts · kind · agency · dates — **the old Status card is gone**;
+    *What it says* **open**; *Gaps read from the page* **open**, each gap as title · why · Fix ·
+    rule and page, with **the three buttons ONCE at the card's foot**; then four folded cards,
+    each with a one-line summary on its header: *Notes · n things we noticed*, *Dates this
+    document sets · n, two overdue · on your calendar*, *What this document is · Record · OSHA ·
+    … — not right? change it*, *Things we think are true about you · n — please confirm on
+    Company information →*. The summary report's partition style and palette (grey · amber · blue
+    · green · grey · grey). **Print opens everything.** *Effect: E4 —
+    `components/DocumentReport.tsx`.*
+
+73. **BREATHING ROOM IS A RULE** (the owner, 5 November 2026: *this is the demo report*). Inside
+    every card an item is **title · 8px · reason · 12px · Fix (the word in weight) · 10px · the
+    rule in small grey**, with **14px above and 16px below** each item and a hairline between.
+    The footer is **Open the file · Read it again · Print · Not right**. *Effect: E4.*
+
+74. **THE DRAWER SPEAKS AS THE CUSTOMER'S OWN EMPLOYEE, IN ONE VOICE** (the owner, 5 November
+    2026, amending his own earlier wording). **Never "ours", "our reading", "CompliBoard's", or
+    anything that puts the product on the other side of the table.** No *"nobody has checked
+    them"*, no *"inferred"* on a customer's screen. **The footer carries no honesty line at all**
+    — *"read from the page"* and *"things we noticed"* are the whole distinction. On a scanned
+    PDF only, a plain note under the title: *"These pages are a scan, so the quotes could not be
+    checked against the file."* *Effect: E4 — `lib/documentsWords.ts`, and `PENDING.md` D3 closes
+    with it.*
+
 **And the three that were decided at E0's map, on 4 November:** decision 48 lives **in the view**, not
 in code, because *"the status the document would otherwise have"* is the six CASE arms underneath the
 one being changed and only SQL can compute them (migration 093); **a record falls to Recorded, not
@@ -483,6 +527,21 @@ an item and of an authority row, which E2 copied as arithmetic** (`.sr .item` is
 and `.sr .auth` is `10px 0 6px`, so item to item is 19px and an authority row to its first item is
 15px). **Where the board and decision 62 disagree, the brief won:** the board draws *Still to
 confirm* blue and the decision says amber.
+
+### `docs/documents-boards.html` — the Documents list and the document drawer (5 November 2026)
+
+**Four boards on the owner's own Clackamas files.** 1 · the list **by date added**, the new
+default, with a batch reading at the top · 2 · the same list **by status** · 3 · a document's
+reading **as the drawer**, with the summary report's partitions · 4 · the same drawer with
+**Notes and Dates opened** and Gaps folded, which is what shows that the spacing rule holds
+whichever cards are open.
+
+**The file says "Draft 4" in its own intro and the brief calls it draft 5**; it is one file and
+this is the row that names it. Two things in it are superseded by the brief's own amendment to
+decision 74, and the plan's rule is that the brief wins and the report says so: the board's
+header line *"things we noticed — our reading, not the page's words"* and its footer *"Quotes are
+word for word from the file; notes are ours"* are **not built**. The drawer speaks as the
+customer's own employee; the two card headings are the whole distinction.
 
 ### `docs/answer-boards.html` — the answer and its source cards (draft 3, 5 November 2026)
 
@@ -618,10 +677,10 @@ Written 3 November 2026, read-only, from `grep` and the live staging schema. Eac
 | ~~E2e~~ | **CANCELLED** (the owner, 5 November), replaced by E2f: it would have gone on refining which source sits under which item, and decision 65 takes the per-item line away instead | — | — | **cancelled, never built** |
 | E3 | **The answer body and the source cards** | `components/AnswerBody.tsx`, `lib/ask/passages.ts` | `app/compliance/page.tsx`, `app/hr/HrWorkspace.tsx`, `components/ConversationDrawer.tsx`, `components/AskScreen.tsx` — **and through AskScreen, the Calendar, Documents and Audits**. Seven surfaces in all | not started |
 | E3 | **THE ANSWER AND ITS SOURCE CARDS** (decisions 66–69, the owner, 5 November; `docs/answer-boards.html` draft 3) — one card per source, no kind labels, an amber edge on an audit finding, the title opening in place; the refused-quote marker lifted out of the running text into a grey note; and the run-audit offer saying **how many documents are on file** and what adding more would answer, with two buttons | `components/AnswerBody.tsx` (the cards, the note) · `lib/askWords.ts` **(new, pure — a browser file may not reach `lib/ask/passages.ts`)** · `components/AskScreen.tsx` (one forwarded prop) · `lib/auditsWords.ts` (`runAuditOffer`, `AGENCY_ASKS`) · `app/audits/page.tsx` (the card) · `app/documents/page.tsx` + `lib/documentsWords.ts` (`?add=folder`) · the three section pages name their swap handler once | **all seven surfaces** that draw an answer: the Workspace's chat and summary drawer, HR's chat and drawer, the shared Ask screen (Calendar, Documents, Audits) and the shared conversation drawer | **done 5 Nov** — **measured under decision 66, 36 Sonnet 5.5 runs, $3.3612**: the packed context is **byte-identical** on all six questions and the key scores match on five of six, the sixth explained by a key the fixture has outgrown. **No Opus tie-break: Sonnet showed no difference.** The follow-up box and action row did not move — measured identical, 99 differing pixels in the paperclip's own 13×14 box from a 0.4px scroll offset. `npm run check` exit 0, **2,643 tests**, floor 2625 → 2643 |
-| E4 | **The document report drawer and the Documents page** — W1's progress line included | `components/DocumentReport.tsx`, `app/documents/page.tsx` (the banner `:979`–`:1017`, the controls `:1019`, the row words `lib/documentStatus.ts:86`–`:95`) | `DocumentReport` is rendered by **`app/calendar/page.tsx`, `app/audits/page.tsx`, `app/compliance/page.tsx` and `app/documents/page.tsx`** | not started |
+| E4 | **THE DOCUMENTS LIST AND THE DOCUMENT DRAWER** (decisions 70–74, the owner, 5 November; `docs/documents-boards.html`) — the list grouped by **date added** with the batch's progress on the day header and the banner gone; **one short-name function** for all six surfaces that name a document; the drawer **seven parts, folded**, in the summary's partition style, its three buttons once at a card's foot; breathing room measured; and **one voice** — no "ours", no "inferred", no honesty line | `app/documents/page.tsx` · `components/DocumentReport.tsx` (rewritten into cards) · `lib/documentName.ts` **(new, pure)** · `lib/documentList.ts` **(new, pure)** · `lib/documentsWords.ts` · `components/ReportView.tsx`, `components/AnswerBody.tsx`, `components/AuditReport.tsx`, `components/AuditBinder.tsx` (the one name) | `DocumentReport` is rendered by **`app/documents/page.tsx`, `app/audits/page.tsx`, `app/calendar/page.tsx` and `app/compliance/page.tsx`**; the name function by those four plus the summary and the answer | **done 5 Nov** — **no model call on the display: decision 66's before/after is not needed and the grep that proves it is in §8.** Walked on Haiku, **three readings, $0.1633**: a folder of three dropped, the day group, the bar, Queued → Reading… → the status. **`PENDING.md` D3 and W1 both close here.** Two things the walk found are in §8, one of them fixed in the same commit. `npm run check` exit 0, **2,663 tests**, floor 2643 → 2663 |
 | E5 | ~~The Enter-after-pick notice (W3)~~ **— done at B0, `43b304e`** — and **"Audit again" on a By template row**, which still waits for the row to say whether the template file still exists | `app/audits/page.tsx`'s By template group | Audits only | not started |
 
-**After the rest of E: the finish line.** The Opus 5.5 against Sonnet 5.5 comparison (`docs/TEST-AT-FINISH-LINE.md`), then the gate walk — which is in §5b with the rest of the pre-release work.
+**⚡ PART E IS COMPLETE** — E0, E0a, E0c, E1, E1a, E2, E2a, E2b, E2c, E2d, E2f, E3 and E4 are done; E2e was cancelled. **After the rest of E: the finish line.** The Opus 5.5 against Sonnet 5.5 comparison (`docs/TEST-AT-FINISH-LINE.md`), then the gate walk — which is in §5b with the rest of the pre-release work.
 
 ---
 
@@ -812,6 +871,104 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### ⚡ What Part E step E4 did and found (5 November 2026) — AND PART E IS COMPLETE
+
+**No model call, and the grep that says so.** E4 is display and words: the only files it touches
+outside `app/documents/page.tsx` and `components/DocumentReport.tsx` are display modules. Nothing
+on the model's path moved —
+
+```
+git status --short -- lib/ask lib/ai.ts prompts lib/documentScan.ts lib/documentContent.ts
+(nothing)
+```
+
+— so decision 66's before/after on Sonnet is not needed, and £3.36 of runs was not spent to prove
+that unchanged code produces unchanged answers.
+
+**1. The list groups by the day a file arrived** (decision 70), newest first, with `filesWord` on
+the header — *"Today · 3 files"*. The banner is gone. The batch's progress is a bar and a line on
+the day group: *"Reading in the background · 0 of 3 done"*, photographed with three rows reading
+Queued, Queued and Reading… (`shots/e4-folder-reading.png`), and the same three with their
+statuses once the sweep had them (`shots/e4-folder-bar.png`).
+
+**⚡ THE ESTIMATE IS THE BATCH'S OWN ELAPSED AVERAGE, BECAUSE THE SWEEP RECORDS NOTHING ELSE.**
+Decision 70 says to read what the sweep records. It records `wall_ms` for the whole run — which
+covers other companies' documents — and nothing per document: `document_scans` has `scanned_at`
+and no start, and `documents.reading_since` is cleared when a reading lands. **Read on staging:
+0 rows of 47 still carry it.** So the line uses decision 70's own fallback.
+
+**⚡ AND THE LIVE PATH HAD TO COUNT TOO, OR THE BAR WOULD BE BLIND TO THE COMMONEST CASE.** Three
+files or fewer are read in the browser one after another (`LIVE_SCAN_MAX`); `done_count` on the
+batch row is written **only by the sweep**. A folder of three — the walk's own case, and the
+owner's — would have shown the day group with no bar at all. The loop that does the reading now
+feeds the same two numbers.
+
+**2. One short name, six surfaces** (decision 71). The rule is the title's first clause, cut at
+the first `" ("` or `", "` **after the fifth word**, and it was measured against **every title on
+staging before it was wired to anything**: 40 distinct titles, **24 shortened**, 0 left with an
+unbalanced bracket. The ten longest, before → after:
+
+| before | after |
+|---|---|
+| 185 | **Annual Report, Reporting Year 2025** |
+| 176 | Oregon DEQ Acknowledgement of Hazardous Waste Site Identification Form (EPA Form 8700-12): SQG biennial re-notification |
+| 160 | Pre-Inspection Audit Checklist for Oregon chemical blending and distribution facilities (Northwest Supplier Assurance Program, revision 2026-03) |
+| 160 | Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check |
+| 144 | **Oregon DEQ Simple Air Contaminant Discharge Permit (ACDP) No. 03-0217-ST-01** |
+| 142 | **Oregon DEQ Simple Air Contaminant Discharge Permit (ACDP) No. ACDP 26-0192-ST** |
+| 135 | Oregon DEQ Annual Report for Reporting Year 2025 with DEQ Receipt Confirmation |
+| 131 | Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check |
+| 129 | **Powered Industrial Truck (Forklift) Operator Certification Roster** |
+| 128 | Hazardous Waste Handler Training Attendance Roster |
+
+**Two things that measurement caught, each now a test.** Cutting at every `" ("` made **two
+different permits one name** — rows 5 and 6 above, one Clackamas's and one Cascade's — so a
+bracket that closes and is followed by more title is part of the name. And the first fix then cut
+*inside* a bracket, leaving an unclosed `(` on the screen (row 3), so a comma inside brackets is
+not a clause end. **Two collisions remain of 40**, both genuine near-duplicate readings of the
+same document; the file name beneath the row is what tells them apart, as `lib/documentBatch.ts`
+already does in the batch email.
+
+**3. The drawer is seven parts, folded** (decisions 72 and 73), photographed open
+(`shots/e4-drawer.png`), folded (`shots/e4-drawer-folds.png`), with Notes and Dates opened
+(`shots/e4-drawer-open.png`) and on paper (`shots/e4-drawer-print.png`). The three buttons sit
+once at a card's foot — **the owner's own printed report carried twelve** — and *"Not right"*
+there asks **which** item, because one verdict belongs to one finding. *"Draft this section"*
+stays per item: it is offered on some gaps and not others, and the foot cannot say which.
+
+**Two parts of the old drawer are NOT in decision 72's seven and are NOT dropped:** *Conditions to
+keep* (a permit's own, and what its evidence is judged against) and *Versions*. Both are folded
+cards after the seven, and this is where that is said rather than left to be noticed.
+
+**4. One voice** (decision 74). Gone from the drawer: *"Quotes are word for word from the document
+and anything we worked out is marked inferred. Read by claude-opus-5-5."*, the `inferred` badge on
+every worked-out fact, and *"nobody has checked them"* over the Notes. **`PENDING.md` D3 closes
+here**: a scanned PDF carries one plain note under the title — *"These pages are a scan, so the
+quotes could not be checked against the file"* — and nothing else claims a check that did not
+happen. Photographed on a real one (`shots/e4-scan-note.png`). How a scan is known: **no extracted
+text AND no quote checked**, both halves, because a reading that simply quoted nothing also has
+`quotes_checked = 0`. Read on staging: **10 of 47 current readings have no extracted text, and all
+10 have `quotes_checked = 0`**.
+
+**W1 closes with the other half of its own fix:** *"Read it again"* is not drawn at all while a
+document is Queued or Reading. The owner pressed it on a file that was simply waiting its turn.
+
+#### Three things the walk found
+
+**(a) ⚡ A STALE BATCH CLAIMED TO BE READING, AND IT WAS FIXED IN THE SAME COMMIT.** Photographed
+on Cascade: *"Reading in the background · 0 of 1 done"* above a batch created on **3 November** and
+`queued` ever since — a sentence in the present tense about something that stopped two days ago
+(§5.1). The bar now draws only while the page's own `in_flight` count is above zero.
+
+**(b) And one row on that company IS stuck `reading` since 3 November** (`permit-lookup.html`), so
+the bar is honest about it and the sweep's stuck-recovery is what clears it. A staging-data
+condition, named here rather than papered over.
+
+**(c) The report route sends text nobody draws.** `/api/documents/report` selects `*` from
+`document_scans`, so every drawer open downloads `raw_text` and `extracted_text` — tens of
+kilobytes the screen never shows. D3's own prescription said "no route change", and E4 is display
+only, so it is named and not touched: the two fields it needed were already arriving.
 
 ### ⚡ What Part E step E3 did and found (5 November 2026)
 
