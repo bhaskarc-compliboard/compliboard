@@ -15,7 +15,7 @@
 > them in. `DECISIONS.md` §130 records the build-on-Haiku rule that came out of this pass, and
 > `docs/VISION-DOCUMENTS.md` is the Documents section's vision.
 >
-> *(`docs/INVENTORY-2026-09.md` checks every `DESIGN.md` rule against the shipped Documents page. One
+> *(`docs/archive/INVENTORY-2026-09.md` checks every `DESIGN.md` rule against the shipped Documents page. One
 > differed — amber on a queued row — and the page was brought to the rule, not the other way round.)*
 
 *Written 23 September 2026 by the chat that shipped the research section. Read this first, then the files in §8, then answer the owner's first message.*

@@ -747,6 +747,10 @@ Read on 3 October 2026 for `BhaskarC@compliboard.com`. Every statement is a `SEL
 connection (superuser), **not** the service role. The target ref was printed first: `dsfwma…`.
 Everything after the first query is scoped to the company it returned.
 
+> *(**6 November 2026:** the command above is left exactly as it was run on this date. Since Supabase CLI
+> 3.0.0 a read also needs **`--read-only`** or it is refused — `CLAUDE.md` §3.7 has the current recipe.
+> Adding the flag to a record of what was run would make the record false, so it is noted, not edited.)*
+
 ```
 SQL> select p.id as profile_id, p.company_id, c.name as company from public.profiles p
        join auth.users u on u.id = p.id left join public.companies c on c.id = p.company_id

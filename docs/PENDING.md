@@ -1,6 +1,25 @@
 # PENDING — everything this product still owes
 
 **Version:** 2 · **Written:** 29 October 2026, by Claude Code at the close of My Account part C.
+**Updated:** 6 November 2026, housekeeping half two. **The counts are now counted from the rows rather than
+carried forward** — 44 open, not 49; see the block below for the arithmetic and for what was wrong with it.
+**O7 is CLOSED** by archiving `INVENTORY-2026-09.md`. **O9 is ADDED**: the public-pages chat's decisions
+(29 October – 2 November) were never written into `DECISIONS.md` either, and that is owed to that chat.
+The *"five to do first"* is now **four**, because slot 4 was D2 and D2 closed on 3 November; the fifth slot
+is left empty on purpose.
+
+> ### ⚡ WHAT THE 6 NOVEMBER HOUSEKEEPING DELIBERATELY DID **NOT** DO, SO THE NEXT ONE DOES NOT RE-ASK.
+>
+> **Six documents describe shipped work and were left exactly where they are:** `ACCOUNT-PLAN.md`,
+> `CALENDAR-PLAN.md`, `DASHBOARD-PLAN.md`, `HR-PLAN.md`, `PUBLIC-PAGES-PLAN.md` and `GAPS-PLAN.md`. All
+> six are archive candidates on their face. **All six are still cited by name from THIS file**, which
+> gathers its rows from them — see *"Gathered from"* below — so moving any of them today would leave a
+> dangling path in the one document a reader opens to ask *"what is left?"*.
+>
+> **They move when this file is next rewritten**, so the pointers and the moves land in one change. That
+> is the same rule that let `INVENTORY-2026-09.md` move on 6 November and not before: fix what points at
+> it, then move it. `GAPS-PLAN.md` additionally holds **§5b**, the open pre-release list, which is live
+> work and not a record of finished work.
 **Updated:** 4 November 2026, at `docs/GAPS-PLAN.md` Part E step E0: **no row is closed, and one gains an
 answer it did not have.** **D3 is CLOSED — 5 November 2026 at E4** (its row below says how); what follows was
 written while it was open and is kept because it records where the drawer had moved to. **D3** was still owed, but the drawer it names has moved
@@ -32,7 +51,8 @@ for some time. F7 keeps only HR and the Compliance Workspace (decision 36). Open
 §7 · `docs/HANDOFF-FROM-DASHBOARD.md` §7 · `docs/HANDOFF-FROM-HR.md` §7 · `docs/HANDOFF-AUDITS.md` §8 ·
 `docs/HANDOFF-CODE.md` §7 · `docs/HANDOFF-FOLDER-TEST.md` · `docs/WORKSPACE-PLAN.md` Stage 3 ·
 `docs/TEST-AT-FINISH-LINE.md` · `docs/ACCOUNT-PLAN.md` · `STATUS.md`'s degraded rows · `docs/TODO.md` ·
-`docs/DECISIONS.md` · `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 and `docs/PUBLIC-PAGES-PLAN.md` §5 (F12).
+`docs/DECISIONS.md` · `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 and `docs/PUBLIC-PAGES-PLAN.md` §5 (F12) ·
+`docs/HANDOFF-FROM-GAPS.md` §7 and §8, and `docs/GAPS-PLAN.md` §5b (added 6 November 2026).
 
 > **Every line below traces to a file and, where it exists, a line number. Nothing here is invented.**
 > Where an item is a *decision* rather than work, it says so. Where it is a *hypothesis* rather than a
@@ -40,25 +60,44 @@ for some time. F7 keeps only HR and the Compliance Workspace (decision 36). Open
 >
 > **Sizes are rough and are for sequencing, not for promising**: *an hour* · *a day* · *a week*.
 
-## How many, and the five to do first
+## How many, and the four to do first
 
-**49 owed items**, plus 3 hypotheses that are not owed work and 7 things deliberately not built:
+> ### ⚡ THESE NUMBERS ARE NOW COUNTED FROM THE ROWS, NOT CARRIED FORWARD — 6 November 2026.
+> The block below used to read *"**49 owed items** … 12 + 15 + 7 + 8 + 7 = **49**"*. **It was never
+> decremented as rows were struck**, so 12 F and 15 D were open-plus-closed counted as open: eight F
+> rows are open and four are struck; eleven D rows are open and four are struck. The arithmetic was
+> right and the inputs were stale, which is the harder kind to notice. Counted from the tables below.
 
-**12** unfinished features (F) · **15** known defects (D) · **7** security and limits (S) · **8**
+**44 open rows**, of which 7 are things deliberately NOT built, so **37 are actually owed**, plus 3
+hypotheses that are claims to settle rather than work to do:
+
+**8** unfinished features (F) · **11** known defects (D) · **7** security and limits (S) · **8**
 waiting on the owner (O) · **7** deliberately not built (N) · **3** hypotheses (H).
-12 + 15 + 7 + 8 + 7 = **49**; the three H rows are claims to settle, not work to do.
-*(47 and 11 until 2 November 2026, when F12 was added; 48 and 14 until later the same day, when D15 was added; 49 and 15 until step 4b closed both.)*
+
+```
+  8 F + 11 D + 7 S + 8 O + 7 N + 3 H  =  44 rows
+                               − 7 N  =  37 owed
+                               − 3 H  =  34 owed and not a hypothesis
+```
+
+**9 rows are struck and kept:** F4 F5 F6 F12 · D2 D3 D5 D15 · O7. A struck row stays visible because
+what was closed, and when, is the only way to read the open ones in order.
 
 | | do first | why this one |
 |---|---|---|
 | **1** | **Stripe live mode** (F1) | Billing is built, released and **inert**. Until this is done the product cannot take a single pound, and every other revenue question is hypothetical. It is a dashboard afternoon, not engineering |
 | **2** | **The Resend sending domain's DNS** (S1) | **Four emails to customers are blocked on it**, the monthly one refuses to send on production by design, and the audit email already landed in a junk folder. It is a DNS job. It has been open since 16 October |
 | **3** | **The scanner's invented switch keys** (D1) | **30 of 30 pending proposals on production name a key that does not exist**, and those names reach a customer's queue *and three prompts*. This is the only open defect that puts fabricated content in front of a customer |
-| **4** | **`.doc` and `.ppt` cannot be read, and the picker offers them** (D2) | The product invites a file it then cannot open, and fails by exception rather than by the sentence written for exactly this. It is also the dependency under the binder (F4) |
-| **5** | **The folder test** (F3) | Everything has been measured a piece at a time. **The product has never been judged on a folder the way a customer arrives with one**, and it is the first thing that will find what the piecemeal tests cannot |
+| **4** | **The folder test** (F3) | Everything has been measured a piece at a time. **The product has never been judged on a folder the way a customer arrives with one**, and it is the first thing that will find what the piecemeal tests cannot |
 
 Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness risk in the product.
-4 and 5 are the pair that would tell us what the product actually does with real mess.
+Number 4 is the one thing that would tell us what the product actually does with real mess.
+
+> **It was five until 6 November 2026, and the fourth has been CLOSED rather than re-ranked.** Slot 4
+> was *"`.doc` and `.ppt` cannot be read, and the picker offers them"* (**D2**), closed on 3 November by
+> `GAPS-PLAN.md` Part B — the picker, the reader and the sentences now agree. The folder test moved up
+> from 5. **The fifth slot is deliberately left empty: which row earns it is the owner's ranking, not
+> Claude Code's**, and inventing one would put a priority in this file that nobody set.
 
 ---
 
@@ -130,9 +169,10 @@ Numbers 1 and 2 are not engineering at all. Number 3 is the biggest correctness 
 | **O3** | **Whether `docs/RELEASE.md`'s generic procedure should carry a backup step**, as the Calendar and Account routines now do | `docs/HANDOFF-CODE.md` §7 |
 | **O4** | **The wording of every failure message that can reach `x.error`** — several end with two instructions | `docs/HANDOFF-CODE.md` §7 (D7 above) |
 | **O5** | **Two proposed HR switches**, yes or no, before they enter `HR-PLAN.md` | `docs/HANDOFF-FROM-HR.md` §7.6; `docs/TEST-AT-FINISH-LINE.md` |
-| **O6** | **Whether `/upload` is deleted** (D13) | `docs/INVENTORY-2026-09.md`; `STATUS.md` |
-| **O7** | **`docs/INVENTORY-2026-09.md` is 46% out of date and two living files point at it as current.** It says the repo holds *34 API routes and 14 pages*; it holds **63 and 17**. `HANDOFF-CODE.md:29` says to read it *"for every file's state and who calls what"*. Either re-take it, or change that one line — **it could not be archived, because the rule is not to archive what a live document points at** | read 29 Oct; `docs/archive/README.md`, the review of 29 October |
+| **O6** | **Whether `/upload` is deleted** (D13) | `docs/archive/INVENTORY-2026-09.md`; `STATUS.md` |
+| ~~**O7**~~ | **⚡ CLOSED 6 November 2026 — the file is archived and the pointers were rewritten first.** It read: *"`docs/INVENTORY-2026-09.md` is 46% out of date and two living files point at it as current… it could not be archived, because the rule is not to archive what a live document points at."* **The content case had got worse, not better** — counted on 6 November the repo holds **68 API route files and 22 pages** against its stated *34 and 14*, so it describes a codebase half this size, not 46% of it. The two pointers — `STATUS.md:50` and `HANDOFF-CODE.md:29` — were rewritten to stop calling it current, **then** the file moved to `docs/archive/`, which is the order the rule requires. `docs/archive/README.md` carries the fresh count and names `SCHEMA.md` plus a directory count as its successor | `docs/archive/README.md`; `docs/archive/INVENTORY-2026-09.md` |
 | **O8** | **Ten near-duplicate production companies** — delete the nine empty ones? (D14) | `docs/HANDOFF-CODE.md` §7 |
+| **O9** | **The public-pages chat's decisions were never written into `DECISIONS.md`.** That file's last entry is **§223**, dated 29 October 2026 (My Account part C). The public-pages work ran **29 October – 2 November** and shipped (`88394af`), and `docs/PUBLIC-PAGES-PLAN.md` is the only home of its decisions. **Every other section wrote in**: HR §164–§184, Calendar §185–§202, the Dashboard §203–§206, My Account §207–§223, and the gaps work §224–§230 on 6 November. **This is owed to the public-pages chat, not written here** — Claude Code will not reconstruct another chat's reasoning or its reversal conditions from the plan file, because a decision record written by someone who was not in the room is the thing `DECISIONS.md` exists not to be | `docs/PUBLIC-PAGES-PLAN.md`; `docs/DECISIONS.md` §223 |
 
 ---
 

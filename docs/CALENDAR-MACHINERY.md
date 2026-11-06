@@ -416,7 +416,7 @@ a model to decide"* (`documentScan.ts:222`). The two paths disagree about who ow
 product question for the calendar section, not a defect, and is flagged rather than answered here.
 
 **Every caller: one.** `cal-page:170–172`, in `handleImport`. Grep over `app/`, `lib/`, `components/` and
-`scripts/` finds no other fetch of `/api/extract-dates`. `docs/INVENTORY-2026-09.md:150` and `:164` say the
+`scripts/` finds no other fetch of `/api/extract-dates`. `docs/archive/INVENTORY-2026-09.md:150` and `:164` say the
 same and add the decision: *"the feature itself — importing dates from a file rather than reading them off
 obligation cadence — is the Calendar section's to keep or remove."*
 
@@ -1206,7 +1206,7 @@ In the shape `docs/HANDOFF-FROM-HR.md` §6 and `docs/TEST-AT-FINISH-LINE.md` J u
 **Owned by the Calendar section (nothing else reads them):**
 - `app/calendar/page.tsx`, `app/api/calendar/route.ts`
 - `app/api/extract-dates/route.ts`, `prompts/extract-dates.ts` — and **whether to keep the import feature at
-  all is the Calendar section's decision** (`docs/INVENTORY-2026-09.md:164`)
+  all is the Calendar section's decision** (`docs/archive/INVENTORY-2026-09.md:164`)
 
 **Documents — changing these changes the Documents report, the Documents golden set and the dashboard:**
 - `lib/documentScan.ts` — `chooseSignificantDate` (:235–285), `normaliseScan` (:365–380), the

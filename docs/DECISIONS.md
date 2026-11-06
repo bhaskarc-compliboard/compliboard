@@ -1,6 +1,24 @@
 # Decision Record
-**Version:** 102 · **Updated:** 23 September 2026
-**Supersedes:** version 101 (23 Sep). Adds **§130 — build on the cheapest model, and the
+**Version:** 125 · **Updated:** 6 November 2026 — **§224–§230, the gaps work (`docs/GAPS-PLAN.md`
+Parts A–F), decisions 36–76.** Written at housekeeping half two, the day after the release, because
+that chat recorded its decisions only in its own plan file and this is where a decision and its
+reversal condition are supposed to live.
+
+> ### ⚠ THE VERSION LINE SAID **102 · 23 SEPTEMBER 2026** UNTIL TODAY, AND THE FILE RAN TO §223.
+> It was five weeks and more than a hundred sections behind its own contents: §150 is 1 October,
+> §223 is 29 October. **The number was never raised after version 102** while twenty-one HR sections,
+> eighteen Calendar sections, the Dashboard's four, My Account's seventeen and the release records
+> were all added. Nothing was lost — the sections are all here — but the one line a reader checks to
+> see whether this file is current was the one line nobody updated. Version numbers now move with the
+> sections; `docs/HOW-WE-BUILD.md` §7, *"update the docs in the same session as the work"*.
+>
+> **And one gap is NOT filled by this version, deliberately:** the public-pages chat
+> (29 October – 2 November 2026, released `88394af`) also wrote nothing here, so §223 remains the
+> last entry before §224 and `docs/PUBLIC-PAGES-PLAN.md` is still the only home of its decisions.
+> **That is owed to that chat, not reconstructed here** — `docs/PENDING.md` **O9** carries it. A
+> decision record written by somebody who was not in the room is the thing this file exists not to be.
+
+**Supersedes:** version 102 (23 Sep), whose own note follows. Version 102 (23 Sep). Adds **§130 — build on the cheapest model, and the
 micro-steps that kept buying themselves.** `.env.local` runs Haiku for prose, judgement, substeps
 and summary; production is unset and therefore unchanged. **Haiku refuses `output_config.effort`
 with a 400** — `temperature` in a mirror — so `modelAcceptsEffort()` drops it. And the $2 of
@@ -17005,3 +17023,245 @@ ever deleted for not paying**.
   mattering for test companies and a real customer's trial is Stripe's to own.
 - **Leaving `service_role` wide (C):** a second holder of that key. Today it is the webhook and the
   reconcile, and narrowing it would need an explicit REVOKE in a later migration.
+
+---
+
+## 224. THE AUDITS CHAT, AND WHAT HR WAS SPARED — 3 November 2026 (`docs/GAPS-PLAN.md` Part A step 6b)
+
+**Records GAPS-PLAN decisions 36, 37, 38, 39, 40, 41, 42, 43, 44 and 45.**
+
+> **Scope of §224–§230: GAPS-PLAN decisions 36–76.** Decisions **1–35** — Part A steps 1 to 6a, the
+> shared chat engine and the Documents chat — are **deliberately left in `docs/GAPS-PLAN.md` §3** and
+> are not restated here, on the owner's instruction of 6 November. They are the only decisions of that
+> chat with a single home. Worth knowing which ones, so nobody looks for them here: **4** the chat looks
+> the same everywhere, **10** the night summary covers every section, **11** each chat is billed and
+> modelled as itself (the one migration 091 exists for), **14** the Documents chat answers from the
+> readings and never the files, and **21/26** no size cap on carried files at a measured ~2,376 input
+> tokens a turn.
+
+Audits got the shared chat: its own Ask tab, its own ledger word, and one offer. The decisions worth
+having here are the three that say *no*.
+
+**36 — HR stays on its own engine for rev 1.** Moving `lib/hrAnswer.ts` onto `lib/ask/` is rev 2
+work. HR's answer path checks quotes against handbook sections and keeps its own check record; the
+engine does not do that, and making it do so is a change to the thing HR is trusted for.
+**⚡ REVERSAL CONDITION, as written:** *"Moving `lib/hrAnswer.ts` onto `lib/ask/` is rev 2 work."*
+It reverses when rev 2 starts, and until then `PENDING.md` **F7** stays open and names HR and the
+Compliance Workspace as the two sections not on the engine.
+
+**37 — `components/AskScreen.tsx` gains ONE optional prop,** `beforeAsk`. One prop, not a fork of the
+screen, because the shared chat looking the same everywhere (decision 4) is the thing that stops six
+sections drifting into six chats.
+
+**38 — the looker requires an audit word.** The word *"audit"* must be present before anything is
+offered. **41 — ONE offer, `run_audit`, not none:** when a question reads like a request to be
+audited, the product offers to run one rather than answering around it. **43** teaches
+`lib/ask/offers.ts` the word with its `source_url` check.
+
+**39 — the command line under the question, and no email promise.** The product does not say it will
+email when the audit is done, because nothing was going to.
+
+**40 — an attached template gets a reading like any other uploaded file.** **44 —
+`ATTACHED_PREFIX` becomes `'AF'`** in `lib/ask/passages.ts`: one character, and it is why Night
+Watch's handle counter reads `AF` and `D` prefixes (§229).
+
+**45 — `prompts/audits-answer.ts` is approved as written, all nineteen sentences.** Recorded because
+`CLAUDE.md` §3.1 makes a prompt a discussion item, and "approved as written" is the discussion.
+
+---
+
+## 225. READING EVERY FILE FORMAT: NO CONVERSION SERVICE, AND THE REFUSAL IS A FEATURE — 3 November 2026 (`docs/GAPS-PLAN.md` Part B)
+
+**Records GAPS-PLAN decisions 46, 51, 52, 53 and 54.**
+
+**51 — the product offers only the file types it can read today, and a file it cannot read is told
+so in its own words.** This is `CLAUDE.md` §5.1 applied to the picker: the accept list had promised
+`image/*`, which admitted every iPhone photo and every scanner, and then failed by exception. B1
+made the list and the sentences agree.
+
+**52 — NO EXTERNAL CONVERSION SERVICE.** This overruled `docs/VISION-DOCUMENTS.md`, which had
+costed a stateless container on Railway or Fly on the premise that *"HEIC (libheif) and old or Open
+Office formats (LibreOffice) cannot run on Vercel"*. **Half of that premise was wrong and was
+settled by running it:** `libheif-js` is libheif compiled to WebAssembly, with nothing native to
+install, and it runs in Vercel's Node runtime like any other dependency.
+**⚡ REVERSAL CONDITION, as written:** *"`.doc` and `.ppt` stay refused for rev 1 with B1's
+sentence; **B3 is struck** and §5b records the container as rev 2."* The container comes back only
+for the old binaries, and only in rev 2. `VISION-DOCUMENTS.md:188` carries the correction in place.
+
+**53 — how, in five parts:** `heic-decode` to raw RGBA then `sharp`; TIFF one block per page capped
+at 20; `bmp-ts`; a **2,576 px long edge**, which is the high-resolution tier's own limit so capping
+saves no tokens the API was not already saving; and **`MAX_MEGAPIXELS = 50`**. That last constant is
+load-bearing in a way nothing else in the product is: `heic-decode` allocates `width * height * 4`
+with no scaled decode, a 48-megapixel HEIC measured a **1,036 MB peak**, and the 2 GB a function
+gets is a **dashboard setting with no representation in this repository**. `docs/RELEASE.md`'s
+function-memory section is the record; lower that dial and this constant must come down in the same
+change.
+
+**54 — `.zip` and email files are parked for rev 1.5.**
+**⚡ REVERSAL CONDITION, as written:** when they come, *"a zip opens into the Documents list as its
+files"* and *"an email files its attachments as documents"* — each one click, neither a new reader.
+§5b carries both.
+
+**46 — B0 first: the reader's missing check and the handed-command busy state.** Two defects the
+owner's own walk found, fixed before the part they interrupted.
+
+---
+
+## 226. THE AUDIT'S WORDS, AND A REPORT THAT IS A PAGE — 3–4 November 2026 (`docs/GAPS-PLAN.md` Part E, steps E0 and E1)
+
+**Records GAPS-PLAN decisions 47, 48, 49, 50, 55, 56, 57, 58, 59 and 60.**
+
+**47 — the audit gains a FIFTH word, `on_file_gaps`, for a line that is on file with gaps
+underneath.** Four words could not say the commonest true thing about a real filing cabinet: the
+document exists and is not complete. With four, such a line had to be either *on file* (which hides
+the gap) or *nothing on file* (which is false). Migration 094.
+
+**48 — a document's status turns to Needs work only on a gap READ FROM THE PAGE**, never on one the
+reading inferred. Migration 093. This is `CLAUDE.md` §3.2's shape — absence of evidence does not
+produce a verdict — applied to display: an inferred gap is a note, and a note does not turn a
+customer's record red.
+
+**49 — a template run does not read its own template as evidence.** It had: a run whose scope read
+*"Audit us against the attached template"* cited the template back as the document that satisfied
+the requirement. Night Watch counter 9 (§229) exists to notice if it happens again.
+
+**50 — a template audit is reported row by row in the auditor's own order and numbering**, and
+**58 — every row carries the auditor's line WHOLE.** The product does not summarise somebody else's
+checklist back at them.
+
+**55 — the audit report is a PAGE, full width, not a drawer. 56 — the Audits section has four tabs.
+57 — the binder numbers documents in order of first citation. 59 — alignment, everywhere.
+60 — the words as the customer sees them**, which is the five-word vocabulary 47 extended.
+
+---
+
+## 227. THE BINDER IS THE REPORT PAGE PRINTED, AND THE BROWSER MAKES IT — 4 November 2026 (`docs/GAPS-PLAN.md` Part C)
+
+**Records GAPS-PLAN decision 61.**
+
+Not a server build and not a stored file: **no `pdf-lib`, no font embedding, no migration, nothing
+in storage.** The person presses Print and saves the PDF themselves.
+
+**Why it matters beyond the binder.** The mapped server build would have stored a PDF at
+`<company>/binders/<runId>.pdf`, and a realistic binder — twelve documents with two 40-page scans —
+measured about **25 MB** against a project storage limit of **50 MB**. Taking the browser removed a
+release-day capacity question entirely. The two measured binders: Clackamas **1.36 MB over 19
+pages**, Cascade DEQ **2.96 MB over 27**.
+
+**⚡ REVERSAL CONDITION, as written:** *"The server-built binder is rev 2 (§5b), wanted only if a
+customer ever needs the originals' own page objects or a stored copy."* If that day comes, the first
+thing to read is the project's storage limit off the Supabase dashboard — it has no representation
+in this repository, and `docs/RELEASE.md`'s storage section says so.
+
+---
+
+## 228. THE DISPLAY PASS: SOURCES ONCE, AND QUALITY MEASURED RATHER THAN ASSERTED — 4–5 November 2026 (`docs/GAPS-PLAN.md` Part E, steps E2–E4a)
+
+**Records GAPS-PLAN decisions 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73 and 74.**
+
+**66 — ⚡ ANSWER QUALITY MUST NOT GO DOWN, AND THAT IS MEASURED, NOT ASSERTED.** Before and after
+any change near the answer: the same questions on `claude-sonnet-5-5` against keys **written before
+the run**, three runs per question. A display change shows the model nothing new, **so the answers
+must match within noise** — and if they do not, the display change was not a display change.
+**⚡ REVERSAL CONDITION, as written:** *"Only if Sonnet shows a difference, one run on
+`claude-opus-5-5` to tell the model from the change. Sonnet 5.5 is the comparison model from here;
+Opus is the tie-break."* This is the rule that made E3 cost $3.36 over 36 runs instead of being
+asserted for nothing, and it is why E4 needed no model call at all.
+
+**65 — ⚡ THE SUMMARY SHOWS ITS SOURCES ONCE, AND NOTHING ELSE ABOUT SOURCES.** No item carries a
+source line of any kind — not a link, and **not the words "No source cited in the conversation"**,
+which are removed from the product. The Sources card sits under *What applies*, deduplicated, and
+opens with the summary. The order is **Your situation · What applies · Sources · Still to confirm**.
+**And *Not answered here* is removed**: a question the person moved past is either answered or not
+needed, and showing it back to them is the product keeping score of a conversation that moved on.
+This decision **cancelled E2e**, which would have gone on refining which source sits under which
+item — the rarer and better kind of decision, one that removes work instead of ordering it.
+
+**63 — a source inside a summary opens in place. 64 — the product says it once, at the foot.
+67 — a source is a card, and no card carries a kind label. 68 — an honesty line is a note, not a
+sentence in the answer. 69 — the run-audit offer says what it needs.**
+
+**62 — the summary report is five cards and the fold turns the right way up. 70 — the Documents list
+is grouped by the day a file arrived. 71 — a row leads with the short name, and ONE function decides
+it. 72 — the drawer is seven parts, folded. 73 — breathing room is a rule** (the owner: *this is the
+demo report*). **74 — the drawer speaks as the customer's own employee, in one voice.**
+
+---
+
+## 229. NIGHT WATCH: CODE FINDS, A PERSON DECIDES, AND IT NEVER CALLS A MODEL — 4–5 November 2026 (`docs/GAPS-PLAN.md` Part F, migration 095)
+
+**Records GAPS-PLAN decision 75.**
+
+**The decision in the owner's words:** *"Code finds, a report lands each morning, a person decides.
+It never calls a model and it never changes anything."* A cron, `/api/jobs/quality` at
+`30 13 * * *`, SELECT-only on everything but its own two tables, counting eleven things across every
+company over the previous **Pacific** day, written to `quality_reports` and mailed to one address.
+
+**⚡ WHAT ARGUED FOR IT, AND IT IS THE WHOLE CASE.** Four problems were found by hand in one week,
+every one of them had been costing money while it was open, and **not one was found by a test**:
+three paid readings refused by a CHECK (**$0.4430**) whose stored rows said the model had never been
+called; a double press that bought a second audit (**$0.4924**); six of ten audit lines writing a
+bare handle at a person; and nine files read in silence for eleven minutes. A test suite asks
+whether the code does what it was written to do. None of those four was that question.
+
+**The eleven counters:** `answers_no_source · refused_quotes · handles_at_a_person ·
+sections_unparsed · word_against_attachments · read_without_the_model · paid_and_unclaimed ·
+summary_without_sources · template_read_itself · stuck_reading · duplicate_runs`, plus a cost line
+and the eight jobs' pulse, **neither of which ever counts toward the number in the subject** — a
+reading is not a complaint, so a quiet night is *0 things to look at* and still carries both.
+
+**Three things decided by measuring rather than assuming**, each of which changed the design:
+- A twelfth count was **dropped**: as worded it returned 17 rows of which **16 were false
+  positives** — sentences about gaps *inside* a document genuinely on file. Three narrowings and
+  four structural alternatives were measured; none worked.
+- Count (g) was **replaced** by the shape that measured sound: *a `document_scan` call no reading
+  claims* — **7 rows, $0.8170**.
+- The handle pattern was **narrowed** after the first walk read `D002` as a document handle. It is
+  EPA's corrosivity code. Measured before changing: **57 finding hits became 56, and the single
+  dropped row is the D002 one.**
+
+**It is closed to everyone but one address.** `requireOwner` matches the caller's email against
+`QUALITY_EMAIL` and answers **404** to everybody else, and **unset refuses everyone** — so
+forgetting the variable closes the page rather than opening it. `anon` and `authenticated` hold
+**nothing** on `quality_reports`, read back with `has_table_privilege` for all eight rights on
+production after the release.
+
+**⚡ REVERSAL CONDITION.** The no-model rule is not a preference, it is enforced:
+`scripts/check-schema-contracts.js` check 3 computes the transitive import closure of every route
+and holds `PAID_COUNT` at **23**, and `/api/jobs/quality` is not one of them. **If Night Watch ever
+needs a model, that number moves and the change is visible in the gate** — which is the only form
+this decision can be reversed in. A Night Watch email that carries a cost of its own is the thing to
+stop for.
+
+**And it found two defects in itself on its first real run**, which is the argument for running a
+new job by hand before trusting it: it reported *itself* as a hanging job, because `startJobRun`
+opens a `job_runs` row before any work and the newest `quality` row IS the run doing the reading
+(fixed with `.neq('id', run.id)` on both reads); and it counted `D002` as a handle, above.
+
+---
+
+## 230. REV 1 SHIPS ON OPUS, AND THE MODEL COMPARISON IS NOT A RELEASE GATE — 5 November 2026 (`docs/GAPS-PLAN.md` decision 76)
+
+**Records GAPS-PLAN decision 76.**
+
+**Rev 1 ships on `claude-opus-5-5` on every tier, which is what production runs today** — so there
+is nothing to decide before the release and nothing to measure first. The Sonnet 5.5 comparison
+moves out of the finish line and into the work that follows it.
+
+**⚡ REVERSAL CONDITION, as written, and it is a sequencing rule rather than a condition to wait
+for:** after the release the comparison is done **ONE TIER AT A TIME, and never two tiers in one
+job**, in this order — **research · the writing · the audit sections · the summaries · the document
+reading**. Each tier's keys are written **before any run of that tier**. One job, one tier, one
+baseline, *"because two tiers moving in one job is a result nobody can attribute, which is the whole
+reason the Haiku guard exists"*.
+
+**And the JSON-schema-at-the-boundary switch on the audit path waits with it**, measured against
+whichever baseline the audit-sections tier's comparison sets. It was recorded at Night Watch's
+close-out under `CLAUDE.md` §3.1, from three audit sections whose JSON `extractJsonText` succeeded
+on and `JSON.parse` refused — all three **whole objects, not truncation**, where the model closed
+the `quote` string and kept writing outside it. `docs/TEST-AT-FINISH-LINE.md` holds the three ids as
+the first rows that comparison reads.
+
+**Where this is also recorded:** `docs/GAPS-PLAN.md` §5b rows **M1** and **M2**, and a note at the
+top of the Audits part of `docs/TEST-AT-FINISH-LINE.md` (version 13). §5a's finish line is now the
+gate walk and the release routine only.

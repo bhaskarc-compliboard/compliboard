@@ -25,8 +25,11 @@ and §12, then `docs/SCHEMA.md` for the database. This file is state, not method
 > Neither is a live instruction.
 >
 > **Current instead:** `docs/VISION-DOCUMENTS.md` for the module's purpose, `docs/DESIGN.md` §3 and
-> §6 for the layout template and file structure, `docs/RELEASE.md` for what Vercel holds,
-> `docs/INVENTORY-2026-09.md` for every file's state and who calls what.
+> §6 for the layout template and file structure, `docs/RELEASE.md` for what Vercel holds.
+> *(This line used to end "`docs/INVENTORY-2026-09.md` for every file's state and who calls what". That
+> file is **archived as of 6 November 2026** and this pointer is why it could not be archived sooner:
+> it counted **34 API routes and 14 pages** and the repo holds **68 and 22**. For a file's state, count
+> the directory; for the schema, `docs/SCHEMA.md`, which is generated.)*
 
 ---
 
@@ -713,10 +716,12 @@ node scripts/bakeoff-audit-report.js --model <model> --label baseline
 **`npm run db:reset` rebuilds the SCHEMA and nothing else.** It replays 000 to 060 from empty, which
 is the only thing that proves the chain can build a database from nothing. **Take the result from the
 database, never from the exit code** — twice on 22 September it appeared to run and did nothing
-because the automation never matched the confirmation prompt:
+because the automation never matched the confirmation prompt. *(**`--read-only` added 6 November 2026**: this
+is a command to RUN, not a record of one, and since Supabase CLI 3.0.0 a read without it is refused —
+`CLAUDE.md` §3.7.)*
 
 ```
-$ npx supabase db query --project-ref <staging> --linked \
+$ npx supabase db query --project-ref <staging> --linked --read-only \
     "select max(version) as newest, count(*) as total from supabase_migrations.schema_migrations;"
   newest 060 · total 61
 ```

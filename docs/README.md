@@ -1,5 +1,14 @@
 # docs/
 
+**Version:** 19 · **Updated:** 6 November 2026 (housekeeping half two) — **eleven live documents were
+missing from this index and one indexed file has been archived.** Added: **`GAPS-PLAN.md`**,
+**`HANDOFF-FROM-GAPS.md`**, **`PUBLIC-PAGES-PLAN.md`**, **`HANDOFF-FROM-PUBLIC-PAGES.md`**, and the two
+folders this index had never mentioned at all — **`releases/`** (3 files) and **`reports/`** (4). Removed
+from the live table: **`INVENTORY-2026-09.md`**, moved to `archive/` on 6 November because it counts *34
+API routes and 14 pages* against today's **68 and 22**; `archive/README.md` carries the fresh count and
+names `SCHEMA.md` plus a directory count as its successor. `archive/` is now **nine files**, not eight.
+*(Version 18's note follows, because the lesson in it is the reason this check is run at all.)*
+
 **Version:** 18 · **Updated:** 29 October 2026 (housekeeping) — **this index was wrong in both
 directions and both are fixed here.** (1) It carried full, present-tense sections for **six files
 that were moved to `archive/` on 28 September** — `BUILD-PLAN.md`, `CHEMICAL-OR-WA.md`,
@@ -11,8 +20,9 @@ the three ever moved, and none of them should** — `HANDOFF-FROM-HR.md:39` says
 `CURRENT-SCHEMA.md`, deleted on 28 September. Now indexes the **Calendar and My Account** doc sets,
 which it had never caught up with, and **`PENDING.md`**.
 
-**This is the index of what is LIVE.** Eight files moved to **`archive/`** on 28 September; that
-folder's own README names what supersedes each, and it is the only place this index points at them.
+**This is the index of what is LIVE.** **Nine files** are in **`archive/`** — eight moved on 28 September
+and `INVENTORY-2026-09.md` on 6 November; that folder's own README names what supersedes each, and it is
+the only place this index points at them.
 
 ---
 
@@ -80,14 +90,13 @@ folder's own README names what supersedes each, and it is the only place this in
 | **`TESTING.md`** | The three kinds of test kept apart, and every manual set — including the historical ones, marked as such |
 | **`SCHEMA.md`** | **GENERATED.** `node --env-file=.env.local scripts/schema-doc.js`. Never edited by hand |
 | **`TODO.md`** | The task-level to-do: what is done, in progress, not started |
-| **`INVENTORY-2026-09.md`** | Every file in the repo checked against 28 September: what it is for, whether it is true, who calls what |
 | **`PATTERNS.md`** | Conventions carried over from the sibling Bizpulses project |
 
 ### Archived
 
 | | |
 |---|---|
-| **`archive/`** | **Eight files**, kept for the record and superseded, all moved on 28 September 2026. **`archive/README.md` names what replaces each** — and flags the three that are the only written design for work still to be done: `AUDIT-CHECKS.md`, `CHEMICAL-OR-WA.md`, `REQUIREMENTS-SCREEN.md`. **A review on 29 October 2026 moved nothing further**, and `archive/README.md` says what was checked and why each candidate stayed |
+| **`archive/`** | **Nine files**, kept for the record and superseded — eight moved on 28 September 2026. **`archive/README.md` names what replaces each** — and flags the three that are the only written design for work still to be done: `AUDIT-CHECKS.md`, `CHEMICAL-OR-WA.md`, `REQUIREMENTS-SCREEN.md`. **A review on 29 October 2026 moved nothing further**, and `archive/README.md` says what was checked and why each candidate stayed |
 
 ### Not indexed above, and added 29 October 2026
 
@@ -99,6 +108,13 @@ folder's own README names what supersedes each, and it is the only place this in
 | **`HANDOFF-FROM-ACCOUNT.md`** | My Account's close-out (29 October): what it is, how billing works, the migrations, what is owed, and what a future session must not break |
 | **`account-boards.html`**, **`account-walk-card.html`** | The owner's nine boards for My Account, and the walk's card. The words on them are his |
 | **`CALENDAR-PLAN.md`**, **`CALENDAR-MACHINERY.md`**, **`calendar-boards.html`** | The Calendar's plan, its pre-build map, and the owner's twelve boards — never indexed here, which is why this row exists |
+| **`GAPS-PLAN.md`** | **The gaps work's plan** (2–5 November): Parts A–F, the 76 numbered decisions in §3, §5a's step tables, **§5b the pre-release list that is still open**, and §8's findings. Parts A–F all shipped on 5 November |
+| **`HANDOFF-FROM-GAPS.md`** | The gaps work's close-out (6 November): what shipped, Night Watch, what moved to §5b, and the first morning to watch |
+| **`documents-chat-boards.html`**, **`audits-chat-boards.html`**, **`summary-report-boards.html`**, **`documents-boards.html`**, **`answer-boards.html`**, **`audit-report-boards.html`** | The owner's boards for the gaps work. Mock-up CSS, never a source for the product's spacing or colour |
+| **`PUBLIC-PAGES-PLAN.md`** | The public pages' plan: the eight panels and eight boards, released 2 November |
+| **`HANDOFF-FROM-PUBLIC-PAGES.md`** | The public pages' close-out, and **§5 is where the seven homepage gate items are listed** — the list `GAPS-PLAN.md` exists to close |
+| **`releases/`** | **Three dated release records**, one per release that needed one: `2026-09-26-documents-rev1.md`, `2026-09-29-task0.md`, `2026-10-01-audits-rev1.md`. Written once and never updated — each is correct for its date by construction |
+| **`reports/`** | **Four dated step reports**, each pinned to the commit it ran against: `public-pages-12-words.md`, `public-pages-13-15.md`, `public-pages-13-map.md`, `workspace-task2.md`. Same rule: history, not instructions |
 
 ---
 

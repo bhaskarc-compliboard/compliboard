@@ -175,7 +175,7 @@ One drawer, and the sections appear by kind. A program shows gaps and drafts; a 
 | Type | Why it matters | How |
 | --- | --- | --- |
 | ~~HEIC, TIFF, BMP~~ **BUILT 3 November 2026 (GAPS-PLAN Part B step B2)** | phone photos, scans | ~~convert to JPEG or PNG on the server before the call; multi-page TIFF becomes a PDF~~ — **the first half is what was built and the second half was wrong.** A multi-page TIFF becomes **one image block per page**, capped at twenty, not a PDF: there was no page-splitting shape to copy (`parseDocumentToBlocks` sends a PDF whole, as one block), one block per page is what the model reads best, and twenty is the API's own threshold, above which it applies a stricter per-image size limit to every image in the request. `lib/imageConvert.ts` |
-| .doc, .ppt | old files in old cabinets | no converter runs on Vercel: a conversion service, or an honest refusal saying "export it as .docx and upload again" |
+| .doc, .ppt | old files in old cabinets | ~~no converter runs on Vercel: a conversion service, or an honest refusal~~ **DECIDED — the refusal, 3 November 2026** (`GAPS-PLAN.md` decision 51, step B1; B3 struck by decision 52). The picker no longer offers them and the sentence written for them is the one shown. The conversion service is rev 2 — see the corrected box below this table |
 | .eml, .msg | permits and notices arrive as email; the attachment is the document | parse the mail, body as text, each attachment its own document in the same batch |
 | .zip | "here is our compliance folder" | expand into a batch, one document per file, folders kept |
 | .md, .rtf, .odt, .ods, .odp | notes, LibreOffice | .md and .rtf as text; the Open formats convert like the binaries |

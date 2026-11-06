@@ -1,6 +1,9 @@
 # How We Build CompliBoard
 
-**Version:** 21 · **Updated:** 4 October 2026, HR Step 2
+**Version:** 22 · **Updated:** 6 November 2026, housekeeping half two — §7 gains the **one step, one push**
+rule (the owner, 5 November) and the **pinned Supabase CLI** with the two breakages that argued for it;
+§9's *"Tests do not exist"* is corrected, five weeks after it stopped being true.
+**Version 21:** 4 October 2026, HR Step 2
 **Supersedes:** version 20 (4 Oct). §5's staging bullet now says reset and restore run only on the owner's say-so, matching §4 and `CLAUDE.md` §3.7 (`DECISIONS.md` §161); it still said Claude Code may and should reset.
 Version 20: version 19 (4 Oct). Adds **§3d — three more working rules from the workspace**: screenshots in `shots/`, the claim + `after()` pattern for long paid work (`lib/topicClaim.ts`), and every report naming its effects on other sections. §3c already carries the port-3999 rule. `CLAUDE.md` §3.11 holds all four as rules.
 Version 19: version 18 (4 Oct). §4: **`npm run db:reset` and `npm run db:restore` run only when the
@@ -684,6 +687,50 @@ error. It earns the same `grep` as the claim it corrects — arguably more.
 
 **Update the docs in the same session as the work.** Drift is not hypothetical here: two TODO files existed simultaneously, a design document was superseded by a copy with a different name, and `CLAUDE.md` §2 pointed at a filename that no longer existed.
 
+> ### ⚡ ONE STEP, ONE PUSH — the owner, 5 November 2026.
+>
+> **A step is one push. A milestone is one push. A step that adds a migration is preceded by the owner
+> running `npm run db:migrate:prod` for that file, the same day.**
+>
+> **Why, from the release that argued for it.** The gaps work went out on 5 November as **63 commits and
+> five migrations in one push**. Nothing broke, and three things were only found because somebody looked
+> hard at a list nobody should have had to read: the pending-migration count was **five, not the four the
+> brief named** — `091` had been written three days earlier and left out of the sentence — and `091` was
+> the one that had to go first, because until it lands every ledger row the two new chats write is refused
+> by a CHECK and swallowed. A single step's push would have applied `091` on 2 November, on its own day,
+> with nothing else to confuse it.
+>
+> **The migration half is the load-bearing half.** `CLAUDE.md` §3.7's order is migrations, then variables,
+> then code — and a batch of five makes that order a thing you have to reconstruct instead of a thing that
+> happened. Same day, because a migration applied to production with its code still unpushed is a window,
+> and the window should be hours rather than days.
+
+> ### ⚡ THE SUPABASE CLI IS PINNED, SO AN UPGRADE IS A DECISION — 6 November 2026.
+>
+> **`package.json` `devDependencies` pins `supabase` to `3.0.0`**, read from `npx supabase --version` on
+> the machine that ran the 5 November release. Before this it was not a dependency at all: `npx supabase`
+> fetched whatever was newest, so the CLI could — and did — change under the project twice in four days
+> without anybody choosing it.
+>
+> **The two breakages, which are the reason:**
+>
+> - **2 November 2026.** CLI 3.0.0 refused to write to staging through `--linked` at all: it connects as
+>   `supabase_read_only_user`, so a `DO` block returned *"cannot execute INSERT in a read-only
+>   transaction"*. Writes to staging now go over the session pooler with `--db-url`, which is what
+>   `scripts/db-migrate.js` has always done. `GAPS-PLAN.md` §8 records it.
+> - **5 November 2026.** The same release refuses any statement it has not been told is safe, and with
+>   `-o json` it cannot prompt, so it reports *"Confirmation required… running in agent mode"* and exits 1.
+>   **`npm run preflight` stopped on it, and then `npm run db:migrate:prod` stopped on it** — the second
+>   one mid-release, reporting only `Command failed` because the real message was piped to a stream nothing
+>   read. The fix is `--read-only` on every read and `--yes` on every apply, now in both scripts and in
+>   `CLAUDE.md` §3.7's recipe.
+>
+> **Upgrading is allowed; doing it by accident is not.** When the pin is raised, run `npm run preflight`
+> and `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run db:migrate` first — between them they exercise
+> every flag combination the project uses — and expect the deprecation already warned about: `--linked`
+> and `--project-ref` go in v4, replaced by `--remote=<ref>`, and seven seed scripts still carry the old
+> pair.
+
 **A decision record that quietly rewrites its own mistakes is worth less than one that shows them.** When a decision is reversed, the old one is marked superseded with what was wrong about it — §15.7 and §17.5 are both still there, annotated.
 
 **Record the reasoning and the reversal condition.** A decision without a stated condition for revisiting it becomes dogma.
@@ -723,7 +770,18 @@ The gate is easy to state and easy to slip past. A prospect signs, someone wants
 
 Honest list, not a formality.
 
-**Tests do not exist.** `npm run check` is `typecheck && check:schema && build`. `CLAUDE.md` §3.10 promises `test` and there is no runner. **The resolution engine in Phase 4 must not ship without one** — it is pure logic with safety properties (`unknown` never yields `does_not_apply`; expired evidence never satisfies) that fail silently when broken. That is the class of bug a wrong comparison direction produces.
+**~~Tests do not exist.~~ CORRECTED 6 November 2026 — they do, and this line was stale for weeks.** It read:
+*"`npm run check` is `typecheck && check:schema && build`. `CLAUDE.md` §3.10 promises `test` and there is no
+runner."* **`npm run check` is `typecheck && check:schema && test && build`**, `test` is
+`node scripts/test-guard.js`, and on 5 November 2026 it ran **2,754 tests, 0 failed, 0 skipped, 0 todo**
+against a floor of 2,754 that only moves with a written reason. The sentence is kept visible rather than
+deleted because **a documentation defect that says the opposite of the truth is the one worth showing**:
+anybody who read this file to decide whether to write a test was told not to bother.
+
+**What is still true in it** is the reason the runner was built: **the resolution engine's safety
+properties** (`unknown` never yields `does_not_apply`; expired evidence never satisfies) **fail silently
+when broken**, which is the class of bug a wrong comparison direction produces. `tests/unit/` now covers
+them, and `scripts/test-guard.js` refuses a run whose count drops.
 
 **No error monitoring.** If something breaks in production, nobody is told. The `/api/industries` outage was found by accident during unrelated work.
 

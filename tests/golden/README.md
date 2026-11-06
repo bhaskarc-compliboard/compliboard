@@ -3,7 +3,7 @@
 **Proposed convention — nothing here is committed yet. See `TODO.md` 2.8.**
 
 One JSON file per test case. The file is data; it is not a test that runs. No runner exists
-yet — `npm run check` is `typecheck && check:schema && build` and there is no test framework
+yet — *(corrected 6 November 2026: `npm run check` is `typecheck && check:schema && test && build`, `test` is `node scripts/test-guard.js`, and it ran **2,754 tests, 0 failed** on 5 November. The rest of this sentence was written before the runner existed)* there is no test framework
 in `package.json`. Writing the cases down first is deliberate: the cases are the expensive
 part and they are worth capturing when the evidence is fresh, whereas the runner is an
 afternoon whenever it is next.

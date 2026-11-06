@@ -1,5 +1,10 @@
 # RELEASE — HOW A CHANGE REACHES PRODUCTION
 
+**Version:** 1 · **Updated:** 6 November 2026, housekeeping half two.
+*(This file had no version line until now, which is why the `~/Desktop/Compliboard` path below survived
+three weeks of releases: nothing recorded when the file was last checked as a whole. `docs/README.md`
+§Versioning: the version goes inside the file, never in the filename.)*
+
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
 *Updated 5 November 2026, the gaps release's preparation (`docs/GAPS-PLAN.md` Parts A–F, decisions 11–76): **"The gaps release's routine"** is at the end of this file — the three owner commands in order, what each of the **five** pending migrations does on production, thirteen free checks, **one** paid check costed from the ledger, Night Watch's first morning, and what the runtime needs for `sharp`, `heic-decode` and `bmp-ts` (nothing). Two things worth knowing from writing it: **the pending list is five, not four** — `091` was written on 2 November and left out of the brief's sentence, and it is the one that must go first, because until it lands every ledger row the two new chats write is refused by a CHECK and swallowed; and **an image upload on production is a paid reading**, because the five-minute sweep claims it unasked, so it rides with the one paid check instead of being claimed as free. The variable table above gains the four new names that are read and deliberately left unset.*
@@ -98,7 +103,28 @@ row's counts show which job wrote it (`job: 'queue'` for the night queue). The t
 
 ## The procedure
 
-All commands in Terminal 3, from `~/Desktop/Compliboard`.
+All commands in Terminal 3, from `/Users/bhaskar/CompliBoard/compliboard-code`.
+
+> ### ⚠ THAT PATH WAS WRONG UNTIL 6 NOVEMBER 2026, AND THE WRONG ONE STILL EXISTS ON THE DISK.
+>
+> This line read *"from `~/Desktop/Compliboard`"*. **That directory is a real, second checkout of this
+> same repository**, and it is three weeks and eleven migrations behind:
+>
+> | | the live repo | the Desktop copy |
+> |---|---|---|
+> | path | `/Users/bhaskar/CompliBoard/compliboard-code` | `/Users/bhaskar/Desktop/compliboard` |
+> | HEAD | current | **`ff94757`**, *"Calendar attempt 1: park the E10 independent review"*, **14 October 2026** |
+> | migrations on disk | 96 — `000`…`095` | **85 — `000`…`084`** |
+> | `git status` | — | **clean**, and its `origin/main` ref is stale too, so **it looks up to date from inside** |
+>
+> Both have the same `origin`, so every command in this file would have *worked* there and done the
+> wrong thing: `npm run db:migrate:prod` would have offered an eleven-migration-old chain, and
+> `git push` would have pushed a 14 October branch. **Nothing like that happened** — the owner has
+> always run from the live path — which is exactly why it went unnoticed: the document was wrong and
+> the habit was right, and only someone following the document instead of the habit would have found it.
+>
+> **The Desktop copy is not deleted here** — deleting a checkout is the owner's call, not a
+> housekeeping edit. If it is kept, it is worth a `README` inside it saying what it is.
 
 **Step 1 — see what's pending on production.**
 ```
@@ -1382,11 +1408,15 @@ Nothing to watch. There is no new cron, no new email and no new model tier in th
 
 ---
 
-# THE GAPS RELEASE'S ROUTINE — written 5 November 2026, BEFORE the push
+# THE GAPS RELEASE'S ROUTINE — written 5 November 2026, AS IT RAN on 5–6 November
 
-*`docs/GAPS-PLAN.md` Parts A–F, decisions 11–76. **Nothing in this section has been done yet.**
-Claude Code prepared it read-only: it ran the free gate, the pre-flight and the ledger readings
-below and changed no app code. **Every command in it is the owner's, in Terminal 3.***
+*`docs/GAPS-PLAN.md` Parts A–F, decisions 11–76. **IT HAS NOW RUN.** Claude Code prepared it read-only;
+the owner ran every command. **Migrations 091–095 are on production, the push is live at
+`https://compliboard.vercel.app`, and the deployment is `compliboard-501g6po1x`, commit `ee0356c`,
+Ready in 45s.** The read-backs and the free checks below answered as written, with **two exceptions,
+both recorded in place**: check 9's wording was wrong (see its row), and the pre-flight and
+`db:migrate:prod` each stopped once on a Supabase CLI confirmation wall before applying anything — see
+the box at `npm run db:migrate:prod`. **The one paid check in step 5 has not been run yet.***
 
 | | |
 |---|---|
@@ -1447,7 +1477,7 @@ select word, count(*) from public.audit_findings group by 1 order by 1;
 
 ### Step 2 — the three commands, in Terminal 3, in order
 
-From `~/Desktop/Compliboard`. **In this order, and not reordered:** the pre-flight is read-only and
+From `/Users/bhaskar/CompliBoard/compliboard-code` — **not** `~/Desktop/Compliboard`, which is a stale second checkout; see the box at *The procedure*. **In this order, and not reordered:** the pre-flight is read-only and
 tells you what the second command will do; the migrations go **before** the push, because 091 is
 what makes the two new chats billable; the push is last.
 
@@ -1593,7 +1623,8 @@ upload**, and it is deliberately not in this list — see step 5.
 | 6 | `/calendar?tab=ask` | Same, for the Calendar's chat: the page draws and its conversations load. Part A step 1 replaced two hard-coded section literals that the Calendar was one of, so this is the other half of check 5 |
 | 7 | `/compliance` → open a conversation with a summary → **Print** | The summary report prints: the print frame, the headings, no cut-off card. The browser's print preview is enough; nothing needs to be sent to a printer |
 | 8 | `/account?tab=company` → **Delete for good** | The sheet opens, titled *"Delete the company for good"*, and the words read *"…every document, report, date, conversation and login, for everyone here. It cannot be undone. Download your data first."* **Then close it. Do not type the name.** That `quality_reports` is in the delete list is proved by `npm run check`'s check 2, which refuses to pass while any table carrying `company_id` is missing from it — not by deleting a company to find out |
-| 9 | `/quality` **signed out** | **404.** Not a login page and not a 403: `requireOwner` answers `Not found.` to everyone who is not the one address in `QUALITY_EMAIL`, so an id cannot be probed by watching which error comes back |
+| 9 | `/quality` **signed out** | **The page answers 200 and shows `Not found.`; the DATA route `/api/quality` answers 404.** *(Corrected 6 November 2026 — this row said the page was a 404 and it is not. `/quality` is statically prerendered, so Vercel serves a 9,929-byte shell whose only visible text is `CompliBoard Reading…`; it then fetches `/api/quality`, gets the 404, and renders exactly `Not found.` — `app/quality/page.tsx:53`. The served HTML contains no counter name, no count, no row id and not the words "Night Watch", checked by grep against the live site. `app/quality/page.tsx:9` says why this is the design: **"an unlinked page is not the security — `requireOwner` is."** Every other app page behaves the same way signed out.)* |
+| 9a | `/api/quality` **signed out** | **404**, body exactly `{"error":"Not found."}` — **22 bytes**. Compare it with a route that genuinely does not exist, e.g. `/api/quality-does-not-exist`, which returns **10,003 bytes of Next's HTML 404 page**. Those are different failures, which is how you know the gate was reached rather than the route being absent (`CLAUDE.md` §9a: prove a check can see a presence) |
 | 10 | `/quality` **signed in as the owner** | The Night Watch table draws, with the eleven counts and the cost and pulse lines. **On the morning of the push it will be empty or absent, and that is correct** — no row exists until the cron has run once |
 | 11 | `/api/jobs/quality` in a browser, no header | **404.** A GET with no `Authorization: Bearer <CRON_SECRET>` is refused, exactly as the other seven jobs are |
 | 12 | Vercel → the deployment → **Settings → Cron Jobs** | **Eight** entries, and `/api/jobs/quality` at `30 13 * * *` among them. The ceiling is 100 on Pro per vercel.com/docs/limits dated 2026-08-03 |

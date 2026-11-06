@@ -837,6 +837,11 @@ select role_name from information_schema.enabled_roles order by 1
 - It is **not** the service role. `SUPABASE_PROD_SERVICE_ROLE_KEY` was not used.
 - On staging the same command runs as `supabase_read_only_user` (B12). The production session's role was **not** queried, because the brief allows exactly two production statements.
 
+> *(**6 November 2026:** the command above is left exactly as it was run on this date. Since Supabase CLI
+> 3.0.0 a read also needs **`--read-only`** or it is refused — `CLAUDE.md` §3.7 has the current recipe.
+> Adding the flag to a record of what was run would make the record false, so it is noted, not edited.)*
+
+
 **C1. Has anyone saved an HR audit?**
 ```
 select count(*) from public.hr_audits;

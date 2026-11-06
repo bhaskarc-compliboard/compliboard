@@ -122,6 +122,12 @@ npx supabase db query --project-ref mgolkkfihzlnglgggprg --linked \
    FROM pg_constraint WHERE conrelid = 'public.uploads'::regclass AND contype = 'c'"
 ```
 
+> *(**6 November 2026.** Two things about the block above, because this file gets read for commands.
+> **The ref `mgolkkfihzlnglgggprg` is BIZPULSES', not CompliBoard's**, and `public.uploads` is a Bizpulses
+> table — this whole file describes that repo as of 9 September 2026 and cites *its* `CLAUDE.md` §2.5, so
+> the ref is correct here and must not be "corrected". **CompliBoard's own recipe is `CLAUDE.md` §3.7**, and
+> since Supabase CLI 3.0.0 it also needs **`--read-only`**, which this 9 September snapshot predates.)*
+
 Without `--linked` the CLI errors out. This is the mandated way to confirm a live constraint name
 before writing a `DROP CONSTRAINT` — not from memory, not from the previous migration file.
 

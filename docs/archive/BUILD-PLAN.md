@@ -540,7 +540,7 @@ and miss both Oregon obligations.
 > | What was decided and why | `DECISIONS.md` §131–§139 |
 > | What shipped, and the smoke test | `docs/releases/2026-09-26-documents-rev1.md` |
 > | Which model reads a document, and what it costs | `tests/golden/documents/bakeoff/2026-09-27-rejudged.md` |
-> | The state of the code today | `docs/HANDOFF-CODE.md`, `docs/INVENTORY-2026-09.md` |
+> | The state of the code today | `docs/HANDOFF-CODE.md`, `docs/archive/INVENTORY-2026-09.md` |
 >
 > **Items in this section that are still open** are the ones the release note and §139 name: the
 > `ScanStatus` split, and the Audits rewiring that finally retires `lib/documentReview.ts`.

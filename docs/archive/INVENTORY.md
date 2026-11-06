@@ -2,7 +2,7 @@
 
 > ### ⚠ SUPERSEDED, IN PART, 28 September 2026.
 >
-> This is the surface inventory **by phase**, last read on 15 September. `docs/INVENTORY-2026-09.md` is
+> This is the surface inventory **by phase**, last read on 15 September. `docs/archive/INVENTORY-2026-09.md` is
 > the inventory **by file**, checked on 28 September against production at migration 054.
 >
 > They answer different questions and both are kept: this one says which phase a thing belongs to, the

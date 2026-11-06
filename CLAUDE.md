@@ -2,7 +2,7 @@
 
 # CompliBoard — Project Rules for Claude Code
 
-**Updated:** 22 October 2026 — §3.4a: the owner's laptop runs **`claude-opus-5-5`** on all 14 tiers, read from
+**Updated:** 22 October 2026 — §3.4a: the owner's laptop runs **`claude-opus-5-5`** on all 16 tiers *(14 when this line was written; `documents` and `audits_chat` were added on 2 November 2026 by `GAPS-PLAN.md` Part A step 1, migration 091)*, read from
 `npm run haiku:check` at My Account step 13. The 20 October line below said Opus 5; the value has moved again,
 which is why this one is recorded with the command that produced it.
 20 October 2026 — §3.4a: the owner's laptop runs **Opus 5**, not Opus 5.5 (corrected at the Dashboard's
@@ -244,7 +244,7 @@ when the question is **"is this answer any good"**, and not before.
 >
 > **CORRECTED 22 OCTOBER 2026 (My Account step 13): THE LAPTOP RUNS `claude-opus-5-5`.**
 > Read rather than recalled: `npm run haiku:check` with no guard — which asks `modelForTask()` itself, for every
-> tier in `lib/ai.ts` — printed **`claude-opus-5-5` on all 14 tiers** on 22 October. The 20 October correction
+> tier in `lib/ai.ts` — printed **`claude-opus-5-5` on all 14 tiers** on 22 October. *(**16 since 2 November 2026** — `documents` and `audits_chat`, counted from `TASK_MODELS` in `lib/ai.ts`, which is the only place the list exists.)* The 20 October correction
 > below said `claude-opus-5`, and the 15 October paragraph before it said 5.5; the value has moved under both.
 > Everything else about it holds — every tier resolves to the same one model locally, and the guard is still the
 > only thing keeping Claude Code's own runs on Haiku. **`docs/RELEASE.md`'s variable table remains the
@@ -347,7 +347,11 @@ once.
   into. A row belonging to another company returns **404, not 403**, so ids cannot be
   probed by watching which error comes back.
 - Every table needs `SELECT`, `INSERT`, `UPDATE`, and `DELETE` policies. **Done —
-  migrations 003–010.** All 23 tables carry what they need — the three reference tables
+  migrations 003–010.** *(**That count is historical and is kept as written: 23 was the whole schema in
+  September. `docs/SCHEMA.md`, generated, reads **57 tables** on 6 November 2026 — so read this sentence
+  as "the tables that existed when 003–010 ran", and `SCHEMA.md` for what exists now. The list below
+  also says "the three reference tables" and then names five; both are left as the record of what was
+  written.*)* All 23 tables carry what they need — the three reference tables
   (`requirement_templates`, `agencies`, `standard_templates`, `switches`,
   `industry_coverage`) are read-only to authenticated callers, `library_candidates` is
   closed to them entirely, `jobs` is read-only, and the not-logged-in role holds no grants
@@ -501,9 +505,26 @@ once.
   `pg_constraint`, `pg_catalog`, `information_schema`) use the Supabase CLI, not the JS
   client — PostgREST does not expose system catalogs:
   ```
-  npx supabase db query --project-ref <ref> --linked "SELECT ..."
+  npx supabase db query --project-ref <ref> --linked --read-only -o json "SELECT ..."
   ```
-  `--linked` is required. Confirm any live constraint name this way before writing a
+  `--linked` is required.
+
+  > ### ⚡ `--read-only` IS REQUIRED TOO, SINCE 5 NOVEMBER 2026, OR THE READ IS REFUSED.
+  > The Supabase CLI (**3.0.0**, pinned in `package.json`) refuses any statement it has not been told
+  > is safe, and with `-o json` it cannot prompt:
+  >
+  > ```
+  > Confirmation required: Run a SQL statement (target: …). This run can't ask because it is
+  > running in agent mode. Nothing was changed.
+  > This is an agent run: ask the user before re-running with --yes.
+  > For a read-only statement, pass --read-only instead.
+  > ```
+  >
+  > **Of its two ways out, `--yes` says "whatever this is, do it" and `--read-only` says "refuse
+  > anything that is not a read" — so a read takes the second**, and §3.7's SELECT-only rule is then
+  > enforced by the server rather than by good intentions. Without it, `npm run preflight` and
+  > `npm run db:migrate:prod` both stopped dead on 5 November, each reporting only `Command failed`
+  > because the real message was piped to a stream nothing read. Both scripts now pass it. Confirm any live constraint name this way before writing a
   DROP — not from memory, not from the prior migration file.
 - Every migration opens with a paragraph explaining **why**, not just what.
 - **`CHECK` constraints pass on NULL, so a NULL inside one silently disables it.** The
