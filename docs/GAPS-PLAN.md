@@ -4,7 +4,7 @@
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
-**Updated:** 5 November 2026 — **THE RELEASE IS PREPARED AND NOTHING IS PUSHED.** No app code changed. `docs/RELEASE.md` gains "The gaps release's routine" (the owner's three commands, the five pending migrations one by one, thirteen free checks, one paid check costed from the ledger, Night Watch's first morning, and the runtime answer for `sharp`/`heic-decode`/`bmp-ts`) and the four new variable names that are read and deliberately left unset. `STATUS.md` v41: eight rows restamped and a new Night Watch row, none marked released. §8 gains the release line and the three things the preparation found. One script changed: `scripts/preflight-prod.js` gains `--read-only`, without which its production read is refused.
+**Updated:** 5 November 2026 — **THE RELEASE IS PREPARED AND NOTHING IS PUSHED.** No app code changed. `docs/RELEASE.md` gains "The gaps release's routine" (the owner's three commands, the five pending migrations one by one, thirteen free checks, one paid check costed from the ledger, Night Watch's first morning, and the runtime answer for `sharp`/`heic-decode`/`bmp-ts`) and the four new variable names that are read and deliberately left unset. `STATUS.md` v41: eight rows restamped and a new Night Watch row, none marked released. §8 gains the release line, the three things the preparation found, and — on a second read before the run — **093 and 094 borrowed a real company for their probes, and 093's moved `usage_counters.files_read` with no AFTER DELETE trigger to put it back**; both now make their own probe company as 091 always did, edited in place because neither is applied on production. One script changed: `scripts/preflight-prod.js` gains `--read-only`, without which its production read is refused.
 **Updated:** 2 November 2026 — **Part A step 1 done** (§5). Four commits: `d14ac16` the plan and the boards, `877d67f` the four doc corrections, `29324c5` the engine and migration 091, `bfdbd67` the types and the schema doc. §8 gains three things the step found: the Haiku guard could pass while seeing no tiers at all, two HR tests pinned the old night-summary list, and Supabase CLI 3.0.0 broke the project's own migrate and schema-doc scripts.
 **Updated:** 2 November 2026 — **Part A step 2 done** (§5). Two commits — `b93757c` the lift and `4431ee4` the proof — plus the staging trial parking, which the OWNER ran in Terminal 3 and which has no commit because it is data and not code. §7 gains the action row for the owner to pick. §8 gains what the step found: the Supabase CLI cannot write to staging through `--linked` at all, and the Calendar page no longer draws a paused note of its own.
 **Updated:** 2 November 2026 — **Part A step 3 done** (§5). Three commits: `4c6652c` the engine's carry, `0c76344` the upload, `dafc786` the two defects the Haiku proof found. §3 records the two step-2 decisions now in force (the action row keeps Calendar's layout; the Delete sheet's words stand). §7 gains the paused sentence and S7's measured number. §8 gains three findings, one of which is a quality question for the owner.
@@ -972,6 +972,55 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+### ⚡ 093 AND 094 BORROWED A CUSTOMER'S COMPANY FOR THEIR PROBES, AND 093'S MOVED A COUNTER (5 November 2026, before the production run)
+
+Both migrations opened their self-test with `select id into co from public.companies limit 1`. On
+staging that is a fixture; **on production it is a real customer.** Read out of `pg_trigger` on
+staging, which is what settles it:
+
+```
+CREATE TRIGGER document_scans_count_reading AFTER INSERT ON public.document_scans
+  FOR EACH ROW WHEN ((new.status IS DISTINCT FROM 'could_not_read'::text))
+  EXECUTE FUNCTION document_scans_count_reading()
+```
+
+093's probe inserts its scan with `status = 'gaps_found'`, which **is** distinct from
+`'could_not_read'`, so the trigger fires and `bump_usage_counter_for(co, 'files_read')` adds one to
+the borrowed company's Dashboard counter. **The probe's delete does not put it back.** All four
+triggers that call `bump_usage_counter_for` — `document_scans_count_reading`,
+`audit_runs_count_done_insert`, `audit_runs_count_done_update`, `checklists_count_created` — are
+AFTER INSERT or AFTER UPDATE, read from the catalog; **there is no AFTER DELETE trigger anywhere.**
+That is migration 080's design rather than a bug in it (`STATUS.md`: *"events, not inventory —
+never decremented, never derived from row counts"*), which is exactly why borrowing was the wrong
+thing to do: a customer's "files read" would have read one higher than the number of files they
+have, for ever, because of a migration's self-test.
+
+**094 moved nothing.** Its run is born `'queued'` and both audit triggers want `status = 'done'`.
+It was changed with 093 regardless, so the pattern does not survive in one file to be copied out of
+again, and so a later edit that makes that probe run `done` fails a verify instead of writing to a
+customer.
+
+**Both now do what 091 always did** — their own probe company, written against, deleted, with the
+teardown proved including the `usage_counters` row. Edited in place rather than fixed by a 096,
+because neither is applied on production yet. **Production never ran either file, so production
+carries no phantom.**
+
+**⏳ WHAT STAGING CARRIES, AND IT IS THE OWNER'S TO DECIDE.** Measured as
+`files_read` minus the count of scans the trigger would have counted
+(`status is distinct from 'could_not_read'`):
+
+| Company | `files_read` | countable scans | difference |
+|---|---|---|---|
+| **Step 20 Card Walk** (`61b26cc0-…`) | 14 | 13 | **+1** — and this is the company `select id from public.companies limit 1` returns today |
+| Cascade Specialty Chemicals, LLC | 25 | 23 | +2 |
+| Test Gamma Solvents | 56 | 17 | +39 — `check:live`'s own churn; it writes and deletes scan rows every run and its `updated_at` moved when the release gate ran |
+
+**Step 20's +1 is consistent with 093's probe and is not proof of it.** A never-decremented counter
+makes an ordinary deleted document look identical to a probe, and nothing records which bump came
+from where — so this is a hypothesis, named rather than filed as a cause. **No counter was
+corrected**, because deciding whether a staging fixture's Dashboard number matters is the owner's
+call, not Claude Code's.
 
 **Release prepared, awaiting the owner's three commands** — 5 November 2026. The free gate is green
 (`npm run check` exit 0, 2,754 tests; `check:live` on 3999, 99 ✓ / 0 ✗), `npm run preflight` derives

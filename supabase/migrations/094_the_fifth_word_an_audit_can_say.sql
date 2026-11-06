@@ -60,15 +60,36 @@ comment on column public.audit_findings.word is
 -- THE PROBE. Three things, and the third is the one worth having: the fifth
 -- word goes in, a sixth word is refused, and a suggestion cannot take it.
 -- ===========================================================================
+-- *** THE PROBE MAKES ITS OWN COMPANY — 5 November 2026, before the production run. ***
+-- This block used to open with `select id into co from public.companies limit 1`, which on
+-- production borrows a real customer. Unlike 093's, **this probe moves no counter today**, and the
+-- change is still worth making. Read from `pg_trigger` on staging:
+--
+--   CREATE TRIGGER audit_runs_count_done_insert AFTER INSERT ON public.audit_runs
+--     FOR EACH ROW WHEN ((new.status = 'done'::text)) EXECUTE FUNCTION audit_runs_count_done()
+--   CREATE TRIGGER audit_runs_count_done_update AFTER UPDATE ON public.audit_runs
+--     FOR EACH ROW WHEN (((old.status IS DISTINCT FROM 'done'::text)
+--       AND (new.status = 'done'::text))) EXECUTE FUNCTION audit_runs_count_done()
+--
+-- The run below is born `'queued'` and is never updated, so neither WHEN clause is satisfied and
+-- `audits_done` does not move. `audit_sections` and `audit_findings` carry no triggers at all.
+--
+-- *** SO WHY CHANGE IT. *** Because that is a fact about one word in one INSERT, and nothing holds
+-- it still. Add `status = 'done'` to this probe later — to prove the fifth word survives a finished
+-- run, which is a reasonable thing for a future edit to want — and it silently adds an audit to a
+-- customer's Dashboard that nobody ran. **There is no AFTER DELETE trigger to take it back**: the
+-- four triggers that touch `usage_counters` are all AFTER INSERT or AFTER UPDATE, which is
+-- migration 080's design (`STATUS.md`: *"events, not inventory — never decremented"*). 093's probe
+-- WAS firing its trigger, for exactly this reason, and the two files are fixed together so the
+-- borrowing pattern does not survive in one of them to be copied out of again.
+--
+-- 091 is the shape being matched: its own company, written against, deleted. `companies`' one
+-- AFTER INSERT trigger, `create_primary_site`, bumps no counter.
 do $$
 declare
-  co uuid; run uuid; sec uuid; ok boolean;
+  co uuid; run uuid; sec uuid; ok boolean; n int;
 begin
-  select id into co from public.companies limit 1;
-  if co is null then
-    raise notice 'MIGRATION 094: no company on this database, probes skipped.';
-    return;
-  end if;
+  insert into public.companies (name) values ('094 probe company') returning id into co;
 
   insert into public.audit_runs (company_id, kind, agency_label, status)
     values (co, 'agency', 'migration-094-probe', 'queued') returning id into run;
@@ -109,8 +130,35 @@ begin
            (co, run, sec, 5, 'finding', 'probe: nothing on file', 'nothing_on_file', 'read'),
            (co, run, sec, 6, 'finding', 'probe: no document', 'not_a_document_question', 'read');
 
+  -- ---- CLEAN UP, AND PROVE IT. ----
+  -- The run goes first because the sections and findings hang off it, then the company. Checked
+  -- rather than trusted, as 091 does: this block writes into three tenant tables on a live
+  -- database and a probe that outlives its probe is somebody else's confusing row later.
   delete from public.audit_runs where id = run;
-  raise notice 'MIGRATION 094: five words in, a sixth refused, and a suggestion still cannot be one of them.';
+  delete from public.companies where id = co;
+
+  select count(*) into n from public.audit_runs where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 094 FAILED: % probe run(s) outlived the probe company.', n;
+  end if;
+  select count(*) into n from public.audit_sections where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 094 FAILED: % probe section(s) outlived the probe company.', n;
+  end if;
+  select count(*) into n from public.audit_findings where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 094 FAILED: % probe finding(s) outlived the probe company.', n;
+  end if;
+  -- `audits_done` was never bumped — the run was born queued — so this proves the absence of a
+  -- counter row rather than the removal of a bump. It is here because a later edit that DOES make
+  -- the run done would fail this line instead of writing to a customer.
+  select count(*) into n from public.usage_counters where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 094 FAILED: the probe company kept a usage_counters row.';
+  end if;
+
+  raise notice 'MIGRATION 094: five words in, a sixth refused, a suggestion still cannot be one of them, '
+    'and the probe company is gone with no counter row behind it.';
 end $$;
 
 -- The definition, read back out of the catalog rather than trusted from above.

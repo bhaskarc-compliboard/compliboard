@@ -227,15 +227,40 @@ grant select on public.document_index_v to authenticated;
 -- point of this migration is one CASE arm, so the arm is walked: a gap read
 -- from the page, a gap only inferred, both, neither, and a dismissed one.
 -- ===========================================================================
+-- *** THE PROBE MAKES ITS OWN COMPANY, AND THAT IS A CORRECTION — 5 November 2026, before the
+-- production run. *** This block used to open with `select id into co from public.companies
+-- limit 1`, borrowing whichever company the planner handed back. On staging that is a fixture; on
+-- production it is a real customer, and the borrowing was not free:
+--
+--   CREATE TRIGGER document_scans_count_reading AFTER INSERT ON public.document_scans
+--     FOR EACH ROW WHEN ((new.status IS DISTINCT FROM 'could_not_read'::text))
+--     EXECUTE FUNCTION document_scans_count_reading()
+--
+-- read out of `pg_trigger` on staging. The probe scan below is inserted with
+-- `status = 'gaps_found'`, which IS DISTINCT FROM 'could_not_read', so the trigger fires and
+-- `bump_usage_counter_for(co, 'files_read')` adds one to that company's Dashboard counter.
+--
+-- *** AND THE DELETE AT THE END OF THE BLOCK DOES NOT PUT IT BACK. *** There is no AFTER DELETE
+-- trigger on `document_scans`, on `documents`, or anywhere else — the four triggers that touch
+-- `usage_counters` are all AFTER INSERT or AFTER UPDATE, read from the catalog. That is migration
+-- 080's design and not a bug in it: `STATUS.md` calls these counters *"events, not inventory —
+-- never decremented, never derived from row counts"*. So a borrowed company keeps the phantom for
+-- good, and a customer's "files read" would read one higher than the number of files they have,
+-- for ever, because of a migration's self-test.
+--
+-- 091 already had the right shape: its own company, written against, deleted again. This now
+-- matches it. `companies` carries one AFTER INSERT trigger, `create_primary_site`, which makes an
+-- `entities` row and bumps no counter; neither it nor `entities` appears among the four triggers
+-- that call `bump_usage_counter_for`. So the probe company's own `files_read` goes to 1 and then
+-- leaves with it — `usage_counters_company_id_fkey` is ON DELETE CASCADE, read from pg_constraint.
+--
+-- The `no company on this database` skip is gone with the borrowing: a probe that creates its own
+-- company has nothing to skip, and an empty database is no longer a case this block has to have.
 do $$
 declare
   co uuid; doc uuid; sc uuid; got text; n int; m int;
 begin
-  select id into co from public.companies limit 1;
-  if co is null then
-    raise notice 'MIGRATION 093: no company on this database, probes skipped.';
-    return;
-  end if;
+  insert into public.companies (name) values ('093 probe company') returning id into co;
 
   insert into public.documents (company_id, name, file_url, file_type, file_size, source, status)
     values (co, 'migration-093-probe.pdf', 'probe/093', 'application/pdf', 1, 'upload', 'read')
@@ -310,8 +335,41 @@ begin
     raise exception 'MIGRATION 093 FAILED: an expired permit reads %, wanted expired.', got;
   end if;
 
+  -- ---- CLEAN UP, AND PROVE IT. ----
+  -- The document goes first because every probe row above hangs off it, then the company. Checked
+  -- rather than trusted: this block writes into four tenant tables on a live database, and a probe
+  -- that outlives its probe is somebody else's confusing row later (091's rule, copied).
   delete from public.documents where id = doc;
-  raise notice 'MIGRATION 093: needs_work needs a gap read from the page, and the notes are counted apart.';
+  delete from public.companies where id = co;
+
+  select count(*) into n from public.documents where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 093 FAILED: % probe document(s) outlived the probe company.', n;
+  end if;
+  select count(*) into n from public.document_scans where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 093 FAILED: % probe scan(s) outlived the probe company.', n;
+  end if;
+  select count(*) into n from public.document_gaps where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 093 FAILED: % probe gap(s) outlived the probe company.', n;
+  end if;
+  select count(*) into n from public.document_deadlines where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 093 FAILED: % probe deadline(s) outlived the probe company.', n;
+  end if;
+
+  -- AND THE COUNTER THIS WHOLE CORRECTION IS ABOUT. The probe scan bumped `files_read` to 1 on the
+  -- probe company; the cascade must have taken the row with it, so no counter anywhere records a
+  -- reading that never happened.
+  select count(*) into n from public.usage_counters where company_id = co;
+  if n <> 0 then
+    raise exception 'MIGRATION 093 FAILED: the probe company kept a usage_counters row, so its '
+      'files_read bump outlived it.';
+  end if;
+
+  raise notice 'MIGRATION 093: needs_work needs a gap read from the page, the notes are counted apart, '
+    'and the probe company and its files_read bump are both gone.';
 end $$;
 
 -- The column list, read back rather than assumed: `calendar_v` depends on this view, so the one

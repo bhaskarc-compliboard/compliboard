@@ -1390,7 +1390,7 @@ below and changed no app code. **Every command in it is the owner's, in Terminal
 
 | | |
 |---|---|
-| **Commits** | **60** on `main`, none pushed — from `d14ac16` to the records commit at the tip, which is this routine itself. `git log origin/main..HEAD --oneline \| wc -l` is the number to trust on the day |
+| **Commits** | **61** on `main`, none pushed — from `d14ac16` to the records commit at the tip, which is this routine itself. `git log origin/main..HEAD --oneline \| wc -l` is the number to trust on the day |
 | **Migrations** | **091, 092, 093, 094, 095** — **five, not four.** See the box below |
 | **New variables needed** | **one**: `QUALITY_EMAIL`, which the owner set on Vercel Production on 5 November. Nothing else |
 | **Variables changed** | none. Four new names are read by this code and **all four are meant to stay unset** — see the list under the variable table |
@@ -1474,13 +1474,48 @@ user, which is a thing to do on staging and never on production.
 |---|---|
 | `091_each_chat_section_is_its_own.sql` | Drops and re-adds **two** CHECK constraints — `ai_calls_task_check` (17 values restated, `documents` and `audits_chat` added) and `topics_section_is_known` (3 restated, the same two added). **It creates a probe company, writes topics and ledger rows against it, and deletes the company again** (`:135` insert, `:194` delete) — its own company, not a customer's, so no existing row is touched. All inside one transaction: a failed probe rolls the migration back. **No existing production row moves** |
 | `092_where_the_converted_photo_lives.sql` | Adds `documents.converted_url`, nullable, and a comment on it. **Writes and deletes nothing.** Two statements. **No existing row moves** — every existing document gets `null`, which is what "this file needed no conversion" means |
-| `093_needs_work_only_on_a_gap_read_from_the_page.sql` | `create or replace view public.document_index_v`, then `revoke` from `anon` and `authenticated` and `grant select` to `authenticated`. **Its probe attaches to an existing company** — `select id into co from public.companies limit 1`, so on production that is a real customer — and writes a probe document, scan, two gaps and a deadline, then **deletes the probe document by its own id** (`:313`), which cascades the rest away. Uncommitted until the migration commits, so no customer ever sees them. **No existing row moves.** With no company on the database it raises a notice and skips the probes |
-| `094_the_fifth_word_an_audit_can_say.sql` | Drops and re-adds `audit_findings_word_check` with a fifth word, every prior value restated, and comments the column. **Probe attaches to an existing company**, writes one `audit_runs` row with two child rows, and **deletes that run by its own id** (`:112`). **No existing row moves** |
+| `093_needs_work_only_on_a_gap_read_from_the_page.sql` | `create or replace view public.document_index_v`, then `revoke` from `anon` and `authenticated` and `grant select` to `authenticated`. **Its probe creates its own `'093 probe company'`, writes a document, scan, two gaps and a deadline against it, then deletes the document and the company and proves both gone** — corrected 5 November, see the box below this table. **No existing row moves, and no customer's counter moves** |
+| `094_the_fifth_word_an_audit_can_say.sql` | Drops and re-adds `audit_findings_word_check` with a fifth word, every prior value restated, and comments the column. **Its probe creates its own `'094 probe company'`**, writes one `audit_runs` row with two child rows, then deletes the run and the company and proves both gone — corrected 5 November with 093's. **No existing row moves** |
 | `095_night_watch_the_nightly_read_only_finder.sql` | Creates **`public.quality_reports`** — RLS on, revoked from `anon` and `authenticated`, granted to neither, no policy — plus its index and comments. Restates **`job_runs_job_check`** whole to admit the eighth word, `quality`. **Probe rows go in and come out again**, and the two deletes are the careful ones: `quality_reports` by the dates `'1999-01-01'` and `'1999-01-02'`, and `job_runs` **by the mark `counts ? 'migration_095_probe'`** — not by "recent and unfinished", because `scan_documents` and `audit_sections` open a row every five minutes and a recency sweep would have deleted a live one. **No existing row moves** |
 
 ```
 git push origin main
 ```
+> ### ⚡ 093 AND 094 USED TO BORROW A CUSTOMER'S COMPANY FOR THEIR PROBES. CORRECTED 5 NOVEMBER 2026, BEFORE THE RUN.
+>
+> Both opened with `select id into co from public.companies limit 1` — on staging a fixture, on
+> production **a real customer**. That was not free. Read out of `pg_trigger` on staging:
+>
+> ```
+> CREATE TRIGGER document_scans_count_reading AFTER INSERT ON public.document_scans
+>   FOR EACH ROW WHEN ((new.status IS DISTINCT FROM 'could_not_read'::text))
+>   EXECUTE FUNCTION document_scans_count_reading()
+> ```
+>
+> 093's probe scan is inserted with `status = 'gaps_found'`, which **is** distinct from
+> `'could_not_read'`, so the trigger fired and `bump_usage_counter_for(co, 'files_read')` added one
+> to that company's Dashboard counter. **And the probe's delete did not put it back**: all four
+> triggers that touch `usage_counters` are AFTER INSERT or AFTER UPDATE, and there is no AFTER
+> DELETE anywhere. That is migration 080's design, not a bug in it — `STATUS.md` calls these
+> counters *"events, not inventory — never decremented, never derived from row counts"*. So a
+> customer's **"files read" would have read one higher than the number of files they have, for
+> ever, because of a migration's self-test.**
+>
+> **094 moved nothing**, because its run is born `'queued'` and both audit triggers want
+> `status = 'done'`. It was changed with 093 anyway, so the borrowing pattern does not survive in
+> one file to be copied out of again — and so that a later edit adding `status = 'done'` to that
+> probe cannot quietly add an audit to a customer's Dashboard.
+>
+> **Both now do what 091 always did:** make their own probe company, write against it, delete it,
+> and prove nothing outlived it — including the `usage_counters` row, which leaves by
+> `usage_counters_company_id_fkey ON DELETE CASCADE`. `companies`' one AFTER INSERT trigger,
+> `create_primary_site`, bumps no counter.
+>
+> **Production never ran either file, so production carries no phantom** — this was caught on the
+> right side of the push. Staging ran the old 093 once, on 4 November; what that left is named in
+> `docs/GAPS-PLAN.md` §8 and is the owner's to decide, because a never-decremented counter makes an
+> ordinary deleted document look exactly the same as a probe.
+
 
 Last. The deployment builds with 091–095 already on the database, which is the ordering the whole
 box above is about. If the push is refused with 403, the section further up this file covers it.
