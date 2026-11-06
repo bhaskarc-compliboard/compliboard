@@ -3,7 +3,7 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-11-05 23:18 UTC
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-11-06 05:48 UTC
 **Migrations applied:** 96 — `000` to `095`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
@@ -29,7 +29,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 170 rows · touched by route calendar/topics/[id]/summarise, route chat, route checklists/from-topic, route documents, route hr/answer, +13 more
+- `topics` — 170 rows · touched by route calendar/topics/[id]/summarise, route chat, route checklists/from-topic, route documents, route hr/answer, +14 more
 - `checklists` — 6 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +7 more
 - `checklist_items` — 34 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
@@ -50,7 +50,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Documents and evidence**
 
-- `documents` — 51 rows · touched by route audit-runs, route calendar, route chat, route document-actions, route document-draft, +15 more
+- `documents` — 51 rows · touched by route audit-runs, route calendar, route chat, route document-actions, route document-draft, +16 more
 - `document_reviews` — 0 rows · touched by lib attachedDocument
 - `company_folders` — 0 rows · touched by route audits/index, route documents/index, route documents, route folders, screen calendar
 - `company_templates` — 0 rows · **no code reads or writes it**
@@ -63,9 +63,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Audits**
 
-- `audit_runs` — 32 rows · touched by route audit-checklist, route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, route audits/index, +7 more
-- `audit_sections` — 58 rows · touched by route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, route audits/index, route jobs/audit-sections, +6 more
-- `audit_findings` — 659 rows · touched by route audit-checklist, route audit-findings, route audit-runs/[id], route audits/index, screen calendar, +4 more
+- `audit_runs` — 32 rows · touched by route audit-checklist, route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, route audits/index, +8 more
+- `audit_sections` — 58 rows · touched by route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, route audits/index, route jobs/audit-sections, +7 more
+- `audit_findings` — 659 rows · touched by route audit-checklist, route audit-findings, route audit-runs/[id], route audits/index, route jobs/quality, +5 more
 
 **Chemicals and substances**
 
@@ -74,7 +74,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 12 rows · touched by screen account, route account/export, route account, route audit-runs, route billing/checkout, +33 more
+- `companies` — 12 rows · touched by screen account, route account/export, route account, route audit-runs, route billing/checkout, +34 more
 - `profiles` — 11 rows · touched by screen account, route account/export, route account, route invitations, route jobs/calendar-month, +15 more
 - `entities` — 16 rows · touched by screen account, route audit-runs, route audits/index, route calendar, route company-information, +26 more
 
@@ -159,7 +159,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 
 **Rows:** 375 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
+**Read or written by:** `route document-draft`, `route jobs/quality`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -217,7 +217,7 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 
 **Rows:** 659 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audit-checklist`, `route audit-findings`, `route audit-runs/[id]`, `route audits/index`, `screen calendar`, `lib ask`, `lib auditRun`, `lib calendarDates`, `script run-golden-audit`
+**Read or written by:** `route audit-checklist`, `route audit-findings`, `route audit-runs/[id]`, `route audits/index`, `route jobs/quality`, `screen calendar`, `lib ask`, `lib auditRun`, `lib calendarDates`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -310,7 +310,7 @@ One audit of one company at one moment. Sections are to a run what files are to 
 
 **Rows:** 32 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audit-checklist`, `route audit-runs/[id]`, `route audit-runs/[id]/sections/[sid]/retry`, `route audit-runs`, `route audits/index`, `route jobs/audit-sections`, `screen dashboard`, `lib ask`, `lib auditNotify`, `lib auditRun`, `lib calendarDates`, `script check-live`
+**Read or written by:** `route audit-checklist`, `route audit-runs/[id]`, `route audit-runs/[id]/sections/[sid]/retry`, `route audit-runs`, `route audits/index`, `route jobs/audit-sections`, `route jobs/quality`, `screen dashboard`, `lib ask`, `lib auditNotify`, `lib auditRun`, `lib calendarDates`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -387,7 +387,7 @@ One agency (or one template), one model call. claimed_at is the sweep's compare-
 
 **Rows:** 58 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audit-runs/[id]`, `route audit-runs/[id]/sections/[sid]/retry`, `route audit-runs`, `route audits/index`, `route jobs/audit-sections`, `lib ask`, `lib auditEstimate`, `lib auditRun`, `lib calendarDates`, `script check-live`, `script run-golden-audit`
+**Read or written by:** `route audit-runs/[id]`, `route audit-runs/[id]/sections/[sid]/retry`, `route audit-runs`, `route audits/index`, `route jobs/audit-sections`, `route jobs/quality`, `lib ask`, `lib auditEstimate`, `lib auditRun`, `lib calendarDates`, `script check-live`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -774,7 +774,7 @@ One row per company per month, written by the monthly email job as a CLAIM befor
 
 **Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route billing/checkout`, `route billing/portal`, `route billing/reconcile`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib accessGate`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `lib requireAccess`, `lib stripeReconcile`, `lib stripeWebhook`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `screen account`, `route account/export`, `route account`, `route audit-runs`, `route billing/checkout`, `route billing/portal`, `route billing/reconcile`, `route company-information`, `route document-scan`, `route invitations`, `route jobs/calendar-month`, `route jobs/scan-documents`, `route join`, `route obligations`, `route quality`, `route website-read`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `screen walk`, `lib accessGate`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `lib requireAccess`, `lib stripeReconcile`, `lib stripeWebhook`, `script check-live`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1604,7 +1604,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 61 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audits/index`, `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib audit`, `lib auditRun`, `lib companyLabels`, `lib documentScan`, `script check-live`, `script run-golden-audit`
+**Read or written by:** `route audits/index`, `route documents/index`, `route documents/report`, `route jobs/quality`, `lib attachedDocument`, `lib audit`, `lib auditRun`, `lib companyLabels`, `lib documentScan`, `script check-live`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1686,7 +1686,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 51 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audit-runs`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-rescan`, `route document-scan`, `route documents`, `route folders`, `route jobs/scan-documents`, `lib ask`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib imageConvert`, `lib storage`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
+**Read or written by:** `route audit-runs`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-rescan`, `route document-scan`, `route documents`, `route folders`, `route jobs/quality`, `route jobs/scan-documents`, `lib ask`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib imageConvert`, `lib storage`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2215,7 +2215,7 @@ A handbook split into sections, each with its text and fingerprint. Written by t
 
 HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route handbooks/read`, `route hr/answer`, `route hr/handbooks/[id]/check`, `screen hr`, `lib handbookCheck`, `lib handbookCheckNotify`, `lib handbookDelete`, `lib handbookRead`, `lib handbookSave`, `lib hrAnswer`, `script check-live`
 
@@ -2436,9 +2436,9 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 69 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 73 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
+**Read or written by:** `route account`, `route jobs/quality`, `lib jobAuth`, `lib jobRun`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2726,9 +2726,9 @@ answers false for a right held on columns rather than on the table — `CLAUDE.m
 
 Night Watch (decision 75): one row per company per day plus one company_id = null totals row, written by /api/jobs/quality at 05:30 Pacific. Read-only counts over the previous Pacific day. Nobody is granted anything on this table; app/api/quality/route.ts reads it as the service role after checking the caller against QUALITY_EMAIL.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `route jobs/quality`, `route quality`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -3109,7 +3109,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 **Rows:** 170 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route calendar/topics/[id]/summarise`, `route chat`, `route checklists/from-topic`, `route documents`, `route hr/answer`, `route hr/topics/[id]/summarise`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `screen hr`, `lib ask`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
+**Read or written by:** `route calendar/topics/[id]/summarise`, `route chat`, `route checklists/from-topic`, `route documents`, `route hr/answer`, `route hr/topics/[id]/summarise`, `route jobs/delete`, `route jobs/quality`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `screen hr`, `lib ask`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -3176,7 +3176,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 
 **Rows:** 388 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
+**Read or written by:** `route jobs/delete`, `route jobs/quality`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|

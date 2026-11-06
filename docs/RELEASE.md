@@ -1463,6 +1463,22 @@ printed; they are above the subtraction for exactly this reason.
 npm run db:migrate:prod
 ```
 
+> ### ⚡ THIS COMMAND STOPPED BEFORE APPLYING ANYTHING ON 5 NOVEMBER 2026, AND IS FIXED.
+>
+> It reported `could not read the remote migration history` after one retry, with the underlying
+> error given only as `Command failed`. **Nothing was applied**, which is the script behaving
+> correctly — a failed read is not an empty history, and it refuses to guess. The cause was the
+> same CLI confirmation wall that refused `npm run preflight` the same night: the history read
+> passed neither `--read-only` nor `--yes`, and its stderr was piped and then discarded, so the
+> message naming the fix was thrown away. Measured against production, the same statement twice:
+> **without the flag, exit 1; with `--read-only`, 91 rows, `000` … `090`.**
+>
+> `scripts/db-migrate.js` now passes `--read-only` on both history reads and prints their stderr
+> redacted instead of swallowing it, and the apply statements pass `--yes`. **The typed-`PRODUCTION`
+> gate is untouched** — the run still prints `*** PRODUCTION MIGRATION ***`, lists every pending
+> file, refuses outright when stdin is not a TTY, and aborts unless the word typed is exactly
+> `PRODUCTION`.
+
 It asks for a typed confirmation and there is no bypass flag. It applies all five in one run and
 regenerates `lib/database.types.ts`. **It does not run `check:live`**, by construction — that is
 `AUDIT-CHECKS.md` check 27 and it is deliberate: `check:live` writes rows as a signed-in fixture

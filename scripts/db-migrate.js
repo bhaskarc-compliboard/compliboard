@@ -200,11 +200,59 @@ function extractRows(parsed) {
   return null;
 }
 
+/**
+ * *** `--read-only` IS WHY THIS WORKS, AND ITS ABSENCE STOPPED A PRODUCTION RUN DEAD.
+ * Added 5 November 2026. ***
+ *
+ * The Supabase CLI now refuses any statement it has not been told is safe. With `-o json` it
+ * cannot prompt, and with `stdio[0] = "ignore"` below it has no stdin either, so it decides it is
+ * being driven by a program and refuses outright. The real message — which this script THREW AWAY,
+ * see the next paragraph — is:
+ *
+ *   Confirmation required: Run a SQL statement (target: custom Postgres (…pooler…:5432)).
+ *   This run can't ask because it is running in agent mode. Nothing was changed.
+ *   This is an agent run: ask the user before re-running with --yes.
+ *   For a read-only statement, pass --read-only instead.
+ *
+ * Measured against production on 5 November 2026, the same statement twice: **without the flag,
+ * exit 1 and the text above; with it, 91 rows, 000 … 090.** Of the CLI's two ways out, `--yes`
+ * says "whatever this is, do it" and `--read-only` says "refuse anything that is not a read" — so
+ * a function whose whole job is to READ takes the second. `CLAUDE.md` §3.7 wants a production
+ * query to be SELECT-only, and the server is a better place to enforce that than this file's good
+ * intentions. `scripts/preflight-prod.js` was fixed the same way on the same night.
+ *
+ * *** AND THE STDERR IS PRINTED, REDACTED, RATHER THAN DISCARDED. ***
+ * `stdio[2]` was `"pipe"` with nothing ever reading it, so every word above was thrown away and
+ * the owner's failed production run reported only `Command failed`, twice, then "could not read
+ * the remote migration history". A refusal that names its own fix is worthless if nobody sees it.
+ *
+ * It is printed through `redact()` rather than inherited: Node builds its error `message` from the
+ * whole failed command, **password included**, which is how a live production password reached a
+ * terminal on 10 September. Inheriting the stream would hand the CLI's output straight to the
+ * console and bypass the one function that exists to stop that. Piped-and-redacted keeps both
+ * rules: nothing is swallowed, and nothing leaks.
+ */
+function runReadOnlyQuery(sql, what) {
+  try {
+    return execSync(
+      `npx supabase db query --db-url "${dbUrl}" --read-only -o json ${sql}`,
+      { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }
+    );
+  } catch (err) {
+    const detail = redact(err?.stderr || err?.stdout || "").trim();
+    if (detail) {
+      console.error(`\n  The CLI refused the ${what} read. Its own words:\n`);
+      for (const line of detail.split("\n")) console.error(`    ${line}`);
+      console.error("");
+    }
+    throw err;
+  }
+}
+
 function readAppliedVersions() {
-  const out = execSync(
-    `npx supabase db query --db-url "${dbUrl}" -o json ` +
-      `"select version from supabase_migrations.schema_migrations order by version"`,
-    { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }
+  const out = runReadOnlyQuery(
+    `"select version from supabase_migrations.schema_migrations order by version"`,
+    "migration history"
   );
   const parsed = JSON.parse(out);
   const rows = extractRows(parsed);
@@ -225,16 +273,20 @@ function readAppliedVersions() {
  */
 function publicTableCount() {
   try {
-    const out = execSync(
-      `npx supabase db query --db-url "${dbUrl}" -o json ` +
-        `"select count(*)::int as n from pg_class c join pg_namespace n on n.oid=c.relnamespace ` +
+    const out = runReadOnlyQuery(
+      `"select count(*)::int as n from pg_class c join pg_namespace n on n.oid=c.relnamespace ` +
         `where n.nspname='public' and c.relkind='r'"`,
-      { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }
+      "public table count"
     );
     const rows = extractRows(JSON.parse(out));
     if (!rows || rows.length === 0) return null;
     return Number(rows[0].n);
-  } catch {
+  } catch (err) {
+    // Returning null still means "cannot rule out a contradiction", which is the contract the
+    // caller relies on. What changed on 5 November is that the reason is no longer silent: this
+    // catch swallowed the same confirmation refusal as the history read above, so a run could be
+    // told "an unknown number of tables" with no hint that a FLAG was the problem.
+    console.error(`  (could not count public tables: ${redact(err?.message?.split("\n")[0] ?? err)})`);
     return null;
   }
 }
@@ -367,7 +419,11 @@ end $$;
   writeFileSync(sqlPath, resetSql);
   console.log("\n  Dropping…\n");
   try {
-    execSync(`npx supabase db query --db-url "${dbUrl}" -f "${sqlPath}"`, { stdio: "inherit" });
+    // `--yes`: the CLI refuses an unconfirmed statement (5 November 2026, the same wall that
+    // stopped the history read above). This path is a RESET, which has already made a person type
+    // a confirmation into this script a few lines up, and which refuses production by flag and
+    // again by ref — there is no combination of arguments that resets production.
+    execSync(`npx supabase db query --db-url "${dbUrl}" --yes -f "${sqlPath}"`, { stdio: "inherit" });
   } catch (err) {
     console.error(`\n  Reset failed: ${redact(err?.message?.split("\n")[0] ?? err)}`);
     console.error("  The database may be partly dropped. Re-run the reset before anything else.\n");
@@ -517,15 +573,37 @@ if (isProduction) {
 // production ref, named the target out loud, and listed exactly what is pending. So staging
 // passes `--yes` and the run completes.
 //
-// *** ON PRODUCTION IT IS NOT PASSED, deliberately, and that is the whole point of the split. ***
-// `CLAUDE.md` §3.7: *"The production guard is never automated, by anyone."* A production run has
-// already typed a confirmation into THIS script; the CLI's own prompt is a second pair of eyes on
-// the same irreversible act, and a flag that silenced it would be this file quietly deciding that
-// one gate is enough. If a production push ever needs `--yes`, that is a person's decision made
-// at a keyboard, not a constant in a script.
-const push = isProduction
-  ? `npx supabase db push --db-url "${dbUrl}"`
-  : `npx supabase db push --yes --db-url "${dbUrl}"`;
+// *** CHANGED 5 NOVEMBER 2026 BY THE OWNER: `--yes` IS NOW PASSED ON PRODUCTION TOO. ***
+//
+// The superseded rule, kept because this is the project's convention and because it is the kind of
+// decision that should be reversible by reading why it was made:
+//
+//   > ON PRODUCTION IT IS NOT PASSED, deliberately, and that is the whole point of the split.
+//   > `CLAUDE.md` §3.7: *"The production guard is never automated, by anyone."* A production run
+//   > has already typed a confirmation into THIS script; the CLI's own prompt is a second pair of
+//   > eyes on the same irreversible act, and a flag that silenced it would be this file quietly
+//   > deciding that one gate is enough. If a production push ever needs `--yes`, that is a
+//   > person's decision made at a keyboard, not a constant in a script.
+//
+// *** THE LAST SENTENCE IS HOW THIS CHANGE IS ALLOWED TO HAPPEN: it IS the owner's decision, made
+// at a keyboard, in the brief of 5 November 2026. *** His words: *"the human gate is the typed word
+// PRODUCTION, which the script asks for BEFORE any apply, and that must stay exactly where it
+// is."* And it does stay, untouched, at the bottom of this file: the run prints `*** PRODUCTION
+// MIGRATION ***`, lists every pending file, **refuses outright when stdin is not a TTY** so the
+// confirmation can never be piped in, and aborts unless the word typed is exactly `PRODUCTION`.
+// §3.7's own wording — *"`npm run db:migrate:prod` and its typed confirmation stay a human
+// action"* — names that gate, and that gate is what survives.
+//
+// *** AND ONE THING WORTH KNOWING BEFORE REVERSING IT. *** The flag is NOT what broke the owner's
+// run on 5 November; the history read's missing `--read-only` was, and the push was never reached.
+// This line's stdio is `"inherit"`, so unlike the reads the CLI gets a real stdin and CAN prompt —
+// which is why the old shape worked for as long as it did. The argument for the flag is therefore
+// not "it is broken" but "two prompts for one act, one of them outside this script's control, is a
+// gate nobody reads twice". To put the second pair of eyes back, delete `--yes ` from the first
+// branch; nothing else depends on it.
+// One string, not a ternary with two identical branches: the split this line used to carry is
+// recorded above rather than mimed in code that reads as though it still varies.
+const push = `npx supabase db push --yes --db-url "${dbUrl}"`;
 
 // Wrapped, because an uncaught execSync failure prints the whole failed command —
 // connection string and password included — as part of Node's stack trace.
