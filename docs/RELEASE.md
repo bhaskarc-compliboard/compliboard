@@ -822,25 +822,36 @@ For a defect found on production, code only, no migration.
 >
 > | Variable | Production value (owner, 4 October 2026, visible) | Read by |
 > |---|---|---|
-> | `AI_MODEL_PROSE` | `claude-opus-5-5` | `lib/ai.ts:108` |
-> | `AI_MODEL_JUDGEMENT` | `claude-opus-5-5` | `lib/ai.ts:106` |
-> | `AI_MODEL_SUBSTEPS` | `claude-opus-5-5` | `lib/ai.ts:114` |
-> | `AI_MODEL_SUMMARY` | `claude-opus-5-5` (was Sonnet until 4 October) | `lib/ai.ts:115` |
-> | `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5-5` | `lib/ai.ts:122` |
-> | `AI_MODEL_DOCUMENT_DRAFT` | `claude-opus-5-5` | `lib/ai.ts:126` |
-> | `AI_MODEL_AUDIT` | `claude-opus-5-5` | `lib/ai.ts:133` |
-> | `AI_MODEL_CRITIQUE` | `claude-opus-5-5` | `lib/ai.ts:104` |
-> | `AI_MODEL_HOWTO` | `claude-opus-5-5` — **added 4 October with the Task 6 release** | `lib/ai.ts:138` |
-> | `AI_MODEL` (the fallback for all of them) | `claude-opus-5-5` | `lib/ai.ts:104–115`, `:139` |
-> | `AI_EFFORT` | **`medium`** — **re-entered 4 October as visible.** Before that it was hidden and its value unknown, so **every production result before 4 October ran at an unknown effort**. `lib/ai.ts:794` `DEFAULT_EFFORT` is also medium, so unset would mean the same | `lib/ai.ts:797` |
-> | `AI_EFFORT_HOWTO` | **unset** — so "How do I do this?" falls back to `AI_EFFORT`, i.e. medium | `lib/ai.ts:815` |
-> | `AI_SEARCH_MAX_HOWTO` | `6` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
-> | `AI_SEARCH_MAX_COMPLETE` | `8` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
+> | `AI_MODEL_PROSE` | `claude-opus-5-5` | `lib/ai.ts:127` `TASK_MODELS.prose` |
+> | `AI_MODEL_JUDGEMENT` | `claude-opus-5-5` | `lib/ai.ts:125` `TASK_MODELS.judgement` |
+> | `AI_MODEL_SUBSTEPS` | `claude-opus-5-5` | `lib/ai.ts:133` `TASK_MODELS.substeps` |
+> | `AI_MODEL_SUMMARY` | `claude-opus-5-5` (was Sonnet until 4 October) | `lib/ai.ts:134` `TASK_MODELS.summary` |
+> | `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5-5` | `lib/ai.ts:141` `TASK_MODELS.document_scan` |
+> | `AI_MODEL_DOCUMENT_DRAFT` | `claude-opus-5-5` | `lib/ai.ts:145` `TASK_MODELS.document_draft` |
+> | `AI_MODEL_AUDIT` | `claude-opus-5-5` | `lib/ai.ts:152` `TASK_MODELS.audit` |
+> | `AI_MODEL_CRITIQUE` | `claude-opus-5-5` | `lib/ai.ts:123` `TASK_MODELS.critique` |
+> | `AI_MODEL_HOWTO` | `claude-opus-5-5` — **added 4 October with the Task 6 release** | `lib/ai.ts:157` `TASK_MODELS.howto` |
+> | `AI_MODEL` (the fallback for all of them) | `claude-opus-5-5` | the whole `TASK_MODELS` block, `lib/ai.ts:115`–`:190`, and `TASK_MODELS.default` at `:190` |
+> | `AI_EFFORT` | **`medium`** — **re-entered 4 October as visible.** Before that it was hidden and its value unknown, so **every production result before 4 October ran at an unknown effort**. `lib/ai.ts:895` `DEFAULT_EFFORT` is also medium, so unset would mean the same | `lib/ai.ts:897` `effortFromEnv` |
+> | `AI_EFFORT_HOWTO` | **unset** — so "How do I do this?" falls back to `AI_EFFORT`, i.e. medium | `lib/ai.ts:915` `effortForHowto` |
+> | `AI_SEARCH_MAX_HOWTO` | `6` — added 4 October with the Task 6 release | `lib/ai.ts:313`–`:315` `searchLimit` |
+> | `AI_SEARCH_MAX_COMPLETE` | `8` — added 4 October with the Task 6 release | `lib/ai.ts:313`–`:315` `searchLimit` |
 > | `AI_SEARCH_MAX_HR` | **not set; the testing step decides.** Unset means no limit for an HR answer's searches, as for the workspace's research answer (HR Step 6b, `DECISIONS.md` §169) | `lib/ai.ts` `searchLimit` |
-> | `AI_MODEL_HR` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (HR Step 13, `DECISIONS.md` §181). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:144` |
-> | `AI_MODEL_HR_CHECK` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (the handbook check and the reading's outline calls). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:145` |
+> | `AI_MODEL_HR` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (HR Step 13, `DECISIONS.md` §181). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:163` `TASK_MODELS.hr` |
+> | `AI_MODEL_HR_CHECK` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (the handbook check and the reading's outline calls). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:164` `TASK_MODELS.hr_check` |
 > | `AI_MODEL_WEBSITE` | `claude-opus-5-5` — **to be added by the owner at RELEASE B** (My Account step 13, `ACCOUNT-PLAN.md` decision 9, `DECISIONS.md` §210). The one read of a new customer's website, after signup. **Unset it falls back to the JUDGEMENT tier**, which on production is also `claude-opus-5-5` — so leaving it out would work and would also mean the first thing this product ever says about a customer moves silently whenever the judgement tier moves. The two real cards were read on Opus 5.5 at **$0.0272 and $0.0312**; the staging walk on Haiku cost **$0.0036** | `lib/ai.ts` `TASK_MODELS.website` |
 >
+> ### ⚡ EVERY LINE NUMBER IN THE COLUMN ABOVE WAS RE-READ FROM `lib/ai.ts` ON 6 NOVEMBER 2026, AND ALL SIXTEEN WERE STALE.
+> They were right when they were written and drifted as the file grew — `lib/ai.ts` has gained
+> nineteen lines above `TASK_MODELS` since, and five tiers inside it (`hr`, `hr_check`, `calendar`,
+> `documents`, `audits_chat`, `website`). The prose tier's `:108` had become `:127`, and every row
+> was out by the same kind of margin; `AI_MODEL_DOCUMENTS` and `AI_MODEL_AUDITS_CHAT` further down
+> this file were the only two correct, being the newest. **So each row now carries the symbol beside
+> the number** — `TASK_MODELS.prose`, `effortFromEnv`, `searchLimit` — because a symbol cannot go
+> stale and a line number always will. The two rows that already used the symbol form
+> (`AI_SEARCH_MAX_HR`, `AI_MODEL_WEBSITE`) were the two that never needed correcting, which is the
+> argument made for us. **Nothing about a value changed, only where to look for the code behind it.**
+
 > **The 4 October correction it replaces:** the 3 October statement *"Every `AI_MODEL_*` variable set
 > on Vercel Production is `claude-opus-5-5`"* was wrong for `AI_MODEL_SUMMARY`, which was Sonnet until
 > 4 October. The owner then set every model variable to `claude-opus-5-5`, visible, and redeployed; so
