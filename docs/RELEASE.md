@@ -850,7 +850,30 @@ From June: `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_P
 
 **Added 5 November 2026 — `QUALITY_EMAIL` (Night Watch, `docs/GAPS-PLAN.md` decision 75). A RELEASE NEEDS IT.**
 One address: the only person `/quality` opens for, and the only recipient of the morning email. Set it to the
-same address `FEEDBACK_EMAIL` holds. **Unset refuses everyone** — `requireOwner` (`lib/auth.ts`) answers 404
+same address `FEEDBACK_EMAIL` holds.
+
+> ### ⚡ THE VALUE IS `bhaskarc@compliboard.com`, ALL LOWER CASE — SET BY THE OWNER ON 6 NOVEMBER 2026, AND THE CASE IS WHY.
+> It held **`BhaskarC@compliboard.com`** for Night Watch's first production run, and **that run's email did
+> not send.** The reading itself was fine — `job_runs` `ba7d06f7`, `ok = true`, `errors []`, counts naming
+> the Pacific day 2026-11-05 — and the refusal is on the row, whole, where the route puts it:
+>
+> *"You can only send testing emails to your own email address (bhaskarc@compliboard.com). To send emails
+> to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an
+> email using this domain."*
+>
+> **What is proved:** the sender is still `onboarding@resend.dev` (S1), so the Resend account has no verified
+> domain, is in testing mode, and will deliver to **its own address only**. **What is NOT proved, and is a
+> hypothesis the next morning settles:** that the capital letters are what it refused. The refusal names the
+> permitted address in lower case while the variable held `BhaskarC@`, and every send on record that worked
+> from this address used the lower-case form — suggestive, not a cause anybody has seen.
+>
+> So **write it in lower case**, and read it back from the dashboard rather than from this file: a Vercel
+> value is a dashboard fact and nothing in this repository can confirm one (§3.4a — the dashboard wins,
+> this file records). **S1 removes the constraint entirely**: a verified domain and the one-line
+> `SANDBOX_FROM` change let the report go to any address, and mend the other three senders in the same
+> commit.
+
+**Unset refuses everyone** — `requireOwner` (`lib/auth.ts`) answers 404
 to every caller when it is blank, which is `cronVerdict`'s rule and is the safe reading of a missing value, so
 forgetting it closes the page rather than opening it. It is not a secret and should be saved **visible**, so
 it can be read back; `AI_EFFORT`'s hidden-and-forgotten value is why that matters.
