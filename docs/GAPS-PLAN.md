@@ -1003,8 +1003,8 @@ customer.
 
 **Both now do what 091 always did** — their own probe company, written against, deleted, with the
 teardown proved including the `usage_counters` row. Edited in place rather than fixed by a 096,
-because neither is applied on production yet. **Production never ran either file, so production
-carries no phantom.**
+because none of the three is applied on production yet. **Production never ran any of them, so
+production carries no phantom.**
 
 **⏳ WHAT STAGING CARRIES, AND IT IS THE OWNER'S TO DECIDE.** Measured as
 `files_read` minus the count of scans the trigger would have counted

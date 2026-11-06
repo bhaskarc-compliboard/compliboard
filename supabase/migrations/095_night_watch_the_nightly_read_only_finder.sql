@@ -130,14 +130,37 @@ comment on column public.job_runs.job is
 -- ===========================================================================
 -- THE PROBE. §3.7: a constraint nobody has tried to break is a comment.
 -- ===========================================================================
+-- *** THE PROBE MAKES ITS OWN COMPANY — 5 November 2026, before the production run, and this is
+-- the last of the four files to be put right. *** This block used to open with `select id into co
+-- from public.companies limit 1`, borrowing whichever company the planner handed back: a fixture
+-- on staging, **a real customer on production**.
+--
+-- *** THIS PROBE MOVED NO COUNTER, AND IT WAS STILL THE WRONG SHAPE. *** Read from `pg_trigger` on
+-- staging: `quality_reports` and `job_runs` carry **no trigger at all**, and the only four triggers
+-- that call `bump_usage_counter_for` sit on `document_scans`, `audit_runs` and `checklists`. So
+-- unlike 093 — whose probe scan fired `document_scans_count_reading` and added one to a borrowed
+-- company's `files_read` with no AFTER DELETE trigger to take it back — nothing here reached a
+-- customer's Dashboard. The change is made anyway, because 091, 093 and 094 all now carry their own
+-- probe company and a lone survivor of the old pattern is the one that gets copied next.
+--
+-- *** AND THE TEARDOWN IS NOT SYMMETRICAL, WHICH IS THE WHOLE REASON TO WRITE IT OUT. ***
+-- Read from `pg_constraint` on staging:
+--
+--   quality_reports_company_id_fkey  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+--
+-- So the row written **for the probe company** leaves with the company, by that cascade — which is
+-- also a free proof of the claim `/api/account` DELETE makes about this table. **But the estate
+-- totals row carries `company_id = null`**, which is the point of the table's shape, and a NULL
+-- references nothing: no cascade can ever reach it. **It has to be deleted explicitly**, and the
+-- delete below is scoped to `"date" = '1999-01-01' and company_id is null` rather than to the date
+-- alone, so it can never take a row that belongs to somebody.
 do $$
 declare
-  co uuid; ok boolean; n int;
+  co uuid; ok boolean; n int; jobs_before int;
 begin
-  select id into co from public.companies limit 1;
-  if co is null then
-    raise notice 'MIGRATION 095: no company on this database, the row probes are skipped.';
-  else
+  select count(*) into jobs_before from public.job_runs;
+  insert into public.companies (name) values ('095 probe company') returning id into co;
+
     -- 1. a company's day, and the estate totals row, both go in for the same date
     insert into public.quality_reports ("date", company_id, counts, "rows")
       values ('1999-01-01', co, '{"answers_no_source": 1}'::jsonb, '{"answers_no_source": ["x"]}'::jsonb);
@@ -180,14 +203,45 @@ begin
       raise exception 'MIGRATION 095 FAILED: the totals row accepted row ids.';
     end if;
 
-    delete from public.quality_reports where "date" in ('1999-01-01', '1999-01-02');
+    -- ---- TEARDOWN, THE ASYMMETRIC HALF FIRST. ----
+    -- The TOTALS row has `company_id = null` and therefore no cascade can reach it: it goes by
+    -- hand, scoped to the date AND to `company_id is null` so it cannot take anybody's row. The
+    -- 1999-01-02 totals row was REFUSED by the ids CHECK at step 4 and never existed, so there is
+    -- nothing to delete for that date — the old blanket `where "date" in (…)` claimed to clear a
+    -- row that the probe had just proved impossible.
+    delete from public.quality_reports where "date" = '1999-01-01' and company_id is null;
+    select count(*) into n from public.quality_reports where "date" = '1999-01-01' and company_id is null;
+    if n <> 0 then
+      raise exception 'MIGRATION 095 FAILED: the totals probe row did not clear.';
+    end if;
+
+    -- The COMPANY's row is deliberately NOT deleted here. Dropping the probe company below must
+    -- take it, by quality_reports_company_id_fkey ON DELETE CASCADE, and that is checked after.
+    select count(*) into n from public.quality_reports where company_id = co;
+    if n <> 1 then
+      raise exception 'MIGRATION 095 FAILED: expected exactly 1 row still standing for the probe '
+        'company before the cascade, found %.', n;
+    end if;
+
+    delete from public.companies where id = co;
+
+    select count(*) into n from public.quality_reports where company_id = co;
+    if n <> 0 then
+      raise exception 'MIGRATION 095 FAILED: % quality_reports row(s) outlived the probe company, '
+        'so quality_reports_company_id_fkey is not cascading.', n;
+    end if;
     select count(*) into n from public.quality_reports where "date" = '1999-01-01';
     if n <> 0 then
-      raise exception 'MIGRATION 095 FAILED: the probe rows did not clear.';
+      raise exception 'MIGRATION 095 FAILED: % probe row(s) dated 1999-01-01 are still there.', n;
     end if;
+    select count(*) into n from public.usage_counters where company_id = co;
+    if n <> 0 then
+      raise exception 'MIGRATION 095 FAILED: the probe company kept a usage_counters row.';
+    end if;
+
     raise notice 'MIGRATION 095: a company day and a totals row in; a duplicate of each refused; '
-      'a totals row with ids refused.';
-  end if;
+      'a totals row with ids refused; the totals row deleted by hand and the company row taken by '
+      'the cascade.';
 
   -- 5. ⚡ ALL EIGHT JOB WORDS GO IN, AND A NINTH IS REFUSED.
   --
@@ -221,7 +275,18 @@ begin
   if n <> 0 then
     raise exception 'MIGRATION 095 FAILED: the job_runs probe rows did not clear.';
   end if;
-  raise notice 'MIGRATION 095: all eight job words accepted, a ninth refused, probe rows cleared.';
+
+  -- *** AND IT TOOK NOTHING ELSE WITH THEM. *** Counting the marked rows to zero proves the delete
+  -- reached its own rows; it does not prove it stopped there. The table must be exactly the size it
+  -- was before this block ran — which is the check that would catch a mark that matched a real
+  -- sweep's row, and is why the mark lives in `counts` and not in a time window.
+  select count(*) into n from public.job_runs;
+  if n <> jobs_before then
+    raise exception 'MIGRATION 095 FAILED: job_runs held % rows before the probe and % after; the '
+      'probe cleanup took % row(s) that were not its own.', jobs_before, n, jobs_before - n;
+  end if;
+  raise notice 'MIGRATION 095: all eight job words accepted, a ninth refused, probe rows cleared, '
+    'and job_runs is back to its % rows.', jobs_before;
 end $$;
 
 -- ===========================================================================

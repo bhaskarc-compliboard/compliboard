@@ -1390,7 +1390,7 @@ below and changed no app code. **Every command in it is the owner's, in Terminal
 
 | | |
 |---|---|
-| **Commits** | **61** on `main`, none pushed — from `d14ac16` to the records commit at the tip, which is this routine itself. `git log origin/main..HEAD --oneline \| wc -l` is the number to trust on the day |
+| **Commits** | **62** on `main`, none pushed — from `d14ac16` to the records commit at the tip, which is this routine itself. `git log origin/main..HEAD --oneline \| wc -l` is the number to trust on the day |
 | **Migrations** | **091, 092, 093, 094, 095** — **five, not four.** See the box below |
 | **New variables needed** | **one**: `QUALITY_EMAIL`, which the owner set on Vercel Production on 5 November. Nothing else |
 | **Variables changed** | none. Four new names are read by this code and **all four are meant to stay unset** — see the list under the variable table |
@@ -1476,12 +1476,12 @@ user, which is a thing to do on staging and never on production.
 | `092_where_the_converted_photo_lives.sql` | Adds `documents.converted_url`, nullable, and a comment on it. **Writes and deletes nothing.** Two statements. **No existing row moves** — every existing document gets `null`, which is what "this file needed no conversion" means |
 | `093_needs_work_only_on_a_gap_read_from_the_page.sql` | `create or replace view public.document_index_v`, then `revoke` from `anon` and `authenticated` and `grant select` to `authenticated`. **Its probe creates its own `'093 probe company'`, writes a document, scan, two gaps and a deadline against it, then deletes the document and the company and proves both gone** — corrected 5 November, see the box below this table. **No existing row moves, and no customer's counter moves** |
 | `094_the_fifth_word_an_audit_can_say.sql` | Drops and re-adds `audit_findings_word_check` with a fifth word, every prior value restated, and comments the column. **Its probe creates its own `'094 probe company'`**, writes one `audit_runs` row with two child rows, then deletes the run and the company and proves both gone — corrected 5 November with 093's. **No existing row moves** |
-| `095_night_watch_the_nightly_read_only_finder.sql` | Creates **`public.quality_reports`** — RLS on, revoked from `anon` and `authenticated`, granted to neither, no policy — plus its index and comments. Restates **`job_runs_job_check`** whole to admit the eighth word, `quality`. **Probe rows go in and come out again**, and the two deletes are the careful ones: `quality_reports` by the dates `'1999-01-01'` and `'1999-01-02'`, and `job_runs` **by the mark `counts ? 'migration_095_probe'`** — not by "recent and unfinished", because `scan_documents` and `audit_sections` open a row every five minutes and a recency sweep would have deleted a live one. **No existing row moves** |
+| `095_night_watch_the_nightly_read_only_finder.sql` | Creates **`public.quality_reports`** — RLS on, revoked from `anon` and `authenticated`, granted to neither, no policy — plus its index and comments. Restates **`job_runs_job_check`** whole to admit the eighth word, `quality`. **Its probe creates its own `'095 probe company'`** and tears down in two halves, because the teardown is not symmetrical: the row written **for that company** is left standing deliberately and taken by `quality_reports_company_id_fkey ON DELETE CASCADE` when the company is dropped, which the probe then checks; **the estate totals row carries `company_id = null`, so no cascade can ever reach it** and it is deleted by hand, scoped to `"date" = '1999-01-01' and company_id is null` so it can never take a row belonging to somebody. `job_runs` probe rows go **by the mark `counts ? 'migration_095_probe'`** — not by "recent and unfinished", because `scan_documents` and `audit_sections` open a row every five minutes and a recency sweep would have deleted a live one — and the probe now also asserts the table is **exactly the size it was before it ran**, which is what would catch a mark that matched a real sweep's row. **No existing row moves** |
 
 ```
 git push origin main
 ```
-> ### ⚡ 093 AND 094 USED TO BORROW A CUSTOMER'S COMPANY FOR THEIR PROBES. CORRECTED 5 NOVEMBER 2026, BEFORE THE RUN.
+> ### ⚡ 093, 094 AND 095 USED TO BORROW A CUSTOMER'S COMPANY FOR THEIR PROBES. ALL THREE CORRECTED 5 NOVEMBER 2026, BEFORE THE RUN.
 >
 > Both opened with `select id into co from public.companies limit 1` — on staging a fixture, on
 > production **a real customer**. That was not free. Read out of `pg_trigger` on staging:
@@ -1511,7 +1511,24 @@ git push origin main
 > `usage_counters_company_id_fkey ON DELETE CASCADE`. `companies`' one AFTER INSERT trigger,
 > `create_primary_site`, bumps no counter.
 >
-> **Production never ran either file, so production carries no phantom** — this was caught on the
+> **095 was the last one and is now the same shape** (5 November, after 093 and 094). Its probe moved
+> no counter — `quality_reports` and `job_runs` carry **no trigger at all**, read from `pg_trigger` —
+> and it was changed anyway, because a lone survivor of the old pattern is the one that gets copied
+> next. Its teardown is the one worth reading: see its row in the table above.
+>
+> **AND THE OBVIOUS NEXT QUESTION, ASKED AND ANSWERED: TWENTY OLDER MIGRATIONS BORROW THE SAME WAY, AND NONE OF THEM CAN HAVE LEFT A PHANTOM.**
+> `grep` finds the pattern in **013, 014, 027, 028, 029, 031, 032, 035, 040, 041, 042, 043, 044, 045,
+> 046, 047, 048, 049, 050 and 051** — every one of them **before 080**, which is the migration that
+> created the counter triggers in the first place. Their probes ran when no trigger existed, and 080
+> then recomputed every counter from the rows: *"**IT SETS; IT DOES NOT ADD.** `files_read = (select
+> count(*) …)`, never `files_read = files_read + …`"*, with the backfill's filters copied from the
+> triggers' `WHEN` clauses word for word. So anything those probes could have done was overwritten by
+> arithmetic over real rows. **After this change, no migration later than 080 borrows a company at
+> all** — which is the property that has to hold, because a `db:reset` replays the whole chain and
+> only a post-080 borrower would survive the backfill. They are left exactly as they are: all twenty
+> are applied on production, and editing an applied migration changes nothing there.
+>
+> **Production never ran any of the three files, so production carries no phantom** — this was caught on the
 > right side of the push. Staging ran the old 093 once, on 4 November; what that left is named in
 > `docs/GAPS-PLAN.md` §8 and is the owner's to decide, because a never-decremented counter makes an
 > ordinary deleted document look exactly the same as a probe.
@@ -1649,7 +1666,7 @@ is also silent.
 
 > ### NOTHING. NO BUILD STEP, NO SIZE PROBLEM, NO `next.config.ts` ENTRY — AND HERE IS WHERE I LOOKED.
 >
-> One line of it is not answerable from this repository, and it is named as such at the bottom.
+> One line of it is not answerable from this repository; it was read off the dashboard on 5 November and is named as a dashboard fact all the same.
 
 | Question | Answer | Read from |
 |---|---|---|
@@ -1657,7 +1674,7 @@ is also silent.
 | `heic-decode` and `bmp-ts`? | **Neither is native.** `heic-decode@2.1.0` depends only on `libheif-js`, which is WASM plus JavaScript; `bmp-ts@1.0.9` has **no dependencies at all** and is pure JavaScript | each package's own `package.json` |
 | A `serverExternalPackages` entry? | **Not needed.** `sharp` is on Next 16's built-in automatic opt-out list, so it is `require`d natively without being told to. `heic-decode` and `bmp-ts` are not on the list and do not need to be — they bundle, and `npm run build` compiles them (exit 0) | `node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/serverExternalPackages.md`; `next.config.ts`, which sets no options |
 | A size limit? | **Clear by an order of magnitude.** The four packages install to **26 MB** here, 15 MB of which is libvips. Vercel's unzipped function limit is 250 MB | `du -sch` on `node_modules/{sharp,@img,heic-decode,libheif-js,bmp-ts}` |
-| A Node version? | **Node ≥ 20.9** is the binding constraint — `next@16.2.6` declares `"node": ">=20.9.0"` and `sharp@0.34.5` declares `"^18.17.0 \|\| ^20.3.0 \|\| >=21.0.0"`; `heic-decode` wants `>=8.0.0` and `bmp-ts` declares none. **⚠ This repository pins nothing** — there is no `engines` block, no `.nvmrc` and no `.npmrc`. So the version that actually runs is **a dashboard setting with no representation here**, the same shape as the model variables (`CLAUDE.md` §3.4a). **Read it off Vercel → Settings → Node.js Version and confirm it is 20.9 or later.** It is the one line of this table that this repository cannot answer | `package.json`, `node_modules/{next,sharp,heic-decode,bmp-ts}/package.json`, and the absence of the three pin files |
+| A Node version? | **Answered: the dashboard reads `24.x`** — Vercel → Settings → Build and Deployment → Node.js Version, read on **5 November 2026**, which clears the floor with room. **Node ≥ 20.9** is that floor — `next@16.2.6` declares `"node": ">=20.9.0"` and `sharp@0.34.5` declares `"^18.17.0 \|\| ^20.3.0 \|\| >=21.0.0"`; `heic-decode` wants `>=8.0.0` and `bmp-ts` declares none. **⚠ This repository pins nothing** — there is no `engines` block, no `.nvmrc` and no `.npmrc`. So the version that actually runs is **a dashboard setting with no representation here**, the same shape as the model variables (`CLAUDE.md` §3.4a). It is still the one line of this table **this repository cannot answer** — it has no representation here, so if it is ever load-bearing again, read the dashboard rather than this sentence | `package.json`, `node_modules/{next,sharp,heic-decode,bmp-ts}/package.json`, and the absence of the three pin files |
 | Memory? | **Already answered and already right: Fluid compute on, 1 vCPU / 2 GB.** A 48-megapixel HEIC peaked at 1,036 MB and `lib/imageConvert.ts` refuses above `MAX_MEGAPIXELS = 50` | the Function memory section further down this file, read from the dashboard on 4 November 2026 |
 | Does any route that converts an image lack a long `maxDuration`? | **No — all four have 800.** `/api/document-scan` and `/api/jobs/scan-documents` from `vercel.json`; `/api/chat` and `/api/document-draft` declare `export const maxDuration = 800` in the file | `vercel.json`; `app/api/chat/route.ts:116`; `app/api/document-draft/route.ts:31` |
 | Can `sharp` reach the browser bundle? | **No.** `lib/acceptedFiles.ts` is imported by three client pages and only *mentions* `lib/imageConvert.ts` in comments — it does not import it. `import sharp` appears in `lib/imageConvert.ts` alone, which no client file reaches | `grep` for `imageConvert` in `lib/acceptedFiles.ts`; `tests/unit/clientImports.test.ts` |
