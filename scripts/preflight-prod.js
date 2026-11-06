@@ -39,12 +39,30 @@ line()
 for (const f of onDisk) console.log('    ' + f)
 
 // ---- INPUT 2, printed in full -------------------------------------------------
+//
+// `--read-only` IS LOAD-BEARING, AND IT IS NEW HERE (5 November 2026, the release pre-flight).
+// Without it this read REFUSED, and the refusal looked exactly like a production problem:
+//
+//     Confirmation required: Run a SQL statement (target: project dsfwmafnphdlfogetsus).
+//     This run can't ask because it writes machine-readable -o json output.
+//     Re-run with --yes to confirm. For a read-only statement, pass --read-only instead.
+//
+// The Supabase CLI now refuses an unconfirmed statement, and `-o json` means it cannot
+// prompt. Of the two ways out, `--yes` says "whatever this is, do it" and `--read-only`
+// says "refuse anything that is not a read" — so `--read-only` is the only one this script
+// may have. CLAUDE.md §3.7: a production query by Claude Code is SELECT only, and the
+// cheapest place to enforce that is the server, not this file's good intentions.
+// `scripts/schema-doc.js:88` already passed it, which is why the migrate chain never broke.
+//
+// The same CLI release deprecates `--linked` and `--project-ref` in favour of `--remote=<ref>`.
+// NOT changed here: a flag rename is a separate change from a refused read, the deprecated
+// form still works and warns, and seven seed scripts carry the same pair.
 let applied = []
 try {
   const out = execFileSync('npx', ['supabase', 'db', 'query', '--project-ref', ref, '--linked',
-    '--agent', 'no', '-o', 'json',
+    '--read-only', '--agent', 'no', '-o', 'json',
     "select version || '_' || name as f from supabase_migrations.schema_migrations order by 1"],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] })
   applied = JSON.parse(out).map((r) => r.f + '.sql')
 } catch {
   console.error('\n  REFUSED: could not read the migration history. Nothing is claimed.\n')

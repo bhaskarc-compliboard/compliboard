@@ -1,9 +1,10 @@
 # Closing the gaps — the plan
 
-**Version:** 33 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
+**Version:** 34 · **Written:** 2 November 2026, by the gaps chat, after the owner's decisions and Claude Code's read-only map (reported in the terminal, 2 November; not a file).
 **Supersedes:** nothing. This is the running plan for the work that makes the homepage's seven gate items true: `docs/HANDOFF-FROM-PUBLIC-PAGES.md` §5 (F1, F4, F6, F7, S1, D2, F12).
 **For:** the owner, Claude Code, and the next chat. Updated at every step: a step is crossed off with the date and the commit, like `docs/PUBLIC-PAGES-PLAN.md`.
 **The pictures:** `docs/documents-chat-boards.html` — six boards, in the Calendar boards' frame — and, for step 6, `docs/audits-chat-boards.html`, five boards in the same frame (draft 3, 3 November 2026). Its CSS is a mock-up and is never a source for the product's spacing, type or colour. Where a board and a step's brief disagree, the brief wins and the report says so.
+**Updated:** 5 November 2026 — **THE RELEASE IS PREPARED AND NOTHING IS PUSHED.** No app code changed. `docs/RELEASE.md` gains "The gaps release's routine" (the owner's three commands, the five pending migrations one by one, thirteen free checks, one paid check costed from the ledger, Night Watch's first morning, and the runtime answer for `sharp`/`heic-decode`/`bmp-ts`) and the four new variable names that are read and deliberately left unset. `STATUS.md` v41: eight rows restamped and a new Night Watch row, none marked released. §8 gains the release line and the three things the preparation found. One script changed: `scripts/preflight-prod.js` gains `--read-only`, without which its production read is refused.
 **Updated:** 2 November 2026 — **Part A step 1 done** (§5). Four commits: `d14ac16` the plan and the boards, `877d67f` the four doc corrections, `29324c5` the engine and migration 091, `bfdbd67` the types and the schema doc. §8 gains three things the step found: the Haiku guard could pass while seeing no tiers at all, two HR tests pinned the old night-summary list, and Supabase CLI 3.0.0 broke the project's own migrate and schema-doc scripts.
 **Updated:** 2 November 2026 — **Part A step 2 done** (§5). Two commits — `b93757c` the lift and `4431ee4` the proof — plus the staging trial parking, which the OWNER ran in Terminal 3 and which has no commit because it is data and not code. §7 gains the action row for the owner to pick. §8 gains what the step found: the Supabase CLI cannot write to staging through `--linked` at all, and the Calendar page no longer draws a paused note of its own.
 **Updated:** 2 November 2026 — **Part A step 3 done** (§5). Three commits: `4c6652c` the engine's carry, `0c76344` the upload, `dafc786` the two defects the Haiku proof found. §3 records the two step-2 decisions now in force (the action row keeps Calendar's layout; the Delete sheet's words stand). §7 gains the paused sentence and S7's measured number. §8 gains three findings, one of which is a quality question for the owner.
@@ -971,6 +972,19 @@ survives and `AF1` is still replaced.
 ---
 
 ## 8. Known defects and document drift recorded by the map (2 November)
+
+**Release prepared, awaiting the owner's three commands** — 5 November 2026. The free gate is green
+(`npm run check` exit 0, 2,754 tests; `check:live` on 3999, 99 ✓ / 0 ✗), `npm run preflight` derives
+`PENDING COUNT: 5` with nothing applied-but-absent, and `docs/RELEASE.md` carries "The gaps
+release's routine". **Three things the preparation found, each recorded in that routine:** the
+pending list is **five** and not four — `091` was written on 2 November, is one of the 59 unpushed
+commits, and must go **first**, because until it lands every ledger row the Documents and Audits
+chats write is refused by `ai_calls_task_check` and swallowed by `recordAICall`'s catch; **an image
+upload on production is a paid reading**, because the five-minute sweep claims it unasked, so it
+cannot be one of the free checks and rides with the one paid one instead; and `npm run preflight`
+itself had to gain `--read-only`, because the Supabase CLI now refuses an unconfirmed statement and
+`-o json` means it cannot prompt — the refusal looked exactly like a production problem and its
+stderr was being swallowed.
 
 ### ⚡ What Part E step E4a did and found (5 November 2026)
 

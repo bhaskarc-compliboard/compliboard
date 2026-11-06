@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 5 November 2026, the gaps release's preparation (`docs/GAPS-PLAN.md` Parts A–F, decisions 11–76): **"The gaps release's routine"** is at the end of this file — the three owner commands in order, what each of the **five** pending migrations does on production, thirteen free checks, **one** paid check costed from the ledger, Night Watch's first morning, and what the runtime needs for `sharp`, `heic-decode` and `bmp-ts` (nothing). Two things worth knowing from writing it: **the pending list is five, not four** — `091` was written on 2 November and left out of the brief's sentence, and it is the one that must go first, because until it lands every ledger row the two new chats write is refused by a CHECK and swallowed; and **an image upload on production is a paid reading**, because the five-minute sweep claims it unasked, so it rides with the one paid check instead of being claimed as free. The variable table above gains the four new names that are read and deliberately left unset.*
+
 *Updated 29 October 2026, My Account part C (`DECISIONS.md` §213–§223): **the Release C routine as it ran** is at the end of this file, with the three backup CSVs, migrations 087–090 in one run, the read-backs, the trial parking and why it was an extension rather than a faked status, and the live checks. **Billing shipped INERT: not one Stripe variable is set on production**, so every billing route refuses in plain words and nothing can be charged. The section **"When Stripe live mode is ready"** holds the six dashboard steps, the three variables and the seven checks that wait for them.*
 
 *Updated 19 October 2026, Calendar step 14b (`DECISIONS.md` §201) and step 15 (§202): **migration 079 — applied by the owner the same day, and read back under step 3a below.** It writes no row; it changes what `calendar_v` computes, so 20 live rows appear on the grid, the list, the Dashboard and the monthly email that are on none of them today, and several of those days are in the past and will show as passed.*
@@ -948,6 +950,36 @@ only for the exact word `true`. Off, an HR answer is the baseline's; on, it is g
 
 **`NOTIFY_TEST_TO` is confirmed ABSENT and must stay absent.** Set here, every customer's batch email goes to that address instead of to them. `DEV_MAX_SEARCHES` is likewise not set and must not be.
 
+**AND IT NOW GOVERNS NIGHT WATCH TOO, WHICH IS A SECOND REASON IT MUST STAY ABSENT.**
+`app/api/jobs/quality/route.ts:368` reads `NOTIFY_TEST_TO` as an override *before* `QUALITY_EMAIL`,
+which is how the staging runs were kept off the owner's inbox. Set on production, the morning
+report goes to the test address and `QUALITY_EMAIL` — the variable this release exists to need —
+is silently ignored.
+
+> ### THE FOUR NEW NAMES THIS RELEASE'S CODE READS AND **DOES NOT NEED SET** — 5 November 2026.
+>
+> Derived by grepping every `process.env.*` name added in the 59 unpushed commits
+> (`git diff origin/main..HEAD`, 59 commits at the time of reading), then reading each one's fallback in the file that reads it. They
+> are written down because *unrecorded and unset* and *recorded as deliberately unset* look the
+> same on the dashboard and are not the same thing — `AI_EFFORT`'s hidden-and-forgotten value is
+> why. **None of them is a stop before the push.**
+>
+> | Variable | Read by | What unset means |
+> |---|---|---|
+> | `AI_MODEL_DOCUMENTS` | `lib/ai.ts:180` | Falls back to `TASK_MODELS.prose()`, which on production is `claude-opus-5-5` — **which is what decision 76 says rev 1 ships on.** Leaving it unset is therefore correct, not an oversight, and it is named so the Documents chat can be moved on its own later |
+> | `AI_MODEL_AUDITS_CHAT` | `lib/ai.ts:181` | The same, for the Audits chat. ***Not* `AI_MODEL_AUDIT`**, which is the agency audit and is set: one long reasoning call over a filing cabinet is not a chat answer, and the ledger has to be able to tell them apart (`DECISIONS.md` §128 J) |
+> | `ASK_CONTEXT_BUDGET_TOKENS` | `lib/ask/calendarBrief.ts:40` `contextBudgetTokens()` | Falls back to `DEFAULT_CONTEXT_BUDGET_TOKENS = 120_000`. A non-numeric or non-positive value falls back too, so it cannot be set to something that breaks |
+> | `ASK_DUMP_DIR` | `lib/ask/engine.ts:448` | Nothing. It is a development aid and the line that reads it is guarded by `process.env.NODE_ENV !== 'production'`, so **setting it on production would still do nothing.** It must stay absent all the same |
+>
+> **Three more new names are read only by `scripts/` and never by the app**, so they have no place
+> on Vercel at all: `ATTACH_DEBUG` (`scripts/measure-layout.mjs`), `CHECK_LIVE_DOCUMENTS_ASK` and
+> `CHECK_LIVE_PASSWORD` (`scripts/check-live.js` and the three answer probes).
+>
+> **Everything else the diff turned up is already in this list and already set:** `ANTHROPIC_API_KEY`,
+> `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+> `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET` (unchanged — the new
+> cron uses the one already there) and `QUALITY_EMAIL`. `NODE_ENV` is the platform's own.
+
 ---
 
 ## MY ACCOUNT PART B'S RELEASE ROUTINE — AS IT RAN, 22 October 2026
@@ -1347,6 +1379,253 @@ spinner that can hang" seen from the outside.
 Nothing to watch. There is no new cron, no new email and no new model tier in this release, and
 `stripe_events` cannot gain a row while the webhook has no secret. The only thing that moves is
 `ai_calls`, exactly as before.
+
+---
+
+# THE GAPS RELEASE'S ROUTINE — written 5 November 2026, BEFORE the push
+
+*`docs/GAPS-PLAN.md` Parts A–F, decisions 11–76. **Nothing in this section has been done yet.**
+Claude Code prepared it read-only: it ran the free gate, the pre-flight and the ledger readings
+below and changed no app code. **Every command in it is the owner's, in Terminal 3.***
+
+| | |
+|---|---|
+| **Commits** | **60** on `main`, none pushed — from `d14ac16` to the records commit at the tip, which is this routine itself. `git log origin/main..HEAD --oneline \| wc -l` is the number to trust on the day |
+| **Migrations** | **091, 092, 093, 094, 095** — **five, not four.** See the box below |
+| **New variables needed** | **one**: `QUALITY_EMAIL`, which the owner set on Vercel Production on 5 November. Nothing else |
+| **Variables changed** | none. Four new names are read by this code and **all four are meant to stay unset** — see the list under the variable table |
+| **New cron** | **one**: `/api/jobs/quality` at `30 13 * * *`. Eight in use against a ceiling of 100 |
+| **New runtime dependencies** | `sharp`, `heic-decode`, `bmp-ts` — prebuilt binaries, no native build step. Step 4's reading is under the routine |
+| **What a customer can do that they could not** | ask questions inside Documents and inside Audits, each billed as itself; upload an iPhone photo, a flatbed scan or a `.bmp` and have it read; read an audit that can say *"on file, gaps found"*; print a summary report |
+| **What a customer can no longer do** | nothing. No column is dropped, no row is rewritten, no route is removed |
+
+> ### ⚡ THE PENDING LIST IS **FIVE**, AND THE FIFTH IS NOT A SURPRISE — IT IS AN UNDERCOUNT IN THE BRIEF.
+>
+> The release brief expected four pending migrations: the converted-photo column, the two
+> word-check restatements, and Night Watch's table. `npm run preflight` derives **five**. The extra
+> one is **`091_each_chat_section_is_its_own.sql`**, and it belongs to this same unreleased batch:
+> `git log --diff-filter=A` puts it in **`29324c5`, 2 November 2026**, Part A step 1, and
+> `git log origin/main..HEAD` confirms that commit is one of the 59 unpushed. It was simply written
+> three days before the other four and left out of the sentence that listed them.
+>
+> **It is also the one that must go first, and the order in the command below is not alphabetical by
+> accident.** 091 teaches `ai_calls_task_check` the words `documents` and `audits_chat`. Until it is
+> applied, the first ledger row either chat writes is refused by the CHECK and swallowed by
+> `recordAICall`'s catch — **the answer arrives, the money is spent, and nothing records it.** Push
+> the code without 091 and the Documents and Audits chats are live and unbilled.
+>
+> **And the pre-flight proves the chain is a strict prefix, which is the thing worth having.**
+> `INPUT 2 minus INPUT 1` is **`(none)`** — no migration is applied on production that is absent
+> from disk. So production's chain is `000`–`090` of the same chain staging ran, and these five
+> applied cleanly on staging from exactly that state. That is why no row can fail the three
+> restated CHECK constraints: each one restates every value the 090-state constraint already held,
+> so no existing row becomes invalid, and `ADD CONSTRAINT`'s validation pass has nothing to refuse.
+
+### Step 1 — the backups
+
+**Production SQL editor → run each, Download CSV, keep the files with the date.**
+
+**No migration in this set rewrites a single existing row**, which is unusual and is the reason
+this list is short. 092 adds one nullable column. 091, 094 and 095 drop and re-add CHECK
+constraints with every prior value restated. 093 replaces a view. 095 creates a table that does not
+exist on production. So these CSVs are **context** — what the read-back in step 3 counts against —
+and not a rescue copy of values about to be overwritten.
+
+```sql
+-- CONTEXT — the two tables whose CHECK constraints are restated. Nothing here is rewritten;
+-- these are the counts step 3 reads back against.
+select task, count(*) from public.ai_calls group by 1 order by 1;
+select section, count(*) from public.topics group by 1 order by 1;
+
+-- CONTEXT — 092 adds `converted_url` to this table, nullable, default null.
+select id, name, file_type, status from public.documents order by created_at desc;
+
+-- CONTEXT — 094 restates the word check. Read it before, so a refused value is visible as a value
+-- and not as a migration that "failed".
+select word, count(*) from public.audit_findings group by 1 order by 1;
+```
+
+### Step 2 — the three commands, in Terminal 3, in order
+
+From `~/Desktop/Compliboard`. **In this order, and not reordered:** the pre-flight is read-only and
+tells you what the second command will do; the migrations go **before** the push, because 091 is
+what makes the two new chats billable; the push is last.
+
+```
+npm run preflight
+```
+
+Expect **`PENDING COUNT: 5`** — `091`, `092`, `093`, `094`, `095`, in that order, and
+`INPUT 2 minus INPUT 1` **`(none)`**. If it says anything else, stop and read the two lists it
+printed; they are above the subtraction for exactly this reason.
+
+```
+npm run db:migrate:prod
+```
+
+It asks for a typed confirmation and there is no bypass flag. It applies all five in one run and
+regenerates `lib/database.types.ts`. **It does not run `check:live`**, by construction — that is
+`AUDIT-CHECKS.md` check 27 and it is deliberate: `check:live` writes rows as a signed-in fixture
+user, which is a thing to do on staging and never on production.
+
+**What each of the five does on production the moment it runs:**
+
+| File | What it does, and what it writes or deletes beyond the schema |
+|---|---|
+| `091_each_chat_section_is_its_own.sql` | Drops and re-adds **two** CHECK constraints — `ai_calls_task_check` (17 values restated, `documents` and `audits_chat` added) and `topics_section_is_known` (3 restated, the same two added). **It creates a probe company, writes topics and ledger rows against it, and deletes the company again** (`:135` insert, `:194` delete) — its own company, not a customer's, so no existing row is touched. All inside one transaction: a failed probe rolls the migration back. **No existing production row moves** |
+| `092_where_the_converted_photo_lives.sql` | Adds `documents.converted_url`, nullable, and a comment on it. **Writes and deletes nothing.** Two statements. **No existing row moves** — every existing document gets `null`, which is what "this file needed no conversion" means |
+| `093_needs_work_only_on_a_gap_read_from_the_page.sql` | `create or replace view public.document_index_v`, then `revoke` from `anon` and `authenticated` and `grant select` to `authenticated`. **Its probe attaches to an existing company** — `select id into co from public.companies limit 1`, so on production that is a real customer — and writes a probe document, scan, two gaps and a deadline, then **deletes the probe document by its own id** (`:313`), which cascades the rest away. Uncommitted until the migration commits, so no customer ever sees them. **No existing row moves.** With no company on the database it raises a notice and skips the probes |
+| `094_the_fifth_word_an_audit_can_say.sql` | Drops and re-adds `audit_findings_word_check` with a fifth word, every prior value restated, and comments the column. **Probe attaches to an existing company**, writes one `audit_runs` row with two child rows, and **deletes that run by its own id** (`:112`). **No existing row moves** |
+| `095_night_watch_the_nightly_read_only_finder.sql` | Creates **`public.quality_reports`** — RLS on, revoked from `anon` and `authenticated`, granted to neither, no policy — plus its index and comments. Restates **`job_runs_job_check`** whole to admit the eighth word, `quality`. **Probe rows go in and come out again**, and the two deletes are the careful ones: `quality_reports` by the dates `'1999-01-01'` and `'1999-01-02'`, and `job_runs` **by the mark `counts ? 'migration_095_probe'`** — not by "recent and unfinished", because `scan_documents` and `audit_sections` open a row every five minutes and a recency sweep would have deleted a live one. **No existing row moves** |
+
+```
+git push origin main
+```
+
+Last. The deployment builds with 091–095 already on the database, which is the ordering the whole
+box above is about. If the push is refused with 403, the section further up this file covers it.
+
+### Step 3 — read production back, from the database and not the exit code
+
+Four read-only statements in the production SQL editor. §3.7's rule applies to every one of them:
+**SELECT only.**
+
+```sql
+-- 1. the chain. Expect 96 rows, the last being 095.
+select count(*), max(version) from supabase_migrations.schema_migrations;
+
+-- 2. the two words 091 added, read out of the catalog and not out of the file.
+select conname, pg_get_constraintdef(oid) from pg_constraint
+ where conname in ('ai_calls_task_check','topics_section_is_known','audit_findings_word_check','job_runs_job_check');
+
+-- 3. the new table's grants — the only thing that must come back EMPTY for both roles.
+select r.rolname, p.priv, has_table_privilege(r.rolname,'public.quality_reports',p.priv) as held
+  from (values ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER'),('MAINTAIN')) p(priv)
+ cross join (values ('anon'),('authenticated')) r(rolname) order by 1,2;
+-- every `held` must be FALSE. service_role's must be TRUE — a check that reports an absence has to
+-- prove it can see a presence first (CLAUDE.md §9a).
+
+-- 4. 092's column, and that no document was given a value.
+select count(*) as docs, count(converted_url) as converted from public.documents;
+```
+
+### Step 4 — the free checks on production
+
+**Against `https://compliboard.vercel.app`, signed in as the owner's own company.** Every one of
+these is free: no model call happens on any of them. **The one thing that is NOT free is an image
+upload**, and it is deliberately not in this list — see step 5.
+
+| # | Where | The exact thing to see |
+|---|---|---|
+| 1 | `/documents?tab=ask` | The Documents chat draws its own tab with its own ask box. **Do not send a question** — an answer is a model call. What is free is that the tab exists and is the Documents one, not the workspace's |
+| 2 | `/documents` | The list is **grouped by the day a file arrived**, with a day heading above each group, and a document's drawer opens with **one face and one size** in every card body and one line under the title (E4, E4a) |
+| 3 | `/audits?tab=ask` | The Audits chat draws, same shape, own tab. Again **send nothing** |
+| 4 | `/audits?tab=past` | A finished audit report opens. On a report that has one, a finding reads **"on file, gaps found"** — the fifth word 094 added. If no existing report carries it, that is correct and expected: the word is new and only a new audit can write it |
+| 5 | `/compliance` | The shared chat still answers as the workspace: the page draws, the ask box is there, the conversation list loads. **Send nothing.** This is the regression check that Part A's lift did not break the section it lifted the code out of |
+| 6 | `/calendar?tab=ask` | Same, for the Calendar's chat: the page draws and its conversations load. Part A step 1 replaced two hard-coded section literals that the Calendar was one of, so this is the other half of check 5 |
+| 7 | `/compliance` → open a conversation with a summary → **Print** | The summary report prints: the print frame, the headings, no cut-off card. The browser's print preview is enough; nothing needs to be sent to a printer |
+| 8 | `/account?tab=company` → **Delete for good** | The sheet opens, titled *"Delete the company for good"*, and the words read *"…every document, report, date, conversation and login, for everyone here. It cannot be undone. Download your data first."* **Then close it. Do not type the name.** That `quality_reports` is in the delete list is proved by `npm run check`'s check 2, which refuses to pass while any table carrying `company_id` is missing from it — not by deleting a company to find out |
+| 9 | `/quality` **signed out** | **404.** Not a login page and not a 403: `requireOwner` answers `Not found.` to everyone who is not the one address in `QUALITY_EMAIL`, so an id cannot be probed by watching which error comes back |
+| 10 | `/quality` **signed in as the owner** | The Night Watch table draws, with the eleven counts and the cost and pulse lines. **On the morning of the push it will be empty or absent, and that is correct** — no row exists until the cron has run once |
+| 11 | `/api/jobs/quality` in a browser, no header | **404.** A GET with no `Authorization: Bearer <CRON_SECRET>` is refused, exactly as the other seven jobs are |
+| 12 | Vercel → the deployment → **Settings → Cron Jobs** | **Eight** entries, and `/api/jobs/quality` at `30 13 * * *` among them. The ceiling is 100 on Pro per vercel.com/docs/limits dated 2026-08-03 |
+| 13 | `/documents`, the upload control | Its accept list now **offers** `.heic`, `.heif`, `.tif`, `.tiff` and `.bmp`, which it used to refuse politely. Reading the control is free; **using it is not** — step 5 |
+
+### Step 5 — ONE paid check, and the photo rides with it
+
+> ### ⚡ AN UPLOAD IS A PAID READING, BECAUSE THE SWEEP CLAIMS IT WITHOUT BEING ASKED.
+>
+> The brief asked for one image upload path among the free checks. **It cannot be free.**
+> `app/api/jobs/scan-documents/route.ts:180` claims every document at `status = 'uploaded'` with
+> `reading_since` null, every five minutes, and reads it — so a file put on production is read on
+> `AI_MODEL_DOCUMENT_SCAN`, which is `claude-opus-5-5`, whether or not anybody presses anything.
+> There is no way to upload a photograph on production and not pay for it. So it is folded into the
+> one paid check instead of being claimed as free.
+
+**Do this as the owner's own company, once.**
+
+1. Make a folder with **two** files: one small template to audit, and **one iPhone `.heic`
+   photograph** of anything with print on it.
+2. Upload both. Watch the photo's row: it should show converted and then read — **not** the polite
+   refusal that B1 shipped. That is `sharp` and `heic-decode` working inside Vercel.
+3. Run **one template audit** on that folder, with as few sections as the template allows.
+4. Read the report, then run `npm run cost` and read what it actually cost.
+
+**What it should cost, estimated from the ledger on staging (read 5 November 2026, `ai_calls`):**
+
+| What | Measured | On production (`claude-opus-5-5`) |
+|---|---|---|
+| A **three-section** template audit | **$1.0353**, 8 calls, 3 November, on `claude-opus-5-5` | **~$1.04.** This is a measured run, not an estimate |
+| A **one-section** template audit | $0.0442, 2 calls, on `claude-haiku-4-5` | **~$0.26** — 2 calls at the `audit` task's Opus average of **$0.1278** (9 calls, 14 days, range $0.0233–$0.1826) |
+| One photograph read | — | **~$0.15** — the `document_scan` task's Opus average of **$0.1469** (20 calls, 14 days, range $0.0853–$0.3783) |
+
+**So the cheapest end-to-end exercise of the audit path, with the photo, is about $0.40**, and about
+**$1.20** if the template runs three sections. Worst case on the ranges above is under **$1.60**.
+**Keep the template to one section** and it is the cheaper line.
+
+### Step 6 — the morning after: Night Watch's first email
+
+**It should arrive at 05:30 Pacific on Friday 6 November 2026** — `30 13 * * *` is 13:30 UTC, which
+is 05:30 PST in winter and 06:30 PDT in summer. It covers the whole of the previous **Pacific** day,
+computed from `now()` in `America/Los_Angeles`, so it reads Thursday 5 November 00:00–24:00 Pacific
+whatever hour it fires.
+
+**What the first production report should contain:**
+
+- **The window, in Pacific, with the date, as its first line.** If that line names a date you did
+  not expect, the window is wrong and nothing below it can be trusted.
+- A subject reading **`Night Watch · <date> · <n> things to look at`**, where `n` counts only the
+  non-zero counters. **The cost line and the jobs' pulse never count toward `n`** — they are
+  readings, not complaints, so a quiet night is `0 things to look at` and still carries both.
+- **The jobs' pulse**, naming all eight jobs with when each last started and whether it left a row
+  open. On the first morning `quality` itself appears here, and **it must not report itself as
+  stuck**: both `job_runs` reads carry `.neq('id', run.id)`, which is the fix for the defect the
+  first staging run found — it mailed *"quality · last started -1 min ago · 1 row left open"*,
+  because `startJobRun` opens its row before any work and the newest `quality` row IS the run doing
+  the reading.
+- **A cost line for the previous Pacific day**, which on 6 November should include step 5's paid
+  check and very little else.
+- Whatever counts are genuinely non-zero. **A first report with findings in it is not a bad sign** —
+  the counters read rows this release's code has only just started writing.
+
+**What it must NOT contain:**
+
+- **Any sign that it called a model.** It never does, and `npm run check`'s check 3 is what keeps
+  that true: it computes the transitive import closure of every route and holds `PAID_COUNT` at
+  **23**. `/api/jobs/quality` is not one of them. If a Night Watch email ever carries a cost of its
+  own, that is the thing to stop for.
+- **Any row id in the estate totals line.** The `company_id = null` row holds counts only;
+  migration 095's `quality_reports_totals_hold_no_ids` CHECK refuses a totals row that carries ids,
+  and it is probed in the migration.
+- **The sandbox refusal.** It sends from `SANDBOX_FROM`, deliberately and with the reason written at
+  the call: its only recipient is the Resend account's own address, which is the one address
+  `onboarding@resend.dev` can reach. `sandboxSenderRefusal` guards the two senders that can reach a
+  **customer**, and this is not one of them. So when S1 verifies the domain, this job follows along
+  on the one-line change.
+- **A second email.** One per day. `quality_reports` is unique on `(date, company_id)` with
+  `nulls not distinct`, which is what makes the totals row's uniqueness hold too.
+
+**If it does not arrive:** read `job_runs` for a `quality` row started after 13:30 UTC with
+`finished_at` set, and check `QUALITY_EMAIL` is still set and visible on Vercel. Unset, the job
+refuses to send and `requireOwner` closes `/quality` to everyone — which is the safe direction, and
+is also silent.
+
+### What the runtime needs for `sharp`, `heic-decode` and `bmp-ts` — read 5 November 2026
+
+> ### NOTHING. NO BUILD STEP, NO SIZE PROBLEM, NO `next.config.ts` ENTRY — AND HERE IS WHERE I LOOKED.
+>
+> One line of it is not answerable from this repository, and it is named as such at the bottom.
+
+| Question | Answer | Read from |
+|---|---|---|
+| A native build step? | **No.** `sharp@0.34.5` ships prebuilt binaries as optional dependencies, and the lockfile carries the Linux ones: `@img/sharp-linux-x64@0.34.5` and `@img/sharp-libvips-linux-x64@1.2.4`, each `"os": ["linux"], "cpu": ["x64"], "optional": true`. Vercel's builder is linux-x64, so `npm ci` downloads them. No compiler, no `node-gyp`, and **`package.json` has no `postinstall`** | `package-lock.json:821` and `:1003`; `package.json` |
+| `heic-decode` and `bmp-ts`? | **Neither is native.** `heic-decode@2.1.0` depends only on `libheif-js`, which is WASM plus JavaScript; `bmp-ts@1.0.9` has **no dependencies at all** and is pure JavaScript | each package's own `package.json` |
+| A `serverExternalPackages` entry? | **Not needed.** `sharp` is on Next 16's built-in automatic opt-out list, so it is `require`d natively without being told to. `heic-decode` and `bmp-ts` are not on the list and do not need to be — they bundle, and `npm run build` compiles them (exit 0) | `node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/serverExternalPackages.md`; `next.config.ts`, which sets no options |
+| A size limit? | **Clear by an order of magnitude.** The four packages install to **26 MB** here, 15 MB of which is libvips. Vercel's unzipped function limit is 250 MB | `du -sch` on `node_modules/{sharp,@img,heic-decode,libheif-js,bmp-ts}` |
+| A Node version? | **Node ≥ 20.9** is the binding constraint — `next@16.2.6` declares `"node": ">=20.9.0"` and `sharp@0.34.5` declares `"^18.17.0 \|\| ^20.3.0 \|\| >=21.0.0"`; `heic-decode` wants `>=8.0.0` and `bmp-ts` declares none. **⚠ This repository pins nothing** — there is no `engines` block, no `.nvmrc` and no `.npmrc`. So the version that actually runs is **a dashboard setting with no representation here**, the same shape as the model variables (`CLAUDE.md` §3.4a). **Read it off Vercel → Settings → Node.js Version and confirm it is 20.9 or later.** It is the one line of this table that this repository cannot answer | `package.json`, `node_modules/{next,sharp,heic-decode,bmp-ts}/package.json`, and the absence of the three pin files |
+| Memory? | **Already answered and already right: Fluid compute on, 1 vCPU / 2 GB.** A 48-megapixel HEIC peaked at 1,036 MB and `lib/imageConvert.ts` refuses above `MAX_MEGAPIXELS = 50` | the Function memory section further down this file, read from the dashboard on 4 November 2026 |
+| Does any route that converts an image lack a long `maxDuration`? | **No — all four have 800.** `/api/document-scan` and `/api/jobs/scan-documents` from `vercel.json`; `/api/chat` and `/api/document-draft` declare `export const maxDuration = 800` in the file | `vercel.json`; `app/api/chat/route.ts:116`; `app/api/document-draft/route.ts:31` |
+| Can `sharp` reach the browser bundle? | **No.** `lib/acceptedFiles.ts` is imported by three client pages and only *mentions* `lib/imageConvert.ts` in comments — it does not import it. `import sharp` appears in `lib/imageConvert.ts` alone, which no client file reaches | `grep` for `imageConvert` in `lib/acceptedFiles.ts`; `tests/unit/clientImports.test.ts` |
 
 ---
 
