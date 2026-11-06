@@ -539,6 +539,25 @@ words on the page; board 3 is E1's.*
       `app/api/jobs/quality/route.ts`, `app/api/quality/route.ts`, `app/quality/page.tsx`,
       `lib/auth.ts`, `lib/jobAuth.ts`, `app/api/account/route.ts`, `vercel.json`, migration 095.*
 
+76. **⚡ REV 1 SHIPS ON OPUS, AND THE MODEL COMPARISON IS NOT A RELEASE GATE** (the owner,
+    5 November 2026). **Rev 1 ships on `claude-opus-5-5` on every tier, which is what production runs
+    today** — so there is nothing to decide before release and nothing to measure first. The Sonnet 5.5
+    comparison moves out of the finish line and into the work that follows it.
+
+    **After the release it is done ONE TIER AT A TIME, and never two tiers in one job**, in this order:
+    **research · the writing · the audit sections · the summaries · the document reading.** Each tier's
+    keys are written **before any run of that tier**, as every measurement in this plan has been. One
+    job, one tier, one baseline — because two tiers moving in one job is a result nobody can attribute,
+    which is the whole reason the Haiku guard exists.
+
+    **And the JSON-schema-at-the-boundary switch on the audit path waits with it.** It was recorded at
+    Night Watch's close-out as the owner's under §3.1 (`docs/TEST-AT-FINISH-LINE.md`, the three
+    broken-JSON sections): `AI_SCAN_STRUCTURED` already sends a schema on the document-scan path and the
+    audit call sends none. It is measured **against whichever baseline the audit-sections tier's own
+    comparison sets**, not before it — a switch measured against no baseline is a change nobody can
+    score. *Effect: §5a loses the comparison row; §5b gains it under its own heading;
+    `docs/TEST-AT-FINISH-LINE.md`'s Audits part carries the same note.*
+
 **And the three that were decided at E0's map, on 4 November:** decision 48 lives **in the view**, not
 in code, because *"the status the document would otherwise have"* is the six CASE arms underneath the
 one being changed and only SQL can compute them (migration 093); **a record falls to Recorded, not
@@ -758,7 +777,7 @@ boundary probe into a nightly job would mean a cron that writes rows on producti
 fixture login — the opposite of what decision 75 is. **What it does replace is the manual routine in
 `docs/RELEASE.md`'s "the morning after a deploy", which asks a person to go and look at `job_runs`:
 the crons' pulse is now in the email every day.** Decided and recorded; nothing built for it beyond
-the pulse the owner already asked for in S-4. **After the rest of E: the finish line.** The Opus 5.5 against Sonnet 5.5 comparison (`docs/TEST-AT-FINISH-LINE.md`), then the gate walk — which is in §5b with the rest of the pre-release work.
+the pulse the owner already asked for in S-4. **After the rest of E: the finish line** — which is now the gate walk and the release routine, and **not** the model comparison. **Decision 76 (5 November 2026) moved that out:** rev 1 ships on `claude-opus-5-5` on every tier, as production already runs, so the Sonnet 5.5 comparison is not a release gate. It is in §5b, under its own heading, with the rest of the work that follows the release.
 
 ---
 
@@ -777,6 +796,8 @@ the pulse the owner already asked for in S-4. **After the rest of E: the finish 
 | D3 | **The two `hello@compliboard.com` prints and the `/contact` form they wait on** | Both still there, re-read 3 November: `lib/signupView.ts:97` — *"Email hello@compliboard.com and we will clear it so you can try again"* — and `components/AppLayout.tsx:464`, a `mailto:` behind the signed-in footer's word **Contact**. The address **does not exist** (`PUBLIC-PAGES-PLAN.md` §7, answered 31 Oct). The public footer's printed copy came off at step 25a; `components/home/Footer.tsx:16` records it. **`app/contact/` does not exist** | `lib/signupView.ts`, `components/AppLayout.tsx`, a new `/contact` route, `docs/PUBLIC-PAGES-PLAN.md` step 30a — **which is blocked on the owner's answer to "where does the form deliver"** (that plan's §7) | not started |
 | D4 | **The homepage's Documents sentence, and D1's invented switch keys** | The panel's gate is closed — `components/home/DocumentsPanel.tsx:1` says so — and the sentence left is *"The box on this panel is the marketing page's own and still types nothing; what it promised now exists behind the login."* That is a page decision, not code. **The invented switch keys are not:** `lib/documentScan.ts:1061` writes `switch_key: f.key.slice(0, 120)` into `fact_proposals` **with no check against the switches table**, and `lib/companyContext.ts:368`–`:371` reads those same proposed keys back into the shared context. On production **30 of 30 pending proposals name a key that is not a switch**, 19 distinct invented names (`PENDING.md` D1) | `lib/documentScan.ts`, `lib/companyContext.ts`, `components/CompanyQuestions.tsx`, `components/DashboardQuestions.tsx`, and **three prompts** — which makes the filter a §3.1 quality change and the owner's | not started — **the only open defect that puts fabricated content in front of a customer** |
 | **D4a** | **DISPLAY — a `?topic=` parameter, so Night Watch's conversation counters link to the conversation and not to the section.** D15's shape, owed from Night Watch (Part F, Claude Code's item 4) | **No page reads one.** Grepped 5 November: the only parameters any page reads are `?run=` (`app/audits/page.tsx:297`), `?document=` (`app/documents/page.tsx:283`, `app/compliance/page.tsx:180`) and `?checklist=` (`app/compliance/page.tsx:187`). So four of Night Watch's eleven counters — `answers_no_source`, `refused_quotes`, `handles_at_a_person` and `summary_without_sources` — land a person on `/audits` or `/documents` with the topic id printed beside the row **to paste**, because `lib/quality.ts` would not invent a parameter nothing reads. The pattern to copy is D15's own fix: read the id, resolve it against the rows the page already has, open it, and show **one plain line** for an id that matches nothing — never saying which of deleted, never-existed or another company's (`CLAUDE.md` §3.6, 404-not-403) | `app/compliance/page.tsx`, `app/hr/page.tsx`, `app/calendar/page.tsx`, `app/documents/page.tsx`, `app/audits/page.tsx` (the five sections in `TOPIC_SECTIONS`); then `lib/quality.ts`'s `sectionHref` becomes a topic href, and `tests/unit/quality.test.ts` asserts the opposite of what it asserts today | not started — **an afternoon on five pages.** Nothing is broken without it; the ids are all on the page already |
+| **M1** | **⚡ WHICH MODEL, PER TIER — Sonnet 5.5 against Opus 5.5. Moved here from §5a by decision 76 (the owner, 5 November 2026): it is NOT a release gate.** Rev 1 ships on `claude-opus-5-5` on every tier, which is what production runs today, so nothing waits on this | The method, the rule for reading a tie, and the first data point are in `docs/TEST-AT-FINISH-LINE.md`, *"Which model, per tier"*. **Its first rows are already written**: three `audit_sections` Night Watch found on its first run, all three whole objects `JSON.parse` refused — the cheapest question the comparison can answer, and a yes/no | one tier's `AI_MODEL_*` variable at a time, **set in the command's own environment and never in `.env.local`**; each tier's keys, written before its first run | **after the release, one tier at a time, never two in one job** — in the owner's order: **research · the writing · the audit sections · the summaries · the document reading** |
+| **M2** | **The JSON schema at the boundary, on the audit path** (§3.1, the owner's). `AI_SCAN_STRUCTURED` already sends a schema on the document-scan path (`lib/ai.ts:267`); the audit call sends none, and the three sections above are a shape a schema would have refused | Recorded at Night Watch's close-out with the three ids and their cause. **Night Watch counts `sections_unparsed` every day**, so whether a fix worked is answerable the morning after rather than by a special run | `lib/ai.ts`, the audit call site, `prompts/audit-agency.ts` — **a prompt input, so §3.1 makes it the owner's** | **waits with M1**, measured against whichever baseline the **audit-sections** tier's comparison sets. A switch measured against no baseline is a change nobody can score |
 | D5 | **The gate walk** (`PUBLIC-PAGES-PLAN.md` step 33), last | F6, F7 and chat-over-documents are closed; F4, F1, S1 and D2 are B, C and D above. Every `GATE` comment in `components/home/` is walked against the shipped product | `components/home/*.tsx`, `docs/PUBLIC-PAGES-PLAN.md`, `docs/PENDING.md` | not started |
 
 
